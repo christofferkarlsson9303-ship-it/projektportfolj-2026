@@ -36,7 +36,7 @@
     --surface:#16272e; --ground:#0d1b21; --sunken:#11222a; --raised:#1b2f37;
     --ink:#e8f1f4; --ink-soft:#9ab0b9; --ink-faint:#7b929c;
     --hairline:#24404a; --hairline-stark:#2e4d58;
-    --web1:#11222a; --morkgra:#e8f1f4;
+    --web1:#11222a;
     --sidebar-1:#06323e; --sidebar-2:#042833; --sidebar-3:#03202a;
     --ok-bg:#10393b; --ok-ink:#6fd4d0;
     --warn-bg:#3d2a16; --warn-ink:#f0ac6a;
@@ -51,7 +51,7 @@
   --surface:#16272e; --ground:#0d1b21; --sunken:#11222a; --raised:#1b2f37;
   --ink:#e8f1f4; --ink-soft:#9ab0b9; --ink-faint:#7b929c;
   --hairline:#24404a; --hairline-stark:#2e4d58;
-  --web1:#11222a; --morkgra:#e8f1f4;
+  --web1:#11222a;
   --sidebar-1:#06323e; --sidebar-2:#042833; --sidebar-3:#03202a;
   --ok-bg:#10393b; --ok-ink:#6fd4d0;
   --warn-bg:#3d2a16; --warn-ink:#f0ac6a;
@@ -434,7 +434,8 @@ section.on{animation:sectionIn .34s var(--ease)}
 .mdl .btn.fara:hover{background:#d8443a;box-shadow:0 6px 18px rgba(234,85,73,.3)}
 @media(max-width:560px){.mdl{padding-top:6vh}.mdl .mfot .btn{flex:1}}
 
-/* --- Kommandopalett --- */background:rgba(4,25,32,.5);backdrop-filter:blur(2px);display:none;
+/* --- Kommandopalett --- */
+.cmdk{position:fixed;inset:0;background:rgba(4,25,32,.5);backdrop-filter:blur(2px);display:none;
   align-items:flex-start;justify-content:center;padding-top:12vh;z-index:70}
 .cmdk.on{display:flex;animation:cmdIn .18s var(--ease)}
 @keyframes cmdIn{from{opacity:0}to{opacity:1}}
@@ -761,7 +762,7 @@ tbody tr{transition:background .12s ease}
 :root{
   --ground:#ffffff; --sunken:#f4f7f9; --surface:#ffffff;
   --hairline:#e7edf1; --hairline-stark:#d6e0e6;
-  --r:18px; --r-sm:12px;
+  --r:12px; --r-sm:8px;
   --sidebar-w:268px;
   --sh-sm:0 1px 2px rgba(16,45,58,.04);
   --sh-md:0 4px 16px rgba(16,45,58,.07);
@@ -780,53 +781,22 @@ tbody tr{transition:background .12s ease}
 
 body{background:var(--ground);font-size:14.5px;line-height:1.55}
 
-/* ---------- Ljus sidomeny ---------- */
-.sidebar{
-  background:var(--surface)!important;
-  border-right:1px solid var(--hairline);
-  box-shadow:none;
-  color:var(--ink);
-  width:var(--sidebar-w);
-}
-.sidebar-top{padding:26px 24px 8px}
-.sidebar-top .mark-img{filter:none;height:30px}
-:root[data-theme="dark"] .sidebar-top .mark-img{filter:brightness(0) invert(1)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .sidebar-top .mark-img{filter:brightness(0) invert(1)}}
-.sidebar-top .dom{color:var(--ink-faint)}
-.sidebar-title{padding:2px 24px 20px}
-.sidebar-title h1{color:var(--ink);font-size:17px;letter-spacing:-.01em}
-.sidebar-title .sub{color:var(--ink-soft)}
-.sidenav{padding:4px 14px}
-.sidenav button{
-  color:var(--ink-soft);border-radius:11px;font-weight:600;font-size:13.5px;padding:10px 13px;
-}
-.sidenav button svg{stroke:var(--ink-faint);opacity:1}
-.sidenav button:hover{background:var(--sunken);color:var(--one-djup)}
-.sidenav button:hover svg{stroke:var(--one-djup)}
-.sidenav button.on{background:var(--info-bg);color:var(--one-djup)}
-.sidenav button.on svg{stroke:var(--one-djup)}
-.sidenav button.on::before{display:none}
-.navsek{color:var(--ink-faint);padding:18px 13px 6px;letter-spacing:.11em}
-.sidebar-curve{opacity:.55}
-.sidebar-foot{border-top:1px solid var(--hairline);padding:18px 24px 22px}
-.namnfalt{color:var(--ink-faint)}
-.namnfalt input{
-  background:var(--sunken);border:1px solid var(--hairline-stark);color:var(--ink);border-radius:10px;padding:9px 11px;
-}
-.namnfalt input::placeholder{color:var(--ink-faint)}
-.namnfalt input:focus{background:var(--surface);border-color:var(--one-bla)}
-.conn{color:var(--ink-faint)}
+/* ---------- Sidomeny: bredare men fortsatt ONE Blågrön (varumärkesmanualen
+   kräver ONE Blå som dominant och blå/blågrön header/nav) ---------- */
+.sidebar{width:var(--sidebar-w)}
 
-/* ---------- Topbar med sidhuvud ---------- */
+/* ---------- Topbar med sidhuvud — ONE Blågrön header enligt manualen ---------- */
 .topbar{
-  padding:20px 38px 18px;background:var(--surface);
-  border-bottom:1px solid var(--hairline);align-items:flex-start;gap:18px;
+  padding:20px 38px 18px;background:var(--one-djup);color:#fff;
+  border-bottom:none;align-items:flex-start;gap:18px;
 }
-.topbar .navtoggle{margin-top:4px}
+.topbar .navtoggle{margin-top:4px;color:#fff}
 .tophead{min-width:0;flex:1}
-.pagetitle{font-size:27px;font-weight:700;letter-spacing:-.02em;line-height:1.2}
-.pagelead{font-size:13.5px;color:var(--ink-soft);margin-top:5px;max-width:62ch;line-height:1.5}
-.topbar .kbd{border-radius:999px;padding:9px 16px;margin-top:3px}
+.pagetitle{font-size:27px;font-weight:700;letter-spacing:-.02em;line-height:1.2;color:#fff}
+.pagelead{font-size:13.5px;color:rgba(255,255,255,.75);margin-top:5px;max-width:62ch;line-height:1.5}
+.topbar .kbd{border-radius:8px;padding:9px 16px;margin-top:3px;
+  background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.3)}
+.topbar .kbd:hover{border-color:#fff;background:rgba(255,255,255,.24);color:#fff}
 main{max-width:1320px;padding:32px 38px 80px}
 section.on{animation:sectionIn .3s var(--ease)}
 
@@ -856,8 +826,8 @@ section.on{animation:sectionIn .3s var(--ease)}
 .pcard.c::before{background:var(--duvbla)}
 .pcard.d::before{background:var(--orange)}
 
-/* ---------- Knappar ---------- */
-.btn{border-radius:999px;padding:10px 20px;letter-spacing:.01em}
+/* ---------- Knappar — 6–8px enligt varumärkesmanualens knapp-CSS ---------- */
+.btn{border-radius:8px;padding:10px 20px;letter-spacing:.01em}
 .btn.mini{padding:7px 14px}
 .btn.sec{border-width:1.5px;padding:8.5px 18.5px}
 .btn.sec.mini{padding:5.5px 12.5px}
@@ -914,7 +884,8 @@ table.belaggning td{vertical-align:middle}
 
 /* ---------- Diverse justeringar ---------- */
 .note{border-radius:0 12px 12px 0;padding:14px 16px}
-footer{background:var(--surface);color:var(--ink-soft);border-top:1px solid var(--hairline)}
+footer{background:var(--morkgra);color:#cfd8dc;border-top:none}
+footer a{color:#fff}
 .gchip,.pstat,.matare,.styr,.punkt,.kalkyl{border-radius:12px}
 .kcol{background:var(--sunken);border:1px solid var(--hairline)}
 .kcard{border-radius:12px;box-shadow:none;border:1px solid var(--hairline);border-left-width:3px}
@@ -2704,7 +2675,7 @@ function ritaOversikt(){
   const naerm=kandaDagar.length?Math.min(...kandaDagar):null;
   const dagarHint=dagarPerProjekt.map(x=>esc(x.p.nr||x.p.ort)+" "+(x.d===null?"—":x.d+" d")).join(" · ");
   const risker=oppnaRisker();
-  const hogRisk=risker.filter(r=>riskvarde(r)>=15).length;
+  const hogRisk=risker.filter(r=>riskMatrisFarg(r.sannolikhet,r.konsekvens)==="rod").length;
   const urOppna=STATE.ur.filter(u=>u.status!=="stangd").length;
   const urHint=STATE.projekt.map(p=>esc(p.nr||p.ort)+" "+STATE.ur.filter(u=>u.projektId===p.id).length).join(" · ")+" i serien";
   const punkter=oppnaPunkter();
@@ -2759,7 +2730,7 @@ function ritaOversikt(){
     ${ganttRad()}
     <div class="grid g4" style="margin-bottom:20px">
       ${kpi("Dagar till färdigställande",naerm===null?"—":naerm,dagarHint,(naerm!==null&&naerm<60)?"warn":"")}
-      ${kpi("Öppna risker",risker.length,hogRisk+" med riskvärde ≥ 15",hogRisk?"bad":"")}
+      ${kpi("Öppna risker",risker.length,hogRisk+" röda enligt riskmatrisen",hogRisk?"bad":"")}
       ${kpi("Öppna UR/ÄTA",urOppna,urHint)}
       ${kpi("Öppna punkter",punkter.length,forfallna?forfallna+" har passerat datum":"inga passerade datum",forfallna?"bad":"")}
     </div>
@@ -6723,7 +6694,7 @@ function ritaRisker2(){
   const pid=valtProjekt, p=projekt(pid);
   const risker=STATE.risker.filter(r=>gallerFor(r,pid));
   const aktiva=risker.filter(r=>r.status!=="stangd");
-  const kritiska=aktiva.filter(r=>riskvarde(r)>=15);
+  const kritiska=aktiva.filter(r=>riskMatrisFarg(r.sannolikhet,r.konsekvens)==="rod");
   const utanForebygg=kritiska.filter(r=>!r.forebygg&&!r.atgard);
   const exponering=aktiva.reduce((s,r)=>s+riskExponering(r),0);
 
@@ -6732,15 +6703,15 @@ function ritaRisker2(){
 
     <div class="grid g5">
       ${kpi("Identifierade risker",risker.length,aktiva.length+" aktiva")}
-      ${kpi("Kritiska (RV ≥ 15)",kritiska.length,"kräver åtgärdsplan",kritiska.length?"bad":"")}
+      ${kpi("Kritiska risker",kritiska.length,"röda enligt riskmatrisen",kritiska.length?"bad":"")}
       ${kpi("Exponentiellt Riskvärde",fmtSEK(exponering),"RV × est. finansiell påverkan")}
       ${kpi("Beställarens risker",aktiva.filter(r=>r.agarskap==="bestallare").length,"lyfts i beställarrapporten")}
       ${kpi("Utan förebyggande åtgärd",utanForebygg.length,"av de kritiska",utanForebygg.length?"warn":"")}
     </div>
 
     ${utanForebygg.length?`<div class="note" style="border-left-color:var(--rod)">
-      <b>${utanForebygg.length} kritisk risk saknar förebyggande åtgärd.</b>
-      Miniriskmetoden kräver att risker med riskvärde ≥ 15 har en konkret åtgärdsplan.</div>`:""}
+      <b>${utanForebygg.length} röd risk saknar förebyggande åtgärd.</b>
+      Miniriskmetoden kräver att röda risker (enligt riskmatrisen) har en konkret åtgärdsplan.</div>`:""}
 
     <div class="grid g2" style="margin-top:16px">
       <div class="card">
