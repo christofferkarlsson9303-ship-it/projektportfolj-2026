@@ -267,7 +267,7 @@ td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
   vertical-align:middle;margin-left:8px}
 
 /* ---------- Inputs ---------- */
-select,input[type=text],input[type=date],input[type=number],textarea{
+select,input[type=text],input[type=email],input[type=date],input[type=number],textarea{
   font-family:var(--font-b);font-size:13px;color:var(--ink);background:var(--surface);
   border:1px solid var(--hairline-stark);border-radius:5px;padding:5px 7px;width:100%}
 select:focus,input:focus,textarea:focus{outline:2px solid var(--one-bla);outline-offset:-1px;border-color:var(--one-bla)}
@@ -841,7 +841,7 @@ main{max-width:1320px;padding:32px 38px 80px}
 th{font-size:10.5px;letter-spacing:.08em;padding:11px 12px;color:var(--ink-faint)}
 td{padding:11px 12px}
 tbody tr:hover{background:var(--sunken)}
-select,input[type=text],input[type=date],input[type=number],textarea{
+select,input[type=text],input[type=email],input[type=date],input[type=number],textarea{
   border-radius:9px;padding:7px 10px;border-color:var(--hairline-stark);
 }
 
@@ -1283,3 +1283,23 @@ tr.lastrad:hover{opacity:.8}
 
 .toast{border-radius:14px}
 
+
+/* ---------- Inloggningsgrind ---------- */
+.inlogg{min-height:100dvh;display:grid;place-items:center;padding:24px;background:var(--sunken)}
+.inlogg-kort{width:100%;max-width:420px;text-align:left}
+.inlogg-logo{height:28px;width:auto;margin-bottom:18px}
+.inlogg-kort h1{font-size:20px;margin:0 0 4px}
+.inlogg-kort label{display:block;font-size:12.5px;font-weight:600;color:var(--ink-svag);margin-bottom:6px}
+.note.err{background:var(--fel-bg,#fdeaea);border-left-color:var(--rod)}
+
+/* ---------- ÄTA- och rapportdokument i utskriftsytan ---------- */
+@media print{
+  #utskrift .delrubrik{font-size:12pt;color:#005f76;font-weight:700;
+    margin:14pt 0 6pt;page-break-after:avoid}
+  #utskrift table.signaturer{margin-top:18pt;page-break-inside:avoid}
+  #utskrift table.signaturer th{width:50%;background:#eef4f6}
+  #utskrift table.signaturer td.signatur-yta{height:54pt}
+  #utskrift .box{page-break-inside:avoid}
+  #utskrift .raphead{page-break-after:avoid}
+  #utskrift .dokumentskift{page-break-before:always}
+}

@@ -1,16 +1,53 @@
-# React + Vite
+# Projektportfölj BESS
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React-versionen av projektportföljen för ONE Nordics batteriparker. Migreras
+sektion för sektion från `Projektportfolj_standalone_2026-09-17.html`, som
+ligger kvar orörd och fortfarande gäller för de vyer som inte flyttats än.
 
-Currently, two official plugins are available:
+## Komma igång
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev      # http://localhost:5173
+npm run build    # en enda självbärande index.html i dist/
+npm run lint
+npm run e2e      # Playwright, desktop + mobil
+```
 
-## React Compiler
+## Lagring och inloggning
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Appen har två lägen, och väljer själv efter om Supabase är konfigurerat.
 
-## Expanding the Oxlint configuration
+**Lokalt läge** — utan `VITE_SUPABASE_URL` och `VITE_SUPABASE_ANON_KEY` sparas
+allt i `localStorage` och ingen inloggning krävs. Det är läget e2e-testen kör i.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+**Delat läge** — med variablerna satta krävs inloggning med magisk länk, och
+adressen måste finnas i tabellen `allowed_users`. Se `.env.example`.
+
+> Lägger du `.env.local` i projektet hamnar Playwright bakom inloggningsgrinden
+> och testen faller. Kör testen utan den filen.
+
+### Datamodellen
+
+Hela portföljen ligger som två JSONB-rader i `app_state`:
+
+| Nyckel | Innehåll | Vem får skriva |
+| --- | --- | --- |
+| `portfolj/state` | allt utom kontraktsvärde och betalplan | alla på listan |
+| `portfolj/ekonomi` | kontraktsvärde och betalplan | bara `role = 'admin'` |
+
+Behörigheten ligger i RLS, inte i klienten — `is_allowed()` och `is_admin()`
+slår mot `allowed_users` via e-posten i JWT:n. Publishable-nyckeln är publik
+till sin natur och följer med klientbygget; det är RLS som skyddar datan.
+
+`src/state/db-supabase.js` lägger ett litet dokument-API ovanpå Supabase
+(`doc(nyckel).get() / .set() / .onSnapshot()`) som `PortfolioProvider` är
+skriven mot. En detalj värd att känna till: PostgREST svarar **inte** med fel
+när RLS nekar en `UPDATE` — den returnerar noll rader. Adaptern räknar därför
+rader och kastar själv, annars skulle en nekad ekonomiändring se ut att ha
+sparats.
+
+### Innan delat läge fungerar
+
+Lägg till appens adress under *Authentication → URL Configuration* i Supabase,
+annars skickar den magiska länken användaren till fel ställe.

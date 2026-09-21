@@ -14,6 +14,7 @@ import { Ata } from "./Ata.jsx";
 import { Byggmoten } from "./Byggmoten.jsx";
 import { Dagbok } from "./Dagbok.jsx";
 import { Storning } from "./Storning.jsx";
+import { Rapport } from "./Rapport.jsx";
 
 export const SEKTIONER = {
   idag: Idag,
@@ -29,4 +30,5 @@ export const SEKTIONER = {
   risker: Risker,
   punkter: Punkter,
   kontakter: Kontakter,
+  rapport: Rapport,
 };

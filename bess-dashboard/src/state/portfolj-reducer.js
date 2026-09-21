@@ -104,6 +104,19 @@ export function reducer(state, action) {
     case "SATT_STATE":
       return action.state;
 
+    /* Slår ihop poster från den delade loggtabellen med dem som finns lokalt.
+       Nyckeln är ts+text, så serverns version av en post ersätter den egna —
+       det är den som bär den inloggade avsändaren i stället för det namn
+       användaren själv skrivit in. */
+    case "SATT_LOGG": {
+      const nyckel = (p) => `${p.ts}|${p.text}`;
+      const sedda = new Map();
+      for (const p of action.poster || []) sedda.set(nyckel(p), p);
+      for (const p of state.andringslogg || []) if (!sedda.has(nyckel(p))) sedda.set(nyckel(p), p);
+      const alla = [...sedda.values()].sort((a, b) => (a.ts < b.ts ? 1 : -1)).slice(0, 150);
+      return { ...state, andringslogg: alla };
+    }
+
     case "UPPDATERA": {
       const { lista, id, falt, varde } = action;
       if (!state[lista]) return state;

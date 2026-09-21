@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "r
 import { SEED } from "../data/seed.js";
 import { nu } from "../lib/datum.js";
 import { PortfolioContext } from "./kontexter.js";
+import { skapaDb } from "./db-supabase.js";
 import { useUi } from "./hooks.js";
 import { arEkonomiAtgard, efterInlasning, normalisera, reducer } from "./portfolj-reducer.js";
 
@@ -41,6 +42,9 @@ function packaStatePayload(state) {
     return rest;
   });
   delete clean.betalplan;
+  // Ändringsloggen har en egen append-only-tabell och ska inte skrivas om
+  // varje gång portföljen sparas — då vore den lika överskrivbar som allt annat.
+  delete clean.andringslogg;
   return clean;
 }
 
@@ -72,6 +76,7 @@ export function PortfolioProvider({ children }) {
   const senastSynkad = useRef("");
   const senastSynkadEk = useRef("");
   const ekonomiLast = useRef(null);
+  const senastLogg = useRef(null); // ts för senaste posten som nått tabellen
   const sparTimer = useRef(null);
   const sparTimerEk = useRef(null);
   const koadKanal = useRef(null); // "state" | "ekonomi" | null
@@ -103,6 +108,33 @@ export function PortfolioProvider({ children }) {
       await dbRef.current.doc(CONFIG.dbPath).set(payload);
       setConn({ kl: "ok", txt: "Delad · sparad " + nu() });
     } catch (e) {
+      /* Konflikt betyder att någon hann spara mellan vår läsning och vår
+         skrivning. Tidigare skrevs den ändringen över utan ett ord; nu läser vi
+         om och säger till. Ändringen finns kvar lokalt, men den delade bilden
+         är nu någon annans — full sammanslagning kräver att portföljen delas
+         upp i riktiga rader, vilket är nästa steg. */
+      if (e.code === "konflikt") {
+        try {
+          const snap = await dbRef.current.doc(CONFIG.dbPath).get();
+          if (snap.exists && snap.data()) {
+            senastSynkad.current = JSON.stringify(packa(snap.data()));
+            const inlast = efterInlasning(normalisera(snap.data()));
+            inlast.andringslogg = stateRef.current.andringslogg || [];
+            // Ekonomifälten ligger i eget dokument — behåll det vi redan vet.
+            const kv = stateRef.current.projekt.map((p) => [p.id, p.kontraktsvarde]);
+            inlast.projekt = inlast.projekt.map((p) => {
+              const träff = kv.find(([id]) => id === p.id);
+              return träff ? { ...p, kontraktsvarde: träff[1] } : p;
+            });
+            inlast.betalplan = stateRef.current.betalplan;
+            rawDispatch({ type: "SATT_STATE", state: inlast });
+          }
+          setConn({ kl: "err", txt: "Någon annan sparade samtidigt — vyn är omläst, kontrollera din ändring" });
+        } catch {
+          setConn({ kl: "err", txt: "Någon annan sparade samtidigt — kunde inte läsa om" });
+        }
+        return;
+      }
       setConn({ kl: "err", txt: `Kunde inte spara delat (${e.code || e.message || "fel"}) — finns lokalt` });
     }
   }, []);
@@ -145,6 +177,7 @@ export function PortfolioProvider({ children }) {
     (action) => {
       rawDispatch(action);
       if (action.type === "SATT_STATE" && action.tyst) return;
+      if (action.type === "SATT_LOGG") return; // loggen sparas i egen tabell
       koadKanal.current = arEkonomiAtgard(action) ? "ekonomi" : "state";
     },
     []
@@ -183,7 +216,7 @@ export function PortfolioProvider({ children }) {
     (async () => {
       let DB = null;
       try {
-        DB = window.claude && typeof window.claude.use === "function" ? await window.claude.use("db") : null;
+        DB = skapaDb();
       } catch {
         DB = null;
       }
@@ -202,7 +235,9 @@ export function PortfolioProvider({ children }) {
         if (avbruten) return;
         if (snap.exists && snap.data()) {
           senastSynkad.current = JSON.stringify(packa(snap.data()));
-          dispatch({ type: "SATT_STATE", state: efterInlasning(normalisera(snap.data())), tyst: true });
+          const inlast = efterInlasning(normalisera(snap.data()));
+          inlast.andringslogg = stateRef.current.andringslogg || [];
+          dispatch({ type: "SATT_STATE", state: inlast, tyst: true });
           setConn({ kl: "ok", txt: "Delad · hämtad " + nu() });
         } else {
           const start = packaStatePayload(stateRef.current);
@@ -235,6 +270,7 @@ export function PortfolioProvider({ children }) {
               return träff ? { ...p, kontraktsvarde: träff[1] } : p;
             });
             nyttState.betalplan = bpSpar;
+            nyttState.andringslogg = stateRef.current.andringslogg || [];
             dispatch({ type: "SATT_STATE", state: nyttState, tyst: true });
             setConn({ kl: "ok", txt: "Delad · uppdaterad " + nu() });
           },
@@ -284,6 +320,20 @@ export function PortfolioProvider({ children }) {
           () => {}
         )
       );
+
+      /* Ändringsloggen: egen append-only-tabell. Läses separat från portföljen
+         och lyssnas på, så att spåret växer även när andra skriver. */
+      if (DB.logg) {
+        try {
+          const poster = await DB.logg.las();
+          if (avbruten) return;
+          senastLogg.current = poster.length ? poster[0].ts : "";
+          if (poster.length) dispatch({ type: "SATT_LOGG", poster });
+        } catch {
+          senastLogg.current = null; // otillgänglig — skicka inget blint
+        }
+        avregistrera.push(DB.logg.lyssna((post) => dispatch({ type: "SATT_LOGG", poster: [post] })));
+      }
     })();
 
     return () => {
@@ -297,6 +347,23 @@ export function PortfolioProvider({ children }) {
       });
     };
   }, [dispatch]);
+
+  /* Skickar upp poster som tillkommit lokalt. Avsändaren utelämnas med flit —
+     databasen fyller i den inloggade adressen, och reglerna tillåter ingen
+     annan. Det är hela poängen: spåret går inte att skriva i någons namn. */
+  useEffect(() => {
+    const db = dbRef.current;
+    const granse = senastLogg.current;
+    if (!db?.logg || granse === null) return;
+
+    const nya = (state.andringslogg || []).filter((p) => p.ts > granse);
+    if (!nya.length) return;
+
+    senastLogg.current = nya[0].ts;
+    db.logg.skriv([...nya].reverse()).catch(() => {
+      setConn({ kl: "err", txt: "Loggposten sparades lokalt men inte delat" });
+    });
+  }, [state.andringslogg]);
 
   // Avbryt köade spar när providern plockas ner. Egen effekt — tidigare låg det
   // i db-effektens cleanup, vilket kopplade ihop två orelaterade livscykler.

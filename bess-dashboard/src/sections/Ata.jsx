@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { usePortfolj, useUi } from "../state/hooks.js";
+import { AtaPrisgodkannande, AtaUnderlag, AtaUnderrattelse } from "../components/ui/AtaDokument.jsx";
 import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
 import { Tathetsvaljare } from "../components/ui/Vyvaljare.jsx";
 import { DataTable } from "../components/ui/DataTable.jsx";
@@ -33,11 +34,12 @@ function Grind({ lage, ikon }) {
 
 function AtaFormular({ u, onStang }) {
   const { state, uppd, uppdStatus, uppdBool, taBort, laggTill } = usePortfolj();
-  const { bekrafta, visaToast, oppnaPost } = useUi();
+  const { bekrafta, visaToast, oppnaPost, skrivUt } = useUi();
 
   const und = underrattelseLage(u);
   const pris = prisGrind(u);
   const dagbok = state.dagbok.filter((d) => d.ataRef === u.nr && d.projektId === u.projektId);
+  const projektet = state.projekt.find((p) => p.id === u.projektId) || null;
   const orsak = ORSAKER.find((o) => o[0] === u.orsak);
 
   const satt = (falt, varde) =>
@@ -294,10 +296,24 @@ function AtaFormular({ u, onStang }) {
         <button type="button" className="btn sec" onClick={taBortPost}>
           Ta bort
         </button>
-        {/* Aviseringsdokumentet hör ihop med ÄTA-kalkylatorn (Bilaga 06.1) och
-            porteras med den. Knappen visas avstängd i stället för att tyst saknas. */}
-        <button type="button" className="btn sec" disabled title="Porteras tillsammans med ÄTA-kalkylatorn">
-          Exportera avisering (PDF)
+        {/* ABT 06-dokumenten i processordning: underrätta, prissätt, underlag.
+            Utskriftsdialogen sparar dem som PDF. */}
+        <button type="button" className="btn sec" onClick={() => skrivUt(<AtaUnderrattelse u={u} projekt={projektet} />)}>
+          Underrättelse (PDF)
+        </button>
+        <button
+          type="button"
+          className="btn sec"
+          onClick={() => skrivUt(<AtaPrisgodkannande u={u} projekt={projektet} />)}
+        >
+          Prisgodkännande (PDF)
+        </button>
+        <button
+          type="button"
+          className="btn sec"
+          onClick={() => skrivUt(<AtaUnderlag u={u} projekt={projektet} dagbok={dagbok} />)}
+        >
+          Underlag (PDF)
         </button>
       </div>
     </section>
