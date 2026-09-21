@@ -1,16 +1,24 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
+  content: ["./index.html", "./src/**/*.{js,jsx}"],
+
+  // Designsystemet i src/styles/design-system.css innehåller redan en komplett
+  // reset och bastypografi. Tailwinds preflight skulle skriva över den.
+  corePlugins: { preflight: false },
+
+  // Mörkt läge styrs av data-theme på <html> (med systeminställning som fallback,
+  // se design-system.css). `dark:`-utilities följer den explicita inställningen.
+  darkMode: ['variant', ':is([data-theme="dark"] &)'],
+
   theme: {
     extend: {
+      // Samma tokens som designsystemet — Tailwind och CSS:en är ett system,
+      // inte två parallella paletter.
       colors: {
-        ground: "var(--ground)",
         surface: "var(--surface)",
+        ground: "var(--ground)",
         sunken: "var(--sunken)",
-        djup: "var(--djup)",
+        raised: "var(--raised)",
 
         ink: "var(--ink)",
         "ink-soft": "var(--ink-soft)",
@@ -19,16 +27,14 @@ export default {
         hairline: "var(--hairline)",
         "hairline-stark": "var(--hairline-stark)",
 
-        one: "var(--one)",
         "one-bla": "var(--one-bla)",
         "one-djup": "var(--one-djup)",
-        "one-mork": "var(--one-mork)",
-        "one-ring": "var(--one-ring)",
-
         turkos: "var(--turkos)",
-        orange: "var(--orange)",
-        rod: "var(--rod)",
+        duvbla: "var(--duvbla)",
         himmel: "var(--himmel)",
+        rod: "var(--rod)",
+        orange: "var(--orange)",
+        morkgra: "var(--morkgra)",
 
         "ok-bg": "var(--ok-bg)",
         "ok-ink": "var(--ok-ink)",
@@ -40,10 +46,25 @@ export default {
         "info-ink": "var(--info-ink)",
       },
       fontFamily: {
-        head: ["system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
-        body: ["system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "sans-serif"],
+        head: "var(--font-h)",
+        body: "var(--font-b)",
+      },
+      borderRadius: {
+        card: "var(--r)",
+        sm: "var(--r-sm)",
+      },
+      boxShadow: {
+        sm: "var(--sh-sm)",
+        md: "var(--sh-md)",
+        lift: "var(--sh-lift)",
+      },
+      transitionTimingFunction: {
+        one: "var(--ease)",
+      },
+      spacing: {
+        sidebar: "var(--sidebar-w)",
       },
     },
   },
   plugins: [],
-}
+};
