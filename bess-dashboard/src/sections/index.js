@@ -15,6 +15,7 @@ import { Byggmoten } from "./Byggmoten.jsx";
 import { Dagbok } from "./Dagbok.jsx";
 import { Storning } from "./Storning.jsx";
 import { Rapport } from "./Rapport.jsx";
+import { Veckokoll } from "./Veckokoll.jsx";
 
 export const SEKTIONER = {
   idag: Idag,
@@ -31,4 +32,5 @@ export const SEKTIONER = {
   punkter: Punkter,
   kontakter: Kontakter,
   rapport: Rapport,
+  vecka: Veckokoll,
 };
