@@ -97,8 +97,8 @@ test("svarsfrist som passerat markeras i registret", async ({ page }) => {
 test("ÄTA skapar dagboksrad med ÄTA-numret som referens", async ({ page }) => {
   const { fel } = await oppna(page, "ÄTA och hinder");
 
-  const forsta = page.getByRole("region", { name: "UR- och ÄTA-register" }).locator("tbody tr").first();
-  await forsta.getByRole("button").first().click();
+  // Tavlan är standardvyn — kortet är numera vägen in i ärendet.
+  await page.locator(".atakort").first().getByRole("button").first().click();
 
   const ataForm = page.getByRole("region", { name: /^Ärende / });
   const rubrik = await ataForm.getByRole("heading", { level: 3 }).textContent();
@@ -118,8 +118,8 @@ test("ÄTA skapar dagboksrad med ÄTA-numret som referens", async ({ page }) => 
 test("ÄTA skapar underrättelse med ärendet inskrivet i ruta A", async ({ page }) => {
   await oppna(page, "ÄTA och hinder");
 
-  const forsta = page.getByRole("region", { name: "UR- och ÄTA-register" }).locator("tbody tr").first();
-  await forsta.getByRole("button").first().click();
+  // Tavlan är standardvyn — kortet är numera vägen in i ärendet.
+  await page.locator(".atakort").first().getByRole("button").first().click();
 
   const ataForm = page.getByRole("region", { name: /^Ärende / });
   const rubrik = await ataForm.getByRole("heading", { level: 3 }).textContent();

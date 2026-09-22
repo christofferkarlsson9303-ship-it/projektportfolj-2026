@@ -10,7 +10,7 @@ import { Punkter } from "./Punkter.jsx";
 import { Kontakter } from "./Kontakter.jsx";
 import { Tavla } from "./Tavla.jsx";
 import { Tidplan } from "./Tidplan.jsx";
-import { Ata } from "./Ata.jsx";
+import { Ata } from "./Ata/AtaSection.jsx";
 import { Byggmoten } from "./Byggmoten.jsx";
 import { Dagbok } from "./Dagbok.jsx";
 import { Storning } from "./Storning.jsx";

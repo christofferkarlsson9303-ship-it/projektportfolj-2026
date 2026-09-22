@@ -1303,3 +1303,79 @@ tr.lastrad:hover{opacity:.8}
   #utskrift .raphead{page-break-after:avoid}
   #utskrift .dokumentskift{page-break-before:always}
 }
+
+/* ---------- ÄTA: tavla, kort och ärendepanel ---------- */
+
+.atatavla-yta{display:flex;flex-direction:column;gap:10px}
+.atatavla{display:grid;grid-template-columns:repeat(5,minmax(210px,1fr));gap:12px;
+  overflow-x:auto;padding-bottom:6px}
+@media(max-width:1100px){.atatavla{grid-template-columns:repeat(5,minmax(200px,1fr))}}
+
+.atakolumn{background:var(--sunken);border:1px solid var(--hairline);border-radius:var(--r-sm);
+  display:flex;flex-direction:column;min-height:180px;transition:background .15s,border-color .15s}
+.atakolumn.over{border-color:var(--one-bla);background:var(--info-bg)}
+.atakolumn-topp{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:10px 12px 8px;border-bottom:1px solid var(--hairline)}
+.atakolumn-topp h4{margin:0;font-size:12px;font-weight:700;letter-spacing:.03em;
+  text-transform:uppercase;color:var(--ink-soft)}
+.atakolumn-antal{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;
+  color:var(--ink-faint)}
+.atakolumn-larm{width:7px;height:7px;border-radius:50%;background:var(--rod)}
+.atakolumn-kropp{display:flex;flex-direction:column;gap:8px;padding:10px;flex:1}
+.atakolumn-tom{margin:0;padding:10px 2px;font-size:12px;color:var(--ink-faint)}
+
+.atakort{background:var(--surface);border:1px solid var(--hairline-stark);border-radius:var(--r-sm);
+  box-shadow:var(--sh-sm);cursor:grab}
+.atakort:active{cursor:grabbing}
+.atakort.vald{border-color:var(--one-bla);box-shadow:0 0 0 2px rgba(0,182,222,.25)}
+.atakort-yta{display:flex;flex-direction:column;gap:6px;width:100%;padding:10px 11px;
+  background:none;border:0;text-align:left;font:inherit;color:inherit;cursor:inherit}
+.atakort-yta:focus-visible{outline:2px solid var(--one-bla);outline-offset:-2px;border-radius:var(--r-sm)}
+.atakort-topp{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.atakort-nr{font-size:11.5px;font-weight:700;color:var(--one-djup);letter-spacing:.03em}
+.atakort-titel{font-size:13px;line-height:1.4;color:var(--ink)}
+.atakort-fot{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  font-size:11.5px;color:var(--ink-faint)}
+.atakort-belopp{font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-soft)}
+
+.atabadge{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;
+  border-radius:50%;font-size:11px;flex:0 0 auto}
+.atabadge.gron{background:var(--ok-bg);color:var(--ok-ink)}
+.atabadge.gul{background:var(--warn-bg);color:var(--warn-ink)}
+.atabadge.rod{background:var(--bad-bg);color:var(--bad-ink)}
+
+.atatavla-fot{margin:0;font-size:12px}
+.lankknapp{background:none;border:0;padding:0;font:inherit;color:var(--one-djup);
+  text-decoration:underline;text-decoration-style:dotted;cursor:pointer}
+
+/* Slide-over. Medvetet utan overlay — tavlan bakom ska gå att läsa. */
+.atadrawer{position:fixed;top:0;right:0;bottom:0;width:min(460px,100vw);z-index:40;
+  background:var(--surface);border-left:1px solid var(--hairline-stark);
+  box-shadow:-12px 0 32px rgba(13,45,54,.14);display:flex;flex-direction:column;
+  animation:atadrawer-in .18s ease-out}
+@keyframes atadrawer-in{from{transform:translateX(24px);opacity:.6}to{transform:none;opacity:1}}
+@media(prefers-reduced-motion:reduce){.atadrawer{animation:none}}
+.atadrawer:focus{outline:none}
+
+.atadrawer-topp{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+  padding:14px 16px;border-bottom:1px solid var(--hairline)}
+.atadrawer-rubrik{min-width:0;display:flex;flex-direction:column;gap:6px}
+.atadrawer-meta{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.atadrawer-titel{margin:0;font-size:15px;line-height:1.35;display:flex;align-items:baseline;
+  gap:4px;flex-wrap:wrap;color:var(--one-djup)}
+.atadrawer-verktyg{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.atadrawer-kropp{padding:14px 16px 28px;overflow-y:auto;flex:1;display:flex;
+  flex-direction:column;gap:14px}
+.atadrawer-kropp .atagrindar{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+
+/* Rubriken ser ut som text tills man klickar eller tabbar dit. */
+.atainline-rubrik{background:none;border:0;padding:2px 4px;margin-left:-4px;text-align:left;
+  font-family:var(--font-h);font-size:16px;font-weight:700;color:var(--ink);
+  border-radius:5px;cursor:text;width:100%}
+.atainline-rubrik:hover{background:var(--sunken)}
+.atainline-rubrik:focus-visible{outline:2px solid var(--one-bla);outline-offset:0}
+
+.atasparad{font-size:11.5px;font-weight:600;color:var(--ok-ink);white-space:nowrap}
+.atasparad.sparar{color:var(--ink-faint)}
+
+@media print{.atadrawer{display:none}}
