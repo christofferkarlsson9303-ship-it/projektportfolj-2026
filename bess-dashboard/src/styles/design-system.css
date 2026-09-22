@@ -366,7 +366,7 @@ footer{background:var(--morkgra);color:#cfd8dc;font-size:12px;padding:16px 24px;
 
 /* ---------- Formulär ---------- */
 .f{margin-bottom:14px}
-.f label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;
+.f label,.f .faltrubrik{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;
   color:var(--ink-soft);font-weight:700;margin-bottom:4px}
 .f .guide{font-size:11.5px;color:var(--ink-soft);margin:0 0 6px;line-height:1.45}
 .f textarea{min-height:74px;resize:vertical;line-height:1.5}

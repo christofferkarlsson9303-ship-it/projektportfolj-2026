@@ -17,6 +17,7 @@ import { Storning } from "./Storning.jsx";
 import { Rapport } from "./Rapport.jsx";
 import { Veckokoll } from "./Veckokoll.jsx";
 import { Rutiner } from "./Rutiner.jsx";
+import { Hseq } from "./Hseq.jsx";
 
 export const SEKTIONER = {
   idag: Idag,
@@ -35,4 +36,5 @@ export const SEKTIONER = {
   rapport: Rapport,
   vecka: Veckokoll,
   rutiner: Rutiner,
+  hseq: Hseq,
 };
