@@ -9,7 +9,12 @@ export async function oppna(page, vy) {
   page.on("pageerror", (e) => fel.push(String(e)));
 
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  /* Egen, längre budget bara här. Bygget är en enda självbärande fil på
+     knappt 900 kB — ett medvetet arkitekturval — och på emulerad mobil-CPU
+     med flera workers igång hinner den inte parsas på standardens fem
+     sekunder. Övriga assertions behåller den korta gränsen, så riktiga fel
+     faller fortfarande snabbt. */
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 20_000 });
 
   if (vy) await gaTill(page, vy);
 
