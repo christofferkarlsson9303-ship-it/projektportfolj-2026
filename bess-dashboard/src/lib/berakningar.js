@@ -210,9 +210,13 @@ export function dagarSedanRond(state, pid) {
 }
 
 export function ampAktuell(state, pid) {
+  /* En arbetsmiljöplan kan revideras två gånger samma dag. Sorteringen är
+     stabil, så utan vändningen nedan vinner den först tillagda vid lika datum
+     och den andra revideringen syns aldrig. Senast tillagda ska gälla. */
   return (
     state.hseqAmp
       .filter((a) => a.projektId === pid)
+      .reverse()
       .sort((a, b) => String(b.datum).localeCompare(String(a.datum)))[0] || null
   );
 }

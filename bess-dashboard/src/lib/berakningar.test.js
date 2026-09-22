@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  ampAktuell,
   dagarSedanRond,
   dagarTillM6,
   incidentLage,
@@ -238,5 +239,29 @@ describe("saknarKarndata", () => {
     expect(saknarKarndata({})).toEqual([
       "kontraktsvärde", "MW", "MWh", "nätägare", "färdigställandetid",
     ]);
+  });
+});
+
+describe("ampAktuell", () => {
+  it("låter den senaste revideringen gälla även samma dag", () => {
+    // Regression: sorteringen är stabil, så utan vändning vann den först
+    // tillagda vid lika datum och den andra revideringen syntes aldrig.
+    const state = {
+      hseqAmp: [
+        { id: "a1", projektId: "p1", version: "rev 1", datum: "2026-09-22" },
+        { id: "a2", projektId: "p1", version: "rev 2", datum: "2026-09-22" },
+      ],
+    };
+    expect(ampAktuell(state, "p1").version).toBe("rev 2");
+  });
+
+  it("väljer ändå det senaste datumet när de skiljer sig", () => {
+    const state = {
+      hseqAmp: [
+        { id: "a1", projektId: "p1", version: "rev 1", datum: "2026-09-22" },
+        { id: "a2", projektId: "p1", version: "rev 2", datum: "2026-03-01" },
+      ],
+    };
+    expect(ampAktuell(state, "p1").version).toBe("rev 1");
   });
 });
