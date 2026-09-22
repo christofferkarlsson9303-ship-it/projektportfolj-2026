@@ -267,6 +267,14 @@ export function slutdokKritisktKlart(state, pid) {
   return rader.length > 0 && rader.every((d) => d.status === "godkand");
 }
 
+/* Slutbesiktningsprotokollet går inte att sätta status på förrän de kritiska
+   kategorierna är godkända — man kan inte slutbesikta mot ofullständigt
+   underlag. Matchar mot kravtexten och inte mot kategoriindex, så mallen kan
+   justeras utan att låsningen tappar bort sig. */
+export function slutdokArLast(d, pid, state) {
+  return /slutbesiktningsprotokoll/i.test(d.krav || "") && !slutdokKritisktKlart(state, pid);
+}
+
 export function dagarTillM6(state, pid) {
   const m = state.milstolpar.find(
     (x) => x.projektId === pid && /färdigställ|slutbesikt/i.test(x.titel || "")

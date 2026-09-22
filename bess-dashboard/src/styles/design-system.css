@@ -1409,3 +1409,6 @@ tr.lastrad:hover{opacity:.8}
 .veckokort-rad{font-size:12.5px;line-height:1.5;color:var(--ink-soft)}
 .veckokort-fot{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .veckokort-kommentar{font-size:12px;color:var(--ink-faint);font-style:italic}
+
+/* ---------- Slutdokumentation ---------- */
+.slutdok-sparr{margin-top:8px;color:var(--bad-ink);font-weight:600}

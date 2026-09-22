@@ -3,7 +3,7 @@
    som gör att React kan rendera om rätt delar av trädet. */
 
 import { SEED } from "../data/seed.js";
-import { KANDA_MAPPAR, PILL } from "../data/konstanter.js";
+import { KANDA_MAPPAR, PILL, SLUTDOK_MALL } from "../data/konstanter.js";
 import { migreraUr } from "../lib/berakningar.js";
 
 /** Namnet används i ändringsloggen och sparas per webbläsare, inte i delad data. */
@@ -50,7 +50,44 @@ export function efterInlasning(state) {
     }
     return nytt;
   });
-  return { ...state, ur, projekt };
+  return { ...state, ur, projekt, slutdok: medSlutdokrader(state, projekt) };
+}
+
+/* Slutdokumentationens rader kommer ur SLUTDOK_MALL och måste finnas som data
+   för att index och M6-grinden ska kunna räkna på dem.
+
+   Standalone-versionen sår dem inuti sin slutdokRader, som därmed muterar
+   state mitt i en läsning. Vår slutdokRader är ren och ska förbli det, så
+   sådden ligger här i stället — samma krok som redan kompletterar ur och
+   underlag vid inläsning.
+
+   Idempotent: id:t är härlett ur projekt, kategori och radnummer, så en rad
+   som redan finns skapas aldrig igen och användarens status bevaras. */
+function medSlutdokrader(state, projekt) {
+  const fanns = Array.isArray(state.slutdok) ? state.slutdok : [];
+  const kanda = new Set(fanns.map((d) => d.id));
+  const nya = [];
+
+  for (const p of projekt) {
+    SLUTDOK_MALL.forEach(([kategori, krav], ki) =>
+      krav.forEach((k, i) => {
+        const id = `sd-${p.id}-${ki}-${i}`;
+        if (kanda.has(id)) return;
+        nya.push({
+          id,
+          projektId: p.id,
+          kategori,
+          krav: k,
+          status: "ejpaborjad",
+          ansvarig: "",
+          senast: "",
+          referens: "",
+        });
+      })
+    );
+  }
+
+  return nya.length ? [...fanns, ...nya] : fanns;
 }
 
 /* ---------- Ändringslogg ---------- */
