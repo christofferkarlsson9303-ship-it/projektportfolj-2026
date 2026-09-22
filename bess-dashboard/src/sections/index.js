@@ -16,6 +16,7 @@ import { Dagbok } from "./Dagbok.jsx";
 import { Storning } from "./Storning.jsx";
 import { Rapport } from "./Rapport.jsx";
 import { Veckokoll } from "./Veckokoll.jsx";
+import { Rutiner } from "./Rutiner.jsx";
 
 export const SEKTIONER = {
   idag: Idag,
@@ -33,4 +34,5 @@ export const SEKTIONER = {
   kontakter: Kontakter,
   rapport: Rapport,
   vecka: Veckokoll,
+  rutiner: Rutiner,
 };

@@ -1254,7 +1254,9 @@ tr.lastrad:hover{opacity:.8}
   transition:border-color .18s var(--ease),box-shadow .18s var(--ease)}
 .kap:hover{border-color:var(--hairline-stark)}
 .kap.oppen{border-color:var(--one-bla);box-shadow:var(--sh-md)}
-.kaph{display:flex;align-items:center;gap:16px;padding:17px 20px;cursor:pointer;user-select:none}
+.kaph{display:flex;align-items:center;gap:16px;padding:17px 20px;cursor:pointer;user-select:none;
+  width:100%;background:none;border:0;font:inherit;color:inherit;text-align:left}
+.kaph:focus-visible{outline:2px solid var(--one-bla);outline-offset:-2px}
 .kaph:hover{background:var(--sunken)}
 .kapnr{flex:0 0 auto;min-width:52px;text-align:center;font-family:var(--font-h);font-weight:700;
   font-size:13px;color:#fff;background:var(--one-djup);border-radius:8px;padding:6px 9px;letter-spacing:.01em}
