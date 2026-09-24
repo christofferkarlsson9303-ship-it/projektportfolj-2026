@@ -19,6 +19,8 @@ import { Veckokoll } from "./Veckokoll.jsx";
 import { Rutiner } from "./Rutiner.jsx";
 import { Hseq } from "./Hseq.jsx";
 import { Slutdok } from "./Slutdok.jsx";
+import { Handlingsplan } from "./Handlingsplan.jsx";
+import { Data } from "./Data.jsx";
 
 export const SEKTIONER = {
   idag: Idag,
@@ -39,4 +41,6 @@ export const SEKTIONER = {
   rutiner: Rutiner,
   hseq: Hseq,
   slutdok: Slutdok,
+  handlingsplan: Handlingsplan,
+  data: Data,
 };

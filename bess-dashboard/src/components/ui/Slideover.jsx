@@ -11,8 +11,14 @@ import { useEffect, useRef } from "react";
 export function Slideover({ titel, etikett, verktyg, onStang, children }) {
   const panelRef = useRef(null);
 
+  /* Fokus flyttas bara när panelen öppnas. Låg det i samma effekt som
+     tangentlyssnaren skulle varje ny onStang-referens — en inline-pil hos
+     anroparen, alltså varje rendering — rycka fokus från fältet man skriver i. */
   useEffect(() => {
     panelRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
     const vidTangent = (e) => {
       if (e.key === "Escape") onStang();
     };

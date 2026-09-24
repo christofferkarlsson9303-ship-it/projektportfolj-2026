@@ -14,13 +14,37 @@ const TILLAGDA = [
   ],
 ];
 
+/* Tillagda vyer som ska ligga på en bestämd plats i listan i stället för
+   först: [efter vy-id, vy]. */
+const INSKJUTNA = [
+  [
+    "tidplan",
+    [
+      "handlingsplan",
+      "Handlingsplan",
+      "Från projektets mål via drivkraft och strategi till åtgärder med resurser, status och datum.",
+    ],
+  ],
+];
+
 const IKONER_TILLAGDA = {
   // Bock i ruta: dagens arbetslista.
   idag: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 2v4M16 2v4"/><path d="M8.5 14.5l2.5 2.5 4.5-5"/>',
+  // Måltavla: mål → åtgärder.
+  handlingsplan: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>',
 };
 
-/** Hela vylistan, med de tillagda vyerna först. */
-export const VYER = [...TILLAGDA, ...VYER_ORIGINAL];
+function medInskjutna(lista) {
+  const ut = [...lista];
+  for (const [efter, vy] of INSKJUTNA) {
+    const i = ut.findIndex((v) => v[0] === efter);
+    ut.splice(i < 0 ? ut.length : i + 1, 0, vy);
+  }
+  return ut;
+}
+
+/** Hela vylistan, med de tillagda vyerna först och de inskjutna på sin plats. */
+export const VYER = medInskjutna([...TILLAGDA, ...VYER_ORIGINAL]);
 
 export const NAVIKONER = { ...NAVIKON, ...IKONER_TILLAGDA };
 

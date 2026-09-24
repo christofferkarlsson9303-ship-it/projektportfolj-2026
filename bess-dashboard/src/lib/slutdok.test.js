@@ -8,7 +8,8 @@ import {
 } from "./berakningar.js";
 import { SLUTDOK_MALL } from "../data/konstanter.js";
 import { SEED } from "../data/seed.js";
-import { efterInlasning, normalisera } from "../state/portfolj-reducer.js";
+import { efterInlasning, normalisera, reducer } from "../state/portfolj-reducer.js";
+import { berakFlaggor } from "./flaggor.js";
 
 const NU = "2026-09-22T10:00:00+02:00";
 beforeEach(() => {
@@ -151,5 +152,104 @@ describe("dagarTillM6", () => {
   it("ger null för projekt utan milstolpe", () => {
     const state = last(SEED);
     expect(dagarTillM6(state, "gotene")).toBeNull();
+  });
+});
+
+/* Portföljperspektivet: index, grind och larm ska räknas per projekt, så att
+   ett projekts godkända handlingar aldrig kan öppna ett annat projekts grind. */
+describe("slutdok över hela portföljen", () => {
+  const godkannKritiska = (state, pid) => ({
+    ...state,
+    slutdok: state.slutdok.map((d) =>
+      d.projektId === pid && KRITISKA.includes(d.kategori) ? { ...d, status: "godkand" } : d
+    ),
+  });
+
+  /* Färdigställande om tio dagar för varje projekt — innanför larmgränsen. */
+  const alltInomTvaVeckor = (state) => ({
+    ...state,
+    milstolpar: state.projekt.map((p) => ({
+      id: `m6-${p.id}`,
+      projektId: p.id,
+      titel: "Färdigställande (M6)",
+      datum: "2026-10-02",
+      status: "planerad",
+    })),
+  });
+
+  const slutdokLarm = (state) => berakFlaggor(state).filter((f) => f.vy === "slutdok");
+
+  it("M6-grinden i ett projekt påverkar inte de andra", () => {
+    const state = godkannKritiska(last(SEED), "36037");
+    expect(slutdokKritisktKlart(state, "36037")).toBe(true);
+    for (const p of state.projekt.filter((x) => x.id !== "36037")) {
+      expect(slutdokKritisktKlart(state, p.id), `projekt ${p.id}`).toBe(false);
+    }
+  });
+
+  it("indexet räknas per projekt och summerar inte portföljen", () => {
+    const state = godkannKritiska(last(SEED), "36037");
+    expect(slutdokIndex(state, "36037").proc).toBeGreaterThan(0);
+    expect(slutdokIndex(state, "36038").proc).toBe(0);
+  });
+
+  it("flaggmotorn larmar för varje projekt under 80 % med under fjorton dagar kvar", () => {
+    const state = alltInomTvaVeckor(last(SEED));
+    const larm = slutdokLarm(state);
+
+    expect(larm.map((f) => f.projektId).sort()).toEqual(state.projekt.map((p) => p.id).sort());
+    for (const f of larm) expect(f.niva).toBe("hog");
+  });
+
+  it("flaggmotorn tystnar bara för det projekt som nått 80 %", () => {
+    let state = alltInomTvaVeckor(last(SEED));
+    state = {
+      ...state,
+      slutdok: state.slutdok.map((d) => (d.projektId === "36038" ? { ...d, status: "godkand" } : d)),
+    };
+
+    const projekt = slutdokLarm(state).map((f) => f.projektId);
+    expect(projekt).not.toContain("36038");
+    expect(projekt).toContain("36037");
+  });
+
+  it("larmar inte när färdigställandet ligger längre bort än fjorton dagar", () => {
+    const state = last(SEED); // Växjö och Alvesta färdigställs i december.
+    expect(slutdokLarm(state)).toEqual([]);
+  });
+});
+
+describe("statusbyte i slutdokumentationen", () => {
+  it("loggas med handlingens namn i ändringsloggen", () => {
+    const state = last(SEED);
+    const rad = slutdokRader(state, "36037")[0];
+
+    const ut = reducer(state, {
+      type: "UPPDATERA_STATUS",
+      lista: "slutdok",
+      id: rad.id,
+      falt: "status",
+      varde: "godkand",
+    });
+
+    expect(ut.slutdok.find((d) => d.id === rad.id).status).toBe("godkand");
+    expect(ut.andringslogg[0].projektId).toBe("36037");
+    expect(ut.andringslogg[0].text).toBe(`Slutdok: ${rad.krav}: status ändrad Ej påbörjad → Godkänd`);
+  });
+
+  it("kommentaren sparas på raden utan att röra sådden", () => {
+    const state = last(SEED);
+    const rad = slutdokRader(state, "36037")[0];
+    const ut = reducer(state, {
+      type: "UPPDATERA",
+      lista: "slutdok",
+      id: rad.id,
+      falt: "kommentar",
+      varde: "Väntar på rev B från Harju",
+    });
+
+    const efter = efterInlasning(ut);
+    expect(efter.slutdok).toHaveLength(state.slutdok.length);
+    expect(efter.slutdok.find((d) => d.id === rad.id).kommentar).toBe("Väntar på rev B från Harju");
   });
 });

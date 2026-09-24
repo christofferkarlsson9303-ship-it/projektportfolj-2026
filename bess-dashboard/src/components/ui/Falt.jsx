@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /* Fält som skriver tillbaka först vid blur eller Enter.
    Varför inte rak onChange mot state: originalets onchange-attribut commitade
@@ -28,6 +28,22 @@ function useUtkast(varde, harFokus) {
 export function Falt({ varde, onCommit, typ = "text", etikett, flerrad = false, ...rest }) {
   const harFokus = useRef(false);
   const [utkast, setUtkast] = useUtkast(varde, harFokus);
+
+  /* Commit även när fältet försvinner med fokus kvar. En Slideover som stängs
+     med Escape tar bort fältet ur DOM:en utan att blur når React, och då
+     skulle det man just skrivit gå förlorat. Senaste värdena hålls i en ref
+     så att städfunktionen — som bara körs vid avmontering — ser dem. */
+  const senaste = useRef(null);
+  useEffect(() => {
+    senaste.current = { utkast, varde, onCommit };
+  });
+  useEffect(
+    () => () => {
+      const s = senaste.current;
+      if (harFokus.current && s && String(s.utkast ?? "") !== String(s.varde ?? "")) s.onCommit(s.utkast);
+    },
+    []
+  );
 
   const commit = () => {
     harFokus.current = false;

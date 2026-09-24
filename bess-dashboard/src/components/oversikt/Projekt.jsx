@@ -1,4 +1,5 @@
 import { usePortfolj, useUi } from "../../state/hooks.js";
+import { ArrowUpRight, BatteryCharging, MapPin, PlugZap, Zap } from "lucide-react";
 import { Falt, NumFalt, DatumFalt } from "../ui/Falt.jsx";
 import { SelStatus, Bar, Tabellyta } from "../ui/Primitiver.jsx";
 import { PROJEKTSTATUS } from "../../data/konstanter.js";
@@ -7,6 +8,14 @@ import { dagarTill, idag } from "../../lib/datum.js";
 import { ekonomi, nastaHandelse, oppnaUR, projektKlass } from "../../lib/berakningar.js";
 
 /* ---------- Projektkort ---------- */
+
+/* Kortet får bryta rader var som helst utom inuti ett värde. Nyckeltalen
+   ligger i ett auto-fit-rutnät i stället för tre fasta kolumner, så ett
+   datum som 2026-12-02 aldrig trycks ut ur sin ruta på smala skärmar — rutan
+   hoppar ner en rad i stället. Saknade uppgifter visas som text ("Effekt ej
+   angiven") och inte som "— MW / — MWh". */
+
+const tonForDagar = (d) => (d === null ? "" : d < 0 ? "bad" : d < 60 ? "warn" : "");
 
 export function Projektkort({ p }) {
   const { state, uppdStatus } = usePortfolj();
@@ -17,81 +26,98 @@ export function Projektkort({ p }) {
   const ur = oppnaUR(state, p.id).length;
   const nasta = nastaHandelse(state, p.id);
 
+  const effekt = p.mw ? `${p.mw} MW / ${p.mwh ?? "—"} MWh` : null;
+  const nat = p.natagare ? p.natagare + (p.natkontakt ? ` · ${p.natkontakt}` : "") : null;
+
   return (
-    <article className={`pcard ${projektKlass(state, p.id)}`.trim()}>
-      <div className="pctop">
-        <div className="pnr">{p.nr || "AO-NR SAKNAS"}</div>
+    <article className={`projkort ${projektKlass(state, p.id)}`.trim()}>
+      <header className="projkort-topp">
+        <span className={`projkort-nr${p.nr ? "" : " saknas"}`}>{p.nr || "AO-nr saknas"}</span>
         <SelStatus
           alternativ={PROJEKTSTATUS}
           varde={p.status || "Planering"}
           etikett={`Status för ${p.namn}`}
           onChange={(v) => uppdStatus("projekt", p.id, "status", v)}
         />
-      </div>
+      </header>
 
-      <h2>
-        {/* Var en <a href="javascript:void(0)"> — en knapp är rätt element för
-            något som byter vy i appen, och den nås med tangentbord. */}
+      <h3 className="projkort-namn">
+        {/* En knapp och inte en länk: den byter vy i appen och nås med tangentbord. */}
         <button
           type="button"
           onClick={() => {
             setValtProjekt(p.id);
             visa("tidplan");
           }}
-          style={{
-            background: "none", border: 0, padding: 0, font: "inherit",
-            color: "inherit", cursor: "pointer", textAlign: "left",
-          }}
         >
-          {p.namn}
+          <span>{p.namn}</span>
+          <ArrowUpRight size={18} aria-hidden="true" className="projkort-pil" />
+          <span className="sr-only"> — öppna tidplanen</span>
         </button>
-      </h2>
+      </h3>
 
-      <div className="pmeta">
-        {p.mw ?? "—"} MW / {p.mwh ?? "—"} MWh · {p.ort || "—"} · Nät: {p.natagare || "—"}
-        {p.natkontakt ? ` (${p.natkontakt})` : ""}
-      </div>
+      <ul className="projkort-fakta">
+        <li className={effekt ? "" : "tom"}>
+          <Zap size={14} aria-hidden="true" />
+          {effekt || "Effekt ej angiven"}
+        </li>
+        <li className={p.ort ? "" : "tom"}>
+          <MapPin size={14} aria-hidden="true" />
+          {p.ort || "Ort ej angiven"}
+        </li>
+        <li className={nat ? "" : "tom"}>
+          <PlugZap size={14} aria-hidden="true" />
+          {nat || "Nätägare ej angiven"}
+        </li>
+      </ul>
 
-      <div className="pstats">
-        <div className="pstat">
-          <div className="l">Färdigställande</div>
-          <div className="v">{p.fardigstallande || "—"}</div>
+      <dl className="projkort-tal">
+        <div>
+          {/* Mjukt bindestreck: delas som "Färdig-ställande" bara när rutan är smal. */}
+          <dt>Färdig&shy;ställande</dt>
+          <dd>{p.fardigstallande || "—"}</dd>
         </div>
-        <div className="pstat">
-          <div className="l">Dagar kvar</div>
-          <div className="v">{d === null ? "—" : d}</div>
+        <div className={tonForDagar(d)}>
+          <dt>Dagar kvar</dt>
+          <dd>{d === null ? "—" : d}</dd>
         </div>
-        <div className="pstat">
-          <div className="l">Öppna UR</div>
-          <div className="v">{ur}</div>
+        <div className={ur ? "warn" : ""}>
+          <dt>Öppna UR</dt>
+          <dd>{ur}</dd>
         </div>
-      </div>
+      </dl>
 
       {nasta ? (
-        <div className={`pnext${nasta.bess ? " bess" : ""}`}>
-          <span className="pnext-d">{nasta.d} d</span>
-          <span>
-            {nasta.bess ? <span aria-hidden="true">🔋 </span> : null}
-            {nasta.titel} · {nasta.datum}
+        <div className={`projkort-nasta${nasta.bess ? " bess" : ""}`}>
+          <span className="projkort-nasta-d">om {nasta.d} d</span>
+          <span className="projkort-nasta-t">
+            {nasta.bess ? <BatteryCharging size={14} aria-hidden="true" /> : null}
+            {nasta.titel}
+            <span className="projkort-nasta-datum">{nasta.datum}</span>
           </span>
         </div>
       ) : null}
 
-      <Bar procent={e.faktProc} etikett={`Fakturerat av kontraktet för ${p.namn}`} />
-      <div className="barlab">
-        <span>
-          Fakturerat {e.faktProc} % {e.faktSEK !== null ? `· ${fmtSEK(e.faktSEK)}` : ""}
-        </span>
-        <span>
-          Kvar {100 - e.faktProc} % {e.kvarSEK !== null ? `· ${fmtSEK(e.kvarSEK)}` : "· belopp saknas"}
-        </span>
+      <div className="projkort-ekonomi">
+        <Bar procent={e.faktProc} etikett={`Fakturerat av kontraktet för ${p.namn}`} />
+        <div className="projkort-ekonomi-rad">
+          <div>
+            <span>Fakturerat</span>
+            <b>
+              {e.faktProc} %{e.faktSEK !== null ? ` · ${fmtSEK(e.faktSEK)}` : ""}
+            </b>
+          </div>
+          <div>
+            <span>Kvar</span>
+            <b>
+              {100 - e.faktProc} %{e.kvarSEK !== null ? ` · ${fmtSEK(e.kvarSEK)}` : ""}
+            </b>
+          </div>
+        </div>
+        {e.kvarSEK === null ? <div className="projkort-saknas">Kontraktsvärde saknas</div> : null}
       </div>
 
-      {p.anteckning ? (
-        <div className="lead" style={{ marginTop: 10 }}>
-          {p.anteckning}
-        </div>
-      ) : null}
+      {p.anteckning ? <p className="projkort-anteckning">{p.anteckning}</p> : null}
     </article>
   );
 }

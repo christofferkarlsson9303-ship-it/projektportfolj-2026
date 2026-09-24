@@ -25,6 +25,8 @@ export const PILL={
   ejstartad:["p-wait","Ej startad"], projektering:["p-go","Projektering"],
   levererad:["p-go","Levererad"], installerad:["p-go","Installerad"],
   driftsatt:["p-ok","Driftsatt"], verifierad:["p-ok","Verifierad"],
+  /* slutdokumentation — ejpaborjad och godkand delas med andra listor */
+  bestalld:["p-go","Beställd"], mottagen:["p-warn","Under granskning"],
   /* ÄTA-loggens åtta statuslägen */
   prissattning:["p-warn","Under prissättning"], skickad_best:["p-warn","Skickad till beställaren"],
   godkand_dok:["p-go","Godkänd — inväntar dok"], godkand:["p-ok","Godkänd"],
@@ -273,6 +275,10 @@ export const SLUTDOK_MALL = [
     "Slutbesiktningsprotokoll utan väsentliga anmärkningar"]]
 ];
 
+/* ---------- Handlingsplan ---------- */
+
+export const HP_STATUS = [["ejpaborjad","Ej påbörjad"],["pagaende","Pågår"],["klar","Klar"]];
+
 export const DOKSTATUS = [["ejpaborjad","Ej påbörjad"],["bestalld","Beställd / under framtagande"],
                    ["mottagen","Under granskning"],["godkand","Godkänd"]];
 
@@ -297,6 +303,7 @@ export const CSV_TABELLER = [
   ["aktiviteter","Aktiviteter och budget"], ["fakturor","Fakturaunderlag"],
   ["milstolpar","Milstolpar"], ["leveranser","Leveranser"], ["betalplan","Betalplan"],
   ["dagbok","Dagbok"], ["storningar","Störningar"], ["veckokoll","Veckokoll"],
+  ["handlingsplaner","Handlingsplan — mål och strategi"], ["hpAtgarder","Handlingsplan — åtgärder"],
   ["kontakter","Kontakter"], ["medarbetare","Medarbetare"], ["andringslogg","Ändringslogg"]
 ];
 

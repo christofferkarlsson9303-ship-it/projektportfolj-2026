@@ -162,6 +162,10 @@ export const SEED = {
   hseqRonder: [], hseqIncidenter: [], hseqAmp: [], hseqId06: [],
   /* Slutdokumentation — grind för M6/M7 */
   slutdok: [],
+  /* Handlingsplan per projekt: mål → drivkraft/strategi → åtgärder → slutresultat.
+     Planhuvudet sås per projekt i efterInlasning; åtgärderna läggs till i vyn. */
+  handlingsplaner: [],
+  hpAtgarder: [],
 
   /* ==========================================================================
      PLANERING OCH TID — resurser, tidrapport, aktivitetsbudget, fakturaunderlag

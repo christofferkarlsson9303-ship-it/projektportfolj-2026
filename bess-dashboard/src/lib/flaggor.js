@@ -16,6 +16,7 @@ import {
   riskMatrisFarg,
   riskvarde,
   saknarKarndata,
+  hpSammanfattning,
   slutdokIndex,
   underrattelseLage,
 } from "./berakningar.js";
@@ -135,6 +136,18 @@ export function berakFlaggor(state) {
         `Kritiska överlämningshandlingar saknas inför slutbesiktning — index ${ix.proc} %, ${d6} dagar kvar`,
         p.id,
         "slutdok"
+      );
+  });
+
+  /* Handlingsplan — åtgärder som passerat sitt datum utan att vara klara */
+  state.projekt.forEach((p) => {
+    const { forsenade } = hpSammanfattning(state, p.id);
+    if (forsenade)
+      lagg(
+        "medel",
+        `${forsenade} åtgärd${forsenade > 1 ? "er" : ""} i handlingsplanen har passerat datum`,
+        p.id,
+        "handlingsplan"
       );
   });
 

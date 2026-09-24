@@ -282,6 +282,35 @@ export function dagarTillM6(state, pid) {
   return m && m.datum ? dagarTill(m.datum) : null;
 }
 
+/* ---------- Handlingsplan ---------- */
+
+/** Planhuvudet för projektet — sås i efterInlasning, kan saknas i äldre state. */
+export function handlingsplan(state, pid) {
+  return (state.handlingsplaner || []).find((h) => h.projektId === pid) || null;
+}
+
+/* Åtgärderna i den ordning de lagts till. Ordningen är stegnumret i vyn och
+   ska inte hoppa när någon ändrar ett datum, så de sorteras inte. */
+export function hpAtgarder(state, pid) {
+  return (state.hpAtgarder || []).filter((a) => a.projektId === pid);
+}
+
+export function hpForsenad(a) {
+  return a.status !== "klar" && !!a.datum && dagarTill(a.datum) < 0;
+}
+
+export function hpSammanfattning(state, pid) {
+  const rader = hpAtgarder(state, pid);
+  const klara = rader.filter((a) => a.status === "klar").length;
+  return {
+    antal: rader.length,
+    klara,
+    pagaende: rader.filter((a) => a.status === "pagaende").length,
+    forsenade: rader.filter(hpForsenad).length,
+    proc: rader.length ? Math.round((klara / rader.length) * 100) : 0,
+  };
+}
+
 /* ---------- Dagbok ---------- */
 
 export const DAGBOK_FALT = ["startdatum", "omfattning", "vader", "kostnad", "forvantadTid", "faktiskTid"];
