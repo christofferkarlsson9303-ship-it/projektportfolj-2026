@@ -56,6 +56,39 @@ test("en avvikelse öppnar panelen och kommentaren sparas", async ({ page }) => 
   ).toHaveValue("Kontraktet genomgånget med platschefen");
 });
 
+/* Regressionsskydd: fältet tappade fokus efter varje tecken. fill() sätter
+   hela värdet i ett svep och kan därför inte fånga det — här skrivs tecken
+   för tecken, som en människa gör. */
+test("kommentarsfältet behåller fokus medan man skriver", async ({ page }) => {
+  const forsta = page.locator(KORT).first();
+  await forsta.getByRole("button", { name: "Avvikelse" }).click();
+  await forsta.getByRole("button", { name: "Kommentera och åtgärda" }).click();
+
+  const falt = page
+    .getByRole("region", { name: "Fråga 1 i veckokollen" })
+    .getByLabel("Kommentar till avvikelsen");
+  await falt.click();
+  await page.keyboard.type("Platschef kontaktad", { delay: 15 });
+
+  await expect(falt).toBeFocused();
+  await expect(falt).toHaveValue("Platschef kontaktad");
+});
+
+test("text som skrivs precis innan Escape går inte förlorad", async ({ page }) => {
+  const forsta = page.locator(KORT).first();
+  await forsta.getByRole("button", { name: "Avvikelse" }).click();
+  await forsta.getByRole("button", { name: "Kommentera och åtgärda" }).click();
+
+  const panel = page.getByRole("region", { name: "Fråga 1 i veckokollen" });
+  await panel.getByLabel("Kommentar till avvikelsen").click();
+  await page.keyboard.type("Sparas utan blur");
+  await page.keyboard.press("Escape");
+  await expect(panel).toBeHidden();
+
+  await forsta.getByRole("button", { name: "Öppna kommentaren" }).click();
+  await expect(panel.getByLabel("Kommentar till avvikelsen")).toHaveValue("Sparas utan blur");
+});
+
 test("panelen stängs med Escape", async ({ page }) => {
   const forsta = page.locator(KORT).first();
   await forsta.getByRole("button", { name: "Avvikelse" }).click();
