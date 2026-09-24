@@ -5,6 +5,7 @@
 import { SEED } from "../data/seed.js";
 import { KANDA_MAPPAR, PILL, SLUTDOK_MALL } from "../data/konstanter.js";
 import { migreraUr } from "../lib/berakningar.js";
+import { forslagText, kanTillampas, tillampaForslag } from "../lib/importera.js";
 
 /** Namnet används i ändringsloggen och sparas per webbläsare, inte i delad data. */
 export const NAMN_KEY = "batchc-portfolj-namn";
@@ -50,7 +51,35 @@ export function efterInlasning(state) {
     }
     return nytt;
   });
-  return { ...state, ur, projekt, slutdok: medSlutdokrader(state, projekt) };
+  return {
+    ...state,
+    ur,
+    projekt,
+    slutdok: medSlutdokrader(state, projekt),
+    handlingsplaner: medHandlingsplaner(state, projekt),
+  };
+}
+
+/* Varje projekt har exakt ett planhuvud (mål, drivkraft, strategi,
+   slutresultat) som vyn skriver i med UPPDATERA. Det sås här av samma skäl
+   som slutdokumentationen: vyn ska inte skapa data bara för att någon öppnar
+   den. Fälten sås tomma — vyn visar exempel som platshållare, så att inget
+   påhittat hamnar i ett riktigt projekts plan. Id:t härleds ur projekt-id,
+   vilket gör sådden idempotent. */
+function medHandlingsplaner(state, projekt) {
+  const fanns = Array.isArray(state.handlingsplaner) ? state.handlingsplaner : [];
+  const har = new Set(fanns.map((h) => h.projektId));
+  const nya = projekt
+    .filter((p) => !har.has(p.id))
+    .map((p) => ({
+      id: `hp-${p.id}`,
+      projektId: p.id,
+      mal: "",
+      drivkraft: "",
+      strategi: "",
+      slutresultat: "",
+    }));
+  return nya.length ? [...fanns, ...nya] : fanns;
 }
 
 /* Slutdokumentationens rader kommer ur SLUTDOK_MALL och måste finnas som data
@@ -112,6 +141,10 @@ const etikettFor = (state, lista, id) => {
       return { etikett: rad.rubrik || "Störning", projektId: rad.projektId };
     case "betalplan":
       return { etikett: `Betalplan ${rad.kod} — ${rad.benamning}`, projektId: rad.projektId };
+    case "slutdok":
+      return { etikett: `Slutdok: ${kort(rad.krav)}`, projektId: rad.projektId };
+    case "hpAtgarder":
+      return { etikett: `Handlingsplan: ${kort(rad.titel || "Namnlös åtgärd")}`, projektId: rad.projektId };
     default:
       return { etikett: String(id), projektId: rad.projektId || null };
   }
@@ -185,6 +218,27 @@ export function reducer(state, action) {
     /* Ersätter en hel kollektion — för sorteringar och massuppdateringar. */
     case "SATT_LISTA":
       return { ...state, [action.lista]: action.rader };
+
+    /* Tillämpar ett granskat importförslag (lib/importera.js). En
+       säkerhetskopia körs genom samma normalisering och migrering som en
+       vanlig inläsning, så att äldre filer får de fält som tillkommit sedan.
+       Importen hamnar i ändringsloggen med filnamn och omfattning. */
+    case "IMPORTERA": {
+      const { forslag } = action;
+      if (!kanTillampas(forslag)) return state;
+      let ut = tillampaForslag(state, forslag);
+      if (forslag.typ === "backup") {
+        ut = efterInlasning(normalisera(ut));
+        ut.andringslogg = state.andringslogg || [];
+      }
+      const post = {
+        ts: new Date().toISOString(),
+        anvandare: hamtaNamn() || "Okänd",
+        projektId: forslag.projektId || null,
+        text: forslagText(forslag),
+      };
+      return { ...ut, andringslogg: [post, ...(ut.andringslogg || [])].slice(0, 150) };
+    }
 
     /* Kontraktsvärde: administratörslåst, sparas i eget dokument. */
     case "UPPD_KONTRAKT": {

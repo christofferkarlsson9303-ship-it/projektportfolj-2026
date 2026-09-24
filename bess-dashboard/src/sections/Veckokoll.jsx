@@ -2,6 +2,7 @@ import { useState } from "react";
 import { usePortfolj, useUi } from "../state/hooks.js";
 import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
 import { Card, Pill, Prog, Tabellyta } from "../components/ui/Primitiver.jsx";
+import { Falt } from "../components/ui/Falt.jsx";
 import { Slideover } from "../components/ui/Slideover.jsx";
 import { VECKOFRAGOR } from "../data/veckofragor.js";
 import { veckaBesvarade, veckaFlaggor, veckorad } from "../lib/berakningar.js";
@@ -304,11 +305,18 @@ export function Veckokoll() {
 
           <div className="f">
             <label htmlFor={`vecka-kommentar-${fragan.n}`}>Kommentar till avvikelsen</label>
-            <textarea
+            {/* Lokalt utkast som sparas vid blur, Ctrl+Enter eller när panelen
+                stängs — inte per tangenttryck. Förut gick två dispatchar per
+                bokstav (värde + datum), och hela appen renderades om mitt i
+                skrivandet. key per fråga ger ett nytt utkast när man byter fråga. */}
+            <Falt
+              key={fragan.n}
+              flerrad
               id={`vecka-kommentar-${fragan.n}`}
-              value={rad?.["k" + fragan.n] || ""}
+              varde={rad?.["k" + fragan.n] || ""}
+              etikett="Kommentar till avvikelsen"
               placeholder="Vad har hänt, vad har du gjort och vad behöver följas upp?"
-              onChange={(e) => satt("k" + fragan.n, e.target.value)}
+              onCommit={(v) => satt("k" + fragan.n, v)}
             />
           </div>
 
