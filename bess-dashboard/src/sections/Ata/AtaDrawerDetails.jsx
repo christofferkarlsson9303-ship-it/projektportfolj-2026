@@ -6,6 +6,7 @@ import { DatumFalt, Falt, Kryss, NumFalt } from "../../components/ui/Falt.jsx";
 import { ATA_KLASS, ATA_STATUS, ORSAKER, PRISGRUND } from "../../data/konstanter.js";
 import { prisGrind, underrattelseLage } from "../../lib/berakningar.js";
 import { idag } from "../../lib/datum.js";
+import { nyDagboksrad } from "../../lib/nyaPoster.js";
 import { hamtaNamn } from "../../state/portfolj-reducer.js";
 import { flagga } from "./flode.js";
 
@@ -126,26 +127,10 @@ export function AtaDrawerDetails({ u, onStang }) {
 
   /* Raden skapas här och Dagbok-vyn öppnar den — ÄTA-numret följer med som
      referens, vilket är det som binder ihop underlaget vid fakturering. */
-  const nyDagboksrad = () => {
-    const id = "d" + Date.now();
-    laggTill("dagbok", {
-      id,
-      projektId: u.projektId,
-      ataRef: u.nr,
-      titel: u.benamning || "",
-      startdatum: idag(),
-      omfattning: "",
-      vader: "",
-      kostnad: "",
-      ombud: "",
-      forvantadTid: "",
-      faktiskTid: "",
-      kravSignering: false,
-      signerad: false,
-      fakturerad: false,
-      notering: "",
-    });
-    oppnaPost("dagbok", id);
+  const nyDagboksradForArende = () => {
+    const rad = nyDagboksrad(u.projektId, { ataRef: u.nr, titel: u.benamning || "" });
+    laggTill("dagbok", rad);
+    oppnaPost("dagbok", rad.id);
   };
 
   const nyUnderrattelse = () => {
@@ -356,7 +341,7 @@ export function AtaDrawerDetails({ u, onStang }) {
         </Note>
 
         <div className="rowbtns">
-          <button type="button" className="btn sec" onClick={nyDagboksrad}>
+          <button type="button" className="btn sec" onClick={nyDagboksradForArende}>
             + Dagboksrad
           </button>
           <button type="button" className="btn sec" onClick={nyUnderrattelse}>

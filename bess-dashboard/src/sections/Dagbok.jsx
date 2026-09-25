@@ -6,7 +6,7 @@ import { DataTable } from "../components/ui/DataTable.jsx";
 import { Note, Pill, Tabellyta } from "../components/ui/Primitiver.jsx";
 import { Falt, DatumFalt, Kryss } from "../components/ui/Falt.jsx";
 import { fmtSEK } from "../lib/format.js";
-import { idag } from "../lib/datum.js";
+import { nyDagboksrad } from "../lib/nyaPoster.js";
 import { dagbokGrupper, dagbokKomplett, projekt } from "../lib/berakningar.js";
 
 /* Fälten i mitten av blanketten. De sex som ingår i DAGBOK_FALT avgör om raden
@@ -199,25 +199,9 @@ export function Dagbok() {
   if (!p) return null;
 
   const nyRad = (ataRef = "") => {
-    const id = "d" + Date.now();
-    laggTill("dagbok", {
-      id,
-      projektId: pid,
-      ataRef,
-      titel: "",
-      startdatum: idag(),
-      omfattning: "",
-      vader: "",
-      kostnad: "",
-      ombud: "",
-      forvantadTid: "",
-      faktiskTid: "",
-      kravSignering: false,
-      signerad: false,
-      fakturerad: false,
-      notering: "",
-    });
-    setOppen(id);
+    const rad = nyDagboksrad(pid, { ataRef });
+    laggTill("dagbok", rad);
+    setOppen(rad.id);
   };
 
   return (

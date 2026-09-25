@@ -146,9 +146,14 @@ export function UiProvider({ children }) {
     return () => window.removeEventListener("hashchange", vidHash);
   }, []);
 
+  /* Vanlig navigering nollställer utpekad post och flagga. Vyerna jämför
+     signalens tid mot ett lokalt state som börjar om när vyn monteras — utan
+     nollställningen öppnades samma post igen varje gång man kom tillbaka. */
   const visa = useCallback((id) => {
     setAktivVy(id);
     setNavOppen(false);
+    setPostFokus(null);
+    setFokus(null);
   }, []);
 
   /** Byt vy och be den öppna en viss post. Används när ett ärende i en sektion
