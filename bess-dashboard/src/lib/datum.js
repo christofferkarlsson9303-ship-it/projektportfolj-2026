@@ -76,6 +76,20 @@ export function kortDatum(d) {
   return { dag: String(dd.getDate()), man: MANADER[dd.getMonth()] };
 }
 
+/** "12 okt" — utan år, för tidslinjer och tabeller där året är givet. */
+export function datumKort(iso) {
+  if (!iso) return "—";
+  const k = kortDatum(iso);
+  return `${k.dag} ${k.man}`;
+}
+
+/** "om 12 d", "idag", "12 d sedan". */
+export function dagarText(d) {
+  if (d === null || d === undefined) return "";
+  if (d === 0) return "idag";
+  return d > 0 ? `om ${d} d` : `${-d} d sedan`;
+}
+
 /** Klockslag HH:MM — används i synkstatusraden. */
 export function nu() {
   return new Date().toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" });

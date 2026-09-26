@@ -53,7 +53,7 @@ function Kraftkurva() {
 
 export function Hero({ akuta, bevaka, onVisaFlaggor }) {
   const { state, laggTill } = usePortfolj();
-  const { valtProjekt, setValtProjekt, oppnaPost, visa, fraga, visaToast } = useUi();
+  const { valtProjekt, oppnaPost, visa, fraga, visaToast } = useUi();
   const p = projekt(state, valtProjekt);
 
   const nu = new Date();
@@ -100,16 +100,17 @@ export function Hero({ akuta, bevaka, onVisaFlaggor }) {
       <Kraftkurva />
 
       <div className="ov-hero-topp">
-        <span className="ov-eyebrow">
-          {datum} · vecka {vecka}
-        </span>
+        <div className="min-w-0">
+          <span className="ov-eyebrow">
+            {datum} · vecka {vecka}
+          </span>
+          <h2 id="ov-halsning" className="ov-halsning">
+            {halsning(nu.getHours())}
+            {fornamn ? `, ${fornamn}` : ""}
+          </h2>
+        </div>
         <LiveMarke />
       </div>
-
-      <h2 id="ov-halsning" className="ov-halsning">
-        {halsning(nu.getHours())}
-        {fornamn ? `, ${fornamn}` : ""}
-      </h2>
 
       <ul className="ov-sammanfatt" aria-label="Läget just nu">
         <li>
@@ -166,17 +167,15 @@ export function Hero({ akuta, bevaka, onVisaFlaggor }) {
           Ladda upp protokoll
         </button>
 
-        <label className="ov-valj">
-          Gäller
-          <select value={p ? p.id : ""} onChange={(e) => setValtProjekt(e.target.value)}>
-            {p ? null : <option value="">Välj projekt…</option>}
-            {state.projekt.map((x) => (
-              <option key={x.id} value={x.id}>
-                {projektNamn(x)}
-              </option>
-            ))}
-          </select>
-        </label>
+        <span className="ov-valj">
+          {p ? (
+            <>
+              Gäller <b>{projektNamn(p)}</b> — byt projekt i Gantt-schemat
+            </>
+          ) : (
+            "Välj projekt i Gantt-schemat"
+          )}
+        </span>
       </div>
     </section>
   );

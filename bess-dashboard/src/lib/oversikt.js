@@ -6,7 +6,6 @@
    fakturering eller framdrift, så korten visar läget nu som mätare och
    segment. Det enda som har tidsstämplar att räkna på är ändringsloggen. */
 
-import { MILSTOLPE_MODELL } from "../data/konstanter.js";
 // Flödets kolumner är ÄTA-tavlans modell — samma indelning här, annars visar
 // översikten andra steg än tavlan man klickar sig vidare till.
 import { KOLUMNER, kolumnFor } from "../sections/Ata/flode.js";
@@ -15,14 +14,11 @@ import { berakFlaggor } from "./flaggor.js";
 import {
   BESS_MATCH,
   ataSummering,
-  betalRad,
   dagarSedanRond,
   dagbokKomplett,
   ekonomi,
-  nastaMilstolpe,
   oppnaRondavvikelser,
   prisGrind,
-  slutdokIndex,
   underrattelseLage,
   veckaFlaggor,
   veckorad,
@@ -59,43 +55,6 @@ export function budgetLage(state) {
     faktProc: kv ? Math.round((fakt / kv) * 100) : 0,
     pagProc: kv ? Math.round((pag / kv) * 100) : 0,
     saknarKv: state.projekt.filter((p) => p.kontraktsvarde === null || p.kontraktsvarde === undefined),
-  };
-}
-
-/* ---------- Framsteg: betalningsmilstolparna M1–M7 ---------- */
-
-export function framstegLage(state) {
-  const rader = state.projekt
-    .filter((p) => harBetalplan(state, p.id))
-    .map((p) => {
-      const steg = MILSTOLPE_MODELL.map((m) => {
-        const b = betalRad(state, p.id, m.kod);
-        const status = b?.status === "fakturerad" ? "klar" : b?.status === "pagaende" ? "pagar" : "kvar";
-        return { kod: m.kod, namn: m.namn, status };
-      });
-      return {
-        p,
-        steg,
-        klara: steg.filter((s) => s.status === "klar").length,
-        nasta: nastaMilstolpe(state, p.id) || null,
-        overlamning: slutdokIndex(state, p.id).proc,
-      };
-    });
-
-  const tot = rader.length * MILSTOLPE_MODELL.length;
-  const klara = rader.reduce((s, r) => s + r.klara, 0);
-  const kanda = state.projekt
-    .map((p) => ({ p, d: dagarTill(p.fardigstallande) }))
-    .filter((x) => x.d !== null)
-    .sort((a, b) => a.d - b.d);
-
-  return {
-    rader,
-    klara,
-    tot,
-    proc: tot ? Math.round((klara / tot) * 100) : 0,
-    naermast: kanda[0] || null,
-    utanBetalplan: state.projekt.length - rader.length,
   };
 }
 

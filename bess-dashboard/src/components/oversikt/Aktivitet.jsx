@@ -69,6 +69,7 @@ export function Aktivitet({ i }) {
     <Ruta
       id="ov-aktivitet"
       i={i}
+      klass="xl:row-span-2"
       ikon={Activity}
       titel="Aktivitet"
       under={delad ? "Uppdateras i realtid från den delade loggen" : "Loggas i den här webbläsaren"}

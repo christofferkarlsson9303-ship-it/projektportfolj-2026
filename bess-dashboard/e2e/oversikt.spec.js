@@ -10,14 +10,46 @@ const projektsektion = (page) => page.getByRole("region", { name: "Projekt", exa
 const uppmarksamhet = (page) => page.getByRole("region", { name: "Kräver uppmärksamhet" });
 const snabbval = (page) => page.getByRole("group", { name: "Snabbåtgärder" });
 
-test("fyra nyckeltalskort: budget, framsteg, ÄTA och skyddsronder", async ({ page }) => {
+test("fyra nyckeltalskort: ÄTA, hållpunkter, skyddsronder och budget", async ({ page }) => {
   const kort = nyckeltal(page).locator(".ov-kpi");
   await expect(kort).toHaveCount(4);
-  await expect(kort.nth(0)).toContainText(/\d+\s*% fakturerat/);
-  // M1–M7 per projekt som steg, med antal klara utskrivet.
-  await expect(kort.nth(1).locator(".ov-spar-rad").first()).toContainText(/\d\/7/);
-  await expect(kort.nth(2)).toContainText("ÄTA-status");
-  await expect(kort.nth(3)).toContainText("Skyddsronder");
+  await expect(kort.nth(0)).toContainText("ÄTA-status");
+  await expect(kort.nth(1)).toContainText("Hållpunkter (HP)");
+  await expect(kort.nth(1)).toContainText(/\d+ av \d+ godkända/);
+  await expect(kort.nth(2)).toContainText("Skyddsronder");
+  await expect(kort.nth(3)).toContainText(/\d+\s*% fakturerat/);
+});
+
+test("Gantt-schemat visar 16 faser, grindar och M1–M7 för valt projekt", async ({ page }) => {
+  const gantt = page.getByRole("region", { name: "Fasplan, grindar och betalningar" });
+  await expect(gantt.locator("button.ov-gantt-fas")).toHaveCount(16);
+  await expect(gantt.locator(".ov-gantt-grind")).toHaveCount(16);
+  await expect(gantt.getByRole("list", { name: "Betalmilstolpar" }).getByRole("listitem")).toHaveCount(7);
+
+  // Passerade faser kan döljas — resten ska vara kvar.
+  await gantt.getByRole("button", { name: "Dölj passerade faser" }).click();
+  const kvar = await gantt.locator("button.ov-gantt-fas").count();
+  expect(kvar).toBeGreaterThan(0);
+  expect(kvar).toBeLessThan(16);
+});
+
+test("ett projekt utan datum får fälten direkt i Gantt-schemat", async ({ page }) => {
+  const gantt = page.getByRole("region", { name: "Fasplan, grindar och betalningar" });
+  await gantt.getByRole("group", { name: "Projekt i Gantt-schemat" }).getByRole("button", { name: "Göteborg" }).click();
+  await expect(gantt.locator("button.ov-gantt-fas")).toHaveCount(0);
+  await expect(gantt.getByLabel("Startdatum för Göteborg Skogome")).toBeVisible();
+});
+
+test("ledtidstrackern bockar av ett ärende med Klar", async ({ page }) => {
+  const ruta = page.getByRole("region", { name: "Ligg steget före – ledtider" });
+  const rader = ruta.locator(".ov-ledlista > li");
+  test.skip((await rader.count()) === 0, "inga aktuella ledtider mot dagens datum");
+
+  const forsta = rader.first();
+  const text = await forsta.locator(".ov-led-text > b").innerText();
+  const projekt = await forsta.locator(".tag").innerText();
+  await forsta.getByRole("button", { name: /^Klar/ }).click();
+  await expect(ruta.locator(".ov-ledlista > li", { hasText: text }).filter({ hasText: projekt })).toHaveCount(0);
 });
 
 test("snabbåtgärden registrerar en ÄTA och öppnar den i ÄTA-vyn", async ({ page }) => {
@@ -105,10 +137,13 @@ test("ingen text i rutor, nyckeltal eller projektkort klipps", async ({ page }) 
   await page.waitForTimeout(900);
   const fel = await page.evaluate(() => {
     const ut = [];
+    // Gantt-schemat ligger i en rullyta med flit — det som rullar är inte klippt.
+    const rullar = (el) => ["auto", "scroll"].includes(getComputedStyle(el).overflowX);
     document.querySelectorAll(".ov-hero, .ov-kpi, .ov-ruta, .projkort").forEach((kort) => {
       const ram = kort.getBoundingClientRect();
       kort.querySelectorAll("*").forEach((el) => {
         if (el.closest(".sr-only") || el.closest('[aria-hidden="true"]')) return;
+        for (let p = el; p && p !== kort; p = p.parentElement) if (rullar(p)) return;
         const r = el.getBoundingClientRect();
         if (!r.width) return;
         const klipptInuti = el.scrollWidth > el.clientWidth + 1 && getComputedStyle(el).display !== "inline";

@@ -8,7 +8,6 @@ import {
   aktivitetPerDag,
   ataLage,
   budgetLage,
-  framstegLage,
   hseqLage,
   klustra,
   kommandeFonster,
@@ -54,27 +53,6 @@ describe("budgetLage", () => {
     const s = seed();
     s.projekt = s.projekt.map((p) => ({ ...p, kontraktsvarde: null }));
     expect(budgetLage(s).faktProc).toBe(0);
-  });
-});
-
-/* ---------- Framsteg ---------- */
-
-describe("framstegLage", () => {
-  it("räknar M1–M7 per projekt med betalplan", () => {
-    const f = framstegLage(seed());
-    expect(f.rader.map((r) => r.p.id)).toEqual(["36037", "36038"]);
-    expect(f.rader[0].steg.map((x) => x.status)).toEqual(["klar", "klar", "klar", "klar", "pagar", "kvar", "kvar"]);
-    expect(f.klara).toBe(8);
-    expect(f.tot).toBe(14);
-    expect(f.proc).toBe(57);
-    expect(f.utanBetalplan).toBe(2);
-    expect(f.rader[0].nasta.kod).toBe("M5");
-  });
-
-  it("hittar närmaste färdigställande", () => {
-    const f = framstegLage(seed());
-    expect(f.naermast.p.id).toBe("36037");
-    expect(f.naermast.d).toBe(68); // 2026-09-25 → 2026-12-02
   });
 });
 

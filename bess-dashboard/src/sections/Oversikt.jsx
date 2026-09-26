@@ -7,14 +7,17 @@ import { Nyckeltal } from "../components/oversikt/Nyckeltal.jsx";
 import { Leveranser, Risker, Uppmarksamhet } from "../components/oversikt/Rutor.jsx";
 import { Aktivitet } from "../components/oversikt/Aktivitet.jsx";
 import { Tidslinje } from "../components/oversikt/Tidslinje.jsx";
+import { Gantt } from "../components/oversikt/Gantt.jsx";
+import { Ledtider } from "../components/oversikt/Ledtider.jsx";
 import { Projektkort, Projektredigering } from "../components/oversikt/Projekt.jsx";
 import { uppmarksamhet } from "../lib/oversikt.js";
 
 /* Översikten — läget i portföljen just nu.
 
    Uppbyggd som ett bento-rutnät i fallande vikt: hälsning och snabbåtgärder,
-   fyra nyckeltal, därefter det som kräver åtgärd bredvid nästa leverans och
-   aktiviteten, sedan tidslinjen och riskerna. Projektkorten och underlaget
+   EPC-checklistans fasplan som Gantt-schema, ledtiderna som ska startas nu
+   bredvid nästa BESS-leverans, fyra nyckeltal, och sedan det som kräver
+   åtgärd, aktiviteten, tidslinjen och riskerna. Projektkorten och underlaget
    ligger sist — de är till för att läsas i lugn och ro. Varje ruta är en egen
    namngiven region, så sidan går att skumma och navigera med skärmläsare. */
 
@@ -50,6 +53,17 @@ export function Oversikt() {
     <div className="flex flex-col gap-5">
       <Hero akuta={akuta} bevaka={lista.length - akuta} onVisaFlaggor={visaAkuta} />
 
+      <section aria-labelledby="ov-planen">
+        <h2 id="ov-planen" className="sr-only">
+          Fasplan och ledtider
+        </h2>
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+          <Gantt i={1} />
+          <Ledtider i={2} />
+          <Leveranser i={3} />
+        </div>
+      </section>
+
       <Nyckeltal />
 
       <section aria-labelledby="ov-laget">
@@ -58,10 +72,9 @@ export function Oversikt() {
         </h2>
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           <Uppmarksamhet lista={lista} flik={flik} setFlik={setFlik} i={4} />
-          <Leveranser i={5} />
-          <Aktivitet i={6} />
-          <Tidslinje i={7} />
-          <Risker i={8} />
+          <Aktivitet i={5} />
+          <Tidslinje i={6} />
+          <Risker i={7} />
         </div>
       </section>
 

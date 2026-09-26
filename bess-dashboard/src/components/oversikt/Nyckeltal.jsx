@@ -1,17 +1,22 @@
 import { useMemo } from "react";
-import { FileDiff, Flag, HardHat, Wallet } from "lucide-react";
+import { FileDiff, HardHat, OctagonAlert, Wallet } from "lucide-react";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { fmtKompakt } from "../../lib/format.js";
-import { RONDINTERVALL, ataLage, budgetLage, framstegLage, hseqLage } from "../../lib/oversikt.js";
+import { RONDINTERVALL, ataLage, budgetLage, hseqLage } from "../../lib/oversikt.js";
+import { checklistlage, kommandeHallpunkter, planAnkare } from "../../lib/epc.js";
+import { datumKort } from "../../lib/datum.js";
+
+/** Hur långt fram hållpunkterna räknas. */
+const HP_FONSTER = 30;
 import { Lank } from "./Ruta.jsx";
 
-/* De fyra nyckeltalen: budget, framsteg, ÄTA och arbetsmiljö.
+/* De fyra nyckeltalen: ÄTA/UR, hållpunkter, skyddsronder (BAS-U) och budget.
 
    Formen följer vad siffran är. Portföljen har ingen historik för
-   fakturering eller milstolpar, så i stället för påhittade trendlinjer visar
-   korten läget nu: segment för andel av en helhet, M1–M7 som steg, ärenden
-   per steg i flödet och dagar sedan rond mot intervallet. Status bärs alltid
-   av både färg och text. */
+   fakturering, så i stället för påhittade trendlinjer visar korten läget nu:
+   ärenden per steg i flödet, de närmaste hållpunkterna, dagar sedan rond mot
+   intervallet och segment för andel av en helhet. M1–M7 står i Gantt-schemat.
+   Status bärs alltid av både färg och text. */
 
 const kortNamn = (p) => p.nr || p.ort || p.namn;
 
@@ -97,7 +102,7 @@ function Budget() {
 
   return (
     <Kpi
-      i={0}
+      i={3}
       ikon={Wallet}
       etikett="Budget"
       varde={b.kv ? b.faktProc : "—"}
@@ -115,44 +120,68 @@ function Budget() {
   );
 }
 
-/* ---------- Framsteg ---------- */
+/* ---------- Hållpunkter ---------- */
 
-function Framsteg() {
+const kortaAv = (t, n = 64) => (t.length > n ? t.slice(0, n - 1).trimEnd() + "…" : t);
+
+function Hallpunkter() {
   const { state } = usePortfolj();
-  const f = useMemo(() => framstegLage(state), [state]);
+  const { oppnaPost } = useUi();
+  const h = useMemo(() => {
+    const projekt = state.projekt.filter((p) => planAnkare(state, p.id));
+    const kommande = projekt.flatMap((p) => kommandeHallpunkter(state, p.id, HP_FONSTER));
+    const lage = projekt.map((p) => checklistlage(state, p.id));
+    return {
+      projekt,
+      kommande,
+      iSenFas: kommande.filter((k) => k.fas.status === "sen").length,
+      godkanda: lage.reduce((n, l) => n + l.hpKlara, 0),
+      totalt: lage.reduce((n, l) => n + l.hp, 0),
+    };
+  }, [state]);
+
+  const ton = !h.projekt.length ? "" : h.iSenFas ? "bad" : h.kommande.length ? "warn" : "ok";
+  const status = !h.projekt.length ? null : h.iSenFas ? "I försenad fas" : h.kommande.length ? "Bevaka" : "Inga just nu";
+  const namn = (pid) => {
+    const p = state.projekt.find((x) => x.id === pid);
+    return p ? kortNamn(p) : pid;
+  };
 
   return (
     <Kpi
       i={1}
-      ikon={Flag}
-      etikett="Framsteg M1–M7"
-      varde={f.tot ? f.proc : "—"}
-      enhet={f.tot ? "%" : null}
-      under={f.tot ? `${f.klara} av ${f.tot} betalningsmilstolpar klara` : "Ingen betalplan registrerad"}
-      fot={f.naermast ? `Färdigställande om ${f.naermast.d} d · ${kortNamn(f.naermast.p)}` : null}
-      lank={["Milstolpar", "milstolpar"]}
+      ikon={OctagonAlert}
+      etikett="Hållpunkter (HP)"
+      varde={h.kommande.length}
+      enhet={`att godkänna inom ${HP_FONSTER} d`}
+      ton={ton}
+      status={status}
+      under={
+        h.projekt.length
+          ? `${h.godkanda} av ${h.totalt} godkända i ${h.projekt.length} projekt — stopp tills godkänt`
+          : "Inga projekt med fasplan ännu"
+      }
+      fot={h.kommande.length > 3 ? `+ ${h.kommande.length - 3} till` : null}
+      lank={["Checklistan", "epc"]}
     >
-      <ul className="ov-spar-lista">
-        {f.rader.map((r) => {
-          const pagar = r.steg.find((s) => s.status === "pagar");
-          return (
-            <li key={r.p.id} className="ov-spar-rad">
-              <span>{kortNamn(r.p)}</span>
-              <div className="ov-steg" aria-hidden="true">
-                {r.steg.map((s) => (
-                  <i key={s.kod} className={s.status} title={`${s.kod} ${s.namn}`} />
-                ))}
-              </div>
-              <b>
-                {r.klara}/7<span className="sr-only"> klara{pagar ? `, ${pagar.kod} pågår` : ""}</span>
-              </b>
-              <small>
-                {r.nasta ? `Nästa ${r.nasta.kod}` : "Alla klara"} · överlämning {r.overlamning} %
-              </small>
+      {h.kommande.length ? (
+        <ul className="ov-hplista">
+          {h.kommande.slice(0, 3).map((k) => (
+            <li key={`${k.projektId}-${k.punkt.id}`}>
+              <button type="button" className="ov-hprad" onClick={() => oppnaPost("epc", `kp-${k.punkt.id}`)}>
+                <span className="ov-hpid">{k.punkt.id}</span>
+                <span className="ov-hptext" title={k.punkt.text}>
+                  {kortaAv(k.punkt.text)}
+                  <small>
+                    {namn(k.projektId)} · fas {k.fas.fas.nr}{" "}
+                    {k.fas.status === "kommande" ? `startar ${datumKort(k.fas.start)}` : k.fas.status === "sen" ? "försenad" : "pågår"}
+                  </small>
+                </span>
+              </button>
             </li>
-          );
-        })}
-      </ul>
+          ))}
+        </ul>
+      ) : null}
     </Kpi>
   );
 }
@@ -169,7 +198,7 @@ function Ata() {
 
   return (
     <Kpi
-      i={2}
+      i={0}
       ikon={FileDiff}
       etikett="ÄTA-status"
       varde={a.oppna}
@@ -226,7 +255,7 @@ function Hseq() {
 
   return (
     <Kpi
-      i={3}
+      i={2}
       ikon={HardHat}
       etikett="Skyddsronder"
       varde={h.avvikelser}
@@ -275,10 +304,10 @@ export function Nyckeltal() {
         Nyckeltal
       </h2>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        <Budget />
-        <Framsteg />
         <Ata />
+        <Hallpunkter />
         <Hseq />
+        <Budget />
       </div>
     </section>
   );
