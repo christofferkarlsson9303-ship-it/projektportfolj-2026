@@ -384,6 +384,34 @@ describe("MASTER-regeln", () => {
     expect(alla.every((r) => r.status === "master")).toBe(true);
   });
 
+  const prot = (id, projektId, filnamn, moteNr = "") => ({ id, projektId, filnamn, moteNr });
+  const statusFor = (alla) => Object.fromEntries(alla.map((r) => [r.id, r.status]));
+
+  it("ett äldre möte som laddas upp i efterhand tar inte över", () => {
+    // Så blev det i Alvesta: möte 5 kom in via Drive efter BM-10.
+    let alla = medNyMaster([], prot("bm10", "36038", "Byggmöte 10 - Alvesta 2026-09-14.pdf", "BM-10"));
+    alla = medNyMaster(alla, prot("m5", "36038", "Alvesta bygg möte 5 (1).pdf"));
+    expect(statusFor(alla)).toEqual({ bm10: "master", m5: "arkiverad" });
+    // Numret läses ur filnamnet när det inte skickats med.
+    expect(alla[0].moteNr).toBe("BM-05");
+  });
+
+  it("en ny version av samma möte ersätter den gamla", () => {
+    let alla = medNyMaster([], prot("v1", "36037", "Byggmöte 9 - Växjö.pdf", "BM-09"));
+    alla = medNyMaster(alla, prot("v2", "36037", "Complete_with_Docusign_Byggmöte_9_-_Växjö.pdf", "BM-09"));
+    expect(statusFor(alla)).toEqual({ v1: "arkiverad", v2: "master" });
+  });
+
+  it("ett protokoll utan nummer tar inte över från ett numrerat, men ett numrerat tar över", () => {
+    let alla = medNyMaster([], prot("bm9", "36037", "BM09.pdf", "BM-09"));
+    alla = medNyMaster(alla, prot("x", "36037", "Protokoll.pdf"));
+    expect(statusFor(alla)).toEqual({ bm9: "master", x: "arkiverad" });
+
+    let utan = medNyMaster([], prot("x", "36037", "Protokoll.pdf"));
+    utan = medNyMaster(utan, prot("bm9", "36037", "BM09.pdf", "BM-09"));
+    expect(statusFor(utan)).toEqual({ x: "arkiverad", bm9: "master" });
+  });
+
   it("grupperar per projekt med MASTER överst", () => {
     let alla = medNyMaster([], rad("a", "36037", "2026-09-01"));
     alla = medNyMaster(alla, rad("c", "36037", "2026-09-03"));

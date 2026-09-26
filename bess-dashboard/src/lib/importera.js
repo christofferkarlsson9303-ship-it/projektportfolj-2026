@@ -437,7 +437,7 @@ export function forslagProtokoll(state, { filnamn = "", projektId = null, datum 
     uppdateringar: [],
     oforandrade: 0,
     varningar: [],
-    info: ["Protokollet blir MASTER för projektet — tidigare protokoll arkiveras."],
+    info: ["Protokollet blir MASTER om mötesnumret är det högsta för projektet — annars arkiveras det direkt."],
     moteNr: nr,
   };
   if (!pid) bas.varningar.push("Kunde inte avgöra projektet ur filnamnet — välj projekt innan du tillämpar.");

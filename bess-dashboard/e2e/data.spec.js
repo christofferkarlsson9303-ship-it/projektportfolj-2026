@@ -129,7 +129,7 @@ test("okänt projekt måste väljas innan förslaget kan tillämpas", async ({ p
   await expect(f.getByRole("button", { name: "Tillämpa" })).toBeEnabled();
 });
 
-test("senast inlästa protokollet blir MASTER och det äldre arkiveras", async ({ page }) => {
+test("nästa möte blir MASTER och det föregående arkiveras", async ({ page }) => {
   await valjFiler(page, pdf("Byggmöte_9_-_Växjö.pdf"));
   await kort(page, "Byggmöte_9_-_Växjö.pdf").getByRole("button", { name: "Tillämpa" }).click();
   await expect(page.getByText("Byggmöte_9_-_Växjö.pdf är MASTER för projektet")).toBeVisible();
@@ -153,6 +153,20 @@ test("senast inlästa protokollet blir MASTER och det äldre arkiveras", async (
   // Sidfotens underlag följer det senaste protokollet, inte det inskrivna BM7/BM8.
   await expect(page.locator("footer")).toContainText("36037: Byggmötesprotokoll BM-10");
   await expect(page.locator("footer")).toContainText("36038: Byggmötesprotokoll BM7/BM8");
+});
+
+test("ett äldre möte som laddas upp i efterhand tar inte över som MASTER", async ({ page }) => {
+  await valjFiler(page, pdf("Byggmöte_10_-_Växjö.pdf"));
+  await kort(page, "Byggmöte_10_-_Växjö.pdf").getByRole("button", { name: "Tillämpa" }).click();
+  await expect(page.getByText("Byggmöte_10_-_Växjö.pdf är MASTER för projektet")).toBeVisible();
+
+  await valjFiler(page, pdf("Byggmöte_9_-_Växjö.pdf"));
+  await kort(page, "Byggmöte_9_-_Växjö.pdf").getByRole("button", { name: "Tillämpa" }).click();
+  await expect(page.getByText(/Byggmöte_9_-_Växjö\.pdf arkiverades/)).toBeVisible();
+
+  const grupp = page.getByRole("region", { name: /Protokoll för 36037/ });
+  await expect(grupp.locator("li.master")).toContainText("Byggmöte_10_-_Växjö.pdf");
+  await expect(grupp.locator("li.arkiverad")).toContainText("Byggmöte_9_-_Växjö.pdf");
 });
 
 test("protokoll för ett projekt påverkar inte ett annat projekts MASTER", async ({ page }) => {

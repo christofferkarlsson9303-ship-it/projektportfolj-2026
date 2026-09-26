@@ -11,20 +11,42 @@
      - lokalt: IndexedDB i webbläsaren, för lokalt läge och e2e-testen. Samma
        MASTER-regel tillämpas här i klienten.
 
-   MASTER: det senast inlästa protokollet för ett projekt är den aktiva
-   sanningen. När ett nytt kommer in arkiveras de äldre för samma projekt.
-   Protokoll utan projekt påverkar inga andra. */
+   MASTER: protokollet med högst mötesnummer är den aktiva sanningen för
+   projektet. Ett nytt protokoll tar över när dess nummer är lika med eller
+   högre än nuvarande MASTER:s — en ny version av samma möte ersätter den
+   gamla. Ett äldre möte som laddas upp i efterhand arkiveras direkt, liksom
+   ett protokoll utan nummer när MASTER har ett. Protokoll utan projekt
+   påverkar inga andra. Samma regel finns som trigger i databasen
+   (supabase/migrations/…_protokoll_master_motesnummer.sql). */
 
 import { supabase } from "../lib/supabase.js";
+import { moteNrUrFilnamn } from "../lib/importera.js";
 
 export const BUCKET = "protokoll";
 
-/** Ren MASTER-regel: lägger till `ny` och arkiverar äldre för samma projekt. */
+/** Mötesnumret som tal ("BM-09" → 9), null om det saknas. */
+export const moteTal = (moteNr) => {
+  const m = String(moteNr || "").match(/\d+/);
+  return m ? Number(m[0]) : null;
+};
+
+/** Ren MASTER-regel: lägger till `ny` först i listan med status satt, och
+ *  arkiverar nuvarande MASTER om `ny` tar över. Mötesnummer som saknas läses
+ *  ur filnamnet, precis som i databasen. */
 export function medNyMaster(rader, ny) {
-  const uppdaterade = ny.projektId
-    ? rader.map((r) => (r.projektId === ny.projektId && r.status === "master" ? { ...r, status: "arkiverad" } : r))
-    : rader;
-  return [{ ...ny, status: "master" }, ...uppdaterade];
+  const rad = { ...ny, moteNr: ny.moteNr || moteNrUrFilnamn(ny.filnamn || "") };
+  if (!rad.projektId) return [{ ...rad, status: "master" }, ...rader];
+
+  const master = rader.find((r) => r.projektId === rad.projektId && r.status === "master");
+  const nyttTal = moteTal(rad.moteNr);
+  const masterTal = master ? moteTal(master.moteNr) : null;
+  if (masterTal !== null && (nyttTal === null || nyttTal < masterTal)) {
+    return [{ ...rad, status: "arkiverad" }, ...rader];
+  }
+  return [
+    { ...rad, status: "master" },
+    ...rader.map((r) => (r.projektId === rad.projektId && r.status === "master" ? { ...r, status: "arkiverad" } : r)),
+  ];
 }
 
 /** Grupperar per projekt, nyast först — MASTER alltid överst. */
