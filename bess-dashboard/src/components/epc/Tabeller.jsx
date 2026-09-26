@@ -1,12 +1,12 @@
 import { usePortfolj } from "../../state/hooks.js";
-import { ATT_VERIFIERA, LARDOMAR } from "../../data/bessChecklistData.ts";
+import { ATT_VERIFIERA, LARDOMAR, NYCKELVARDEN } from "../../data/bessChecklistData.ts";
 import { Pill, Tabellyta } from "../ui/Primitiver.jsx";
 import { datumKort, dagarText } from "../../lib/datum.js";
 import { ledtidslage, milstolpslage } from "../../lib/epc.js";
 import { LedtidStatus } from "./Delar.jsx";
 
 /* Guidens referensdelar: betalplanen, ledtiderna mot projektets datum,
-   lärdomarna och det som källorna inte är överens om. */
+   nyckelvärdena, lärdomarna och det som källorna inte är överens om. */
 
 const MS_PILL = { fakturerad: "fakturerad", pagaende: "pagaende", kvar: "kvar" };
 
@@ -120,6 +120,25 @@ export function Ledtidstabell({ pid, onMarkera }) {
         </tbody>
       </table>
     </Tabellyta>
+  );
+}
+
+export function Nyckelvarden() {
+  return (
+    <dl className="epc-nyckel">
+      {NYCKELVARDEN.map((n) => (
+        <div key={n.omrade}>
+          <dt>{n.omrade}</dt>
+          <dd>
+            <ul>
+              {n.varden.map((v) => (
+                <li key={v}>{v}</li>
+              ))}
+            </ul>
+          </dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 

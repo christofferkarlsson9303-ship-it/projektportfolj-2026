@@ -110,7 +110,7 @@ describe("faslage", () => {
     expect(f[7].status).toBe("klar");
     expect(f[10].status).toBe("pagar"); // 2026-09-04 → 2026-11-04
     expect(f[11].status).toBe("kommande");
-    expect(f[10]).toMatchObject({ punkter: 11, hp: 3 });
+    expect(f[10]).toMatchObject({ punkter: 15, hp: 5 });
   });
 
   it("markerar en fas som sen när slutet passerat utan grind", () => {
@@ -188,7 +188,8 @@ describe("kommandeHallpunkter", () => {
   it("tar hållpunkter i pågående fas och faser som startar inom 30 dagar", () => {
     const hp = kommandeHallpunkter(seed(), "36037", 30, NU);
     expect(new Set(hp.map((x) => x.fas.fas.nr))).toEqual(new Set([10, 11, 12]));
-    expect(hp).toHaveLength(9);
+    // Fas 10–12 har 5 + 5 + 4 hållpunkter.
+    expect(hp).toHaveLength(14);
   });
 
   it("släpper fasens hållpunkter när grinden passeras", () => {
@@ -206,9 +207,9 @@ describe("lagesbild", () => {
     expect(l.nastaGrind.fas.grind.kod).toBe("G10");
     expect(l.nastaBetalning).toMatchObject({ kod: "M5", status: "pagaende" });
     expect(l.grindarPasserade).toBe(10);
-    expect(l.hp).toBe(33);
-    // Hållpunkterna i fas 0–9: 0+0+1+1+0+2+3+6+3+2.
-    expect(l.hpPasserade).toBe(18);
+    expect(l.hp).toBe(47);
+    // Hållpunkterna i fas 0–9: 0+1+2+1+1+2+4+8+3+2.
+    expect(l.hpPasserade).toBe(24);
     expect(l.dagarTillSlutbesiktning).toBe(67);
   });
 

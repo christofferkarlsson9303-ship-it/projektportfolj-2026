@@ -57,16 +57,18 @@ annars skickar den magiska länken användaren till fel ställe.
 ## Bygga batteripark
 
 Kapitlet *Bygga batteripark* (vy-id `epc`) bygger på "Bygga batteripark som
-totalentreprenad" (v1.0, 2026-09-26): 16 faser med grind (G0–G15), 199
-kontrollpunkter varav 33 hållpunkter, betalmilstolparna M1–M7, ledtider och tio
-lärdomar från Batch C. Kapitlet är en guide och en lägesbild, inte en
+totalentreprenad" (v1.1, 2026-09-26): 16 faser med grind (G0–G15), 286
+kontrollpunkter varav 47 hållpunkter, betalmilstolparna M1–M7, nyckelvärden,
+ledtider, tio lärdomar från Batch C och tolv motsägelser att reda ut. Version
+1.1 bygger på en genomgång av samtliga källor i åtta NotebookLM-böcker; de nya
+punkterna ligger sist i varje fas under "Från källgenomgången". Kapitlet är en guide och en lägesbild, inte en
 att göra-lista: överst står var varje projekt är i de 16 faserna, under det
 guiden steg för steg med kontrollpunkterna som referens.
 
 | Fil | Innehåll |
 | --- | --- |
-| `src/data/bessChecklistData.ts` | Checklistan som data. Id:n (`"7.3"`, `"lop.4"`) står i länkar och ledtidernas punkthänvisning och får aldrig numreras om. |
-| `src/data/bessChecklistData.test.js` | Låser antalen (16/199/33/7) och kopplingarna mellan faser, grindar, milstolpar och ledtider. |
+| `src/data/bessChecklistData.ts` | Checklistan som data. Id:n (`"7.3"`, `"lop.4"`) står i länkar och ledtidernas punkthänvisning och får aldrig numreras om — nya punkter läggs sist i fasen med nästa lediga nummer. |
+| `src/data/bessChecklistData.test.js` | Låser antalen (16/286/47/7/12), att id:n från 1.0 finns kvar och kopplingarna mellan faser, grindar, milstolpar och ledtider. |
 | `src/lib/epc.js` | Lägesbild, fasplan, grindar, milstolpar, ledtider och hållpunkter per projekt. |
 
 Läget följs per fas: en fas är klar när dess grind är passerad, och då räknas

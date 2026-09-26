@@ -1,11 +1,17 @@
 /* BESS EPC-checklistan som data — "Bygga batteripark som totalentreprenad",
-   version 1.0 (2026-09-26), ONE Nordic AB. Avtalsgrund ABT 06 / ABT-U 07.
+   version 1.1 (2026-09-26), ONE Nordic AB. Avtalsgrund ABT 06 / ABT-U 07.
 
    Allt här är extraherat ur checklistans PDF: 16 faser med grind (G0–G15),
-   199 kontrollpunkter varav 33 hållpunkter, betalmilstolparna M1–M7,
-   ledtidstabellen och de tio lärdomarna från Batch C (Växjö 36037, Alvesta
-   36038). src/data/bessChecklistData.test.js låser antalen, så en punkt som
+   286 kontrollpunkter varav 47 hållpunkter, betalmilstolparna M1–M7,
+   nyckelvärdena, ledtidstabellen, de tio lärdomarna från Batch C (Växjö
+   36037, Alvesta 36038) och de tolv motsägelserna att reda ut.
+   src/data/bessChecklistData.test.js låser antalen, så en punkt som
    försvinner eller dubbleras vid en uppdatering syns direkt.
+
+   Version 1.1 bygger på en genomgång av samtliga källor i åtta
+   NotebookLM-böcker. De 87 nya punkterna ligger sist i varje fas, under
+   "Från källgenomgången" (fas 1: "Kontraktsgranskning efter signering"),
+   och sist i löpande ÄTA-disciplin. Punkterna från 1.0 är oförändrade.
 
    Id:n ("7.3", "lop.4") står i länkar (#kp-7.3) och i ledtidernas
    punkthänvisning — de får aldrig numreras om. Ny punkt i en fas läggs sist
@@ -93,11 +99,20 @@ export interface Ledtid {
   not?: string;
 }
 
+export interface Nyckelvarde {
+  omrade: string;
+  /** Värdena som de står på sidan, ett per del (sidan skiljer dem med ·). */
+  varden: string[];
+}
+
 export interface Lardom {
   handelse: string;
   vadHande: string;
   gorSa: string;
 }
+
+/** Checklistans version — står i kapitlets rubrik. */
+export const VERSION = { nr: "1.1", datum: "2026-09-26" } as const;
 
 /* ---------- Markeringar ---------- */
 
@@ -161,6 +176,16 @@ export const FASER: Fas[] = [
           { id: "0.17", text: "Säkerheter & försäkring kalkylerade: bankgaranti 10 % (entreprenadtid) / 5 % (garantitid), allrisk, ansvar", badges: ["K"], ansvar: "PL / ekonomi", nar: "Anbud" },
         ],
       },
+      {
+        namn: "Från källgenomgången",
+        punkter: [
+          { id: "0.18", text: "Ortsspecifika à-priser för förorenade massor i reservationsbilagan (t.ex. Växjö KM 210 / MKM 380 / IFA 640 kr/t; Alvesta 207 / 390 / 650)", badges: ["L"], ansvar: "Kalkyl", nar: "Anbud" },
+          { id: "0.19", text: "Vinterkostnader (< −10 °C, snö/is) på löpande räkning med tak (Batch C: 52 000 kr, Göteborg 65 000 kr)", badges: ["K"], ansvar: "PL", nar: "Anbud" },
+          { id: "0.20", text: "TA-plan: skriv tydligt per projekt om den ingår – Batch C-bilagan säger både 'ingår' och 'ingår ej'", badges: ["L"], ansvar: "PL", nar: "Anbud" },
+          { id: "0.21", text: "Leveransvillkor för elutrustning (NU 15) och ABT 06 / ABT-U 07 rätt kopplade i avtalskedjan", badges: ["K"], ansvar: "PL", nar: "Anbud" },
+          { id: "0.22", text: "Tvistlösning (Batch C: SCC-skiljeförfarande, engelska) och sekretessvite (5 %) kända före signering", badges: ["K"], ansvar: "PL", nar: "Anbud" },
+        ],
+      },
     ],
   },
   {
@@ -200,6 +225,19 @@ export const FASER: Fas[] = [
           { id: "1.13", text: "M1-avisering (Excel-mall) → godkännande → faktura i IFS", badges: [], ansvar: "PL", nar: "Direkt" },
         ],
       },
+      {
+        namn: "Kontraktsgranskning efter signering",
+        punkter: [
+          { id: "1.14", text: "Kontrollera alla milstolpedatum – Batch C-AF anger 2025 i stället för 2026. Få skriftlig bekräftelse", badges: ["HP", "L"], ansvar: "PL", nar: "Direkt" },
+          { id: "1.15", text: "Kontraktssumma hämtas ur signerat kontrakt – aldrig ur kalkyl/anbud", badges: ["L"], ansvar: "PL / ekonomi", nar: "Uppstart" },
+          { id: "1.16", text: "Bilagenummer skiljer mellan huvudkontrakt och UE-avtal – hänvisa med dokumentnamn i skrivelser", badges: ["L"], ansvar: "PL", nar: "Löpande" },
+          { id: "1.17", text: "UE-intyg: F-skatt, registreringsbevis, försäkring, kollektivavtal – före start och var 12:e månad", badges: ["K"], ansvar: "PL", nar: "Före UE-start" },
+          { id: "1.18", text: "Direct Agreement med finansiär vid anfordran – information till Security Agent inom 15 dagar", badges: ["K"], ansvar: "Ombud", nar: "Vid anfordran" },
+          { id: "1.19", text: "Ingen publicering/referens av projektet utan beställarens skriftliga OK (vite 5 %)", badges: ["K"], ansvar: "PL", nar: "Hela projektet" },
+          { id: "1.20", text: "Volymrabatt: huvudavtal löpande vs UE-avtal mot sista lyft – planera kassaflödet", badges: ["L"], ansvar: "PL / ekonomi", nar: "Uppstart" },
+          { id: "1.21", text: "UE bär obegränsat ONE Nordics viten vid UE-försening – kontrollera att det står i UE-avtalet", badges: ["K"], ansvar: "PL", nar: "Före UE-avtal" },
+        ],
+      },
     ],
   },
   {
@@ -230,6 +268,17 @@ export const FASER: Fas[] = [
           { id: "2.9", text: "Avverkningsplan godkänd av beställaren innan avverkning (5 AD granskning)", badges: ["HP", "K"], ansvar: "PL", nar: "Före avverkning" },
           { id: "2.10", text: "Elinstallationsföretag registrerat hos Elsäkerhetsverket med egenkontrollprogram (även UE)", badges: ["K"], ansvar: "Elinstallatör", nar: "Före elarbete" },
           { id: "2.11", text: "Heta arbeten, sprängning (t.ex. Simplex/snigeldynamit), tunga transporter – egna tillstånd", badges: [], ansvar: "Platschef", nar: "Före moment" },
+        ],
+      },
+      {
+        namn: "Från källgenomgången",
+        punkter: [
+          { id: "2.12", text: "All myndighetskontakt kanaliseras via beställaren (Batch C)", badges: ["K"], ansvar: "PL", nar: "Löpande" },
+          { id: "2.13", text: "Bullrande arbete vardagar 07–18; kringboende informeras i förväg", badges: ["K"], ansvar: "Platschef", nar: "Löpande" },
+          { id: "2.14", text: "Sprängning < 100 m från elanläggning: anmälan ≥ 2 v före med sprängplan; < 50 m inga elektriska tändsystem", badges: ["K"], ansvar: "Platschef", nar: "≥ 2 v före" },
+          { id: "2.15", text: "Vattenskyddsområde: separat tillstånd, inga öppna schakt över natt, ingen tankning, miljöklassad hydraulolja", badges: ["K"], ansvar: "PL", nar: "Före start" },
+          { id: "2.16", text: "Fornlämning/okänd förorening: stopplikt + anmälan till länsstyrelse/kommun och beställare", badges: ["HP", "K"], ansvar: "Platschef", nar: "Omedelbart" },
+          { id: "2.17", text: "Klargör vem som betalar myndighetsavgift för § 28-anmälan (oklart i Batch C)", badges: ["L"], ansvar: "PL", nar: "Tidigt" },
         ],
       },
     ],
@@ -266,6 +315,18 @@ export const FASER: Fas[] = [
           { id: "3.13", text: "Beställarändringar i handlingar → UR direkt (kap. 2 § 6)", badges: ["K"], ansvar: "PL", nar: "Samma dag" },
         ],
       },
+      {
+        namn: "Från källgenomgången",
+        punkter: [
+          { id: "3.14", text: "CATL-placering: sida–sida ≥ 3,0 m (rek. 3,5 m), bak ≥ 1,1 m, ≥ 50 m till bostäder, över högsta vattennivå", badges: ["K"], ansvar: "Projektör", nar: "Layout" },
+          { id: "3.15", text: "Klimatlaster med 50-års returperiod; 25 års teknisk livslängd", badges: ["K"], ansvar: "K-konstruktör", nar: "Projektering" },
+          { id: "3.16", text: "Material, metoder, kabeltyper eller dimensioner ändras aldrig utan beställarens skriftliga samtycke", badges: ["K"], ansvar: "PL", nar: "Hela projektet" },
+          { id: "3.17", text: "Skyltplan till beställaren för godkännande – stålstolpar, inga trästolpar", badges: ["K"], ansvar: "PL", nar: "Före montage" },
+          { id: "3.18", text: "Stationshus: takhöjd ≥ 2 700 mm (tryckavlastning), golv ±5 mm/m, varje rum EI60", badges: ["K"], ansvar: "Projektör", nar: "Före beställning" },
+          { id: "3.19", text: "Lås beteckningar och data: lokaltrafo 315/630 kVA, 11/12 kV, LSP IP31/IP21 och 800/400 A, fack H1/HA01/H01", badges: ["L"], ansvar: "Elprojektör", nar: "Före beställning" },
+          { id: "3.20", text: "Klargör provningsansvar för ställverksfack vid nätägarens inkoppling (ansvarsmatris saknade detta)", badges: ["L"], ansvar: "PL", nar: "Före beställning" },
+        ],
+      },
     ],
   },
   {
@@ -295,6 +356,16 @@ export const FASER: Fas[] = [
           { id: "4.8", text: "Mottagningskontroll varje leverans: rätt artikel, spec, antal, rätt site – avvikelse samma dag", badges: ["L"], ansvar: "Platschef", nar: "Vid leverans" },
           { id: "4.9", text: "Material > 5 000 EUR märkt med beställarens namn och projekt-ID (äganderätt)", badges: ["K"], ansvar: "Platschef", nar: "Vid leverans" },
           { id: "4.10", text: "Fakturor matchas mot order på pris × antal × summa – inte bara ordernr", badges: ["L"], ansvar: "PL", nar: "Löpande" },
+        ],
+      },
+      {
+        namn: "Från källgenomgången",
+        punkter: [
+          { id: "4.11", text: "Förankring M16 A4-70 för MV-skid/PCS ingår INTE i PE-leveransen – beställ själv", badges: ["L"], ansvar: "PL", nar: "Före lyft" },
+          { id: "4.12", text: "Harju: kWh-mätare (DSO) och SIM-kort (kund) ingår inte; site-driftsättning KA1 offereras separat", badges: ["L"], ansvar: "PL", nar: "Vid beställning" },
+          { id: "4.13", text: "FAT KA1 i Västerås (3–4 AD) – ritningsunderlag ska vara godkänt innan", badges: ["HP"], ansvar: "PL", nar: "Före FAT" },
+          { id: "4.14", text: "Kranfirma: lyftok c/c 2 500–2 700 mm, schacklar 6,5 t + 13,5 t; räkna MV-skid som 13 t", badges: ["L"], ansvar: "PL", nar: "Vid bokning" },
+          { id: "4.15", text: "Hitta CATL-shims vid mottagning (ligger vid vattenrörens skydd i elrummet)", badges: [], ansvar: "Platschef", nar: "Vid leverans" },
         ],
       },
     ],
@@ -330,6 +401,17 @@ export const FASER: Fas[] = [
           { id: "5.12", text: "HSEQ-avvikelse kan ge vite (t.ex. 10 000 kr/tillfälle)", badges: ["K"], ansvar: "PL", nar: "—" },
         ],
       },
+      {
+        namn: "Från källgenomgången",
+        punkter: [
+          { id: "5.13", text: "KMA-avvikelse ej åtgärdad inom 3 AD → vite 10 000 kr/händelse (max 150 000 kr)", badges: ["K"], ansvar: "BAS-U", nar: "≤ 3 AD" },
+          { id: "5.14", text: "Incident: omedelbar anmälan till beställaren; utredning + åtgärdsbevis inom 1 vecka på begäran", badges: ["K"], ansvar: "Platschef", nar: "≤ 1 v" },
+          { id: "5.15", text: "Byggstängsel runt hela arbetsområdet från dag 1", badges: ["K"], ansvar: "Platschef", nar: "Dag 1" },
+          { id: "5.16", text: "Beställarens Code of Conduct, alkohol- och drogpolicy kommunicerade till alla UE", badges: ["K"], ansvar: "PL", nar: "Byggstart" },
+          { id: "5.17", text: "Kompetensregister med utgångsdatum: ESA (3 år), HLR (2 år), heta arbeten, förarbevis, OEM-utbildning", badges: ["L"], ansvar: "BAS-U", nar: "Byggstart" },
+          { id: "5.18", text: "Formella, skriftliga utseenden av BAS-P och BAS-U med avgränsning", badges: ["K"], ansvar: "PL", nar: "Före start" },
+        ],
+      },
     ],
   },
   {
@@ -359,6 +441,14 @@ export const FASER: Fas[] = [
         punkter: [
           { id: "6.9", text: "Schaktbotten besiktigad och godkänd (beställarens byggledare) – protokoll", badges: ["HP"], ansvar: "Platschef", nar: "Milstolpe" },
           { id: "6.10", text: "Kapillärbrytande lager/packning (≥ 98 %) verifierat innan fundament", badges: ["HP"], ansvar: "UE mark", nar: "Före gjutning" },
+        ],
+      },
+      {
+        namn: "Från källgenomgången",
+        punkter: [
+          { id: "6.11", text: "Geotekniker besiktigar schaktbotten när provgropar bara nått 0,3–0,4 m (Växjö: flytbenägen silthaltig morän)", badges: ["HP", "L"], ansvar: "PL", nar: "Vid schaktbotten" },
+          { id: "6.12", text: "Samlingsprov för massor till mottagning tas av certifierad miljöprovtagare", badges: ["K"], ansvar: "UE mark", nar: "Löpande" },
+          { id: "6.13", text: "Höjdsättning av mark och fundament enligt beviljat bygglov", badges: ["K"], ansvar: "Platschef", nar: "Utsättning" },
         ],
       },
     ],
@@ -393,6 +483,16 @@ export const FASER: Fas[] = [
           { id: "7.11", text: "Egenkontroller kompletta, daterade, signerade → avisering M4", badges: ["K", "L"], ansvar: "PL", nar: "Före M4" },
         ],
       },
+      {
+        namn: "Från källgenomgången",
+        punkter: [
+          { id: "7.12", text: "Temperaturmätning under härdning (SS-EN 206)", badges: ["K"], ansvar: "UE betong", nar: "Vid gjutning" },
+          { id: "7.13", text: "CATL-stödpunkter: ≥ 6 st, Ø ≥ 500 mm, maxhöjd 200 mm, ≥ 80 mm luftspalt under", badges: ["HP"], ansvar: "K-konstruktör", nar: "Projektering" },
+          { id: "7.14", text: "MV-skid + PCS: platta ≥ 9 700 × 6 020 mm i marknivå, lutning ≤ 0,25 %, ≥ 25 N/mm², packning ≥ 98 %", badges: ["K"], ansvar: "K-konstruktör", nar: "Projektering" },
+          { id: "7.15", text: "Plintgrundläggning INTE tillåten när PCS dockas mot MV-skid", badges: ["L"], ansvar: "K-konstruktör", nar: "Projektering" },
+          { id: "7.16", text: "Ursparingar/kabelrännor i betong ±20 mm", badges: ["HP"], ansvar: "UE betong", nar: "Före gjutning" },
+        ],
+      },
     ],
   },
   {
@@ -416,6 +516,13 @@ export const FASER: Fas[] = [
           { id: "8.7", text: "Datum och utförare för mätning korrekt i dagbok (avvikelser skapar tvist)", badges: ["L"], ansvar: "Platschef", nar: "Löpande" },
         ],
       },
+      {
+        namn: "Från källgenomgången",
+        punkter: [
+          { id: "8.8", text: "Jordtagsmätning med bryggmetod: hjälpjord och sond ≥ 80 m ut, 100 gon isär", badges: ["K"], ansvar: "Elinstallatör", nar: "Vid mätning" },
+          { id: "8.9", text: "MV-skid jordas via M8 på jordplattan i LV-skåpet; PCS endast via BE13-plattan – aldrig chassiskruv. PE ansluts först, kopplas bort sist", badges: ["K"], ansvar: "Elinstallatör", nar: "Vid anslutning" },
+        ],
+      },
     ],
   },
   {
@@ -437,6 +544,17 @@ export const FASER: Fas[] = [
           { id: "9.5", text: "Fiber: OTDR (bidirektionell)", badges: ["K"], ansvar: "Elinstallatör", nar: "Efter förläggning" },
           { id: "9.6", text: "Signerade kabeltestprotokoll skickas DIREKT till beställaren – vänta inte till slutbesiktning", badges: ["K", "L"], ansvar: "PL", nar: "Samma vecka" },
           { id: "9.7", text: "Relationsdata (sträckning, djup, skarvar, GPS) samlas vid förläggning", badges: ["L"], ansvar: "Elinstallatör", nar: "Löpande" },
+        ],
+      },
+      {
+        namn: "Från källgenomgången",
+        punkter: [
+          { id: "9.8", text: "24-timmars spänningsprov med U0 på MV-kabel (Växjö SoW)", badges: ["K"], ansvar: "Elinstallatör", nar: "Före spänning" },
+          { id: "9.9", text: "Foto av kabelgrav med GPS före återfyllning", badges: ["K"], ansvar: "Elinstallatör", nar: "Före återfyllning" },
+          { id: "9.10", text: "PD-mätning på skarvar och avslut 24–36 kV; skärmkontroll inom 0,3–0,9", badges: ["L"], ansvar: "Elinstallatör", nar: "Före spänning" },
+          { id: "9.11", text: "Kabelände som inte skarvas samma dag förses med ändtätning", badges: ["L"], ansvar: "Elinstallatör", nar: "Dagligen" },
+          { id: "9.12", text: "Skyddsrör under container: innerdiameter ≥ 1,5 × kabelns ytterdiameter", badges: ["K"], ansvar: "Elinstallatör", nar: "Förläggning" },
+          { id: "9.13", text: "Inkommande nätkabel alltid i Line 1 (vänster om skyddscellen) i RMU", badges: ["K"], ansvar: "Elinstallatör", nar: "Montage" },
         ],
       },
     ],
@@ -471,6 +589,15 @@ export const FASER: Fas[] = [
           { id: "10.11", text: "Provresurser (Omicron/Megger) bokade i god tid", badges: ["L"], ansvar: "PL", nar: "≥ 6 v före provning" },
         ],
       },
+      {
+        namn: "Från källgenomgången",
+        punkter: [
+          { id: "10.12", text: "Verktygssats (handtag jordkopplare/brytare, servicevagn) kvitterad och vägghängd", badges: [], ansvar: "Platschef", nar: "Mottagning" },
+          { id: "10.13", text: "Fack H3: jordkopplaren kräver spänningssatt förreglingsmagnet (110 VDC) – forcera aldrig", badges: ["L"], ansvar: "Elinstallatör", nar: "Drift/provning" },
+          { id: "10.14", text: "Ljusbågsskydd testat (trippreläer ~7 ms) inkl. utlösning av effektbrytare", badges: ["HP"], ansvar: "Reläprovare", nar: "SAT" },
+          { id: "10.15", text: "LS1 110 VDC: laddning och batteritest verifierat innan ställverket spänningssätts", badges: ["HP"], ansvar: "Elinstallatör", nar: "Före spänning" },
+        ],
+      },
     ],
   },
   {
@@ -502,6 +629,16 @@ export const FASER: Fas[] = [
           { id: "11.10", text: "Avvikelse från avtalat leveransfönster → skriftligt varsel direkt (extra krandagar = ÄTA)", badges: ["K", "L"], ansvar: "PL", nar: "Samma dag" },
         ],
       },
+      {
+        namn: "Från källgenomgången",
+        punkter: [
+          { id: "11.11", text: "CATL-lyft: acceleration ≤ 0,5 g, lutning < 5°; vikt ~43,8 t", badges: ["HP"], ansvar: "Kranförare", nar: "Lyftdag" },
+          { id: "11.12", text: "Batterier levereras vid ~30 % SOC; lagring −35 … +60 °C", badges: ["L"], ansvar: "PL", nar: "Före leverans" },
+          { id: "11.13", text: "Shims justerade så att alla dörrar öppnar/stänger fritt", badges: ["K"], ansvar: "Montör", nar: "Efter placering" },
+          { id: "11.14", text: "Svetsfogar CATL korrosionsskyddas direkt", badges: ["K"], ansvar: "Montör", nar: "Lyftdag" },
+          { id: "11.15", text: "PCS (~5,5 t) dockas mot MV-skid med centreringsverktyg medan den hänger i kranen", badges: ["HP"], ansvar: "Montör", nar: "Lyftdag" },
+        ],
+      },
     ],
   },
   {
@@ -526,6 +663,17 @@ export const FASER: Fas[] = [
           { id: "12.8", text: "Brandtätning av alla kabelgenomföringar (brandkitt) – egenkontroll med foto", badges: ["K"], ansvar: "Elinstallatör", nar: "Montage" },
           { id: "12.9", text: "VCI-rostskyddsskum borttaget ur skåp", badges: ["L"], ansvar: "Montör", nar: "Före spänning" },
           { id: "12.10", text: "Momentprotokoll med kalibrerad nyckel", badges: ["K"], ansvar: "Montör", nar: "Montage" },
+        ],
+      },
+      {
+        namn: "Från källgenomgången",
+        punkter: [
+          { id: "12.11", text: "CATL: 2 skyddsplåtar i busbar-utrymmet demonteras före kabeldragning, återmonteras 10 Nm (kondens)", badges: ["HP"], ansvar: "Montör", nar: "Montage" },
+          { id: "12.12", text: "Moment: CATL-busbar 50 Nm, AC-krage 60 Nm; märk förband med färgpenna efter kalibrerad nyckel", badges: ["K"], ansvar: "Montör", nar: "Montage" },
+          { id: "12.13", text: "VCI-rostskyddsskum sitter kvar under byggtiden – tas bort först vid idrifttagning", badges: ["L"], ansvar: "Montör", nar: "Idrifttagning" },
+          { id: "12.14", text: "Torrrör DN50 PN16 anslutet till containerflänsen, RAL 3000", badges: ["K"], ansvar: "Rörentreprenör", nar: "Montage" },
+          { id: "12.15", text: "Oljetråg: regnvattenventil ÖPPEN, avtappningsventil stängd och tejpad", badges: ["K"], ansvar: "Montör", nar: "Före spänning" },
+          { id: "12.16", text: "LSP-kabelfärger enligt bygghandling (manöver DC+ mörkblå/DC− vit, yttre manöver orange)", badges: ["K"], ansvar: "Elinstallatör", nar: "Montage" },
         ],
       },
     ],
@@ -567,6 +715,20 @@ export const FASER: Fas[] = [
           { id: "13.13", text: "CATL/OEM-verifiering skriftlig → avisering M5", badges: ["K", "L"], ansvar: "PL", nar: "Direkt" },
         ],
       },
+      {
+        namn: "Från källgenomgången",
+        punkter: [
+          { id: "13.14", text: "Cold commissioning startar först när ≥ 50 % av installationen och hjälpkraften är klar", badges: ["HP"], ansvar: "PL", nar: "Före cold" },
+          { id: "13.15", text: "Mätutrustning på plats: 1500 VDC multimeter, megger 2500 V, DC-tång 600 A, CAN-interface, täthetsprovare", badges: ["K"], ansvar: "Elinstallatör", nar: "Före cold" },
+          { id: "13.16", text: "MSD (manual service disconnect) installeras som sista moment", badges: ["HP"], ansvar: "OEM / montör", nar: "Hot" },
+          { id: "13.17", text: "Ansvarsgräns: CATL = BMS/firmware/batterifel; entreprenör/kund = PCS/EMS, station, nät, FSS", badges: ["K"], ansvar: "PL", nar: "Före start" },
+          { id: "13.18", text: "FSS-test: H2 10 % LEL startar fläkt; aerosol 30 s fördröjning (avbrytbar)", badges: ["K"], ansvar: "OEM / elinstallatör", nar: "Hot" },
+          { id: "13.19", text: "Energisation Certificate utfärdas efter godkänd cold commissioning", badges: ["K"], ansvar: "PL", nar: "Efter cold" },
+          { id: "13.20", text: "SAT nätfunktioner: Q/V, P-Q, FCR/FFR, peak shaving, SoC-styrning", badges: ["K"], ansvar: "PL / OEM", nar: "Hot" },
+          { id: "13.21", text: "Elanläggningsansvar till ONE Nordic: kopplingsansvar dygnet runt (Alvesta 3 000 kr/mån) – bemanna", badges: ["HP", "L"], ansvar: "PL", nar: "Före spänning" },
+          { id: "13.22", text: "Under provning: inga andra arbetsbevis utlämnade; permanent märkning monterad före spänning", badges: ["K"], ansvar: "Eldriftledare", nar: "Provning" },
+        ],
+      },
     ],
   },
   {
@@ -590,6 +752,13 @@ export const FASER: Fas[] = [
           { id: "14.7", text: "Efterbesiktning skriftligt bekräftad → M7", badges: ["K"], ansvar: "PL", nar: "Efter åtgärd" },
           { id: "14.8", text: "Särskild besiktning inom 6 mån för delar som inte kunde besiktigas (snö/is)", badges: ["K"], ansvar: "PL", nar: "≤ 6 mån" },
           { id: "14.9", text: "Återställd mark utanför site – kvittens från fastighetsägare", badges: ["K"], ansvar: "PL", nar: "Före slut" },
+        ],
+      },
+      {
+        namn: "Från källgenomgången",
+        punkter: [
+          { id: "14.10", text: "Beställaren kan anmäla fel upp till 1 månad efter upptäckt – åtgärd inom 2 veckor", badges: ["K"], ansvar: "PL", nar: "Garantitid" },
+          { id: "14.11", text: "Skriftlig underrättelse om driftfärdig anläggning med kopplingsläge före slutbesiktning", badges: ["K"], ansvar: "PL", nar: "Före SB" },
         ],
       },
     ],
@@ -632,6 +801,16 @@ export const FASER: Fas[] = [
           { id: "15.14", text: "Kick-out: projekttriangel utvärderad, lärdomar in i nästa anbud", badges: [], ansvar: "PL", nar: "Avslut" },
         ],
       },
+      {
+        namn: "Från källgenomgången",
+        punkter: [
+          { id: "15.15", text: "RTU- och HMI-projektfiler överlämnas i redigerbart format", badges: ["K"], ansvar: "PL", nar: "Överlämning" },
+          { id: "15.16", text: "Eldokumentation: 2 pappersexemplar + digitalt (Harju)", badges: ["K"], ansvar: "PL", nar: "Överlämning" },
+          { id: "15.17", text: "Batterigaranti vid stillestånd > 90 dagar: SOC 30–60 %, cell aldrig < 3,21 V, full cykel var 12:e månad – in i DoU", badges: ["L"], ansvar: "PL", nar: "Överlämning" },
+          { id: "15.18", text: "Farligt avfall (olja, batterier, kemikalier) e-rapporterat till Naturvårdsverket; transportdokument sparas ≥ 1 år", badges: ["K"], ansvar: "PL", nar: "Löpande" },
+          { id: "15.19", text: "Underhållsintervall i DoU: ställverk inspektion vart 5:e år, jordtag vart 8:e år (ELSÄK-FS 2022:3)", badges: [], ansvar: "PL", nar: "Överlämning" },
+        ],
+      },
     ],
   },
 ];
@@ -654,6 +833,9 @@ export const LOPANDE: Lopande = {
         { id: "lop.8", text: "UE-ÄTA (ABT-U 07) kopplas till rätt UR mot beställaren – samma frister back-to-back", badges: ["L"], ansvar: "PL", nar: "Löpande" },
         { id: "lop.9", text: "Tidsförlängning begärs löpande med orsakssamband – inte i slutet", badges: ["K"], ansvar: "PL", nar: "Löpande" },
         { id: "lop.10", text: "Skilj projekten åt: separata UR-loggar per projekt, aldrig korsreferera", badges: ["L"], ansvar: "PL", nar: "Löpande" },
+        { id: "lop.22", text: "Paraplymodell: beställarens UR-nr som huvudnyckel, UE-krav länkade under (SUMIF)", badges: ["L"], ansvar: "PL", nar: "Löpande" },
+        { id: "lop.23", text: "Rätt timpris (Bilaga 06.1): montör 945, PL/eldriftledare 1 245, provningsingenjör 1 540 kr/h; övertid +50/100/200 %", badges: ["K"], ansvar: "PL", nar: "Löpande" },
+        { id: "lop.24", text: "Restid och traktamente debiteras; resekostnader + 10 %", badges: ["K"], ansvar: "PL", nar: "Löpande" },
       ],
     },
     {
@@ -731,6 +913,27 @@ export const ANKARE_NAMN: Record<Ankare, string> = {
   slutbesiktning: "slutbesiktning",
 };
 
+/* ---------- Nyckelvärden — snabbreferens ----------
+   Gränsvärden och frister ur kontrakt, leverantörsmanualer och EBR som
+   oftast avgör om en hållpunkt passeras. Motsägande värden: ATT_VERIFIERA. */
+
+export const NYCKELVARDEN: Nyckelvarde[] = [
+  { omrade: "Jordtag", varden: ["Ytjord < 50 Ω", "djupjord < 100 Ω", "container–jordnät ≤ 0,1 Ω"] },
+  { omrade: "CATL-fundament", varden: ["Nivå ±10 mm", "planhet ±4 mm/2 m", "6 stöd Ø ≥ 500 mm", "dimensionera 45 t"] },
+  { omrade: "CATL-avstånd", varden: ["Sida–sida ≥ 3,0 m (rek. 3,5)", "bak ≥ 1,1 m", "≥ 50 m till bostäder"] },
+  { omrade: "CATL-lyft", varden: ["~43,8 t", "kran ≥ 45 t", "linor > 6,3 m", "vinkel ≥ 60°", "lutning < 5°"] },
+  { omrade: "CATL-anslutning", varden: ["DC M12 50 Nm dubbelhålssko c/c 45", "jord M12 50 Nm", "hjälpkraft 37 kW"] },
+  { omrade: "CATL-kommunikation", varden: ["CAN-terminering 60 Ω", "CAN-bridge vid > 30 m", "nödstopp PCS 1 s / 0 A 2 s"] },
+  { omrade: "MV-skid", varden: ["13 t", "kran ≥ 40 t", "platta 9 700 × 6 020 mm", "lutning ≤ 0,25 %", "dränering 800 × 100 mm"] },
+  { omrade: "PCS", varden: ["DC-säkringar före kabel (40 Nm)", "max 2 kablar/terminal", "balans ≤ ±20 %"] },
+  { omrade: "Betong", varden: ["Grön betong + EPD", "≥ 3 kuber/fundament", "≥ 25 N/mm²", "25 års livslängd"] },
+  { omrade: "Stationshus", varden: ["Takhöjd ≥ 2 700 mm", "golv ±5 mm/m", "EI60 per rum"] },
+  { omrade: "Kabel", varden: ["Mantel", "megger", "VLF", "24 h U0", "PD 24–36 kV", "skärmkontroll 0,3–0,9", "rör ≥ 1,5 × OD"] },
+  { omrade: "Batteri i vila", varden: ["SOC 30–60 %", "cell ≥ 3,21 V", "full cykel var 12:e månad"] },
+  { omrade: "Frister", varden: ["Granskning 15 + 15 AD", "hinder 24 h (max 10 AD)", "fel 2 v", "slutdok 2 v före SB", "sluträkning 14 d"] },
+  { omrade: "Viten (Batch C)", varden: ["0,5 %/v", "1,25 %/v", "1,5 %/v", "0,2 %/v", "tak 12,5 %", "KMA 10 000 kr (max 150 000)"] },
+];
+
 /* ---------- Lärdomar från Batch C — de 10 som kostat mest ---------- */
 
 export const LARDOMAR: Lardom[] = [
@@ -749,11 +952,18 @@ export const LARDOMAR: Lardom[] = [
 /* ---------- Att verifiera — källorna säger olika ---------- */
 
 export const ATT_VERIFIERA: { amne: string; text: string }[] = [
-  { amne: "Hinderanmälan", text: "Egen rutin 24 h (ABT 06 kap. 2 § 7) mot kontraktets preklusionsfrist 10 AD (cl. 18.2). Tillämpa 24 h – fristen är ytterkanten." },
-  { amne: "Betalplan", text: "M1–M7 enligt Batch C (10/25/25/20/15/3/2 %). NotebookLM-källor visar även andra fördelningar (t.ex. 20 % vid idrifttagning, 5 % vid SB) – kontrollera alltid aktuellt kontrakt." },
-  { amne: "Sluträkning", text: "Batch C-kontraktet anger 14 dagar efter avhjälpta anmärkningar; standard-ABT anger annan frist. Kontraktet gäller." },
-  { amne: "Containervikt", text: "CATL-manual anger ca 43,8 t; Alvesta-dialog anger 46 t mot 45 t fundament. Kräv skriftlig bekräftelse från OEM per projekt." },
-  { amne: "Milstolpedatum", text: "Kontraktets milstolpedatum (feb–sep 2026) är ursprungliga; senaste tidplan (BM7/BM8) har förskjutits till dec 2026." },
+  { amne: "Hinderanmälan", text: "Egen rutin 24 h (ABT 06 kap. 2 § 7) mot kontraktets preklusionsfrist 10 AD (AF cl. 18.2). Tillämpa 24 h – fristen är ytterkanten." },
+  { amne: "Milstolpedatum", text: "Batch C-AF (cl. 6.3) anger 2025, huvudkontrakt och tidplaner 2026. Få skriftlig bekräftelse – annars teoretisk vitesrisk." },
+  { amne: "Alvesta kontraktssumma", text: "NotebookLM läser 6 614 187 kr i kontraktet, tidigare underlag anger 5 600 000 kr. Kontrollera mot signerat kontrakt." },
+  { amne: "Alvesta storlek", text: "'General info' anger 12 MW / ca 1 000 m², kontraktet 8 MW / 16 MWh; miljörapport 3 batterirack mot 4 containrar i teknisk beskrivning." },
+  { amne: "TA-plan", text: "Reservationsbilagan säger 'ingår ej' (eBoP generellt) och 'ingår' (Alvesta)." },
+  { amne: "Betalplan", text: "M1–M7 enligt Batch C (10/25/25/20/15/3/2 %). Andra källor visar andra fördelningar – kontrollera alltid aktuellt kontrakt." },
+  { amne: "CATL", text: "Fundamentlast 36 t eller 45 t, planhet ±4 mm/2 m eller ≤ 5 mm totalt, transport-SOC 30 % eller 23 %, moment XT0 1,5–1,8 eller 0,6–0,8 Nm, XT1 3,2–3,7 eller 6–8 Nm, kylvätska glykol eller 'etanol' (tryckfel). Dimensionera för strängaste värdet och få skriftligt svar från CATL." },
+  { amne: "Containervikt", text: "CATL-manual ~43,8 t; Alvesta-dialog 46 t mot 45 t fundament." },
+  { amne: "Power Electronics", text: "MV-skid 11,5 t eller 13 t (räkna 13 t); M12 50 Nm (CATL-busbar) eller 60 Nm (AC-krage)." },
+  { amne: "Harju/Aktif", text: "Lokaltrafo 315 eller 630 kVA, 11 eller 12 kV, LSP IP31/IP21 och 800/400 A, fackbeteckningar H1/HA01/H01 – lås innan beställning." },
+  { amne: "Volymrabatt", text: "Huvudavtal räknar av löpande, UE-avtal mot sista lyftet – ger kassaflödesförskjutning." },
+  { amne: "Sluträkning", text: "Batch C 14 dagar efter avhjälpta anmärkningar; standard-ABT annan frist. Kontraktet gäller." },
 ];
 
 /* ---------- Härledda uppslag ---------- */
@@ -773,4 +983,5 @@ export const SUMMERING = {
   punkter: ALLA_PUNKTER.length,
   hallpunkter: ALLA_PUNKTER.filter((p) => p.badges.includes("HP")).length,
   milstolpar: MILSTOLPAR.length,
+  motsagelser: ATT_VERIFIERA.length,
 };
