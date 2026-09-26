@@ -11,6 +11,7 @@ import { Gantt } from "../components/oversikt/Gantt.jsx";
 import { Ledtider } from "../components/oversikt/Ledtider.jsx";
 import { Projektkort, Projektredigering } from "../components/oversikt/Projekt.jsx";
 import { uppmarksamhet } from "../lib/oversikt.js";
+import { projektUnderlag } from "../lib/berakningar.js";
 
 /* Översikten — läget i portföljen just nu.
 
@@ -32,6 +33,12 @@ export function Oversikt() {
   const lista = useMemo(() => uppmarksamhet(state), [state]);
   const akuta = lista.filter((f) => f.niva === "hog").length;
   const saknarKV = state.projekt.filter((p) => p.kontraktsvarde === null).map(kortNamn);
+  // Batch C:s senaste underlag, samma som i sidfoten.
+  const batchC = state.projekt
+    .filter((p) => p.id === "36037" || p.id === "36038")
+    .map((p) => ({ p, u: projektUnderlag(state, p) }))
+    .filter((x) => x.u)
+    .map(({ p, u }) => `${p.nr} ${u.kalla.replace(/^Byggmötesprotokoll /, "")}${u.datum ? " " + u.datum : ""}`);
 
   /* Flaggan "Kärndata saknas" pekar hit. Justering under render, som när
      andra vyer öppnar en utpekad post, och rullning när rutan finns i DOM. */
@@ -105,7 +112,8 @@ export function Oversikt() {
 
       <Note>
         <b>Underlag och antaganden.</b> Datum, UR-serier, leverantörer och kontakter för 36037/36038 kommer
-        ur byggmötesprotokoll BM7/BM8 (2026-08-17), senaste tidplan och UR-status. Göteborg Skogome och
+        ur byggmötesprotokollen{batchC.length ? ` (senast ${batchC.join(", ")})` : ""}, senaste tidplan och
+        UR-status. Göteborg Skogome och
         Götene är nyligen tillagda i portföljmodellen och saknar ännu underlag — fyll i uppgifter under
         "Redigera projektuppgifter" ovan och i respektive flik.{" "}
         {saknarKV.length ? <b>Kontraktsvärde för {saknarKV.join(", ")} saknas i underlaget</b> : null}

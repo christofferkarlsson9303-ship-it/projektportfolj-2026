@@ -417,6 +417,13 @@ export function moteNrUrFilnamn(filnamn) {
   return m ? "BM-" + String(Number(m[1])).padStart(2, "0") : "";
 }
 
+/** Mötesdatum ur filnamnet ("Byggmöte 9 - Växjö 2026-09-14.pdf"). Går före
+ *  filens ändringsdatum, som lika gärna kan vara dagen den laddades ner. */
+export function datumUrFilnamn(filnamn) {
+  const m = String(filnamn).match(/(?:^|[^\d])(20\d{2})[-_.](0[1-9]|1[0-2])[-_.](0[1-9]|[12]\d|3[01])(?!\d)/);
+  return m ? `${m[1]}-${m[2]}-${m[3]}` : "";
+}
+
 export function forslagProtokoll(state, { filnamn = "", projektId = null, datum = "" } = {}) {
   const pid = projektId || hittaProjekt(state, filnamn);
   const nr = moteNrUrFilnamn(filnamn);
