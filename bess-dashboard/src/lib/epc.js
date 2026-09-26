@@ -1,12 +1,14 @@
-/* BESS EPC-checklistan mot ett projekt: fasplan, grindar, milstolpar,
-   ledtider och hållpunkter. Rena funktioner som resten av lib/.
+/* BESS EPC-checklistan mot ett projekt: lägesbild, fasplan, grindar,
+   milstolpar, ledtider och hållpunkter. Rena funktioner som resten av lib/.
 
-   Datan om checklistan ligger i data/bessChecklistData.ts. Här räknas den
-   mot projektets egna datum och det som bockats av:
+   Datan om checklistan ligger i data/bessChecklistData.ts. Läget följs per
+   fas, inte per kontrollpunkt: en fas är klar när dess grind är passerad, och
+   då räknas fasens kontroll- och hållpunkter som genomförda. Per projekt
+   sparas bara det som avviker:
 
-   - state.epcStatus  en rad per avbockad eller UR-kopplad kontrollpunkt
-   - state.epcFaser   en rad per fas med egna datum, passerad grind och
-                      anteckningar — bara faser som avviker från standard
+   - state.epcFaser     en rad per fas med egna datum, passerad grind och
+                        anteckningar
+   - state.epcLedtider  en rad per ledtid som markerats klar i förväg
 
    Fasplanen är en utgångspunkt, inte en tidplan. Den räknas fram ur start,
    BESS-leverans och slutbesiktning, och varje fas kan få egna datum. */
@@ -27,7 +29,6 @@ import { idag, lokaltDatum } from "./datum.js";
  *  (ok/info/warn/bad); texten står alltid bredvid färgen. */
 export const FAS_STATUS = {
   klar: ["ok", "Grind passerad"],
-  redo: ["info", "Redo för grind"],
   pagar: ["info", "Pågår"],
   sen: ["bad", "Försenad"],
   kommande: ["", "Kommande"],
@@ -58,13 +59,7 @@ export const plusDagar = (iso, n) => {
 export const dagarMellan = (fran, till) => Math.round((tillDatum(till) - tillDatum(fran)) / 86400000);
 const giltigt = (iso) => typeof iso === "string" && /^\d{4}-\d{2}-\d{2}$/.test(iso);
 
-/* ---------- Avbockning ---------- */
-
-export function punktRad(state, pid, punkt) {
-  return (state.epcStatus || []).find((r) => r.projektId === pid && r.punkt === punkt) || null;
-}
-
-export const arKlar = (state, pid, punkt) => !!punktRad(state, pid, punkt)?.klar;
+/* ---------- Sparade rader ---------- */
 
 export function fasRad(state, pid, nr) {
   return (state.epcFaser || []).find((r) => r.projektId === pid && r.fas === nr) || null;
@@ -144,17 +139,13 @@ const PUNKTER_I_FAS = FASER.map((f) => f.sektioner.flatMap((s) => s.punkter));
 export function faslage(state, pid, nu = idag()) {
   const plan = fasplan(state, pid);
   const g = grindar(state, pid);
-  const klara = new Set((state.epcStatus || []).filter((r) => r.projektId === pid && r.klar).map((r) => r.punkt));
 
   return FASER.map((f, i) => {
     const punkter = PUNKTER_I_FAS[i];
-    const hp = punkter.filter((p) => p.badges.includes("HP"));
-    const antalKlara = punkter.filter((p) => klara.has(p.id)).length;
     const { start, slut, egen } = plan[i];
 
     let status;
     if (g[i].passerad) status = "klar";
-    else if (antalKlara === punkter.length) status = "redo";
     else if (!start || !slut) status = "odaterad";
     else if (nu > slut) status = "sen";
     else if (nu >= start) status = "pagar";
@@ -167,12 +158,16 @@ export function faslage(state, pid, nu = idag()) {
       egenPlan: egen,
       grind: g[i],
       status,
-      klara: antalKlara,
-      totalt: punkter.length,
-      hp: hp.length,
-      hpKlara: hp.filter((p) => klara.has(p.id)).length,
+      punkter: punkter.length,
+      hp: punkter.filter((p) => p.badges.includes("HP")).length,
     };
   });
+}
+
+/** Kontrollpunkten räknas som genomförd när dess fas har passerat sin grind. */
+export function punktGenomford(faser, punktId) {
+  const kp = PUNKT_FOR_ID.get(punktId);
+  return kp?.fas !== null && kp?.fas !== undefined ? faser[kp.fas].grind.passerad : false;
 }
 
 /* ---------- Milstolpar på tidslinjen ---------- */
@@ -233,9 +228,14 @@ const ORDNING = { sen: 0, snart: 1, "i-tid": 2, bevaka: 3, odaterad: 4, klar: 5,
 export function ledtidslage(state, pid, nu = idag()) {
   const faser = faslage(state, pid, nu);
   const ank = ankardatum(state, pid, faser);
+  const markerade = new Set(
+    (state.epcLedtider || []).filter((r) => r.projektId === pid && r.klar).map((r) => r.ledtid)
+  );
 
   return LEDTIDER.map((l) => {
-    const bas = { ...l, projektId: pid, klar: arKlar(state, pid, l.punkt) };
+    // Klar när den markerats i förväg, eller när fasen den hör till är passerad.
+    const markerad = markerade.has(l.id);
+    const bas = { ...l, projektId: pid, markerad, klar: markerad || punktGenomford(faser, l.punkt) };
     if (!l.ankare) return { ...bas, status: bas.klar ? "klar" : "bevaka", senast: null, dagarKvar: null, ank: null };
 
     const a = ank[l.ankare];
@@ -265,36 +265,45 @@ export function ledtiderPortfolj(state, nu = idag()) {
 
 /* ---------- Hållpunkter ---------- */
 
-/** Hållpunkter som inte är godkända i faser som pågår, är sena eller startar
- *  inom `inom` dagar. Sorterade på fasens start. */
+/** Hållpunkter i faser som pågår, är sena eller startar inom `inom` dagar —
+ *  det som ska godkännas härnäst. Sorterade på fasens start. */
 export function kommandeHallpunkter(state, pid, inom = 30, nu = idag()) {
   const faser = faslage(state, pid, nu);
   const grans = plusDagar(nu, inom);
   return faser
-    .filter((f) => ["pagar", "sen", "redo"].includes(f.status) || (f.status === "kommande" && f.start <= grans))
+    .filter((f) => ["pagar", "sen"].includes(f.status) || (f.status === "kommande" && f.start <= grans))
     .flatMap((f) =>
       PUNKTER_I_FAS[f.fas.nr]
-        .filter((p) => p.badges.includes("HP") && !arKlar(state, pid, p.id))
+        .filter((p) => p.badges.includes("HP"))
         .map((p) => ({ punkt: p, fas: f, projektId: pid }))
     )
     .sort((a, b) => (a.fas.start || "9999").localeCompare(b.fas.start || "9999"));
 }
 
-/* ---------- Sammanfattning ---------- */
+/* ---------- Lägesbild ---------- */
 
-export function checklistlage(state, pid) {
-  const klara = new Set((state.epcStatus || []).filter((r) => r.projektId === pid && r.klar).map((r) => r.punkt));
-  let antal = 0;
-  let hp = 0;
-  let hpKlara = 0;
-  // Räknar bara id:n som finns i checklistan — en sparad rad för en punkt som
-  // senare tagits bort ska inte blåsa upp procenten.
-  for (const [id, p] of PUNKT_FOR_ID) {
-    const klar = klara.has(id);
-    if (klar) antal++;
-    if (!p.badges.includes("HP")) continue;
-    hp++;
-    if (klar) hpKlara++;
-  }
-  return { klara: antal, totalt: PUNKT_FOR_ID.size, hp, hpKlara };
+/** Var projektet står: pågående faser, nästa grind och betalning, passerade
+ *  grindar och hållpunkter, dagar till slutbesiktning. */
+export function lagesbild(state, pid, nu = idag()) {
+  const p = projekt(state, pid);
+  const faser = faslage(state, pid, nu);
+  const ms = milstolpslage(state, pid, faser);
+  const passerade = faser.filter((f) => f.grind.passerad);
+  const sb = giltigt(p?.fardigstallande) ? dagarMellan(nu, p.fardigstallande) : null;
+
+  return {
+    harPlan: !!planAnkare(state, pid),
+    faser,
+    aktuella: faser.filter((f) => f.status === "pagar" || f.status === "sen"),
+    sena: faser.filter((f) => f.status === "sen"),
+    nastaGrind: faser.find((f) => !f.grind.passerad) || null,
+    nastaBetalning:
+      ms
+        .filter((m) => m.status !== "fakturerad")
+        .sort((a, b) => (a.datum || "9999").localeCompare(b.datum || "9999"))[0] || null,
+    grindarPasserade: passerade.length,
+    hp: faser.reduce((n, f) => n + f.hp, 0),
+    hpPasserade: passerade.reduce((n, f) => n + f.hp, 0),
+    dagarTillSlutbesiktning: sb,
+  };
 }

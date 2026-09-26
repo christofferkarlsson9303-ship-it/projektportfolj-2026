@@ -15,7 +15,7 @@ import { uppmarksamhet } from "../lib/oversikt.js";
 /* Översikten — läget i portföljen just nu.
 
    Uppbyggd som ett bento-rutnät i fallande vikt: hälsning och snabbåtgärder,
-   EPC-checklistans fasplan som Gantt-schema, ledtiderna som ska startas nu
+   batteriparkens fasplan som Gantt-schema, ledtiderna som ska startas nu
    bredvid nästa BESS-leverans, fyra nyckeltal, och sedan det som kräver
    åtgärd, aktiviteten, tidslinjen och riskerna. Projektkorten och underlaget
    ligger sist — de är till för att läsas i lugn och ro. Varje ruta är en egen

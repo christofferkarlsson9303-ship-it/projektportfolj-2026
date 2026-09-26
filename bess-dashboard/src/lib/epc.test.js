@@ -3,12 +3,11 @@ import { SEED } from "../data/seed.js";
 import { efterInlasning, normalisera, reducer } from "../state/portfolj-reducer.js";
 import {
   VARNING_DAGAR,
-  arKlar,
-  checklistlage,
   faslage,
   fasplan,
   grindar,
   kommandeHallpunkter,
+  lagesbild,
   ledtiderPortfolj,
   ledtidslage,
   mallDatum,
@@ -111,7 +110,7 @@ describe("faslage", () => {
     expect(f[7].status).toBe("klar");
     expect(f[10].status).toBe("pagar"); // 2026-09-04 → 2026-11-04
     expect(f[11].status).toBe("kommande");
-    expect(f[10]).toMatchObject({ totalt: 11, hp: 3, klara: 0 });
+    expect(f[10]).toMatchObject({ punkter: 11, hp: 3 });
   });
 
   it("markerar en fas som sen när slutet passerat utan grind", () => {
@@ -133,43 +132,46 @@ describe("milstolpslage", () => {
 /* ---------- Ledtider ---------- */
 
 describe("ledtidslage", () => {
-  it("räknar sista startdatum mot bekräftad leverans och flaggar rött och gult", () => {
+  it("räknar sista startdatum mot bekräftade datum och flaggar rött och gult", () => {
     const s = seed();
-    // BESS-leverans 2026-10-12: transportväg 4 v före = 2026-09-14, kranyta 2 v före = 2026-09-28.
-    expect(ledtid(s, "36037", "transportvag")).toMatchObject({ senast: "2026-09-14", dagarKvar: -12, status: "sen" });
-    expect(ledtid(s, "36037", "kranyta")).toMatchObject({ senast: "2026-09-28", dagarKvar: 2, status: "snart" });
-    expect(ledtid(s, "36037", "transportvag").ank).toMatchObject({ datum: "2026-10-12", kalla: "leveranslistan" });
-  });
-
-  it("använder MV-leveransen och idrifttagningen ur tidplanen", () => {
-    const s = seed();
-    expect(ledtid(s, "36037", "kranMv")).toMatchObject({ senast: "2026-09-22", status: "sen" });
-    // Cold Commissioning start 2026-11-11, testplanen ≥ 2 mån före.
+    // Cold Commissioning start 2026-11-11: testplanen ≥ 2 mån före = 2026-09-11.
+    expect(ledtid(s, "36037", "testplan")).toMatchObject({ senast: "2026-09-11", dagarKvar: -15, status: "sen" });
     expect(ledtid(s, "36037", "testplan").ank).toMatchObject({ datum: "2026-11-11", kalla: "tidplanen" });
+    // BESS-leverans 2026-10-12: kranytan 2 v före = 2026-09-28.
+    expect(ledtid(s, "36037", "kranyta")).toMatchObject({ senast: "2026-09-28", dagarKvar: 2, status: "snart" });
+    expect(ledtid(s, "36037", "kranyta").ank).toMatchObject({ datum: "2026-10-12", kalla: "leveranslistan" });
   });
 
-  it("räknar ledtider i faser med passerad grind som passerade, inte sena", () => {
-    expect(ledtid(seed(), "36037", "p28").status).toBe("passerad");
-  });
-
-  it("blir klar när kontrollpunkten bockas av, och gäller alla ledtider på punkten", () => {
-    let s = seed();
-    s = reducer(s, { type: "EPC_VAXLA", pid: "36037", punkt: "4.6", klar: true });
-    expect(ledtid(s, "36037", "kranBess").status).toBe("klar");
-    expect(ledtid(s, "36037", "kranMv").status).toBe("klar");
-    expect(ledtid(s, "36038", "kranBess").status).not.toBe("klar");
-  });
-
-  it("gulmarkerar exakt inom varningsgränsen", () => {
+  it("räknar ledtider vars fas har passerat sin grind som klara", () => {
     const s = seed();
-    const l = ledtid(s, "36037", "slutdok"); // SB 2026-12-02 − 14 = 2026-11-18
+    // Transportvägen är punkt 2.7 och kranen 4.6 — fas 2 och 4 är passerade.
+    expect(ledtid(s, "36037", "transportvag")).toMatchObject({ status: "klar", markerad: false });
+    expect(ledtid(s, "36037", "kranMv").status).toBe("klar");
+  });
+
+  it("blir klar när ledtiden markeras, per projekt, och loggas", () => {
+    let s = seed();
+    s = reducer(s, { type: "EPC_LEDTID", pid: "36037", ledtid: "testplan", klar: true });
+    expect(ledtid(s, "36037", "testplan")).toMatchObject({ status: "klar", markerad: true });
+    expect(ledtid(s, "36038", "testplan").status).toBe("sen");
+    expect(s.andringslogg[0]).toMatchObject({ projektId: "36037", text: "Ledtid klar: Test- och kontrollplan" });
+    s = reducer(s, { type: "EPC_LEDTID", pid: "36037", ledtid: "testplan", klar: false });
+    expect(ledtid(s, "36037", "testplan").status).toBe("sen");
+    expect(s.epcLedtider).toHaveLength(1);
+  });
+
+  it("gulmarkerar inte det som ligger utanför varningsgränsen", () => {
+    const l = ledtid(seed(), "36037", "slutdok"); // SB 2026-12-02 − 14 = 2026-11-18
     expect(l.senast).toBe("2026-11-18");
     expect(l.dagarKvar).toBeGreaterThan(VARNING_DAGAR);
     expect(l.status).toBe("i-tid");
   });
 
   it("bevakar nätanslutningen utan datum", () => {
-    expect(ledtid(seed(), "36037", "natanslutning")).toMatchObject({ status: "bevaka", senast: null });
+    // Punkt 2.2 ligger i passerad fas 2 — då är den klar i stället för bevakad.
+    let s = seed();
+    s.betalplan = s.betalplan.map((b) => ({ ...b, status: "kvar" }));
+    expect(ledtid(s, "36037", "natanslutning")).toMatchObject({ status: "bevaka", senast: null });
   });
 
   it("sorterar portföljen med sena först och tar bara projekt med plan", () => {
@@ -180,7 +182,7 @@ describe("ledtidslage", () => {
   });
 });
 
-/* ---------- Hållpunkter och avbockning ---------- */
+/* ---------- Hållpunkter och lägesbild ---------- */
 
 describe("kommandeHallpunkter", () => {
   it("tar hållpunkter i pågående fas och faser som startar inom 30 dagar", () => {
@@ -189,37 +191,31 @@ describe("kommandeHallpunkter", () => {
     expect(hp).toHaveLength(9);
   });
 
-  it("släpper en hållpunkt när den godkänns, och loggar det", () => {
+  it("släpper fasens hållpunkter när grinden passeras", () => {
     let s = seed();
-    s = reducer(s, { type: "EPC_VAXLA", pid: "36037", punkt: "11.4", klar: true });
-    expect(kommandeHallpunkter(s, "36037", 30, NU).some((x) => x.punkt.id === "11.4")).toBe(false);
-    expect(s.andringslogg[0].text).toMatch(/^EPC 11\.4 hållpunkt godkänd: Lyftplan/);
+    s = reducer(s, { type: "EPC_FAS", pid: "36037", fas: 10, falt: "grindDatum", varde: "2026-09-25" });
+    expect(kommandeHallpunkter(s, "36037", 30, NU).some((x) => x.fas.fas.nr === 10)).toBe(false);
   });
 });
 
-describe("avbockning", () => {
-  it("loggar inte vanliga punkter och kan bockas ur igen", () => {
-    let s = seed();
-    s = reducer(s, { type: "EPC_VAXLA", pid: "36037", punkt: "4.1", klar: true });
-    expect(s.andringslogg).toHaveLength(0);
-    expect(arKlar(s, "36037", "4.1")).toBe(true);
-    s = reducer(s, { type: "EPC_VAXLA", pid: "36037", punkt: "4.1", klar: false });
-    expect(arKlar(s, "36037", "4.1")).toBe(false);
-    expect(s.epcStatus).toHaveLength(1);
+describe("lagesbild", () => {
+  it("visar pågående fas, nästa grind och nästa betalning", () => {
+    const l = lagesbild(seed(), "36037", NU);
+    expect(l.harPlan).toBe(true);
+    expect(l.aktuella.map((f) => f.fas.nr)).toEqual([10]);
+    expect(l.nastaGrind.fas.grind.kod).toBe("G10");
+    expect(l.nastaBetalning).toMatchObject({ kod: "M5", status: "pagaende" });
+    expect(l.grindarPasserade).toBe(10);
+    expect(l.hp).toBe(33);
+    // Hållpunkterna i fas 0–9: 0+0+1+1+0+2+3+6+3+2.
+    expect(l.hpPasserade).toBe(18);
+    expect(l.dagarTillSlutbesiktning).toBe(67);
   });
 
-  it("kopplar en UR till punkten utan att bocka av den", () => {
-    let s = seed();
-    s = reducer(s, { type: "EPC_KOPPLA_UR", pid: "36037", punkt: "6.5", urId: "u1", urNr: "UR007" });
-    expect(s.epcStatus[0]).toMatchObject({ punkt: "6.5", urId: "u1", klar: false });
-    expect(s.andringslogg[0].text).toBe("EPC 6.5: UR007 skapad vid avvikelse");
-  });
-
-  it("summerar mot checklistans 199 punkter och 33 hållpunkter", () => {
-    let s = seed();
-    s = reducer(s, { type: "EPC_VAXLA", pid: "36037", punkt: "7.1", klar: true });
-    s = reducer(s, { type: "EPC_VAXLA", pid: "36037", punkt: "lop.1", klar: true });
-    s.epcStatus.push({ projektId: "36037", punkt: "99.1", klar: true }); // borttagen punkt
-    expect(checklistlage(s, "36037")).toEqual({ klara: 2, totalt: 199, hp: 33, hpKlara: 1 });
+  it("saknar plan men visar ändå grindar för projekt utan datum", () => {
+    const l = lagesbild(seed(), "goteborg", NU);
+    expect(l.harPlan).toBe(false);
+    expect(l.aktuella).toEqual([]);
+    expect(l.nastaGrind.fas.nr).toBe(0);
   });
 });

@@ -21,8 +21,8 @@ const INSKJUTNA = [
     "oversikt",
     [
       "epc",
-      "BESS EPC Checklista",
-      "16 faser med grind, 199 kontrollpunkter och 33 hållpunkter — ABT 06 från anbud till garantitid, avbockat per projekt.",
+      "Bygga batteripark",
+      "16 faser med grind från anbud till garantitid — steg för steg, och var varje projekt står just nu.",
     ],
   ],
   [

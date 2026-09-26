@@ -5,7 +5,7 @@ import { datumKort, dagarText } from "../../lib/datum.js";
 import { ledtidslage, milstolpslage } from "../../lib/epc.js";
 import { LedtidStatus } from "./Delar.jsx";
 
-/* Checklistans referensdelar: betalplanen, ledtiderna mot projektets datum,
+/* Guidens referensdelar: betalplanen, ledtiderna mot projektets datum,
    lärdomarna och det som källorna inte är överens om. */
 
 const MS_PILL = { fakturerad: "fakturerad", pagaende: "pagaende", kvar: "kvar" };
@@ -49,7 +49,9 @@ export function Milstolpstabell({ pid }) {
   );
 }
 
-export function Ledtidstabell({ pid, onBockaAv }) {
+/** onMarkera(ledtid, klar) markerar en ledtid som klar i förväg, eller ångrar
+ *  det. En ledtid vars fas är passerad är klar ändå och går inte att ångra. */
+export function Ledtidstabell({ pid, onMarkera }) {
   const { state } = usePortfolj();
   const rader = ledtidslage(state, pid);
   return (
@@ -100,8 +102,13 @@ export function Ledtidstabell({ pid, onBockaAv }) {
               <td data-label="Läge">
                 <span className="epc-ledlage">
                   <LedtidStatus status={l.status} />
-                  {!l.klar && l.status !== "passerad" ? (
-                    <button type="button" className="btn sec mini" onClick={() => onBockaAv(l.punkt)}>
+                  {l.markerad ? (
+                    <button type="button" className="epc-textknapp" onClick={() => onMarkera(l.id, false)}>
+                      Ångra
+                      <span className="sr-only">: {l.arende}</span>
+                    </button>
+                  ) : !l.klar && l.status !== "passerad" ? (
+                    <button type="button" className="btn sec mini" onClick={() => onMarkera(l.id, true)}>
                       Klar
                       <span className="sr-only">: {l.arende}</span>
                     </button>

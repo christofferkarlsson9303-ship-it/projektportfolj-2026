@@ -4,7 +4,7 @@ import { gaTill, oppna, utanKonsolfel } from "./hjalpare.js";
 const PORTERADE = [
   "Idag",
   "Översikt",
-  "BESS EPC Checklista",
+  "Bygga batteripark",
   "Tavla",
   "Tidplan",
   "Milstolpar M1–M7",

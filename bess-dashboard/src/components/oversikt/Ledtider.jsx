@@ -10,7 +10,7 @@ import { Lank, Ruta } from "./Ruta.jsx";
 /* Ligg steget före — ledtidskrävande moment räknade bakåt från projektets
    datum. Röd när sista startdatum passerat, gul inom två veckor. Listan visar
    det som är aktuellt nu (försenat, starta nu och det som ska startas inom
-   två månader); resten finns i checklistans ledtidstabell. */
+   två månader); resten finns i ledtidstabellen under Bygga batteripark. */
 
 const FRAMFORHALLNING = 60;
 const I_LISTAN = 4;
@@ -23,7 +23,7 @@ const aktuell = (l) =>
 
 export function Ledtider({ i }) {
   const { state, dispatch } = usePortfolj();
-  const { valtProjekt, oppnaPost, visa } = useUi();
+  const { valtProjekt, oppnaPost } = useUi();
   const [omfang, setOmfang] = useState("alla");
   const [visaAlla, setVisaAlla] = useState(false);
   const nu = idag();
@@ -50,7 +50,7 @@ export function Ledtider({ i }) {
       }
       klass="md:col-span-2"
       atgard={
-        <Lank onClick={() => visa("epc")} etikett="Öppna ledtidstabellen i checklistan">
+        <Lank onClick={() => oppnaPost("epc", "epc-ledtider")} etikett="Öppna ledtidstabellen under Bygga batteripark">
           Alla ledtider
         </Lank>
       }
@@ -91,12 +91,12 @@ export function Ledtider({ i }) {
                   onClick={() => oppnaPost("epc", `kp-${l.punkt}`)}
                 >
                   {l.punkt}
-                  <span className="sr-only">: öppna kontrollpunkten i checklistan</span>
+                  <span className="sr-only">: öppna kontrollpunkten i guiden</span>
                 </button>
                 <button
                   type="button"
                   className="btn mini ov-led-klar"
-                  onClick={() => dispatch({ type: "EPC_VAXLA", pid: l.projektId, punkt: l.punkt, klar: true })}
+                  onClick={() => dispatch({ type: "EPC_LEDTID", pid: l.projektId, ledtid: l.id, klar: true })}
                 >
                   <Check size={13} aria-hidden="true" />
                   Klar
@@ -109,7 +109,7 @@ export function Ledtider({ i }) {
       ) : alla.length ? (
         <div className="ov-tom">Inget ledtidskrävande att starta de kommande {FRAMFORHALLNING} dagarna.</div>
       ) : (
-        <p className="lead m-0">Ange startdatum och färdigställande per projekt i checklistan eller i Gantt-schemat.</p>
+        <p className="lead m-0">Ange startdatum och färdigställande per projekt i lägesbilden under Bygga batteripark eller i Gantt-schemat.</p>
       )}
 
       {lista.length > I_LISTAN ? (

@@ -1,72 +1,71 @@
 import { expect, test } from "@playwright/test";
 import { gaTill, oppna, utanKonsolfel } from "./hjalpare.js";
 
-const KAPITEL = "BESS EPC Checklista";
+const KAPITEL = "Bygga batteripark";
 
 test.beforeEach(async ({ page }) => {
   await oppna(page, KAPITEL);
 });
 
-const huvud = (page) => page.getByRole("region", { name: /Växjö Batteripark/ });
+const lage = (page) => page.getByRole("region", { name: "Lägesbild — var projekten står" });
+const projektrad = (page, namn) => lage(page).getByRole("group", { name: "Välj projekt" }).getByRole("button", { name: namn });
 const rad = (page, id) => page.locator(`[id="kp-${id}"]`);
 
-test("kapitlet har 16 faser, de löpande punkterna och alla 199 kontrollpunkter", async ({ page }) => {
+test("guiden har 16 faser, de löpande punkterna och alla 199 kontrollpunkter som referens", async ({ page }) => {
   await expect(page.locator("details.epc-fas")).toHaveCount(17);
   await expect(page.locator(".epc-rad")).toHaveCount(199);
   await expect(page.locator(".epc-rad.hp")).toHaveCount(33);
-  await expect(huvud(page)).toContainText("0/33");
+  // Punkterna bockas inte av och skapar inga ärenden — läget följs per fas.
+  await expect(page.locator(".epc-rad input[type=checkbox]")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Skapa UR\/ÄTA/ })).toHaveCount(0);
+});
+
+test("lägesbilden har en rad per projekt och visar läget för valt projekt", async ({ page }) => {
+  const rader = lage(page).getByRole("group", { name: "Välj projekt" }).getByRole("button");
+  await expect(rader).toHaveCount(4);
+  await expect(projektrad(page, /^36037 Växjö/)).toHaveAttribute("aria-pressed", "true");
+  await expect(projektrad(page, /^36037 Växjö/)).toContainText(/av 16 grindar passerade/);
+  await expect(projektrad(page, /^Göteborg/)).toContainText("Datum saknas");
+  await expect(lage(page)).toContainText(/\d+ av 16 grindar och \d+ av 33 hållpunkter passerade/);
+});
+
+test("ett annat projekt väljs i lägesbilden och guiden följer med", async ({ page }) => {
+  await projektrad(page, /^36038 Alvesta/).click();
+  await expect(projektrad(page, /^36038 Alvesta/)).toHaveAttribute("aria-pressed", "true");
+  await expect(lage(page).getByLabel("Startdatum för Alvesta Batteripark")).toBeVisible();
+  // Faserna är stängda <details>, så rutan söks på attributet.
+  await expect(page.locator('aside[aria-label="Fas 0 i 36038 Alvesta"]')).toBeAttached();
 });
 
 test("filtret Hållpunkter visar bara de 33 hållpunkterna", async ({ page }) => {
   await page.getByRole("group", { name: "Visa markering" }).getByRole("button", { name: "Hållpunkter" }).click();
-  const synliga = page.locator(".epc-rad");
-  await expect(synliga).toHaveCount(33);
+  await expect(page.locator(".epc-rad")).toHaveCount(33);
   await expect(page.locator(".epc-rad:not(.hp)")).toHaveCount(0);
 });
 
 test("sökningen hittar lärdomen om CT-fönster", async ({ page }) => {
-  await page.getByRole("searchbox", { name: "Sök i checklistan" }).fill("CT-fönster");
+  await page.getByRole("searchbox", { name: "Sök i guiden" }).fill("CT-fönster");
   await expect(page.locator(".epc-rad")).toHaveCount(1);
   await expect(rad(page, "3.8")).toBeVisible();
   await expect(rad(page, "3.8").locator(".epc-markering.l")).toBeVisible();
 });
 
-test("en godkänd hållpunkt räknas och syns i ändringsloggen", async ({ page }) => {
-  // Fas 11 är inte utfälld från början — fäll ut den först.
-  await page.locator("#fas-11 > summary").click();
-  await rad(page, "11.4").getByRole("checkbox").check();
-  await expect(huvud(page)).toContainText("1/33");
-  await expect(rad(page, "11.4")).toHaveClass(/klar/);
+test("en grind markeras passerad, fasen byter läge och det loggas", async ({ page }) => {
+  const fas = page.locator("#fas-11");
+  await fas.locator("summary").click();
+  const iProjektet = fas.getByRole("complementary", { name: "Fas 11 i 36037 Växjö" });
+  await iProjektet.getByRole("button", { name: "Markera G11 passerad idag" }).click();
+  await expect(fas.locator("summary")).toContainText("Grind passerad");
+  await expect(iProjektet).toContainText(/G11 passerad \d{4}-\d{2}-\d{2}/);
+  // En senare grind gör alla tidigare passerade.
+  await expect(projektrad(page, /^36037 Växjö/)).toContainText("12 av 16 grindar passerade");
 
   await gaTill(page, "Översikt");
-  await expect(page.getByRole("region", { name: "Aktivitet" })).toContainText("EPC 11.4 hållpunkt godkänd");
-});
-
-test("Skapa UR/ÄTA skapar ett kopplat ärende från kontrollpunkten", async ({ page }) => {
-  await page.locator("#fas-6 > summary").click();
-  await rad(page, "6.5").getByRole("button", { name: /Skapa UR\/ÄTA/ }).click();
-
-  const dialog = page.getByRole("dialog");
-  await expect(dialog.getByLabel("Beskriv avvikelsen")).toHaveValue(/^Avvikelse 6\.5: Okänd förorening/);
-  await dialog.getByRole("button", { name: "Skapa UR/ÄTA" }).click();
-
-  const lank = rad(page, "6.5").getByRole("button", { name: /^UR\d{3}/ });
-  await expect(lank).toBeVisible();
-  await lank.click();
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("ÄTA och hinder");
-  await expect(page.getByRole("region", { name: /^Ärende UR\d{3}$/ })).toContainText("Avvikelse 6.5");
-});
-
-test("en grind markeras passerad och fasen byter läge", async ({ page }) => {
-  const fas = page.locator("#fas-10");
-  await expect(fas).toHaveAttribute("open", "");
-  await fas.getByRole("button", { name: "Markera G10 passerad idag" }).click();
-  await expect(fas.locator("summary")).toContainText("Grind passerad");
-  await expect(huvud(page)).toContainText("11/16");
+  await expect(page.getByRole("region", { name: "Aktivitet" })).toContainText("G11 passerad");
 });
 
 test("antaget startdatum är markerat tills någon anger det", async ({ page }) => {
-  const plan = huvud(page);
+  const plan = lage(page);
   await expect(plan.getByText("ANTAGANDE")).toBeVisible();
   const falt = plan.getByLabel("Startdatum för Växjö Batteripark");
   await falt.fill("2026-02-09");
@@ -74,7 +73,19 @@ test("antaget startdatum är markerat tills någon anger det", async ({ page }) 
   await expect(plan.getByText("ANTAGANDE")).toHaveCount(0);
 });
 
-test("Gantt-schemats fasrad öppnar fasen i checklistan", async ({ page }) => {
+test("en ledtid markeras klar i förväg och går att ångra", async ({ page }) => {
+  const tabell = page.getByRole("region", { name: "Ledtider för projektet" });
+  const forsta = tabell.locator("tbody tr").filter({ has: page.getByRole("button", { name: /^Klar/ }) }).first();
+  const arende = (await forsta.locator("td").first().locator("b").textContent()).trim();
+  await forsta.getByRole("button", { name: /^Klar/ }).click();
+
+  const raden = tabell.locator("tbody tr").filter({ hasText: arende });
+  await expect(raden.getByRole("button", { name: /^Ångra/ })).toBeVisible();
+  await raden.getByRole("button", { name: /^Ångra/ }).click();
+  await expect(raden.getByRole("button", { name: /^Klar/ })).toBeVisible();
+});
+
+test("Gantt-schemats fasrad öppnar fasen i guiden", async ({ page }) => {
   await gaTill(page, "Översikt");
   await page.getByRole("button", { name: /^Fas 12 Anslutning BESS/ }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(KAPITEL);

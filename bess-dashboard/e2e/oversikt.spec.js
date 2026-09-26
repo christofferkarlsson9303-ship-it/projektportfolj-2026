@@ -15,7 +15,7 @@ test("fyra nyckeltalskort: ÄTA, hållpunkter, skyddsronder och budget", async (
   await expect(kort).toHaveCount(4);
   await expect(kort.nth(0)).toContainText("ÄTA-status");
   await expect(kort.nth(1)).toContainText("Hållpunkter (HP)");
-  await expect(kort.nth(1)).toContainText(/\d+ av \d+ godkända/);
+  await expect(kort.nth(1)).toContainText(/\d+ av \d+ passerade/);
   await expect(kort.nth(2)).toContainText("Skyddsronder");
   await expect(kort.nth(3)).toContainText(/\d+\s*% fakturerat/);
 });
