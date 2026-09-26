@@ -4,7 +4,9 @@
 
 import { SEED } from "../data/seed.js";
 import { KANDA_MAPPAR, PILL, SLUTDOK_MALL } from "../data/konstanter.js";
+import { PUNKT_FOR_ID } from "../data/bessChecklistData.ts";
 import { migreraUr } from "../lib/berakningar.js";
+import { idag } from "../lib/datum.js";
 import { forslagText, kanTillampas, tillampaForslag } from "../lib/importera.js";
 
 /** Namnet används i ändringsloggen och sparas per webbläsare, inte i delad data. */
@@ -48,6 +50,15 @@ export function efterInlasning(state) {
         p.id === "36037" || p.id === "36038"
           ? { kalla: "Byggmötesprotokoll BM7/BM8", datum: "2026-08-17", infort: "2026-09-12", av: "" }
           : { kalla: "", datum: "", infort: "", av: "" };
+    }
+    /* Startdatum (NTP) styr EPC-checklistans fasplan. Batch C saknar det i
+       underlaget; kontraktets milstolpar låg feb–sep 2026, så början av
+       februari sätts som ANTAGANDE och markeras tills någon anger rätt datum.
+       Bara när fältet aldrig funnits — ett tömt fält är ett medvetet val. */
+    if (nytt.startdatum === undefined) {
+      const batchC = p.id === "36037" || p.id === "36038";
+      nytt.startdatum = batchC ? "2026-02-02" : "";
+      nytt.startdatumAntagande = batchC;
     }
     return nytt;
   });
@@ -167,6 +178,22 @@ function medLogg(state, lista, id, gammalt, nytt) {
 /* ---------- Reducer ---------- */
 
 const byt = (lista, id, andra) => lista.map((r) => (r.id === id ? andra(r) : r));
+
+/** Uppdaterar raden som matchar, eller lägger till ny = {...ny, ...andring}. */
+function uppsatt(lista, matchar, ny, andring) {
+  const rader = lista || [];
+  return rader.some(matchar)
+    ? rader.map((r) => (matchar(r) ? { ...r, ...andring } : r))
+    : [...rader, { ...ny, ...andring }];
+}
+
+const kortText = (s) => (String(s).length > 70 ? String(s).slice(0, 67) + "…" : String(s));
+
+/** Lägger en fritextpost i ändringsloggen. */
+function loggat(state, projektId, text) {
+  const post = { ts: new Date().toISOString(), anvandare: hamtaNamn() || "Okänd", projektId: projektId || null, text };
+  return { ...state, andringslogg: [post, ...(state.andringslogg || [])].slice(0, 150) };
+}
 
 export function reducer(state, action) {
   switch (action.type) {
@@ -410,16 +437,58 @@ export function reducer(state, action) {
       };
     }
 
-    /* Fritextpost i ändringsloggen — för händelser utan statusövergång. */
-    case "LOGGA": {
-      const post = {
-        ts: new Date().toISOString(),
-        anvandare: hamtaNamn() || "Okänd",
-        projektId: action.projektId || null,
-        text: action.text,
+    /* EPC-checklistan: bocka av en kontrollpunkt. Hållpunkter loggas — de är
+       stopp tills godkänt, och vem som släppte en hållpunkt ska gå att se.
+       Vanliga punkter loggas inte; 199 bockar skulle dränka loggen. */
+    case "EPC_VAXLA": {
+      const { pid, punkt, klar } = action;
+      const nytt = {
+        ...state,
+        epcStatus: uppsatt(state.epcStatus, (r) => r.projektId === pid && r.punkt === punkt, {
+          id: `ek-${pid}-${punkt}`,
+          projektId: pid,
+          punkt,
+        }, { klar, datum: klar ? idag() : "", av: klar ? hamtaNamn() || "" : "" }),
       };
-      return { ...state, andringslogg: [post, ...(state.andringslogg || [])].slice(0, 150) };
+      const kp = PUNKT_FOR_ID.get(punkt);
+      if (!kp || !kp.badges.includes("HP")) return nytt;
+      return loggat(nytt, pid, `EPC ${punkt} hållpunkt ${klar ? "godkänd" : "återöppnad"}: ${kortText(kp.text)}`);
     }
+
+    /* EPC-checklistan: en UR/ÄTA skapad ur en kontrollpunkt kopplas till punkten. */
+    case "EPC_KOPPLA_UR": {
+      const { pid, punkt, urId, urNr } = action;
+      const nytt = {
+        ...state,
+        epcStatus: uppsatt(state.epcStatus, (r) => r.projektId === pid && r.punkt === punkt, {
+          id: `ek-${pid}-${punkt}`,
+          projektId: pid,
+          punkt,
+          klar: false,
+        }, { urId }),
+      };
+      return loggat(nytt, pid, `EPC ${punkt}: ${urNr} skapad vid avvikelse`);
+    }
+
+    /* EPC-checklistan: fasens egna datum, passerad grind och anteckningar.
+       Grindpassage loggas — den låser upp nästa fas och ibland en betalning. */
+    case "EPC_FAS": {
+      const { pid, fas, falt, varde } = action;
+      const nytt = {
+        ...state,
+        epcFaser: uppsatt(state.epcFaser, (r) => r.projektId === pid && r.fas === fas, {
+          id: `ef-${pid}-${fas}`,
+          projektId: pid,
+          fas,
+        }, { [falt]: varde }),
+      };
+      if (falt !== "grindDatum") return nytt;
+      return loggat(nytt, pid, varde ? `G${fas} passerad ${varde}` : `G${fas} återöppnad`);
+    }
+
+    /* Fritextpost i ändringsloggen — för händelser utan statusövergång. */
+    case "LOGGA":
+      return loggat(state, action.projektId, action.text);
 
     /* Kanban: flytta ett kort mellan kolumner. Loggas som statusändring. */
     case "FLYTTA_KORT": {

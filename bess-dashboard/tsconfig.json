@@ -1,0 +1,15 @@
+{
+  // Bara typkontroll — Vite transpilerar själv. Appen är i övrigt JavaScript;
+  // det som är TypeScript är checklistdatan, och det är den som kontrolleras.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "lib": ["ES2022"]
+  },
+  "include": ["src/**/*.ts"]
+}
