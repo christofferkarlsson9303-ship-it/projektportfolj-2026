@@ -4,7 +4,7 @@
 
 import { SEED } from "../data/seed.js";
 import { KANDA_MAPPAR, PILL, SLUTDOK_MALL } from "../data/konstanter.js";
-import { PUNKT_FOR_ID } from "../data/bessChecklistData.ts";
+import { LEDTIDER } from "../data/bessChecklistData.ts";
 import { migreraUr } from "../lib/berakningar.js";
 import { idag } from "../lib/datum.js";
 import { forslagText, kanTillampas, tillampaForslag } from "../lib/importera.js";
@@ -186,8 +186,6 @@ function uppsatt(lista, matchar, ny, andring) {
     ? rader.map((r) => (matchar(r) ? { ...r, ...andring } : r))
     : [...rader, { ...ny, ...andring }];
 }
-
-const kortText = (s) => (String(s).length > 70 ? String(s).slice(0, 67) + "…" : String(s));
 
 /** Lägger en fritextpost i ändringsloggen. */
 function loggat(state, projektId, text) {
@@ -437,37 +435,20 @@ export function reducer(state, action) {
       };
     }
 
-    /* EPC-checklistan: bocka av en kontrollpunkt. Hållpunkter loggas — de är
-       stopp tills godkänt, och vem som släppte en hållpunkt ska gå att se.
-       Vanliga punkter loggas inte; 199 bockar skulle dränka loggen. */
-    case "EPC_VAXLA": {
-      const { pid, punkt, klar } = action;
+    /* EPC-checklistan: en ledtid markerad klar före sin fas. Loggas — det
+       är ett besked om att något ledtidskrävande faktiskt är igångsatt. */
+    case "EPC_LEDTID": {
+      const { pid, ledtid, klar } = action;
       const nytt = {
         ...state,
-        epcStatus: uppsatt(state.epcStatus, (r) => r.projektId === pid && r.punkt === punkt, {
-          id: `ek-${pid}-${punkt}`,
+        epcLedtider: uppsatt(state.epcLedtider, (r) => r.projektId === pid && r.ledtid === ledtid, {
+          id: `el-${pid}-${ledtid}`,
           projektId: pid,
-          punkt,
+          ledtid,
         }, { klar, datum: klar ? idag() : "", av: klar ? hamtaNamn() || "" : "" }),
       };
-      const kp = PUNKT_FOR_ID.get(punkt);
-      if (!kp || !kp.badges.includes("HP")) return nytt;
-      return loggat(nytt, pid, `EPC ${punkt} hållpunkt ${klar ? "godkänd" : "återöppnad"}: ${kortText(kp.text)}`);
-    }
-
-    /* EPC-checklistan: en UR/ÄTA skapad ur en kontrollpunkt kopplas till punkten. */
-    case "EPC_KOPPLA_UR": {
-      const { pid, punkt, urId, urNr } = action;
-      const nytt = {
-        ...state,
-        epcStatus: uppsatt(state.epcStatus, (r) => r.projektId === pid && r.punkt === punkt, {
-          id: `ek-${pid}-${punkt}`,
-          projektId: pid,
-          punkt,
-          klar: false,
-        }, { urId }),
-      };
-      return loggat(nytt, pid, `EPC ${punkt}: ${urNr} skapad vid avvikelse`);
+      const l = LEDTIDER.find((x) => x.id === ledtid);
+      return loggat(nytt, pid, `Ledtid ${klar ? "klar" : "återöppnad"}: ${l ? l.arende : ledtid}`);
     }
 
     /* EPC-checklistan: fasens egna datum, passerad grind och anteckningar.

@@ -2,6 +2,7 @@ import { crc32, deflateRawSync } from "node:zlib";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { excelDatum, kolIndex, lasXlsx } from "./xlsx.js";
 import {
+  datumUrFilnamn,
   filtyp,
   forslagBackup,
   forslagCsv,
@@ -345,6 +346,13 @@ describe("protokoll", () => {
     expect(moteNrUrFilnamn("Byggmöte 10 - Alvesta.pdf")).toBe("BM-10");
     expect(moteNrUrFilnamn("BM07 protokoll.docx")).toBe("BM-07");
     expect(moteNrUrFilnamn("Protokoll.pdf")).toBe("");
+  });
+
+  it("läser mötesdatum ur filnamnet men inte ur andra siffror", () => {
+    expect(datumUrFilnamn("Byggmöte 9 - Växjö 2026-09-14.pdf")).toBe("2026-09-14");
+    expect(datumUrFilnamn("BM10_Alvesta_2026_09_14.docx")).toBe("2026-09-14");
+    expect(datumUrFilnamn("Complete_with_Docusign_Byggmöte_9_-_Växjö_20.pdf")).toBe("");
+    expect(datumUrFilnamn("Protokoll 2026-13-40.pdf")).toBe("");
   });
 
   it("skapar mötet i Byggmöten första gången och kopplar filen andra gången", () => {

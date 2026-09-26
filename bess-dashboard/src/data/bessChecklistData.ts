@@ -7,8 +7,10 @@
    36038). src/data/bessChecklistData.test.js låser antalen, så en punkt som
    försvinner eller dubbleras vid en uppdatering syns direkt.
 
-   Id:n ("7.3", "lop.4") är nycklar i sparad data — de får aldrig numreras om.
-   Ny punkt i en fas läggs sist i fasen med nästa lediga nummer.
+   Id:n ("7.3", "lop.4") står i länkar (#kp-7.3) och i ledtidernas
+   punkthänvisning — de får aldrig numreras om. Ny punkt i en fas läggs sist
+   i fasen med nästa lediga nummer. Läget sparas per fas och ledtid, inte per
+   punkt.
 
    Två saker är tillägg, inte ur PDF:en, och markerade där de står:
    - `kort` och `mall` per fas (kort namn för Gantt och standardplanens läge)

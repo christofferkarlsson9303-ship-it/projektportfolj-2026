@@ -6,11 +6,13 @@ import {
   incidentLage,
   motesFlagga,
   prisGrind,
+  projektUnderlag,
   riskKlass,
   riskMatrisFarg,
   riskvarde,
   saknarKarndata,
   slutdokIndex,
+  underlagsstampel,
   underrattelseLage,
 } from "./berakningar.js";
 
@@ -263,5 +265,46 @@ describe("ampAktuell", () => {
       ],
     };
     expect(ampAktuell(state, "p1").version).toBe("rev 1");
+  });
+});
+
+/* ---------- Underlagsstämpeln ---------- */
+
+describe("projektUnderlag", () => {
+  const vaxjo = {
+    id: "36037",
+    nr: "36037",
+    underlag: { kalla: "Byggmötesprotokoll BM7/BM8", datum: "2026-08-17" },
+  };
+  const mote = (nr, datum, status = "justerat") => ({ id: nr, projektId: "36037", nr, datum, status });
+
+  it("följer senaste justerade byggmötesprotokoll när det är nyare än angiven källa", () => {
+    // Så låg produktionsdatan: BM-09 uppladdat, källfältet kvar på BM7/BM8.
+    const state = { projekt: [vaxjo], byggmoten: [mote("BM-08", "2026-08-17"), mote("BM-09", "2026-09-14")] };
+    expect(projektUnderlag(state, vaxjo)).toEqual({
+      kalla: "Byggmötesprotokoll BM-09",
+      datum: "2026-09-14",
+      fran: "byggmote",
+    });
+    expect(underlagsstampel(state)).toBe("Underlag — 36037: Byggmötesprotokoll BM-09 2026-09-14");
+  });
+
+  it("räknar inte utkast och inte andra projekts möten", () => {
+    const state = {
+      projekt: [vaxjo],
+      byggmoten: [mote("BM-10", "2026-09-28", "utkast"), { ...mote("BM-10", "2026-09-14"), projektId: "36038" }],
+    };
+    expect(projektUnderlag(state, vaxjo).kalla).toBe("Byggmötesprotokoll BM7/BM8");
+  });
+
+  it("låter en angiven källa med samma eller senare datum gälla", () => {
+    const angiven = { ...vaxjo, underlag: { kalla: "Tidplan rev D", datum: "2026-09-14" } };
+    const state = { projekt: [angiven], byggmoten: [mote("BM-09", "2026-09-14")] };
+    expect(projektUnderlag(state, angiven)).toMatchObject({ kalla: "Tidplan rev D", fran: "angiven" });
+  });
+
+  it("tar det högsta mötesnumret när två protokoll har samma datum", () => {
+    const state = { projekt: [vaxjo], byggmoten: [mote("BM-9", "2026-09-30"), mote("BM-10", "2026-09-30")] };
+    expect(projektUnderlag(state, vaxjo).kalla).toBe("Byggmötesprotokoll BM-10");
   });
 });

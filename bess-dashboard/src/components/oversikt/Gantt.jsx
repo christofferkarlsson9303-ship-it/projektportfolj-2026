@@ -7,12 +7,12 @@ import { dagarTill, datumKort, idag, MANADER } from "../../lib/datum.js";
 import { FAS_STATUS, dagarMellan, faslage, milstolpslage, planAnkare } from "../../lib/epc.js";
 import { Lank, Ruta } from "./Ruta.jsx";
 
-/* Fasplanen som Gantt-schema: checklistans 16 faser med grindarna G0–G15
+/* Fasplanen som Gantt-schema: batteriparkens 16 faser med grindarna G0–G15
    och betalmilstolparna M1–M7 för valt projekt.
 
    Staplarnas färg är en ton i tre steg (klar → pågår → kommande), samma
    validerade ramp som nyckeltalen; bara försenad bär statusrött. Varje rad
-   är en knapp som öppnar fasen i checklistan, och verktygstipset visas på
+   är en knapp som öppnar fasen i guiden, och verktygstipset visas på
    både hover och tangentbordsfokus. Milstolparna står även som text under
    schemat, så ingenting hänger på att man hovrar. */
 
@@ -124,8 +124,8 @@ export function Gantt({ i }) {
       }
       klass="ov-gantt-ruta md:col-span-2 xl:col-span-3"
       atgard={
-        <Lank onClick={() => visa("epc")} etikett="Öppna BESS EPC Checklista">
-          Checklistan
+        <Lank onClick={() => visa("epc")} etikett="Öppna Bygga batteripark">
+          Lägesbild och guide
         </Lank>
       }
     >
@@ -225,23 +225,17 @@ export function Gantt({ i }) {
                       onClick={() => oppnaPost("epc", `fas-${f.fas.nr}`)}
                       aria-label={`Fas ${f.fas.nr} ${f.fas.titel}: ${statusText}, ${
                         harDatum ? `${f.start} till ${f.slut}` : "ej planerad"
-                      }, ${f.klara} av ${f.totalt} punkter klara, ${grindText}. Öppna i checklistan.`}
+                      }, ${grindText}${f.hp ? `, ${f.hp} hållpunkter` : ""}. Öppna i guiden.`}
                     >
                       <span className="ov-gantt-etikett">
                         <span className="ov-gantt-nr">{f.fas.nr}</span>
                         <span className="ov-gantt-namn">{f.fas.kort}</span>
-                        <span className="ov-gantt-antal">
-                          {f.klara}/{f.totalt}
-                        </span>
+                        {f.hp ? <span className="ov-gantt-antal">{f.hp} HP</span> : null}
                       </span>
                       <span className="ov-gantt-spar">
                         {harDatum ? (
                           <>
-                            <span className="ov-gantt-stapel" style={{ left: vanster + "%", width: bredd + "%" }}>
-                              {f.status === "pagar" || f.status === "sen" ? (
-                                <i style={{ width: Math.round((f.klara / f.totalt) * 100) + "%" }} />
-                              ) : null}
-                            </span>
+                            <span className="ov-gantt-stapel" style={{ left: vanster + "%", width: bredd + "%" }} />
                             <span
                               className={`ov-gantt-grind${f.grind.passerad ? " passerad" : ""}${f.fas.milstolpe ? " betalning" : ""}`}
                               style={{ left: vanster + bredd + "%" }}
@@ -255,8 +249,8 @@ export function Gantt({ i }) {
                               </b>
                               {datumKort(f.start)} – {datumKort(f.slut)} {f.egenPlan ? "· egna datum" : "· standardplan"}
                               <br />
-                              {statusText} · {f.klara}/{f.totalt} punkter
-                              {f.hp ? ` · HP ${f.hpKlara}/${f.hp}` : ""}
+                              {statusText} · {f.punkter} kontrollpunkter
+                              {f.hp ? ` · ${f.hp} hållpunkter` : ""}
                               <br />
                               {grindText}
                               {f.fas.milstolpe ? ` · låser ${f.fas.milstolpe}` : ""}

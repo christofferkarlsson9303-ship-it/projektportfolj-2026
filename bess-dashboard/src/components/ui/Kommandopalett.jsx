@@ -66,7 +66,7 @@ export function Kommandopalett() {
     (state.punkter || []).forEach((p) =>
       ut.push({ t: "Punkt", label: p.titel, sub: p.agare || "", kor: () => visa("punkter") })
     );
-    // Checklistans punkter: sökbara på nummer och text, öppnas i valt projekt.
+    // Batteriparkens kontrollpunkter: sökbara på nummer och text, öppnas i guiden.
     ALLA_PUNKTER.forEach((kp) =>
       ut.push({
         t: "EPC",

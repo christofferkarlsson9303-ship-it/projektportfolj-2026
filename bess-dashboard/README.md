@@ -54,27 +54,32 @@ sparats.
 Lägg till appens adress under *Authentication → URL Configuration* i Supabase,
 annars skickar den magiska länken användaren till fel ställe.
 
-## BESS EPC Checklista
+## Bygga batteripark
 
-Kapitlet *BESS EPC Checklista* bygger på "Bygga batteripark som totalentreprenad"
-(v1.0, 2026-09-26): 16 faser med grind (G0–G15), 199 kontrollpunkter varav 33
-hållpunkter, betalmilstolparna M1–M7, ledtider och tio lärdomar från Batch C.
+Kapitlet *Bygga batteripark* (vy-id `epc`) bygger på "Bygga batteripark som
+totalentreprenad" (v1.0, 2026-09-26): 16 faser med grind (G0–G15), 199
+kontrollpunkter varav 33 hållpunkter, betalmilstolparna M1–M7, ledtider och tio
+lärdomar från Batch C. Kapitlet är en guide och en lägesbild, inte en
+att göra-lista: överst står var varje projekt är i de 16 faserna, under det
+guiden steg för steg med kontrollpunkterna som referens.
 
 | Fil | Innehåll |
 | --- | --- |
-| `src/data/bessChecklistData.ts` | Checklistan som data. Id:n (`"7.3"`, `"lop.4"`) är nycklar i sparad data och får aldrig numreras om. |
+| `src/data/bessChecklistData.ts` | Checklistan som data. Id:n (`"7.3"`, `"lop.4"`) står i länkar och ledtidernas punkthänvisning och får aldrig numreras om. |
 | `src/data/bessChecklistData.test.js` | Låser antalen (16/199/33/7) och kopplingarna mellan faser, grindar, milstolpar och ledtider. |
-| `src/lib/epc.js` | Fasplan, grindar, milstolpar, ledtider och hållpunkter per projekt. |
+| `src/lib/epc.js` | Lägesbild, fasplan, grindar, milstolpar, ledtider och hållpunkter per projekt. |
 
-Per projekt sparas bara det som avviker: avbockade punkter och kopplade UR i
-`epcStatus`, egna fasdatum, passerade grindar och anteckningar i `epcFaser`.
+Läget följs per fas: en fas är klar när dess grind är passerad, och då räknas
+fasens kontroll- och hållpunkter som genomförda. Per projekt sparas bara det
+som avviker: passerade grindar, egna fasdatum och anteckningar i `epcFaser`,
+ledtider som markerats klara i förväg i `epcLedtider`.
 
 **Fasplanen** räknas fram ur projektets startdatum (NTP), BESS-leveransen och
 färdigställandet (slutbesiktning) — se `MALL_SKALA` i datafilen. Varje fas kan få
 egna datum. Batch C saknar startdatum i underlaget; 2026-02-02 är satt som
 ANTAGANDE och markeras tills någon anger det rätta.
 
-**Grindar** räknas som passerade när de angetts i checklistan, när milstolpen de
+**Grindar** räknas som passerade när de markerats i guiden, när milstolpen de
 låser är fakturerad, eller när en senare grind är passerad.
 
 **Ledtiderna** räknas bakåt från kända datum (leveranslistan, tidplanen,

@@ -149,6 +149,10 @@ test("senast inlästa protokollet blir MASTER och det äldre arkiveras", async (
   // Mötena finns i Byggmöten.
   await gaTill(page, "Byggmöten");
   await expect(page.getByText("BM-10").first()).toBeVisible();
+
+  // Sidfotens underlag följer det senaste protokollet, inte det inskrivna BM7/BM8.
+  await expect(page.locator("footer")).toContainText("36037: Byggmötesprotokoll BM-10");
+  await expect(page.locator("footer")).toContainText("36038: Byggmötesprotokoll BM7/BM8");
 });
 
 test("protokoll för ett projekt påverkar inte ett annat projekts MASTER", async ({ page }) => {

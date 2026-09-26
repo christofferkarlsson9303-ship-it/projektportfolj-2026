@@ -11,7 +11,7 @@ import { gaTill, oppna } from "./hjalpare.js";
 
 const VYER = [
   "Översikt",
-  "BESS EPC Checklista",
+  "Bygga batteripark",
   "Tavla",
   "Tidplan",
   "Milstolpar M1–M7",

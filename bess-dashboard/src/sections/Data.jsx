@@ -7,6 +7,7 @@ import { KONFIGURERAD } from "../lib/supabase.js";
 import { exporteraJson, exporteraLista } from "../lib/export.js";
 import { lasXlsx } from "../lib/xlsx.js";
 import {
+  datumUrFilnamn,
   filtyp,
   forslagBackup,
   forslagCsv,
@@ -62,7 +63,8 @@ async function tolkaFil(state, fil) {
     }
   }
   if (typ === "protokoll") {
-    const datum = fil.lastModified ? new Date(fil.lastModified).toISOString().slice(0, 10) : "";
+    const datum =
+      datumUrFilnamn(fil.name) || (fil.lastModified ? new Date(fil.lastModified).toISOString().slice(0, 10) : "");
     return forslagProtokoll(state, { filnamn: fil.name, datum });
   }
   return {

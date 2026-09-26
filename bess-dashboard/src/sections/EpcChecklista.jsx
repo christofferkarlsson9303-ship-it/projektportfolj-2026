@@ -1,23 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { usePortfolj, useUi } from "../state/hooks.js";
-import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
-import { DatumFalt } from "../components/ui/Falt.jsx";
 import { Note } from "../components/ui/Primitiver.jsx";
 import { Fasruta, Sektioner } from "../components/epc/Fas.jsx";
 import { Markering } from "../components/epc/Delar.jsx";
+import { NuLage, Portfoljlage } from "../components/epc/Lagesbild.jsx";
 import { AttVerifiera, Lardomar, Ledtidstabell, Milstolpstabell } from "../components/epc/Tabeller.jsx";
 import { LOPANDE, MARKERINGAR, SUMMERING } from "../data/bessChecklistData.ts";
 import { projekt } from "../lib/berakningar.js";
-import { datumKort } from "../lib/datum.js";
-import { checklistlage, faslage, planAnkare } from "../lib/epc.js";
+import { FAS_STATUS, faslage } from "../lib/epc.js";
 
-/* BESS EPC Checklista — "Bygga batteripark som totalentreprenad".
+/* Bygga batteripark — hur en BESS-anläggning byggs som totalentreprenad
+   (ABT 06), steg för steg, och var portföljens projekt står.
 
-   Checklistan är densamma för alla projekt; det som skiljer är vad som är
-   avbockat, fasernas datum och passerade grindar. Allt sparas per projekt i
-   portföljen och delas som resten av datan. Varje fas avslutas med en grind:
-   nästa fas startar inte förrän grinden är passerad. */
+   Guiden är densamma för alla projekt: 16 faser som var och en avslutas med
+   en grind, med kontroll- och hållpunkterna som referens. Läget följs per
+   fas: när grinden är passerad är fasen klar. Det som sparas per projekt är
+   passerade grindar, egna fasdatum och anteckningar. */
 
 const MARKFILTER = [
   ["alla", "Alla"],
@@ -26,31 +25,35 @@ const MARKFILTER = [
   ["L", "Lärdomar"],
 ];
 
-/** Faser som är öppna från början: det man arbetar med nu. */
-const oppnaFranBorjan = (faser) =>
-  new Set(faser.filter((f) => ["pagar", "sen", "redo"].includes(f.status)).map((f) => f.fas.nr));
+const LAGEN = ["klar", "pagar", "sen", "kommande", "odaterad"];
 
-function Checklista({ pid }) {
-  const { state, uppd } = usePortfolj();
-  const { postFokus } = useUi();
+/** Faser som pågår eller är sena för projektet — de fälls ut från början. */
+const aktuellaFaser = (faser) =>
+  faser.filter((f) => f.status === "pagar" || f.status === "sen").map((f) => f.fas.nr);
+
+function Guide({ pid, mal }) {
+  const { state } = usePortfolj();
   const p = projekt(state, pid);
   const faser = useMemo(() => faslage(state, pid), [state, pid]);
-  const sum = useMemo(() => checklistlage(state, pid), [state, pid]);
-  const a = planAnkare(state, pid);
 
-  const [oppna, setOppna] = useState(() => oppnaFranBorjan(faser));
+  const [oppna, setOppna] = useState(() => new Set(aktuellaFaser(faser)));
   const [sok, setSok] = useState("");
   const [mark, setMark] = useState("alla");
-  const [doljKlara, setDoljKlara] = useState(false);
 
-  /* Översikten och ledtiderna pekar ut en fas ("fas-7") eller en punkt
-     ("kp-7.3"). Justering under render öppnar fasen, effekten rullar dit. */
-  const [mal, setMal] = useState(null);
-  if (postFokus?.vy === "epc" && postFokus.tid !== mal?.tid) {
-    const id = String(postFokus.id);
-    const fas = /lop/.test(id) ? "lop" : Number(id.replace(/^(fas-|kp-)/, "").split(".")[0]);
+  /* Byter man projekt i lägesbilden fälls det projektets pågående faser ut. */
+  const [forraPid, setForraPid] = useState(pid);
+  if (pid !== forraPid) {
+    setForraPid(pid);
+    setOppna((o) => new Set([...o, ...aktuellaFaser(faser)]));
+  }
+
+  /* Målet är en fas ("fas-7") eller en punkt ("kp-7.3"). Justering under
+     render fäller ut fasen, effekten rullar dit. */
+  const [utfalld, setUtfalld] = useState(null);
+  if (mal && mal.tid !== utfalld) {
+    setUtfalld(mal.tid);
+    const fas = /lop/.test(mal.id) ? "lop" : Number(mal.id.replace(/^(fas-|kp-)/, "").split(".")[0]);
     if (fas === "lop" || Number.isInteger(fas)) setOppna((o) => new Set([...o, fas]));
-    setMal({ id: id === "fas-lop" ? "fas-lopande" : id, tid: postFokus.tid });
   }
   useEffect(() => {
     const el = mal && document.getElementById(mal.id);
@@ -66,16 +69,10 @@ function Checklista({ pid }) {
     };
   }, [mal]);
 
-  const klaraId = useMemo(
-    () => new Set((state.epcStatus || []).filter((r) => r.projektId === pid && r.klar).map((r) => r.punkt)),
-    [state.epcStatus, pid]
-  );
-
   const sokord = sok.trim().toLowerCase();
-  const filterAktivt = !!sokord || mark !== "alla" || doljKlara;
+  const filterAktivt = !!sokord || mark !== "alla";
   const filter = (punkt) =>
     (mark === "alla" || punkt.badges.includes(mark)) &&
-    (!doljKlara || !klaraId.has(punkt.id)) &&
     (!sokord || `${punkt.id} ${punkt.text} ${punkt.ansvar} ${punkt.nar}`.toLowerCase().includes(sokord));
 
   const vaxla = (nr, oppen) =>
@@ -86,88 +83,17 @@ function Checklista({ pid }) {
       return n;
     });
 
-  const aktuell = faser.find((f) => ["sen", "pagar", "redo"].includes(f.status));
-  const passerade = faser.filter((f) => f.grind.passerad).length;
-  const procent = Math.round((sum.klara / sum.totalt) * 100);
   const lopandeSynliga = LOPANDE.sektioner.some((s) => s.punkter.some(filter));
+  const projektnamn = p ? (p.nr ? p.nr + " " : "") + (p.ort || p.namn) : "projektet";
 
   return (
-    <>
-      <section className="card epc-huvud" aria-labelledby="epc-rubrik">
-        <div className="epc-huvudrad">
-          <div className="min-w-0">
-            <h2 id="epc-rubrik" className="epc-rubrik">
-              {(p.nr ? p.nr + " " : "") + p.namn}
-            </h2>
-            <p className="lead m-0">
-              {SUMMERING.faser} faser med grind · {SUMMERING.punkter} kontrollpunkter · {SUMMERING.hallpunkter}{" "}
-              hållpunkter · {SUMMERING.milstolpar} betalmilstolpar. ABT 06 / ABT-U 07, version 1.0.
-            </p>
-          </div>
-          <ul className="epc-tal" aria-label="Läget i checklistan">
-            <li>
-              <b>{procent} %</b>
-              <span>
-                {sum.klara} av {sum.totalt} punkter
-              </span>
-            </li>
-            <li>
-              <b>
-                {sum.hpKlara}/{sum.hp}
-              </b>
-              <span>hållpunkter godkända</span>
-            </li>
-            <li>
-              <b>{passerade}/16</b>
-              <span>grindar passerade</span>
-            </li>
-            <li>
-              <b>{aktuell ? `Fas ${aktuell.fas.nr}` : "—"}</b>
-              <span>{aktuell ? aktuell.fas.kort : "ingen fas pågår"}</span>
-            </li>
-          </ul>
-        </div>
-
-        <div className="epc-projektplan">
-          <div className="epc-falt">
-            <label htmlFor={`epc-start-${pid}`}>
-              Startdatum (NTP)
-              {p.startdatumAntagande ? <span className="ant">ANTAGANDE</span> : null}
-            </label>
-            <DatumFalt
-              id={`epc-start-${pid}`}
-              varde={p.startdatum || ""}
-              etikett={`Startdatum för ${p.namn}`}
-              onCommit={(v) => {
-                uppd("projekt", pid, "startdatum", v);
-                uppd("projekt", pid, "startdatumAntagande", false);
-              }}
-            />
-          </div>
-          <div className="epc-falt">
-            <label htmlFor={`epc-slut-${pid}`}>Färdigställande / slutbesiktning</label>
-            <DatumFalt
-              id={`epc-slut-${pid}`}
-              varde={p.fardigstallande || ""}
-              etikett={`Färdigställande för ${p.namn}`}
-              onCommit={(v) => uppd("projekt", pid, "fardigstallande", v)}
-            />
-          </div>
-          <p className="epc-plantext">
-            {a ? (
-              <>
-                Standardplanen räknas från start, {a.mittKalla === "leverans" ? "BESS-leveransen" : "en antagen leverans"}{" "}
-                {datumKort(a.mitt)} och slutbesiktningen. Varje fas kan få egna datum.
-                {a.startAntagande
-                  ? " Startdatumet är antaget ur kontraktets milstolpar (feb–sep 2026) — ange det rätta."
-                  : ""}
-              </>
-            ) : (
-              "Ange startdatum och färdigställande så räknas fasplan, Gantt-schema och ledtider fram."
-            )}
-          </p>
-        </div>
-
+    <section className="epc-block" aria-labelledby="epc-steg">
+      <div className="epc-stegrubrik">
+        <h3 id="epc-steg">Steg för steg — från affär till garantitid</h3>
+        <p className="lead">
+          Varje fas avslutas med en grind: nästa fas startar inte förrän grinden är passerad. Fälls en fas ut syns
+          vad som ska vara gjort, vem som äger det och när — och till höger hur det ser ut i {projektnamn}.
+        </p>
         <ul className="epc-legend" aria-label="Markeringar">
           {Object.entries(MARKERINGAR).map(([k, m]) => (
             <li key={k}>
@@ -175,12 +101,12 @@ function Checklista({ pid }) {
             </li>
           ))}
         </ul>
-      </section>
+      </div>
 
       <div className="epc-filter" role="search">
         <label className="epc-sok">
           <Search size={15} aria-hidden="true" />
-          <span className="sr-only">Sök i checklistan</span>
+          <span className="sr-only">Sök i guiden</span>
           <input
             type="search"
             value={sok}
@@ -195,10 +121,6 @@ function Checklista({ pid }) {
             </button>
           ))}
         </div>
-        <label className="epc-dolj">
-          <input type="checkbox" checked={doljKlara} onChange={(e) => setDoljKlara(e.target.checked)} />
-          Dölj klara
-        </label>
         {!filterAktivt ? (
           <div className="epc-fallknappar">
             <button type="button" className="btn sec mini" onClick={() => setOppna(new Set(faser.map((f) => f.fas.nr)))}>
@@ -217,6 +139,7 @@ function Checklista({ pid }) {
             key={l.fas.nr}
             lage={l}
             pid={pid}
+            projektnamn={projektnamn}
             oppen={oppna.has(l.fas.nr)}
             onVaxla={vaxla}
             filter={filter}
@@ -225,7 +148,10 @@ function Checklista({ pid }) {
         ))}
 
         {!filterAktivt || lopandeSynliga ? (
-          <details className="epc-fas lopande" id="fas-lopande" open={filterAktivt || oppna.has("lop")}
+          <details
+            className="epc-fas lopande"
+            id="fas-lopande"
+            open={filterAktivt || oppna.has("lop")}
             onToggle={(e) => {
               if (!filterAktivt && e.currentTarget.open !== oppna.has("lop")) vaxla("lop", e.currentTarget.open);
             }}
@@ -240,7 +166,9 @@ function Checklista({ pid }) {
               </span>
             </summary>
             <div className="epc-faskropp">
-              <Sektioner sektioner={LOPANDE.sektioner} pid={pid} filter={filter} />
+              <div className="epc-guide">
+                <Sektioner sektioner={LOPANDE.sektioner} filter={filter} />
+              </div>
             </div>
           </details>
         ) : null}
@@ -249,46 +177,102 @@ function Checklista({ pid }) {
           <p className="lead">Inga kontrollpunkter matchar filtret.</p>
         ) : null}
       </div>
-    </>
+    </section>
   );
 }
 
 export function EpcChecklista() {
   const { state, dispatch } = usePortfolj();
-  const { valtProjekt: pid } = useUi();
+  const { valtProjekt, setValtProjekt, postFokus } = useUi();
+  const pid = projekt(state, valtProjekt) ? valtProjekt : state.projekt[0]?.id;
   const p = projekt(state, pid);
 
-  if (!p) {
-    return (
-      <>
-        <Projektvaljare />
-        <p className="lead">Välj ett projekt.</p>
-      </>
-    );
+  /* Översikten och paletten pekar ut en fas eller punkt via postFokus,
+     lägesbilden via visaFas. */
+  const [mal, setMal] = useState(null);
+  const [fokusTid, setFokusTid] = useState(null);
+  if (postFokus?.vy === "epc" && postFokus.tid !== fokusTid) {
+    setFokusTid(postFokus.tid);
+    const id = String(postFokus.id);
+    setMal({ id: id === "fas-lop" ? "fas-lopande" : id, tid: postFokus.tid });
   }
 
-  const bockaAv = (punkt) => dispatch({ type: "EPC_VAXLA", pid, punkt, klar: true });
+  if (!p) return <p className="lead">Inga projekt i portföljen.</p>;
+
+  const visaFas = (nr) => setMal({ id: `fas-${nr}`, tid: Date.now() });
 
   return (
     <>
-      <Projektvaljare />
-      {/* key: fällda faser och filter börjar om när man byter projekt. */}
-      <Checklista key={pid} pid={pid} />
+      <section className="card epc-huvud" aria-labelledby="epc-rubrik">
+        <div className="epc-huvudrad">
+          <div className="min-w-0">
+            <h2 id="epc-rubrik" className="epc-rubrik">
+              Så byggs en batteripark
+            </h2>
+            <p className="lead m-0">
+              Totalentreprenad enligt ABT 06 / ABT-U 07 — från anbud och nätanslutning via mark, leverans och
+              idrifttagning till slutbesiktning och garantitid. Byggd på erfarenheterna från Batch C.
+            </p>
+          </div>
+          <ul className="epc-tal" aria-label="Guiden i siffror">
+            <li>
+              <b>{SUMMERING.faser}</b>
+              <span>faser med grind</span>
+            </li>
+            <li>
+              <b>{SUMMERING.punkter}</b>
+              <span>kontrollpunkter</span>
+            </li>
+            <li>
+              <b>{SUMMERING.hallpunkter}</b>
+              <span>hållpunkter</span>
+            </li>
+            <li>
+              <b>{SUMMERING.milstolpar}</b>
+              <span>betalmilstolpar</span>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section className="card epc-block epc-lagesbild" aria-labelledby="epc-lage">
+        <h3 id="epc-lage">Lägesbild — var projekten står</h3>
+        <p className="lead">
+          En ruta per fas. Välj ett projekt för att se vad som pågår, vad som står näst på tur och vilka ledtider
+          som ska startas.
+        </p>
+        <Portfoljlage valt={pid} onValj={setValtProjekt} />
+        <ul className="ov-legend epc-lage-legend" aria-label="Lägen">
+          {LAGEN.map((s) => (
+            <li key={s}>
+              <i className={`epc-lagepunkt ${s}`} aria-hidden="true" />
+              {FAS_STATUS[s][1]}
+            </li>
+          ))}
+        </ul>
+        <NuLage pid={pid} onVisaFas={visaFas} />
+      </section>
+
+      <Guide pid={pid} mal={mal} />
 
       <section className="card epc-block" aria-labelledby="epc-ledtider">
         <h3 id="epc-ledtider">Ligg steget före – ledtider</h3>
         <p className="lead">
-          Sista startdatum räknat mot projektets datum. Kända datum ur leveranslistan och tidplanen går före
-          fasplanen. Röd = startdatumet har passerat, gul = inom två veckor.
+          Sista startdatum för {(p.nr ? p.nr + " " : "") + (p.ort || p.namn)}, räknat mot projektets datum. Kända datum ur
+          leveranslistan och tidplanen går före fasplanen. Röd = startdatumet har passerat, gul = inom två veckor. En
+          ledtid räknas som klar när dess fas är passerad, eller när du markerar den.
         </p>
-        <Ledtidstabell pid={pid} onBockaAv={bockaAv} />
+        <Ledtidstabell
+          pid={pid}
+          onMarkera={(ledtid, klar) => dispatch({ type: "EPC_LEDTID", pid, ledtid, klar })}
+        />
       </section>
 
       <section className="card epc-block" aria-labelledby="epc-milstolpar">
-        <h3 id="epc-milstolpar">Betalmilstolpar (Batch C)</h3>
+        <h3 id="epc-milstolpar">Betalmilstolpar</h3>
         <p className="lead">
-          Rutin: avisering (Excel) → beställarens OK → faktura i IFS. Faser med en betalning har orange
-          kant — de låser en milstolpe.
+          Sju betalningar kopplade till grindarna. Rutin: avisering (Excel) → beställarens OK → faktura i IFS. Faser
+          med en betalning har orange kant i guiden.
         </p>
         <Milstolpstabell pid={pid} />
       </section>

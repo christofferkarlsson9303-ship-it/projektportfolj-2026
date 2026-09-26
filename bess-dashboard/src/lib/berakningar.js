@@ -395,10 +395,27 @@ export function kommandeHandelser(state) {
 
 /* ---------- Underlagsstämpel ---------- */
 
+/** Byggmöten vars protokoll är fastställt. Ett utkast är inget underlag. */
+const PROTOKOLL_FASTSTALLT = new Set(["justerat", "utskickat"]);
+
+/** Projektets aktuella underlag: det nyaste av den angivna källan och senaste
+ *  justerade byggmötesprotokollet. Ett uppladdat protokoll blir ett byggmöte,
+ *  så underlaget följer med utan att någon ändrar källfältet för hand. Vid
+ *  samma datum gäller den angivna källan. null om inget underlag finns. */
+export function projektUnderlag(state, p) {
+  const angiven = p.underlag && p.underlag.kalla ? { kalla: p.underlag.kalla, datum: p.underlag.datum || "", fran: "angiven" } : null;
+  const mote = (state.byggmoten || [])
+    .filter((m) => m.projektId === p.id && m.nr && m.datum && PROTOKOLL_FASTSTALLT.has(m.status))
+    .sort((a, b) => b.datum.localeCompare(a.datum) || String(b.nr).localeCompare(String(a.nr), "sv", { numeric: true }))[0];
+  if (!mote) return angiven;
+  if (angiven && angiven.datum >= mote.datum) return angiven;
+  return { kalla: "Byggmötesprotokoll " + mote.nr, datum: mote.datum, fran: "byggmote" };
+}
+
 export function underlagsstampel(state) {
   const rader = state.projekt
     .map((p) => {
-      const u = p.underlag && p.underlag.kalla ? p.underlag : null;
+      const u = projektUnderlag(state, p);
       if (!u) return null;
       return (p.nr || p.namn) + ": " + u.kalla + (u.datum ? " " + u.datum : "");
     })

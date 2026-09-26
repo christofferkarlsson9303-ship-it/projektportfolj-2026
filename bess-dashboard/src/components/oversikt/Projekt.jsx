@@ -5,7 +5,7 @@ import { SelStatus, Bar, Tabellyta } from "../ui/Primitiver.jsx";
 import { PROJEKTSTATUS } from "../../data/konstanter.js";
 import { fmtSEK } from "../../lib/format.js";
 import { dagarTill, idag } from "../../lib/datum.js";
-import { ekonomi, nastaHandelse, oppnaUR, projektKlass } from "../../lib/berakningar.js";
+import { ekonomi, nastaHandelse, oppnaUR, projektKlass, projektUnderlag } from "../../lib/berakningar.js";
 
 /* ---------- Projektkort ---------- */
 
@@ -141,6 +141,16 @@ const KOLUMNER = [
   ["anteckning", "Anteckning", 180],
 ];
 
+/** Visas när ett nyare justerat byggmöte går före källfältet i sidfoten. */
+function SenasteProtokoll({ u }) {
+  if (u?.fran !== "byggmote") return null;
+  return (
+    <small style={{ display: "block", fontSize: 10.5, color: "var(--ink-faint)", marginTop: 3 }}>
+      Sidfoten visar {u.kalla.replace(/^Byggmötesprotokoll /, "")} {u.datum} — senaste justerade byggmöte
+    </small>
+  );
+}
+
 export function Projektredigering() {
   const { state, uppd, uppdNum, uppdStatus, dispatch } = usePortfolj();
 
@@ -251,6 +261,7 @@ export function Projektredigering() {
                       {p.underlag.av ? ` av ${p.underlag.av}` : ""}
                     </small>
                   ) : null}
+                  <SenasteProtokoll u={projektUnderlag(state, p)} />
                 </td>
                 <td data-label="Anteckning">
                   <Falt
