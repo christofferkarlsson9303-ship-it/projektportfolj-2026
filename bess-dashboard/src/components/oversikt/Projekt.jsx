@@ -133,6 +133,7 @@ const KOLUMNER = [
   ["kontraktsvarde", "Kontraktssumma 🔒", 130],
   ["natagare", "Nätägare", 150],
   ["natkontakt", "Nätkontakt", 150],
+  ["startdatum", "Startdatum (NTP)", 150],
   ["fardigstallande", "Färdigställande", 150],
   ["status", "Status", 130],
   ["mapp", "Projektmapp", 180],
@@ -192,6 +193,17 @@ export function Projektredigering() {
                 </td>
                 <td data-label="Nätkontakt">
                   <Falt varde={p.natkontakt || ""} etikett={`Nätkontakt för ${p.namn}`} onCommit={(v) => uppd("projekt", p.id, "natkontakt", v)} />
+                </td>
+                <td data-label="Startdatum">
+                  <DatumFalt
+                    varde={p.startdatum}
+                    etikett={`Startdatum för ${p.namn}`}
+                    onCommit={(v) => {
+                      uppd("projekt", p.id, "startdatum", v);
+                      uppd("projekt", p.id, "startdatumAntagande", false);
+                    }}
+                  />
+                  {p.startdatumAntagande ? <span className="ant">ANTAGANDE</span> : null}
                 </td>
                 <td data-label="Färdigställande">
                   <DatumFalt

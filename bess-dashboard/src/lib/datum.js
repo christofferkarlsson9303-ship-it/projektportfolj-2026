@@ -12,7 +12,11 @@ export const DAGNAMN = ["Mån", "Tis", "Ons", "Tor", "Fre", "Lör", "Sön"];
  *  gav det fel dag mellan midnatt och 02:00 sommartid — nedräkningar och
  *  "förfallen"-flaggor slog då till ett dygn för tidigt. */
 export function idag() {
-  const d = new Date();
+  return lokaltDatum(new Date());
+}
+
+/** Ett Date-objekt som YYYY-MM-DD i lokal tid — samma regel som idag(). */
+export function lokaltDatum(d) {
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const dag = String(d.getDate()).padStart(2, "0");
   return `${d.getFullYear()}-${m}-${dag}`;
@@ -72,6 +76,20 @@ export function kortDatum(d) {
   return { dag: String(dd.getDate()), man: MANADER[dd.getMonth()] };
 }
 
+/** "12 okt" — utan år, för tidslinjer och tabeller där året är givet. */
+export function datumKort(iso) {
+  if (!iso) return "—";
+  const k = kortDatum(iso);
+  return `${k.dag} ${k.man}`;
+}
+
+/** "om 12 d", "idag", "12 d sedan". */
+export function dagarText(d) {
+  if (d === null || d === undefined) return "";
+  if (d === 0) return "idag";
+  return d > 0 ? `om ${d} d` : `${-d} d sedan`;
+}
+
 /** Klockslag HH:MM — används i synkstatusraden. */
 export function nu() {
   return new Date().toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" });
@@ -89,6 +107,29 @@ export function fmtLoggTid(iso) {
   const datum =
     datS === idag() ? "Idag" : d.toLocaleDateString("sv-SE", { day: "numeric", month: "short" });
   return `${datum} ${tid}`;
+}
+
+/** Relativ tid för aktivitetsflödet: "Just nu", "12 min sedan", "3 h sedan",
+ *  därefter "Igår 14:20" och till sist samma form som ändringsloggen. Timmar
+ *  används bara inom samma dygn — "20 h sedan" säger mindre än "Igår 14:20". */
+export function fmtRelativ(iso, nuMs = Date.now()) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return String(iso);
+  const min = Math.floor((nuMs - d.getTime()) / 60000);
+  if (min < 1) return "Just nu";
+  if (min < 60) return `${min} min sedan`;
+
+  const nu = new Date(nuMs);
+  const dagS = lokaltDatum(d);
+  if (dagS === lokaltDatum(nu)) return `${Math.floor(min / 60)} h sedan`;
+
+  const igar = new Date(nu);
+  igar.setDate(nu.getDate() - 1);
+  if (dagS === lokaltDatum(igar)) {
+    return "Igår " + d.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" });
+  }
+  return fmtLoggTid(iso);
 }
 
 /** Timmar sedan en tidpunkt — driver 24-timmarsfristen i ÄTA-loggen. */

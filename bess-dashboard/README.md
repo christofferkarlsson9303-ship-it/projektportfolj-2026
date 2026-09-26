@@ -11,6 +11,8 @@ npm install
 npm run dev      # http://localhost:5173
 npm run build    # en enda självbärande index.html i dist/
 npm run lint
+npm run typecheck  # TypeScript-kontroll av checklistdatan
+npm test         # Vitest
 npm run e2e      # Playwright, desktop + mobil
 ```
 
@@ -51,3 +53,30 @@ sparats.
 
 Lägg till appens adress under *Authentication → URL Configuration* i Supabase,
 annars skickar den magiska länken användaren till fel ställe.
+
+## BESS EPC Checklista
+
+Kapitlet *BESS EPC Checklista* bygger på "Bygga batteripark som totalentreprenad"
+(v1.0, 2026-09-26): 16 faser med grind (G0–G15), 199 kontrollpunkter varav 33
+hållpunkter, betalmilstolparna M1–M7, ledtider och tio lärdomar från Batch C.
+
+| Fil | Innehåll |
+| --- | --- |
+| `src/data/bessChecklistData.ts` | Checklistan som data. Id:n (`"7.3"`, `"lop.4"`) är nycklar i sparad data och får aldrig numreras om. |
+| `src/data/bessChecklistData.test.js` | Låser antalen (16/199/33/7) och kopplingarna mellan faser, grindar, milstolpar och ledtider. |
+| `src/lib/epc.js` | Fasplan, grindar, milstolpar, ledtider och hållpunkter per projekt. |
+
+Per projekt sparas bara det som avviker: avbockade punkter och kopplade UR i
+`epcStatus`, egna fasdatum, passerade grindar och anteckningar i `epcFaser`.
+
+**Fasplanen** räknas fram ur projektets startdatum (NTP), BESS-leveransen och
+färdigställandet (slutbesiktning) — se `MALL_SKALA` i datafilen. Varje fas kan få
+egna datum. Batch C saknar startdatum i underlaget; 2026-02-02 är satt som
+ANTAGANDE och markeras tills någon anger det rätta.
+
+**Grindar** räknas som passerade när de angetts i checklistan, när milstolpen de
+låser är fakturerad, eller när en senare grind är passerad.
+
+**Ledtiderna** räknas bakåt från kända datum (leveranslistan, tidplanen,
+färdigställande) och annars från fasplanen. Röd = sista startdatum passerat,
+gul = inom 14 dagar (`VARNING_DAGAR`).

@@ -8,6 +8,7 @@ import { Falt, DatumFalt } from "../components/ui/Falt.jsx";
 import { MOTESSTATUS, PARAGRAFER, PUNKTROLL } from "../data/konstanter.js";
 import { idag } from "../lib/datum.js";
 import { motesFlagga, projekt } from "../lib/berakningar.js";
+import { nyAtaPost } from "../lib/nyaPoster.js";
 
 /* Byggmöten.
 
@@ -171,26 +172,14 @@ function Motespunkt({ m, pt }) {
       visaToast("Skriv punktens text först.", "warn");
       return;
     }
-    const antal = state.ur.filter((u) => u.projektId === m.projektId).length + 1;
-    const id = "u" + Date.now();
-    laggTill("ur", {
-      id,
-      projektId: m.projektId,
-      nr: "UR" + String(antal).padStart(3, "0"),
+    const post = nyAtaPost(state, m.projektId, {
       benamning: pt.text,
-      status: "oppen",
       klass: pt.para === "5" ? "hinder" : "ata",
       handelseDatum: m.datum || idag(),
-      underrattelseDatum: "",
-      prisgrund: "lopande",
-      belopp: null,
-      godkantDatum: "",
-      fakturaDatum: "",
-      arbeteStartat: false,
-      orsak: "",
       kalla: `Byggmöte ${m.nr} §${pt.para}`,
     });
-    satt("urId", id);
+    laggTill("ur", post);
+    satt("urId", post.id);
     visaToast(`Ärende skapat ur ${m.nr} §${pt.para}`);
   };
 

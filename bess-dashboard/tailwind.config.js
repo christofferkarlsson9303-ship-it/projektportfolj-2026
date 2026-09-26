@@ -44,6 +44,11 @@ export default {
         "bad-ink": "var(--bad-ink)",
         "info-bg": "var(--info-bg)",
         "info-ink": "var(--info-ink)",
+
+        // Diagramfärger — en ton i två steg plus spår, se Översikten i design-system.css.
+        "viz-klar": "var(--viz-klar)",
+        "viz-pagar": "var(--viz-pagar)",
+        "viz-spar": "var(--viz-spar)",
       },
       fontFamily: {
         head: "var(--font-h)",

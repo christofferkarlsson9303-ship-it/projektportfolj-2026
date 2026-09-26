@@ -15,6 +15,7 @@ import {
 import { rondHint, rondKlass } from "../lib/hseqtriage.js";
 import { fmtSEK } from "../lib/format.js";
 import { idag } from "../lib/datum.js";
+import { nySkyddsrond } from "../lib/nyaPoster.js";
 import { hamtaNamn } from "../state/portfolj-reducer.js";
 
 /* HSEQ / BAS-U.
@@ -261,8 +262,16 @@ function Rondpanel({ rond, projekt, onStang, onUppd, onPunkt, onAvvikelse, onNyA
 
 export function Hseq() {
   const { state, uppd, laggTill, dispatch } = usePortfolj();
-  const { valtProjekt: pid, skrivUt, visaToast } = useUi();
+  const { valtProjekt: pid, skrivUt, visaToast, postFokus } = useUi();
   const [oppenRond, setOppenRond] = useState(null);
+
+  /* Översiktens snabbåtgärd skapar ronden och pekar ut den här. Justering
+     under render, som i ÄTA och Dagbok, så att panelen är öppen direkt. */
+  const [sedd, setSedd] = useState(null);
+  if (postFokus?.vy === "hseq" && postFokus.tid !== sedd) {
+    setSedd(postFokus.tid);
+    setOppenRond(postFokus.id);
+  }
 
   const p = state.projekt.find((x) => x.id === pid);
   if (!p) return null;
@@ -287,17 +296,9 @@ export function Hseq() {
   /* ---------- Åtgärder ---------- */
 
   const nyRond = () => {
-    const id = nyttId("sr");
-    laggTill("hseqRonder", {
-      id,
-      projektId: pid,
-      datum: idag(),
-      utfordAv: hamtaNamn() || "",
-      checklista: {},
-      enia: "",
-      avvikelser: [],
-    });
-    setOppenRond(id);
+    const rond = nySkyddsrond(pid, { utfordAv: hamtaNamn() || "" });
+    laggTill("hseqRonder", rond);
+    setOppenRond(rond.id);
   };
 
   const uppdRond = (id, falt, varde) => uppd("hseqRonder", id, falt, varde);

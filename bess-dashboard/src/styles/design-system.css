@@ -1449,46 +1449,294 @@ tr.lastrad:hover{opacity:.8}
 }
 
 /* ---------- Översikten ----------
-   Luft kommer från sektionerna, inte från inline-marginaler. Rutnäten är
-   auto-fit så att korten hellre hoppar ner en rad än trycks ihop, och inget
-   värde får ellips — långa texter bryts på ord, siffror bryts inte alls. */
-.oversikt-paminnelser{display:flex;flex-direction:column;gap:12px;margin-bottom:24px}
-.oversikt-paminnelser .note{margin:0}
-.oversikt-matare{margin:24px 0}
+   Bento: nyckeltal överst, därunder rutor med olika vikt. Luft kommer från
+   rutnätet, inte från inline-marginaler, och inget värde får ellips — långa
+   texter bryts på ord, siffror bryts inte alls.
+
+   Varumärket (Grafisk Manual 2025): ONE Blå dominerar, Blågrön ger djup,
+   Röd och Orange är små accenter och aldrig stora ytor. Ikoner ligger i
+   rundade kvadrater och går till ONE Orange vid mouseover. Siffror sätts i
+   Open Sans — Roboto Slab är bara för rubriker. */
+
+/* Diagramfärger. En ton, två steg plus ett spår — validerade som ordinal
+   ramp mot ytan i båda lägena. I mörkt läge blir "klar" det ljusa steget. */
+:root{--viz-klar:#005f76;--viz-pagar:#00b6de;--viz-spar:#e3edf0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--viz-klar:#aee0e8;--viz-spar:#24404a}}
+:root[data-theme="dark"]{--viz-klar:#aee0e8;--viz-spar:#24404a}
+
 .oversikt-sektion{margin:40px 0}
 .oversikt-rubrik{display:flex;align-items:baseline;gap:6px 12px;flex-wrap:wrap;margin-bottom:16px}
 .oversikt-rubrik h2{font-size:19px;letter-spacing:-.01em;color:var(--ink)}
 .oversikt-undertext{font-size:13px;color:var(--ink-faint)}
 .oversikt-rubrik-knapp{margin-left:auto;display:inline-flex;align-items:center;gap:6px;align-self:center}
 
-/* Metric cards */
-.metric-rutnat{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:20px}
-/* Neutral ton via --info-ink: --one-djup definieras inte om i mörkt läge. */
-.metric{--ton:var(--info-ink);--ton-bg:var(--info-bg);
-  background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r);
-  padding:22px 22px 20px;display:flex;flex-direction:column;gap:14px;min-width:0;
-  transition:box-shadow .22s var(--ease),border-color .22s}
-.metric:hover{box-shadow:var(--sh-md);border-color:var(--hairline-stark)}
-.metric.ok{--ton:var(--ok-ink);--ton-bg:var(--ok-bg)}
-.metric.warn{--ton:var(--orange);--ton-bg:var(--warn-bg)}
-.metric.bad{--ton:var(--rod);--ton-bg:var(--bad-bg)}
-.metric-topp{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-.metric-etikett{font-family:var(--font-b);font-size:12px;font-weight:600;line-height:1.35;
-  letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);margin:0;overflow-wrap:break-word}
-.metric-ikon{flex:0 0 auto;width:34px;height:34px;border-radius:10px;display:inline-flex;
-  align-items:center;justify-content:center;background:var(--ton-bg);color:var(--ton)}
-.metric-varde{font-family:var(--font-h);font-size:40px;font-weight:700;line-height:1;
-  letter-spacing:-.02em;color:var(--ton);display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
-.metric-enhet{font-family:var(--font-b);font-size:14px;font-weight:600;letter-spacing:0;color:var(--ink-soft)}
-.metric-delar{list-style:none;margin:0;padding:12px 0 0;border-top:1px solid var(--hairline);
-  display:flex;flex-direction:column;gap:6px}
-.metric-delar li{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
-  font-size:13px;color:var(--ink-soft);min-width:0}
-.metric-delar li span{min-width:0;overflow-wrap:break-word}
-.metric-delar li b{font-weight:700;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
-.metric-delar li.warn b{color:var(--warn-ink)}
-.metric-delar li.bad b{color:var(--bad-ink)}
-.metric-fot{font-size:12px;color:var(--ink-faint);margin-top:auto}
+@keyframes ovIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes ovAvsloja{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+@keyframes ovVaxa{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes ovRita{to{stroke-dashoffset:0}}
+@keyframes ovPuls{from{transform:scale(1);opacity:.65}to{transform:scale(2.9);opacity:0}}
+
+/* ----- Ruta: grundkortet i rutnätet ----- */
+.ov-ruta,.ov-kpi{position:relative;min-width:0;display:flex;flex-direction:column;gap:16px;
+  background:var(--surface);border:1px solid var(--hairline);border-radius:12px;padding:20px 22px;
+  overflow-wrap:break-word;
+  transition:box-shadow .22s var(--ease),border-color .22s var(--ease),translate .22s var(--ease);
+  animation:ovIn .45s var(--ease) both;animation-delay:calc(var(--i,0) * 50ms)}
+.ov-ruta:hover,.ov-kpi:hover{border-color:var(--hairline-stark);box-shadow:var(--sh-md)}
+/* translate och inte transform: inglidningens slutläge (transform:none) ligger kvar
+   och skulle annars skriva över hover-lyftet. */
+.ov-kpi:hover{translate:0 -2px}
+.ov-ruta-huvud{display:flex;align-items:flex-start;gap:12px;min-width:0}
+.ov-ruta-titel{font-family:var(--font-h);font-size:15.5px;font-weight:600;line-height:1.3;color:var(--ink);margin:0}
+.ov-ruta-under{margin:2px 0 0;font-size:12.5px;line-height:1.4;color:var(--ink-faint)}
+
+.ov-ikon{flex:0 0 auto;width:34px;height:34px;border-radius:9px;display:inline-flex;align-items:center;
+  justify-content:center;background:var(--info-bg);color:var(--one-bla);transition:color .18s,background .18s}
+.ov-ikon.bad{background:var(--bad-bg);color:var(--rod)}
+.ov-ikon.warn{background:var(--warn-bg);color:var(--orange)}
+.ov-ikon.ok{background:var(--ok-bg);color:var(--turkos)}
+.ov-ruta:hover .ov-ruta-huvud .ov-ikon:not(.bad):not(.warn),
+.ov-kpi:hover .ov-ikon:not(.bad):not(.warn){color:var(--orange)}
+
+.ov-lank{display:inline-flex;align-items:center;gap:5px;flex:0 0 auto;background:none;border:0;cursor:pointer;
+  padding:6px 8px;margin:-6px 0;border-radius:8px;font:600 12.5px/1.2 var(--font-b);
+  color:var(--info-ink);white-space:nowrap;transition:background .15s}
+.ov-lank svg{transition:transform .18s var(--ease)}
+.ov-lank:hover{background:var(--info-bg)}
+.ov-lank:hover svg{transform:translateX(3px)}
+
+/* ----- Hero med snabbåtgärder ----- */
+.ov-hero{position:relative;overflow:hidden;border:1px solid var(--hairline);border-radius:12px;
+  padding:24px 26px 22px;background:var(--surface);
+  background:linear-gradient(115deg,var(--surface) 0%,var(--surface) 42%,
+    color-mix(in srgb,var(--one-bla) 11%,var(--surface)) 100%);
+  animation:ovIn .45s var(--ease) both}
+.ov-hero>*:not(.ov-kurva){position:relative}
+.ov-hero-topp{display:flex;align-items:flex-start;justify-content:space-between;gap:10px 16px;flex-wrap:wrap}
+.ov-eyebrow{font:700 11.5px/1.3 var(--font-b);letter-spacing:.1em;text-transform:uppercase;color:var(--info-ink)}
+.ov-halsning{font-family:var(--font-h);font-size:clamp(22px,2.6vw,28px);font-weight:600;line-height:1.2;
+  color:var(--ink);margin:4px 0 0;letter-spacing:-.01em}
+.ov-sammanfatt{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0;padding:0;list-style:none}
+.ov-chip{display:inline-flex;align-items:center;gap:7px;font:600 12.5px/1.2 var(--font-b);color:var(--ink-soft);
+  background:var(--surface);border:1px solid var(--hairline);border-radius:999px;padding:6px 12px}
+button.ov-chip{cursor:pointer;transition:border-color .15s,color .15s}
+button.ov-chip:hover{border-color:var(--one-bla);color:var(--ink)}
+.ov-chip i{width:7px;height:7px;border-radius:50%;background:var(--one-bla);flex:0 0 auto}
+.ov-chip.bad i{background:var(--rod)}
+.ov-chip b{color:var(--ink);font-variant-numeric:tabular-nums}
+
+.ov-live{display:inline-flex;align-items:center;gap:8px;font:600 12px/1.2 var(--font-b);color:var(--ink-soft);
+  background:var(--sunken);border-radius:999px;padding:6px 12px 6px 10px}
+.ov-live i{position:relative;width:8px;height:8px;border-radius:50%;background:var(--ink-faint);flex:0 0 auto}
+.ov-live.pa i{background:var(--turkos)}
+.ov-live.pa i::after{content:"";position:absolute;inset:0;border-radius:50%;background:var(--turkos);
+  animation:ovPuls 1.9s ease-out infinite}
+.ov-live.fel i{background:var(--rod)}
+
+.ov-snabb{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:14px}
+.ov-atgard{display:inline-flex;align-items:center;gap:10px;min-height:46px;padding:6px 14px 6px 6px;
+  border-radius:10px;border:1px solid var(--hairline-stark);background:var(--surface);color:var(--ink);
+  font:600 13px/1.2 var(--font-b);cursor:pointer;
+  transition:border-color .18s,box-shadow .18s var(--ease),transform .18s var(--ease),background .18s}
+.ov-atgard .ov-ikon{width:32px;height:32px;border-radius:8px}
+.ov-atgard:hover{border-color:var(--one-bla);box-shadow:var(--sh-sm);transform:translateY(-1px)}
+.ov-atgard:hover .ov-ikon{color:var(--orange)}
+.ov-atgard:active{transform:translateY(0) scale(.985)}
+/* Primär åtgärd i Blågrön: vit text på ONE Blå når bara 2,4:1 i kontrast. */
+.ov-atgard.primar{background:var(--one-djup);border-color:var(--one-djup);color:#fff}
+.ov-atgard.primar .ov-ikon{background:rgba(255,255,255,.16);color:#fff}
+.ov-atgard.primar:hover{background:#00728f;border-color:#00728f}
+.ov-atgard.primar:hover .ov-ikon{color:#fff}
+.ov-valj{margin-left:auto;font-size:12.5px;line-height:1.4;color:var(--ink-faint)}
+.ov-valj b{color:var(--ink-soft)}
+
+/* Kraftkurvan — signaturelementet, tunna linjer i fem av profilfärgerna. */
+.ov-kurva{position:absolute;right:-8px;bottom:-4px;width:min(48%,540px);height:auto;pointer-events:none;opacity:.9}
+.ov-kurva path{fill:none;stroke-width:2;stroke-linecap:round;stroke-dasharray:1000;stroke-dashoffset:1000;
+  animation:ovRita 1.8s var(--ease) forwards;animation-delay:calc(var(--k,0) * 110ms + .1s)}
+@media(max-width:767px){.ov-kurva{width:90%;opacity:.35}.ov-valj{margin-left:0}}
+
+/* ----- Nyckeltalskort ----- */
+.ov-kpi{gap:14px}
+.ov-kpi-topp{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 10px}
+.ov-kpi-etikett{margin:0;font:600 12px/1.35 var(--font-b);letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft)}
+.ov-kpi-varde{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 8px;font:700 34px/1 var(--font-b);
+  letter-spacing:-.02em;color:var(--ink)}
+.ov-kpi-enhet{font-size:14px;font-weight:600;letter-spacing:0;color:var(--ink-soft)}
+.ov-kpi-under{margin:-6px 0 0;font-size:12.5px;line-height:1.45;color:var(--ink-soft)}
+.ov-status{display:inline-flex;align-items:center;gap:5px;font:700 10.5px/1 var(--font-b);letter-spacing:.04em;
+  text-transform:uppercase;border-radius:999px;padding:4px 8px;white-space:nowrap}
+.ov-status.ok{background:var(--ok-bg);color:var(--ok-ink)}
+.ov-status.warn{background:var(--warn-bg);color:var(--warn-ink)}
+.ov-status.bad{background:var(--bad-bg);color:var(--bad-ink)}
+.ov-delar{list-style:none;margin:0;padding:12px 0 0;border-top:1px solid var(--hairline);display:flex;flex-direction:column;gap:6px}
+.ov-delar li{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:12.5px;color:var(--ink-soft);min-width:0}
+.ov-delar li>span{min-width:0}
+.ov-delar b{font-weight:700;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
+.ov-delar li.bad b{color:var(--bad-ink)}
+.ov-delar li.warn b{color:var(--warn-ink)}
+.ov-kpi-fot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;
+  font-size:12px;color:var(--ink-faint)}
+
+/* Segmentstapel: fakturerat | pågår | kvar, med 2 px luft mellan delarna. */
+.ov-seg{display:flex;gap:2px;height:10px;border-radius:999px;overflow:hidden;animation:ovAvsloja .9s var(--ease) .15s both}
+.ov-seg>i{display:block;height:100%;min-width:0}
+.ov-seg .klar,.ov-legend .klar{background:var(--viz-klar)}
+.ov-seg .pagar,.ov-legend .pagar{background:var(--viz-pagar)}
+.ov-seg .kvar,.ov-legend .kvar{background:var(--viz-spar)}
+.ov-seg .kvar{flex:1 1 0}
+.ov-legend{list-style:none;margin:-4px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--ink-soft)}
+.ov-legend li{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.ov-legend i{width:10px;height:10px;border-radius:3px;flex:0 0 auto}
+.ov-legend i.lev{border-radius:50%;background:var(--viz-klar)}
+.ov-legend i.ms{border-radius:2px;transform:rotate(45deg) scale(.8);background:var(--viz-klar)}
+.ov-legend i.bess{border-radius:50%;background:var(--one-bla)}
+
+/* Rader med etikett, mätare och värde (skyddsronder per site). */
+.ov-spar-lista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.ov-spar-rad{display:grid;grid-template-columns:minmax(44px,auto) minmax(0,1fr) auto;align-items:center;gap:4px 10px}
+.ov-spar-rad>span{font:700 12px/1.2 var(--font-b);color:var(--ink-soft)}
+.ov-spar-rad>b{font:700 12.5px/1.2 var(--font-b);color:var(--ink);font-variant-numeric:tabular-nums}
+.ov-spar-rad>small{grid-column:2 / -1;font-size:11.5px;color:var(--ink-faint);line-height:1.35}
+
+/* Kolumner per steg i ÄTA-flödet. En serie, en färg, värdet på locket. */
+.ov-kol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;
+  align-items:end;border-bottom:1px solid var(--hairline-stark)}
+.ov-kol li{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;height:74px;min-width:0}
+.ov-kol-tal{font:700 12px/1 var(--font-b);color:var(--ink);font-variant-numeric:tabular-nums}
+.ov-kol-stapel{width:100%;max-width:24px;border-radius:4px 4px 0 0;background:var(--viz-pagar);
+  transform-origin:bottom;animation:ovVaxa .7s var(--ease) both;animation-delay:calc(var(--k,0) * 60ms + .2s)}
+.ov-kol-stapel.noll{background:var(--viz-spar);height:2px!important;border-radius:1px}
+.ov-kol-namn{list-style:none;margin:6px 0 0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.ov-kol-namn li{font-size:10.5px;line-height:1.2;color:var(--ink-faint);text-align:center;min-width:0;overflow-wrap:anywhere;hyphens:auto}
+
+/* Mätare: dagar sedan skyddsrond mot intervallet. */
+.ov-matare{height:8px;border-radius:999px;background:var(--viz-spar);overflow:hidden}
+.ov-matare>i{display:block;height:100%;border-radius:999px;background:var(--viz-pagar);
+  transform-origin:left;animation:ovAvsloja .9s var(--ease) .2s both}
+.ov-matare.warn>i{background:var(--orange)}
+.ov-matare.bad>i{background:var(--rod)}
+
+/* ----- Kräver uppmärksamhet ----- */
+.ov-flikar{display:inline-flex;flex-wrap:wrap;gap:2px;padding:3px;border-radius:10px;background:var(--sunken)}
+.ov-flikar button{display:inline-flex;align-items:center;gap:6px;border:0;background:none;cursor:pointer;
+  padding:6px 10px;border-radius:8px;font:600 12px/1.2 var(--font-b);color:var(--ink-soft);transition:background .15s,color .15s}
+.ov-flikar button:hover{color:var(--ink)}
+.ov-flikar button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--sh-sm)}
+.ov-flikar b{font-variant-numeric:tabular-nums;font-size:11px;border-radius:999px;padding:1px 6px;
+  background:var(--hairline);color:var(--ink-soft)}
+.ov-flikar .hog b{background:var(--bad-bg);color:var(--bad-ink)}
+/* Listan går ut i rutans padding så att raden kan få hover-yta utan att texten flyttar in. */
+.ov-flista{list-style:none;margin:0 -8px;padding:0;display:flex;flex-direction:column}
+.ov-flista>li+li{border-top:1px solid var(--hairline)}
+.ov-frad{display:flex;align-items:center;gap:12px;width:100%;margin:0;padding:10px 8px;
+  border:0;border-radius:9px;background:none;text-align:left;font:inherit;color:inherit;cursor:pointer;transition:background .15s}
+.ov-frad:hover{background:var(--sunken)}
+.ov-frad .ov-ikon{width:30px;height:30px;border-radius:8px}
+.ov-ftext{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.ov-ftext>span{font-size:13px;line-height:1.4;color:var(--ink)}
+.ov-fmeta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:11.5px;color:var(--ink-faint)}
+.ov-fpil{flex:0 0 auto;color:var(--ink-faint);transition:transform .18s var(--ease),color .18s}
+.ov-frad:hover .ov-fpil{transform:translateX(3px);color:var(--one-bla)}
+.ov-tom{display:flex;align-items:center;gap:12px;padding:14px;border-radius:10px;background:var(--ok-bg);
+  color:var(--ok-ink);font-size:13px;font-weight:600}
+
+/* ----- Nästa BESS-leverans: den enda mörka rutan ----- */
+.ov-bess{background:linear-gradient(160deg,var(--sidebar-1) 0%,var(--sidebar-2) 100%);border-color:transparent;color:#fff;overflow:hidden}
+.ov-bess:hover{border-color:transparent}
+.ov-bess .ov-ruta-titel{color:#fff}
+.ov-bess .ov-ruta-under{color:rgba(255,255,255,.72)}
+.ov-bess .ov-ikon{background:rgba(255,255,255,.12);color:var(--himmel)}
+.ov-bess:hover .ov-ruta-huvud .ov-ikon:not(.bad):not(.warn){color:var(--orange)}
+.ov-bess .ov-lank{color:var(--himmel)}
+.ov-bess .ov-lank:hover{background:rgba(255,255,255,.1)}
+.ov-bess :focus-visible{outline-color:#fff}
+.ov-bess-vattenmarke{position:absolute;right:-18px;top:-10px;color:#fff;opacity:.06;pointer-events:none}
+.ov-hjalte{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px;font:700 56px/1 var(--font-b);letter-spacing:-.03em;color:#fff}
+.ov-hjalte small{font-size:15px;font-weight:600;letter-spacing:0;color:rgba(255,255,255,.82)}
+.ov-hjalte-under{margin:0;font-size:13px;line-height:1.45;color:rgba(255,255,255,.82)}
+.ov-lev-lista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.ov-lev-lista li{display:flex;align-items:baseline;justify-content:space-between;gap:4px 12px;flex-wrap:wrap;
+  padding:8px 0;border-top:1px solid rgba(255,255,255,.14);font-size:12.5px;color:rgba(255,255,255,.88)}
+.ov-lev-lista li>span{min-width:0}
+.ov-lev-lista li>span b{color:#fff;font-weight:700;margin-right:6px}
+.ov-lev{font:700 11px/1.2 var(--font-b);border-radius:999px;padding:3px 9px;white-space:nowrap;
+  background:rgba(255,255,255,.12);color:#fff}
+.ov-lev.bekraftad,.ov-lev.levererad{background:rgba(60,184,186,.28)}
+.ov-lev.avvikelse{background:rgba(234,85,73,.3);color:#ffd7d2}
+
+/* ----- Aktivitet ----- */
+.ov-dagar{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:3px;align-items:end;height:42px;
+  border-radius:6px;cursor:crosshair}
+.ov-dagar>i{display:block;border-radius:3px 3px 0 0;background:var(--ink-faint);opacity:.4;min-height:2px;
+  transform-origin:bottom;animation:ovVaxa .6s var(--ease) both;animation-delay:calc(var(--k,0) * 25ms + .2s);
+  transition:opacity .12s}
+.ov-dagar>i.idag{background:var(--one-bla);opacity:1}
+.ov-dagar>i.vald{opacity:1;background:var(--one-bla)}
+.ov-dag-las{display:flex;justify-content:space-between;gap:8px;margin-top:6px;font-size:11.5px;color:var(--ink-soft);
+  font-variant-numeric:tabular-nums}
+.ov-dag-las b{color:var(--ink)}
+.ov-flode{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.ov-flode li{position:relative;display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;padding:8px 0;
+  animation:ovIn .4s var(--ease) both}
+.ov-flode li:not(:last-child)::before{content:"";position:absolute;left:15px;top:40px;bottom:-6px;width:1px;background:var(--hairline)}
+.ov-avatar{width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+  background:var(--info-bg);color:var(--info-ink);font:700 11px/1 var(--font-b);letter-spacing:.02em}
+.ov-flode-text{font-size:13px;line-height:1.4;color:var(--ink);overflow-wrap:anywhere}
+.ov-flode-meta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin-top:3px;font-size:11.5px;color:var(--ink-faint)}
+
+/* ----- Tidslinje ----- */
+.ov-tl{--tl-etikett:64px;display:flex;flex-direction:column;gap:2px}
+.ov-tl-axel{position:relative;height:18px;margin:0 13px 0 var(--tl-etikett);font-size:11px;color:var(--ink-faint)}
+.ov-tl-axel span{position:absolute;top:0;white-space:nowrap;transform:translateX(-50%)}
+.ov-tl-axel span.start{transform:none;font-weight:700;color:var(--info-ink)}
+.ov-tl-bana{display:grid;grid-template-columns:var(--tl-etikett) minmax(0,1fr);align-items:center;min-height:36px;padding-right:13px}
+.ov-tl-namn{font:700 11.5px/1.2 var(--font-b);letter-spacing:.03em;color:var(--ink-soft);overflow-wrap:anywhere;padding-right:8px}
+.ov-tl-spar{position:relative;height:36px}
+.ov-tl-spar::before{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:var(--hairline-stark)}
+.ov-tl-linje{position:absolute;top:0;bottom:0;width:1px;background:var(--hairline)}
+.ov-tl-linje.idag{background:var(--one-bla);width:2px;border-radius:2px}
+.ov-tl-punkt{position:absolute;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;padding:0;border:0;background:none;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:50%}
+.ov-tl-punkt>i{width:10px;height:10px;border-radius:50%;background:var(--viz-klar);box-shadow:0 0 0 2px var(--surface);
+  transition:transform .15s var(--ease)}
+.ov-tl-punkt.ms>i{border-radius:2px;transform:rotate(45deg)}
+.ov-tl-punkt.bess>i{width:13px;height:13px;background:var(--one-bla)}
+.ov-tl-punkt:hover>i,.ov-tl-punkt:focus-visible>i{transform:scale(1.35)}
+.ov-tl-punkt.ms:hover>i,.ov-tl-punkt.ms:focus-visible>i{transform:rotate(45deg) scale(1.35)}
+.ov-tl-tips{position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);z-index:3;display:none;
+  min-width:180px;max-width:240px;padding:8px 10px;border-radius:8px;background:var(--raised);border:1px solid var(--hairline-stark);
+  box-shadow:var(--sh-md);text-align:left;font:400 12px/1.4 var(--font-b);color:var(--ink-soft);pointer-events:none}
+.ov-tl-tips b{display:block;font-weight:700;color:var(--ink);font-size:12.5px;margin-bottom:2px}
+.ov-tl-punkt.vanster .ov-tl-tips{left:0;transform:none}
+.ov-tl-punkt.hoger .ov-tl-tips{left:auto;right:0;transform:none}
+.ov-tl-punkt:hover .ov-tl-tips,.ov-tl-punkt:focus-visible .ov-tl-tips{display:block}
+.ov-tl-tips b+b{margin-top:4px}
+/* Händelser inom några dagar på samma bana slås ihop — antalet sitter i ett märke. */
+.ov-tl-antal{position:absolute;top:0;right:0;min-width:15px;height:15px;padding:0 4px;border-radius:999px;
+  background:var(--ink);color:var(--surface);font:700 9.5px/15px var(--font-b);text-align:center;pointer-events:none}
+.ov-tl-lista{list-style:none;margin:0;padding:0}
+.ov-tl-lista li{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:8px 0;
+  border-top:1px solid var(--hairline)}
+.ov-tl-datum{display:flex;flex-direction:column;align-items:center;line-height:1}
+.ov-tl-datum b{font:700 16px/1 var(--font-b);color:var(--ink)}
+.ov-tl-datum span{font-size:10.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+.ov-tl-titel{min-width:0;display:flex;flex-direction:column;gap:3px}
+.ov-tl-titel>span{font-size:13px;line-height:1.35;color:var(--ink)}
+.ov-tl-titel>small{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-faint)}
+.ov-tl-kvar{font:600 12px/1.2 var(--font-b);color:var(--ink-soft);white-space:nowrap;font-variant-numeric:tabular-nums}
+.ov-tl-kvar.snart{color:var(--warn-ink)}
+.ov-varning{display:flex;align-items:flex-start;gap:8px;font-size:12.5px;line-height:1.45;color:var(--bad-ink);
+  background:var(--bad-bg);border-radius:9px;padding:9px 11px}
+.ov-varning svg{flex:0 0 auto;margin-top:1px}
+
+/* ----- Risker ----- */
+.ov-risklista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.ov-risklista li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;padding:9px 0;
+  border-top:1px solid var(--hairline)}
+.ov-risklista li:first-child{border-top:0;padding-top:0}
+.ov-risklista .rv{margin-top:1px}
+.ov-risklista p{margin:0 0 4px;font-size:13px;line-height:1.4;color:var(--ink)}
 
 /* Projektkort */
 .projkort-rutnat{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr));gap:20px}
@@ -1551,10 +1799,11 @@ tr.lastrad:hover{opacity:.8}
 
 @media(max-width:640px){
   .oversikt-sektion{margin:32px 0}
-  .metric-rutnat,.projkort-rutnat{gap:14px}
-  .metric{padding:18px}
-  .metric-varde{font-size:34px}
+  .projkort-rutnat{gap:14px}
   .projkort{padding:20px 18px 18px}
+  .ov-ruta,.ov-kpi{padding:18px}
+  .ov-hero{padding:20px 18px 18px}
+  .ov-hjalte{font-size:48px}
   .oversikt-rubrik-knapp{margin-left:0}
 }
 /* Riktigt smala kort: datumet får en egen rad i stället för att trängas. */
@@ -1700,3 +1949,249 @@ textarea.hp-led-text::placeholder{color:var(--ink-faint);font-weight:400;font-st
 .datalista li.planerad{border-left-color:var(--orange)}
 .datalista b{font-size:13.5px;color:var(--ink);display:inline-flex;align-items:center;gap:6px}
 .datalista span{font-size:13px;line-height:1.5;color:var(--ink-soft)}
+
+/* ---------- BESS EPC Checklista ----------
+   Faserna är <details>-kort med statusfärg i vänsterkanten. Faser som låser
+   en betalning har orange ram, som i checklistans flödesbild. Markeringarna
+   har fasta färger: vit text på röd/blågrön håller kontrast i båda lägena. */
+
+.epc-markeringar{display:inline-flex;gap:4px;flex-wrap:wrap}
+.epc-markering{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:18px;padding:0 5px;
+  border-radius:5px;font:800 10px/1 var(--font-b);letter-spacing:.04em;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+.epc-markering.hp{background:#b8322a;color:#fff}
+.epc-markering.k{background:#005f76;color:#fff}
+.epc-markering.l{background:var(--info-bg);color:var(--info-ink);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--info-ink) 35%,transparent)}
+
+.epc-status{display:inline-flex;align-items:center;gap:6px;font:700 11px/1 var(--font-b);border-radius:999px;padding:5px 9px;
+  white-space:nowrap;background:var(--sunken);color:var(--ink-soft)}
+.epc-status::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:0 0 auto}
+.epc-status.ok{background:var(--ok-bg);color:var(--ok-ink)}
+.epc-status.info{background:var(--info-bg);color:var(--info-ink)}
+.epc-status.warn{background:var(--warn-bg);color:var(--warn-ink)}
+.epc-status.bad{background:var(--bad-bg);color:var(--bad-ink)}
+
+/* Huvudkortet */
+.epc-huvud{display:flex;flex-direction:column;gap:16px;margin-bottom:14px}
+.epc-huvudrad{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:16px 24px}
+.epc-rubrik{font-size:20px;line-height:1.25;color:var(--ink);margin:0 0 4px}
+.epc-tal{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,auto));gap:10px 28px}
+.epc-tal li{display:flex;flex-direction:column;gap:2px;min-width:0}
+.epc-tal b{font:700 22px/1.1 var(--font-b);color:var(--ink);white-space:nowrap}
+.epc-tal span{font-size:12px;color:var(--ink-faint)}
+.epc-projektplan{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 18px;padding-top:14px;border-top:1px solid var(--hairline)}
+.epc-legend{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12.5px;color:var(--ink-soft)}
+.epc-legend li{display:inline-flex;align-items:center;gap:7px}
+@media(max-width:760px){.epc-tal{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.epc-falt{display:flex;flex-direction:column;gap:4px;min-width:0}
+.epc-falt label{display:flex;align-items:center;gap:6px;font:700 10.5px/1.3 var(--font-b);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint)}
+.epc-falt input{width:170px;max-width:100%;min-height:36px}
+.epc-plantext{margin:0;flex:1 1 240px;font-size:12px;line-height:1.5;color:var(--ink-faint)}
+.epc-textknapp{background:none;border:0;padding:0;font:inherit;font-weight:600;color:var(--info-ink);cursor:pointer;
+  display:inline-flex;align-items:center;gap:4px}
+.epc-textknapp:hover{text-decoration:underline}
+
+/* Filterraden */
+.epc-filter{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin:0 0 14px}
+.epc-sok{display:flex;align-items:center;gap:8px;flex:1 1 260px;min-height:40px;padding:0 12px;border-radius:10px;
+  background:var(--surface);border:1px solid var(--hairline-stark);color:var(--ink-faint)}
+.epc-sok:focus-within{border-color:var(--one-bla)}
+.epc-sok input{flex:1;min-width:0;border:0;background:none;padding:9px 0;font:13.5px var(--font-b);color:var(--ink)}
+.epc-sok input:focus{outline:none}
+.epc-dolj{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--ink-soft);cursor:pointer}
+.epc-dolj input{width:17px;height:17px;margin:0;accent-color:var(--one-bla)}
+.epc-fallknappar{display:flex;gap:6px;margin-left:auto}
+
+/* Faserna */
+.epc-faser{display:flex;flex-direction:column;gap:10px}
+.epc-fas{--accent:var(--hairline-stark);background:var(--surface);border:1px solid var(--hairline);
+  border-left:4px solid var(--accent);border-radius:12px;min-width:0;scroll-margin-top:96px}
+.epc-fas.klar{--accent:var(--viz-klar)}
+.epc-fas.pagar,.epc-fas.redo{--accent:var(--one-bla)}
+.epc-fas.sen{--accent:var(--rod)}
+.epc-fas.betalning{border-top-color:color-mix(in srgb,var(--orange) 60%,var(--hairline));
+  border-right-color:color-mix(in srgb,var(--orange) 60%,var(--hairline));
+  border-bottom-color:color-mix(in srgb,var(--orange) 60%,var(--hairline))}
+.epc-fas>summary{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:10px 14px;
+  padding:14px 16px;cursor:pointer;list-style:none;border-radius:10px}
+.epc-fas>summary::-webkit-details-marker{display:none}
+.epc-fas>summary:hover{background:var(--sunken)}
+.epc-fasnr{width:34px;height:34px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;
+  font:700 15px/1 var(--font-h);background:var(--sunken);color:var(--ink-soft)}
+.epc-fas.klar .epc-fasnr{background:var(--viz-klar);color:var(--surface)}
+.epc-fas.pagar .epc-fasnr,.epc-fas.redo .epc-fasnr{background:var(--info-bg);color:var(--info-ink);box-shadow:inset 0 0 0 2px var(--one-bla)}
+.epc-fas.sen .epc-fasnr{background:var(--bad-bg);color:var(--bad-ink)}
+.epc-fastitel{display:flex;flex-direction:column;gap:2px;min-width:0}
+.epc-fastitel b{font:600 15px/1.3 var(--font-h);color:var(--ink)}
+.epc-fasdatum{font-size:12px;color:var(--ink-faint);font-variant-numeric:tabular-nums}
+.epc-fasinfo{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px 8px}
+.epc-mschip{font:700 11px/1 var(--font-b);border-radius:999px;padding:5px 9px;background:var(--warn-bg);color:var(--warn-ink);white-space:nowrap}
+.epc-hpchip{font:700 11px/1 var(--font-b);border-radius:999px;padding:5px 9px;background:var(--sunken);color:var(--ink-soft);white-space:nowrap}
+.epc-framdrift{display:inline-flex;align-items:center;gap:7px;font:700 12px/1 var(--font-b);color:var(--ink-soft);
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+.epc-spar{display:block;width:64px;height:6px;border-radius:999px;background:var(--viz-spar);overflow:hidden}
+.epc-spar i{display:block;height:100%;border-radius:999px;background:var(--viz-klar);transition:width .3s var(--ease)}
+.epc-pil{color:var(--ink-faint);transition:transform .2s var(--ease)}
+.epc-fas[open]>summary .epc-pil{transform:rotate(180deg)}
+.epc-fas.lopande>summary{grid-template-columns:auto minmax(0,1fr)}
+@media(max-width:760px){
+  .epc-fas>summary{grid-template-columns:auto minmax(0,1fr) auto}
+  .epc-fasinfo{grid-column:1 / -1;justify-content:flex-start}
+  .epc-fas>summary .epc-pil{grid-row:1;grid-column:3}
+}
+
+.epc-faskropp{display:flex;flex-direction:column;gap:14px;padding:0 18px 18px;border-top:1px solid var(--hairline)}
+.epc-syfte{margin:14px 0 0;font-size:13.5px;line-height:1.5;color:var(--ink-soft)}
+.epc-grindtext{margin:0;font-size:13px;line-height:1.5;color:var(--ink);padding:10px 12px;border-radius:9px;background:var(--sunken)}
+.epc-planering{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 16px}
+.epc-grind{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 16px;width:100%;padding-top:12px;border-top:1px solid var(--hairline)}
+.epc-sektion h4{margin:0 0 4px;font:700 11px/1.3 var(--font-b);letter-spacing:.08em;text-transform:uppercase;color:var(--info-ink)}
+.epc-lista{list-style:none;margin:0;padding:0}
+.epc-rad{display:grid;grid-template-columns:22px minmax(0,1fr) auto;grid-template-areas:"cb text atgard" ". meta atgard";
+  gap:4px 10px;align-items:start;padding:10px 8px;border-top:1px solid var(--hairline);scroll-margin-top:96px}
+.epc-rad:first-child{border-top:0}
+.epc-rad.hp:not(.klar){box-shadow:inset 3px 0 0 #b8322a}
+.epc-rad>input{grid-area:cb;width:18px;height:18px;margin:2px 0 0;accent-color:var(--one-djup);cursor:pointer}
+.epc-radtext{grid-area:text;display:flex;gap:8px;font-size:13.5px;line-height:1.45;color:var(--ink);cursor:pointer;min-width:0}
+.epc-radtext>span:last-child{min-width:0;overflow-wrap:anywhere}
+.epc-id{flex:0 0 auto;min-width:34px;font:700 12px/1.6 var(--font-b);color:var(--ink-faint);font-variant-numeric:tabular-nums}
+.epc-rad.klar .epc-radtext>span:last-child{color:var(--ink-faint);text-decoration:line-through;text-decoration-color:var(--hairline-stark)}
+.epc-radmeta{grid-area:meta;display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;padding-left:42px;font-size:12px;color:var(--ink-soft)}
+.epc-ansvar{font-weight:600}
+.epc-nar{color:var(--ink-faint)}
+.epc-nar::before{content:"· ";color:var(--hairline-stark)}
+.epc-klarinfo{color:var(--ok-ink);font-weight:600}
+.epc-radatgard{grid-area:atgard;display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px}
+.epc-skapa{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.epc-urlank{border:0;cursor:pointer;border-radius:999px;padding:5px 9px;font:700 11.5px/1 var(--font-b);
+  background:var(--warn-bg);color:var(--warn-ink)}
+.epc-urlank:hover{text-decoration:underline}
+@media(max-width:640px){
+  .epc-rad{grid-template-columns:22px minmax(0,1fr);grid-template-areas:"cb text" ". meta" ". atgard"}
+  .epc-radmeta{padding-left:0}
+  .epc-radatgard{justify-content:flex-start}
+}
+.epc-anteckning textarea{min-height:64px}
+.epc-markerad{animation:epcMarkera 2.4s var(--ease)}
+@keyframes epcMarkera{0%,45%{box-shadow:0 0 0 3px var(--one-bla)}100%{box-shadow:0 0 0 3px transparent}}
+
+/* Referensdelarna */
+.epc-block{margin-top:16px}
+.epc-punktref{display:block;margin-top:2px;font-size:11.5px;font-weight:400;color:var(--ink-faint)}
+.epc-ledrad.sen td:first-child{box-shadow:inset 3px 0 0 var(--rod)}
+.epc-ledrad.snart td:first-child{box-shadow:inset 3px 0 0 var(--orange)}
+.epc-ledlage{display:inline-flex;flex-wrap:wrap;align-items:center;gap:8px}
+.epc-lardomar{list-style:none;margin:12px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:12px}
+.epc-lardomar li{display:flex;gap:12px;padding:14px;border-radius:10px;background:var(--sunken);min-width:0}
+.epc-lardomnr{flex:0 0 auto;width:28px;height:28px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;
+  font:700 13px/1 var(--font-h);background:var(--info-bg);color:var(--info-ink)}
+.epc-lardomar b{font-size:13.5px;color:var(--ink)}
+.epc-lardomar p{margin:4px 0 0;font-size:13px;line-height:1.45;color:var(--ink-soft)}
+.epc-gorsa span{font-weight:700;color:var(--ok-ink)}
+.epc-verifiera{margin:12px 0 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px}
+.epc-verifiera>div{border-left:3px solid var(--orange);padding:4px 0 4px 12px}
+.epc-verifiera dt{font-weight:700;font-size:13px;color:var(--ink)}
+.epc-verifiera dd{margin:3px 0 0;font-size:13px;line-height:1.5;color:var(--ink-soft)}
+
+/* ---------- Översikt: Gantt-schema ----------
+   Etikettkolumn + spår. Spåret slutar --gantt-hoger före kanten så att
+   grindkoden vid sista fasen får plats utan att rullytan växer. */
+.ov-gantt-ruta{gap:14px}
+.ov-gantt-verktyg{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
+.ov-gantt-rull{overflow-x:auto;padding-bottom:4px}
+.ov-gantt{--gantt-etikett:250px;--gantt-hoger:30px;position:relative;min-width:780px}
+.ov-gantt-rad{display:grid;grid-template-columns:var(--gantt-etikett) minmax(0,1fr);align-items:center;width:100%;min-height:28px}
+button.ov-gantt-rad{position:relative;border:0;margin:0;padding:0;background:none;font:inherit;color:inherit;text-align:left;
+  cursor:pointer;border-radius:8px;transition:background .12s}
+button.ov-gantt-rad:hover,button.ov-gantt-rad:focus-visible{background:var(--sunken)}
+button.ov-gantt-rad:focus-visible{outline:3px solid var(--one-bla);outline-offset:-2px}
+.ov-gantt-etikett{display:flex;align-items:center;gap:8px;min-width:0;padding:0 12px 0 4px}
+.ov-gantt-nr{flex:0 0 auto;width:22px;height:22px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;
+  font:700 11px/1 var(--font-b);background:var(--sunken);color:var(--ink-soft)}
+.ov-gantt-fas.klar .ov-gantt-nr{background:var(--viz-klar);color:var(--surface)}
+.ov-gantt-fas.pagar .ov-gantt-nr,.ov-gantt-fas.redo .ov-gantt-nr{background:var(--info-bg);color:var(--info-ink);box-shadow:inset 0 0 0 1.5px var(--one-bla)}
+.ov-gantt-fas.sen .ov-gantt-nr{background:var(--bad-bg);color:var(--bad-ink)}
+.ov-gantt-msrad .ov-gantt-nr{background:var(--warn-bg);color:var(--warn-ink)}
+.ov-gantt-namn{flex:1;min-width:0;font-size:12.5px;line-height:1.2;color:var(--ink);white-space:nowrap}
+.ov-gantt-msrad .ov-gantt-namn{color:var(--ink-soft)}
+.ov-gantt-antal{flex:0 0 auto;font:600 11px/1 var(--font-b);color:var(--ink-faint);font-variant-numeric:tabular-nums}
+.ov-gantt-spar{position:relative;display:block;height:28px;margin-right:var(--gantt-hoger)}
+.ov-gantt-axelrad .ov-gantt-spar{height:18px}
+.ov-gantt-msrad .ov-gantt-spar{height:42px}
+.ov-gantt-manad{position:absolute;top:2px;padding-left:3px;font-size:10.5px;line-height:1;color:var(--ink-faint);white-space:nowrap}
+.ov-gantt-idagtext{position:absolute;top:1px;transform:translateX(-50%);z-index:3;padding:0 4px;border-radius:4px;
+  background:var(--one-bla);color:#fff;font:700 10px/14px var(--font-b)}
+.ov-gantt-rader{position:relative}
+.ov-gantt-linje{position:absolute;top:-60px;bottom:0;width:1px;background:var(--hairline);pointer-events:none}
+.ov-gantt-linje.idag{top:-60px;width:2px;margin-left:-1px;background:var(--one-bla);z-index:2}
+.ov-gantt-stapel{position:absolute;top:7px;height:14px;border-radius:4px;overflow:hidden;background:var(--viz-spar);
+  box-shadow:inset 0 0 0 1px var(--hairline-stark);animation:ovAvsloja .8s var(--ease) .15s both}
+.ov-gantt-stapel i{display:block;height:100%;background:var(--viz-pagar)}
+.ov-gantt-fas.klar .ov-gantt-stapel{background:var(--viz-klar);box-shadow:none}
+.ov-gantt-fas.pagar .ov-gantt-stapel,.ov-gantt-fas.redo .ov-gantt-stapel{
+  background:color-mix(in srgb,var(--viz-pagar) 30%,var(--surface));box-shadow:inset 0 0 0 1.5px var(--viz-pagar)}
+.ov-gantt-fas.sen .ov-gantt-stapel{background:var(--bad-bg);box-shadow:inset 0 0 0 1.5px var(--rod)}
+.ov-gantt-grind{position:absolute;top:50%;z-index:1;width:10px;height:10px;margin:-5px 0 0 -5px;transform:rotate(45deg);
+  border-radius:2px;background:var(--surface);border:2px solid var(--ink-faint)}
+.ov-gantt-grind.passerad{background:var(--viz-klar);border-color:var(--viz-klar)}
+.ov-gantt-grind.betalning{border-color:var(--orange)}
+.ov-gantt-gkod{position:absolute;top:50%;transform:translate(9px,-50%);font:700 10px/1 var(--font-b);color:var(--ink-faint);
+  white-space:nowrap;pointer-events:none}
+.ov-gantt-ms{position:absolute;transform:translateX(-50%);z-index:2;padding:4px 6px;border-radius:999px;cursor:default;
+  font:800 10.5px/1 var(--font-b);white-space:nowrap;background:var(--surface);color:var(--ink);border:1.5px solid var(--orange)}
+.ov-gantt-ms.upp{top:2px}
+.ov-gantt-ms.ner{top:22px}
+.ov-gantt-ms.fakturerad{background:var(--viz-klar);border-color:var(--viz-klar);color:var(--surface)}
+.ov-gantt-ms.pagaende{background:var(--info-bg);border-color:var(--one-bla);color:var(--info-ink)}
+.ov-gantt-tips{position:absolute;bottom:calc(100% + 2px);z-index:6;display:none;min-width:230px;max-width:300px;padding:9px 11px;
+  border-radius:8px;background:var(--raised);border:1px solid var(--hairline-stark);box-shadow:var(--sh-md);text-align:left;
+  font:400 12px/1.45 var(--font-b);color:var(--ink-soft);white-space:normal;pointer-events:none}
+.ov-gantt-tips b{display:block;margin-bottom:2px;font-weight:700;font-size:12.5px;color:var(--ink)}
+.ov-gantt-tips.under{bottom:auto;top:calc(100% + 2px)}
+.ov-gantt-tips.hoger{transform:translateX(-60%)}
+.ov-gantt-ms .ov-gantt-tips{left:50%;transform:translateX(-50%)}
+button.ov-gantt-rad:hover .ov-gantt-tips,button.ov-gantt-rad:focus-visible .ov-gantt-tips,.ov-gantt-ms:hover .ov-gantt-tips{display:block}
+.ov-gantt-fot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 20px}
+.ov-legend i.sen{background:var(--bad-bg);box-shadow:inset 0 0 0 1.5px var(--rod)}
+.ov-legend i.grind{border-radius:2px;transform:rotate(45deg) scale(.8);background:var(--surface);box-shadow:inset 0 0 0 2px var(--orange)}
+.ov-gantt-mslista{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--ink-soft)}
+.ov-gantt-mslista b{color:var(--ink)}
+.ov-gantt-mslista li.fakturerad{color:var(--ok-ink)}
+.ov-gantt-tom{display:flex;flex-direction:column;gap:12px;padding:14px;border-radius:10px;background:var(--sunken);
+  font-size:13px;line-height:1.5;color:var(--ink-soft)}
+
+/* ---------- Översikt: ledtider och hållpunkter ---------- */
+.ov-ledlista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.ov-ledlista li{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"huvud atgard" "text atgard";
+  gap:6px 12px;padding:11px 0 11px 12px;border-top:1px solid var(--hairline);box-shadow:inset 3px 0 0 var(--hairline-stark)}
+.ov-ledlista li:first-child{border-top:0}
+.ov-ledlista li.sen{box-shadow:inset 3px 0 0 var(--rod)}
+.ov-ledlista li.snart{box-shadow:inset 3px 0 0 var(--orange)}
+.ov-led-huvud{grid-area:huvud;display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+.ov-led-agare{font-size:11.5px;color:var(--ink-faint)}
+.ov-led-text{grid-area:text;display:flex;flex-direction:column;gap:2px;min-width:0}
+.ov-led-text>b{font-size:13.5px;line-height:1.35;color:var(--ink)}
+.ov-led-text>span{font-size:12.5px;line-height:1.45;color:var(--ink-soft)}
+.ov-led-text>span b{color:var(--ink)}
+.ov-led-atgard{grid-area:atgard;align-self:center;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
+.ov-led-klar{display:inline-flex;align-items:center;gap:4px}
+@media(max-width:560px){
+  .ov-ledlista li{grid-template-columns:minmax(0,1fr);grid-template-areas:"huvud" "text" "atgard"}
+  .ov-led-atgard{justify-content:flex-start}
+}
+.ov-hplista{list-style:none;margin:0 -6px;padding:0;display:flex;flex-direction:column;gap:2px}
+.ov-hprad{display:flex;gap:10px;width:100%;padding:7px 6px;border:0;border-radius:8px;background:none;text-align:left;
+  font:inherit;color:inherit;cursor:pointer;transition:background .15s}
+.ov-hprad:hover{background:var(--sunken)}
+.ov-hpid{flex:0 0 auto;height:fit-content;padding:4px 5px;border-radius:5px;font:800 10px/1 var(--font-b);background:#b8322a;color:#fff}
+.ov-hptext{display:flex;flex-direction:column;gap:2px;min-width:0;font-size:12.5px;line-height:1.35;color:var(--ink)}
+.ov-hptext small{font-size:11px;color:var(--ink-faint)}
+/* Etikettkolumnen ligger kvar när schemat rullas i sidled. */
+.ov-gantt-rad>:first-child{position:sticky;left:0;z-index:4;align-self:stretch;display:flex;align-items:center;background:var(--surface)}
+button.ov-gantt-rad:hover>:first-child,button.ov-gantt-rad:focus-visible>:first-child{background:var(--sunken)}
+@media(max-width:640px){
+  .ov-gantt{--gantt-etikett:136px;min-width:720px}
+  .ov-gantt-antal{display:none}
+  .ov-gantt-namn{white-space:normal;font-size:11.5px;line-height:1.15}
+  .ov-gantt-etikett{gap:6px;padding-right:8px}
+}

@@ -3,6 +3,7 @@ import { usePortfolj, useUi } from "../../state/hooks.js";
 import { MILSTOLPE_MODELL, PILL } from "../../data/konstanter.js";
 import { VYER } from "../../data/vyer.js";
 import { riskvarde } from "../../lib/berakningar.js";
+import { ALLA_PUNKTER } from "../../data/bessChecklistData.ts";
 
 /* Kommandopalett (Ctrl/Cmd+K).
    Tillgänglighet: i standalone-versionen låg aria-selected på vanliga <li> utan
@@ -10,7 +11,7 @@ import { riskvarde } from "../../lib/berakningar.js";
    aria-activedescendant, så det aktiva alternativet läses upp vid piltangenter. */
 export function Kommandopalett() {
   const { state } = usePortfolj();
-  const { visa, setValtProjekt } = useUi();
+  const { visa, setValtProjekt, oppnaPost } = useUi();
   const [oppen, setOppen] = useState(false);
   const [q, setQ] = useState("");
   const [vald, setVald] = useState(0);
@@ -65,11 +66,20 @@ export function Kommandopalett() {
     (state.punkter || []).forEach((p) =>
       ut.push({ t: "Punkt", label: p.titel, sub: p.agare || "", kor: () => visa("punkter") })
     );
+    // Checklistans punkter: sökbara på nummer och text, öppnas i valt projekt.
+    ALLA_PUNKTER.forEach((kp) =>
+      ut.push({
+        t: "EPC",
+        label: `${kp.id.replace("lop.", "∞.")} ${kp.text}`,
+        sub: kp.badges.join(" "),
+        kor: () => oppnaPost("epc", `kp-${kp.id}`),
+      })
+    );
     (state.kontakter || []).forEach((k) =>
       ut.push({ t: "Kontakt", label: k.namn, sub: `${k.roll} · ${k.org}`, kor: () => visa("kontakter") })
     );
     return ut;
-  }, [state, visa, setValtProjekt]);
+  }, [state, visa, setValtProjekt, oppnaPost]);
 
   const traffar = useMemo(() => {
     const s = q.toLowerCase().trim();
@@ -94,7 +104,9 @@ export function Kommandopalett() {
 
   useEffect(() => {
     if (oppen) inputRef.current?.focus();
-    else if (forraFokus.current instanceof HTMLElement) forraFokus.current.focus();
+    // Utan preventScroll avbryter fokusåterställningen en rullning som målvyn
+    // just startat — t.ex. checklistan som rullar fram en utpekad punkt.
+    else if (forraFokus.current instanceof HTMLElement) forraFokus.current.focus({ preventScroll: true });
   }, [oppen]);
 
   useEffect(() => {

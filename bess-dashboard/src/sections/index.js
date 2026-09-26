@@ -3,6 +3,7 @@
 
 import { Idag } from "./Idag.jsx";
 import { Oversikt } from "./Oversikt.jsx";
+import { EpcChecklista } from "./EpcChecklista.jsx";
 import { Ekonomi } from "./Ekonomi.jsx";
 import { Milstolpar } from "./Milstolpar.jsx";
 import { Risker } from "./Risker.jsx";
@@ -25,6 +26,7 @@ import { Data } from "./Data.jsx";
 export const SEKTIONER = {
   idag: Idag,
   oversikt: Oversikt,
+  epc: EpcChecklista,
   tavla: Tavla,
   tidplan: Tidplan,
   milstolpar: Milstolpar,

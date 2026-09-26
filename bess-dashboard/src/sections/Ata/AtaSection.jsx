@@ -4,7 +4,7 @@ import { Projektvaljare } from "../../components/ui/Projektvaljare.jsx";
 import { Tathetsvaljare } from "../../components/ui/Vyvaljare.jsx";
 import { Kpi, Note, Tabellyta } from "../../components/ui/Primitiver.jsx";
 import { fmtSEK } from "../../lib/format.js";
-import { idag } from "../../lib/datum.js";
+import { nyAtaPost } from "../../lib/nyaPoster.js";
 import { ataSummering, prisGrind, projekt, underrattelseLage } from "../../lib/berakningar.js";
 import { hamtaNamn } from "../../state/portfolj-reducer.js";
 import { ViewSwitcher } from "./ViewSwitcher.jsx";
@@ -74,26 +74,9 @@ export function Ata() {
     });
     if (!sv || !sv.benamning) return;
 
-    const antal = state.ur.filter((u) => u.projektId === pid).length + 1;
-    const id = "u" + Date.now();
-    laggTill("ur", {
-      id,
-      projektId: pid,
-      nr: "UR" + String(antal).padStart(3, "0"),
-      benamning: sv.benamning,
-      status: "oppen",
-      klass: "oklar",
-      handelseDatum: idag(),
-      underrattelseDatum: "",
-      prisgrund: "lopande",
-      belopp: null,
-      godkantDatum: "",
-      fakturaDatum: "",
-      arbeteStartat: false,
-      orsak: "",
-      ansvarig: hamtaNamn() || "",
-    });
-    setOppen(id);
+    const post = nyAtaPost(state, pid, { benamning: sv.benamning, ansvarig: hamtaNamn() || "" });
+    laggTill("ur", post);
+    setOppen(post.id);
   };
 
   const larm = n.utan24.length + n.utanPris.length;
