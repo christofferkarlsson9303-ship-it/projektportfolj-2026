@@ -9,6 +9,7 @@ import { Aktivitet } from "../components/oversikt/Aktivitet.jsx";
 import { Tidslinje } from "../components/oversikt/Tidslinje.jsx";
 import { Gantt } from "../components/oversikt/Gantt.jsx";
 import { Ledtider } from "../components/oversikt/Ledtider.jsx";
+import { NastaUppgift } from "../components/oversikt/NastaUppgift.jsx";
 import { Projektkort, Projektredigering } from "../components/oversikt/Projekt.jsx";
 import { uppmarksamhet } from "../lib/oversikt.js";
 import { projektUnderlag } from "../lib/berakningar.js";
@@ -16,7 +17,7 @@ import { projektUnderlag } from "../lib/berakningar.js";
 /* Översikten — läget i portföljen just nu.
 
    Uppbyggd som ett bento-rutnät i fallande vikt: hälsning och snabbåtgärder,
-   batteriparkens fasplan som Gantt-schema, ledtiderna som ska startas nu
+   nästa uppgift i valt projekt, batteriparkens fasplan som Gantt-schema, ledtiderna som ska startas nu
    bredvid nästa BESS-leverans, fyra nyckeltal, och sedan det som kräver
    åtgärd, aktiviteten, tidslinjen och riskerna. Projektkorten och underlaget
    ligger sist — de är till för att läsas i lugn och ro. Varje ruta är en egen
@@ -59,6 +60,8 @@ export function Oversikt() {
   return (
     <div className="flex flex-col gap-5">
       <Hero akuta={akuta} bevaka={lista.length - akuta} onVisaFlaggor={visaAkuta} />
+
+      <NastaUppgift i={1} />
 
       <section aria-labelledby="ov-planen">
         <h2 id="ov-planen" className="sr-only">

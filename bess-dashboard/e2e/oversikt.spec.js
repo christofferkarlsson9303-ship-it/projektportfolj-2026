@@ -15,9 +15,30 @@ test("fyra nyckeltalskort: ÄTA, hållpunkter, skyddsronder och budget", async (
   await expect(kort).toHaveCount(4);
   await expect(kort.nth(0)).toContainText("ÄTA-status");
   await expect(kort.nth(1)).toContainText("Hållpunkter (HP)");
-  await expect(kort.nth(1)).toContainText(/\d+ av \d+ passerade/);
+  await expect(kort.nth(1)).toContainText(/\d+ av \d+ klara/);
   await expect(kort.nth(2)).toContainText("Skyddsronder");
   await expect(kort.nth(3)).toContainText(/\d+\s*% fakturerat/);
+});
+
+test("nästa uppgift bockas av, nästa vaskas fram och det går att ångra", async ({ page }) => {
+  const ruta = page.getByRole("region", { name: "Nästa uppgift" });
+  const id = ruta.locator(".ov-nasta-kort .ov-nasta-id");
+  const forsta = (await id.textContent()).trim();
+
+  await ruta.getByRole("button", { name: /^Klar/ }).click();
+  await expect(id).not.toHaveText(forsta);
+  await expect(ruta.locator(".ov-nasta-senast")).toContainText(`${forsta} klar — nästa:`);
+
+  await ruta.getByRole("button", { name: "Ångra" }).click();
+  await expect(id).toHaveText(forsta);
+});
+
+test("nästa uppgift tar en kommentar direkt på punkten", async ({ page }) => {
+  const ruta = page.getByRole("region", { name: "Nästa uppgift" });
+  await ruta.getByRole("button", { name: /^Kommentera/ }).click();
+  await ruta.getByLabel("Kommentar", { exact: true }).fill("Ringt leverantören, svar på fredag");
+  await ruta.getByRole("button", { name: "Spara notering" }).click();
+  await expect(ruta.getByRole("button", { name: /^Kommentera \(1\)/ })).toBeVisible();
 });
 
 test("Gantt-schemat visar 16 faser, grindar och M1–M7 för valt projekt", async ({ page }) => {

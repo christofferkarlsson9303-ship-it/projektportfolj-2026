@@ -225,17 +225,23 @@ export function Gantt({ i }) {
                       onClick={() => oppnaPost("epc", `fas-${f.fas.nr}`)}
                       aria-label={`Fas ${f.fas.nr} ${f.fas.titel}: ${statusText}, ${
                         harDatum ? `${f.start} till ${f.slut}` : "ej planerad"
-                      }, ${grindText}${f.hp ? `, ${f.hp} hållpunkter` : ""}. Öppna i guiden.`}
+                      }, ${f.klara} av ${f.punkter} punkter klara, ${grindText}. Öppna i guiden.`}
                     >
                       <span className="ov-gantt-etikett">
                         <span className="ov-gantt-nr">{f.fas.nr}</span>
                         <span className="ov-gantt-namn">{f.fas.kort}</span>
-                        {f.hp ? <span className="ov-gantt-antal">{f.hp} HP</span> : null}
+                        <span className="ov-gantt-antal">
+                          {f.klara}/{f.punkter}
+                        </span>
                       </span>
                       <span className="ov-gantt-spar">
                         {harDatum ? (
                           <>
-                            <span className="ov-gantt-stapel" style={{ left: vanster + "%", width: bredd + "%" }} />
+                            <span className="ov-gantt-stapel" style={{ left: vanster + "%", width: bredd + "%" }}>
+                              {f.status === "pagar" || f.status === "sen" ? (
+                                <i style={{ width: Math.round((f.klara / Math.max(1, f.punkter - f.ejAktuella)) * 100) + "%" }} />
+                              ) : null}
+                            </span>
                             <span
                               className={`ov-gantt-grind${f.grind.passerad ? " passerad" : ""}${f.fas.milstolpe ? " betalning" : ""}`}
                               style={{ left: vanster + bredd + "%" }}
@@ -249,8 +255,8 @@ export function Gantt({ i }) {
                               </b>
                               {datumKort(f.start)} – {datumKort(f.slut)} {f.egenPlan ? "· egna datum" : "· standardplan"}
                               <br />
-                              {statusText} · {f.punkter} kontrollpunkter
-                              {f.hp ? ` · ${f.hp} hållpunkter` : ""}
+                              {statusText} · {f.klara} av {f.punkter} klara
+                              {f.hp ? ` · HP ${f.hpKlara}/${f.hp}` : ""}
                               <br />
                               {grindText}
                               {f.fas.milstolpe ? ` · låser ${f.fas.milstolpe}` : ""}

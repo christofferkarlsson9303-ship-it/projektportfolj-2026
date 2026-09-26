@@ -130,13 +130,13 @@ function Hallpunkter() {
   const h = useMemo(() => {
     const projekt = state.projekt.filter((p) => planAnkare(state, p.id));
     const kommande = projekt.flatMap((p) => kommandeHallpunkter(state, p.id, HP_FONSTER));
-    // En hållpunkt räknas som passerad när fasens grind är passerad.
+    // En hållpunkt är klar när den bockats av eller fasens grind är passerad.
     const lage = projekt.map((p) => lagesbild(state, p.id));
     return {
       projekt,
       kommande,
       iSenFas: kommande.filter((k) => k.fas.status === "sen").length,
-      passerade: lage.reduce((n, l) => n + l.hpPasserade, 0),
+      klara: lage.reduce((n, l) => n + l.hpKlara, 0),
       totalt: lage.reduce((n, l) => n + l.hp, 0),
     };
   }, [state]);
@@ -159,7 +159,7 @@ function Hallpunkter() {
       status={status}
       under={
         h.projekt.length
-          ? `${h.passerade} av ${h.totalt} passerade i ${h.projekt.length} projekt — stopp tills godkänt`
+          ? `${h.klara} av ${h.totalt} klara i ${h.projekt.length} projekt — stopp tills godkänt`
           : "Inga projekt med fasplan ännu"
       }
       fot={h.kommande.length > 3 ? `+ ${h.kommande.length - 3} till` : null}

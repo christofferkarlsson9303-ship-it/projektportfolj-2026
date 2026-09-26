@@ -141,7 +141,7 @@ export function NuLage({ pid, onVisaFas }) {
           ) : null}
           <li>
             <span>
-              {l.grindarPasserade} av 16 grindar och {l.hpPasserade} av {l.hp} hållpunkter passerade
+              {l.grindarPasserade} av 16 grindar passerade · {l.hpKlara} av {l.hp} hållpunkter klara
             </span>
           </li>
         </ul>

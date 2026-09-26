@@ -2048,6 +2048,9 @@ textarea.hp-led-text::placeholder{color:var(--ink-faint);font-weight:400;font-st
 .epc-iprojekt-huvud{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px}
 .epc-iprojekt-huvud b{font-size:13.5px;color:var(--ink)}
 .epc-grind{display:flex;flex-direction:column;align-items:flex-start;gap:10px}
+.epc-framsteg{margin:0;font-size:12.5px;line-height:1.45;color:var(--ink-soft)}
+.epc-framsteg b{color:var(--ink)}
+.epc-grindforslag{margin:0;padding:8px 10px;border-radius:8px;background:var(--ok-bg);color:var(--ok-ink);font-size:12.5px;font-weight:600;line-height:1.45}
 .epc-grindlage{margin:0;display:flex;align-items:flex-start;gap:6px;font-size:12.5px;line-height:1.45;color:var(--ink-soft)}
 .epc-grindlage.ok{color:var(--ok-ink);font-weight:600}
 .epc-grindlage svg{flex:0 0 auto;margin-top:1px}
@@ -2060,13 +2063,58 @@ textarea.hp-led-text::placeholder{color:var(--ink-faint);font-weight:400;font-st
 @media(max-width:900px){.epc-faskropp{grid-template-columns:minmax(0,1fr)}.epc-iprojekt{order:-1}}
 .epc-sektion h4{margin:0 0 4px;font:700 11px/1.3 var(--font-b);letter-spacing:.08em;text-transform:uppercase;color:var(--info-ink)}
 .epc-lista{list-style:none;margin:0;padding:0}
-.epc-rad{display:flex;gap:10px;align-items:flex-start;padding:9px 8px;border-top:1px solid var(--hairline);scroll-margin-top:96px}
+.epc-rad{display:grid;grid-template-columns:20px minmax(0,1fr) auto;grid-template-areas:"cb kropp atgard" "panel panel panel";
+  gap:4px 10px;align-items:start;padding:9px 8px 9px 11px;border-top:1px solid var(--hairline);scroll-margin-top:96px}
 .epc-rad:first-child{border-top:0}
 .epc-rad.hp{box-shadow:inset 3px 0 0 #b8322a}
+.epc-rad>input{grid-area:cb;width:18px;height:18px;margin:2px 0 0;accent-color:var(--one-djup);cursor:pointer}
+.epc-rad>input:disabled{cursor:default}
 .epc-id{flex:0 0 auto;min-width:34px;font:700 12px/1.6 var(--font-b);color:var(--ink-faint);font-variant-numeric:tabular-nums}
-.epc-radkropp{display:flex;flex-direction:column;gap:4px;min-width:0}
-.epc-radtext{font-size:13.5px;line-height:1.45;color:var(--ink);overflow-wrap:anywhere}
+.epc-radkropp{grid-area:kropp;display:flex;flex-direction:column;gap:4px;min-width:0}
+.epc-radtext{display:flex;gap:8px;font-size:13.5px;line-height:1.45;color:var(--ink);overflow-wrap:anywhere;cursor:pointer}
+.epc-radtext>span:last-child{min-width:0}
+.epc-rad.klar .epc-radtext>span:last-child{color:var(--ink-soft)}
+.epc-rad.ejaktuell .epc-radtext>span:last-child{color:var(--ink-faint);text-decoration:line-through;text-decoration-color:var(--hairline-stark)}
 .epc-radmeta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-size:12px;color:var(--ink-soft)}
+.epc-klarinfo{color:var(--ok-ink);font-weight:600}
+.epc-ejinfo{color:var(--ink-faint);font-style:italic}
+.epc-radatgard{grid-area:atgard;display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px}
+.epc-kommknapp,.epc-erfchip{display:inline-flex;align-items:center;gap:4px;min-height:26px;padding:3px 8px;border-radius:999px;cursor:pointer;
+  font:600 11.5px/1 var(--font-b);background:none;border:1px solid var(--hairline-stark);color:var(--ink-faint)}
+.epc-kommknapp.har{border-color:var(--one-bla);color:var(--info-ink);background:var(--info-bg)}
+.epc-kommknapp[aria-expanded="true"]{border-color:var(--one-bla);color:var(--info-ink)}
+.epc-erfchip{border-color:color-mix(in srgb,var(--orange) 55%,var(--hairline));color:var(--warn-ink);background:var(--warn-bg)}
+.epc-ejknapp{font-size:11.5px;color:var(--ink-faint);font-weight:600}
+.epc-radpanel{grid-area:panel;padding:8px 0 4px 30px;min-width:0}
+@media(max-width:640px){
+  .epc-rad{grid-template-columns:20px minmax(0,1fr);grid-template-areas:"cb kropp" "cb atgard" "panel panel"}
+  .epc-radatgard{justify-content:flex-start}
+  .epc-radpanel{padding-left:0}
+}
+
+/* Kommentarer, avvikelser och lärdomar på en punkt */
+.epc-kommentarer{display:flex;flex-direction:column;gap:10px}
+.epc-kommlista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.epc-komm{padding:10px 12px;border-radius:9px;background:var(--sunken);border-left:3px solid var(--hairline-stark)}
+.epc-komm.avvikelse{border-left-color:var(--rod)}
+.epc-komm.lardom{border-left-color:var(--one-bla)}
+.epc-komm-huvud{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+.epc-komm-meta{font-size:11.5px;color:var(--ink-faint)}
+.epc-komm-text{margin:6px 0 0;font-size:13px;line-height:1.5;color:var(--ink);white-space:pre-wrap;overflow-wrap:anywhere}
+.epc-komm-gorsa{margin:4px 0 0;font-size:12.5px;line-height:1.5;color:var(--ink-soft)}
+.epc-komm-gorsa b{color:var(--ok-ink)}
+.epc-ikonknapp{margin-left:auto;display:inline-flex;border:0;background:none;color:var(--ink-faint);cursor:pointer;padding:5px;border-radius:6px}
+.epc-ikonknapp:hover{color:var(--bad-ink);background:var(--bad-bg)}
+.epc-nykomm{display:flex;flex-direction:column;gap:8px}
+.epc-nykomm textarea,.epc-nykomm input[type=text]{width:100%}
+.epc-nykomm-rad{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 14px}
+.epc-nykomm-rad label{display:flex;flex-direction:column;gap:4px;font:700 10.5px/1.3 var(--font-b);letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-faint)}
+.epc-nykomm-rad label input[type=text],.epc-nykomm-rad select{width:150px;text-transform:none;letter-spacing:0}
+.epc-tidigare{padding:10px 12px;border-radius:9px;border-left:3px solid var(--orange);
+  background:color-mix(in srgb,var(--orange) 7%,var(--surface));font-size:12.5px;line-height:1.5;color:var(--ink)}
+.epc-tidigare>b{display:inline-flex;align-items:center;gap:6px;color:var(--warn-ink)}
+.epc-tidigare ul{margin:6px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
 .epc-ansvar{font-weight:600}
 .epc-nar{color:var(--ink-faint)}
 .epc-nar::before{content:"· ";color:var(--hairline-stark)}
@@ -2144,6 +2192,23 @@ button.epc-lage-rad[aria-pressed="true"]{border-color:var(--one-bla);box-shadow:
 .epc-lardomar b{font-size:13.5px;color:var(--ink)}
 .epc-lardomar p{margin:4px 0 0;font-size:13px;line-height:1.45;color:var(--ink-soft)}
 .epc-gorsa span{font-weight:700;color:var(--ok-ink)}
+.epc-sumtal{margin:6px 0 14px}
+.epc-matarcell{display:inline-flex;align-items:center;gap:8px;min-width:0}
+.epc-matare{display:block;width:110px;max-width:40vw;height:8px;border-radius:999px;background:var(--viz-spar);overflow:hidden}
+.epc-matare i{display:block;height:100%;border-radius:999px;background:var(--viz-klar)}
+.epc-matartal{font-size:12.5px;color:var(--ink);font-variant-numeric:tabular-nums}
+.epc-sumtabell th[scope=row]{text-align:left;font-weight:600;white-space:nowrap}
+.epc-sumtabell tr.pagar th[scope=row]{box-shadow:inset 3px 0 0 var(--one-bla)}
+.epc-sumtabell tr.sen th[scope=row]{box-shadow:inset 3px 0 0 var(--rod)}
+.epc-erf{display:flex;flex-direction:column;gap:12px;margin-top:8px}
+.epc-erfverktyg{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
+.epc-skrivut{display:inline-flex;align-items:center;gap:6px}
+.epc-erflista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.epc-erfrad{display:flex;gap:12px;padding:14px;border-radius:10px;background:var(--sunken);min-width:0}
+.epc-erfhuvud{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-bottom:6px}
+.epc-erftext{display:block;font-size:13.5px;line-height:1.45;color:var(--ink);overflow-wrap:anywhere}
+.epc-erfrad .epc-gorsa{margin:4px 0 0;font-size:13px;line-height:1.45;color:var(--ink-soft)}
+.epc-erfpunkt{margin-top:6px;text-align:left;font-size:12px;font-weight:600}
 .epc-version{margin:6px 0 0;font:600 11.5px/1.4 var(--font-b);color:var(--ink-faint)}
 .epc-nyckel{margin:12px 0 0;display:flex;flex-direction:column}
 .epc-nyckel>div{display:grid;grid-template-columns:minmax(120px,190px) minmax(0,1fr);gap:6px 16px;align-items:start;
@@ -2193,6 +2258,7 @@ button.ov-gantt-rad:focus-visible{outline:3px solid var(--one-bla);outline-offse
 .ov-gantt-linje.idag{top:-60px;width:2px;margin-left:-1px;background:var(--one-bla);z-index:2}
 .ov-gantt-stapel{position:absolute;top:7px;height:14px;border-radius:4px;overflow:hidden;background:var(--viz-spar);
   box-shadow:inset 0 0 0 1px var(--hairline-stark);animation:ovAvsloja .8s var(--ease) .15s both}
+.ov-gantt-stapel i{display:block;height:100%;background:var(--viz-pagar)}
 .ov-gantt-fas.klar .ov-gantt-stapel{background:var(--viz-klar);box-shadow:none}
 .ov-gantt-fas.pagar .ov-gantt-stapel{
   background:color-mix(in srgb,var(--viz-pagar) 30%,var(--surface));box-shadow:inset 0 0 0 1.5px var(--viz-pagar)}
@@ -2225,6 +2291,32 @@ button.ov-gantt-rad:hover .ov-gantt-tips,button.ov-gantt-rad:focus-visible .ov-g
 .ov-gantt-mslista li.fakturerad{color:var(--ok-ink)}
 .ov-gantt-tom{display:flex;flex-direction:column;gap:12px;padding:14px;border-radius:10px;background:var(--sunken);
   font-size:13px;line-height:1.5;color:var(--ink-soft)}
+
+/* ---------- Översikt: nästa uppgift ---------- */
+.ov-nasta{gap:14px}
+.ov-nasta-grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:18px 28px;align-items:start}
+.ov-nasta-kort{display:flex;flex-direction:column;gap:10px;min-width:0;animation:ovNasta .35s var(--ease)}
+@keyframes ovNasta{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.ov-nasta-orsak{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+.ov-nasta-fas{font-size:12px;color:var(--ink-faint)}
+.ov-nasta-orsak .ov-status{text-transform:none;letter-spacing:0;font-size:11.5px;white-space:normal;line-height:1.3}
+@media(max-width:560px){.ov-nasta-text{font-size:15.5px}}
+.ov-nasta-text{margin:0;display:flex;align-items:baseline;gap:10px;font:600 17px/1.45 var(--font-b);color:var(--ink);overflow-wrap:anywhere}
+.ov-nasta-id{flex:0 0 auto;padding:5px 8px;border-radius:7px;font:700 13px/1 var(--font-b);background:var(--info-bg);color:var(--info-ink);
+  font-variant-numeric:tabular-nums}
+.ov-nasta-meta{margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-size:12.5px;color:var(--ink-soft)}
+.ov-nasta-knappar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:2px}
+.ov-nasta-klar,.ov-nasta-komm{display:inline-flex;align-items:center;gap:6px}
+.ov-nasta-senast{margin:0;min-height:22px;display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--ok-ink)}
+.ov-nasta-senast .epc-textknapp{margin-left:6px}
+.ov-nasta-darefter h4{margin:0 0 6px;font:700 11px/1.3 var(--font-b);letter-spacing:.08em;text-transform:uppercase;color:var(--info-ink)}
+.ov-nasta-darefter ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.ov-nasta-idchip{flex:0 0 auto;height:fit-content;padding:4px 6px;border-radius:5px;font:800 10.5px/1 var(--font-b);
+  background:var(--sunken);color:var(--ink-soft);box-shadow:inset 0 0 0 1px var(--hairline-stark)}
+.ov-nasta-idchip.bad{background:var(--bad-bg);color:var(--bad-ink);box-shadow:none}
+.ov-nasta-idchip.warn{background:var(--warn-bg);color:var(--warn-ink);box-shadow:none}
+.ov-nasta-idchip.ok{background:var(--ok-bg);color:var(--ok-ink);box-shadow:none}
+@media(max-width:900px){.ov-nasta-grid{grid-template-columns:minmax(0,1fr)}}
 
 /* ---------- Översikt: ledtider och hållpunkter ---------- */
 .ov-ledlista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}

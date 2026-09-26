@@ -143,14 +143,23 @@ export const SEED = {
   /* Rutinstatus — endast ikryssade punkter lagras. Nyckel: "rutin|grupp|punkt". */
   rutinstatus: [],
 
-  /* BESS EPC-checklistan (data/bessChecklistData.ts) per projekt. Läget
-     följs per fas — en passerad grind gör fasens punkter genomförda.
+  /* BESS EPC-checklistan (data/bessChecklistData.ts) per projekt. Varje
+     punkt bockas av för sig; en passerad grind gör dessutom alla fasens
+     punkter genomförda.
      epcFaser: en rad per fas som avviker från standardplanen
        {id, projektId, fas, start, slut, grindDatum, anteckning}
      epcLedtider: en rad per ledtid som markerats klar i förväg
-       {id, projektId, ledtid, klar, datum, av} */
+       {id, projektId, ledtid, klar, datum, av}
+     epcPunkter: en rad per punkt som bockats av eller satts som ej aktuell
+       {id, projektId, punkt, status: "klar" | "ejaktuell" | "", datum, av}
+     epcKommentarer: kommentarer och avvikelser på en punkt — underlaget
+       för erfarenhetslistan
+       {id, projektId, punkt, typ: "notering" | "avvikelse" | "lardom",
+        text, gorSa, paverkan: 1–3, kostnad, datum, av} */
   epcFaser: [],
   epcLedtider: [],
+  epcPunkter: [],
+  epcKommentarer: [],
 
   /* Dagbok — en rad per ÄTA-tillfälle. Källa: 2.4 "Har följande noterats om ÄTA
      i dagboken? Nedan måste noteras för varje enskilt ÄTA": startdatum, omfattning,

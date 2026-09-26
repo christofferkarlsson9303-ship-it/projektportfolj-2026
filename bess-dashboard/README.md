@@ -71,10 +71,22 @@ guiden steg för steg med kontrollpunkterna som referens.
 | `src/data/bessChecklistData.test.js` | Låser antalen (16/286/47/7/12), att id:n från 1.0 finns kvar och kopplingarna mellan faser, grindar, milstolpar och ledtider. |
 | `src/lib/epc.js` | Lägesbild, fasplan, grindar, milstolpar, ledtider och hållpunkter per projekt. |
 
-Läget följs per fas: en fas är klar när dess grind är passerad, och då räknas
-fasens kontroll- och hållpunkter som genomförda. Per projekt sparas bara det
-som avviker: passerade grindar, egna fasdatum och anteckningar i `epcFaser`,
-ledtider som markerats klara i förväg i `epcLedtider`.
+Varje punkt bockas av per projekt (eller sätts som ej aktuell), och en
+passerad grind gör dessutom alla fasens punkter klara. Per projekt sparas bara
+det som avviker: passerade grindar, egna fasdatum och anteckningar i
+`epcFaser`, ledtider som markerats klara i förväg i `epcLedtider`, avbockade
+punkter i `epcPunkter` och kommentarer i `epcKommentarer`.
+
+**Nästa uppgift** på Översikten tar första posten i kön från `nastaUppgifter`:
+försenade och akuta ledtider först, sedan öppna punkter i försenade och
+pågående faser i checklistans ordning, och grinden när en fas är klar. Bockas
+den av vaskas nästa fram direkt, och det senaste går att ångra.
+
+**Erfarenhetsåterföring:** kommentarer av typen avvikelse eller lärdom blir
+erfarenhetslistan (`erfarenheter`), rangordnad på påverkan, hur många projekt
+samma punkt gett problem i, och kostnad. Andra projekts erfarenheter visas på
+samma punkt i guiden och på Nästa uppgift, så lärdomen dyker upp när den
+behövs. Listan går att skriva ut som A4.
 
 **Fasplanen** räknas fram ur projektets startdatum (NTP), BESS-leveransen och
 färdigställandet (slutbesiktning) — se `MALL_SKALA` i datafilen. Varje fas kan få
