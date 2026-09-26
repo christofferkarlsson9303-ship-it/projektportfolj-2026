@@ -3,6 +3,8 @@ import { SEED } from "../data/seed.js";
 import { efterInlasning, normalisera, reducer } from "../state/portfolj-reducer.js";
 import {
   VARNING_DAGAR,
+  checklistsummering,
+  erfarenheter,
   faslage,
   fasplan,
   grindar,
@@ -12,7 +14,10 @@ import {
   ledtidslage,
   mallDatum,
   milstolpslage,
+  nastaUppgifter,
   planAnkare,
+  punktlage,
+  tidigareErfarenheter,
 } from "./epc.js";
 
 const NU = "2026-09-26";
@@ -209,7 +214,7 @@ describe("lagesbild", () => {
     expect(l.grindarPasserade).toBe(10);
     expect(l.hp).toBe(47);
     // Hållpunkterna i fas 0–9: 0+1+2+1+1+2+4+8+3+2.
-    expect(l.hpPasserade).toBe(24);
+    expect(l.hpKlara).toBe(24);
     expect(l.dagarTillSlutbesiktning).toBe(67);
   });
 
@@ -218,5 +223,120 @@ describe("lagesbild", () => {
     expect(l.harPlan).toBe(false);
     expect(l.aktuella).toEqual([]);
     expect(l.nastaGrind.fas.nr).toBe(0);
+  });
+});
+
+/* ---------- Status per punkt ---------- */
+
+const punkt = (s, pid, id, status) => reducer(s, { type: "EPC_PUNKT", pid, punkt: id, status });
+
+describe("punktlage", () => {
+  it("räknar punkter i passerade faser som klara via grinden", () => {
+    const pl = punktlage(seed(), "36037");
+    expect(pl.get("1.1")).toMatchObject({ status: "klar", kalla: "grind" });
+    expect(pl.get("10.1")).toMatchObject({ status: "oppen", kalla: null });
+    expect(pl.get("lop.1").status).toBe("oppen");
+  });
+
+  it("tar en avbockad punkt som klar och låter ej aktuell gå före grinden", () => {
+    let s = punkt(seed(), "36037", "10.1", "klar");
+    s = punkt(s, "36037", "2.14", "ejaktuell");
+    const pl = punktlage(s, "36037");
+    expect(pl.get("10.1")).toMatchObject({ status: "klar", kalla: "markerad", datum: NU });
+    expect(pl.get("2.14")).toMatchObject({ status: "ejaktuell", kalla: "markerad" });
+    expect(punktlage(s, "36038").get("10.1").status).toBe("oppen");
+  });
+
+  it("loggar en godkänd hållpunkt och en återöppnad punkt", () => {
+    let s = punkt(seed(), "36037", "10.7", "klar");
+    expect(s.andringslogg[0]).toMatchObject({ projektId: "36037", text: "EPC 10.7 hållpunkt godkänd" });
+    s = punkt(s, "36037", "10.7", "");
+    expect(s.andringslogg[0].text).toBe("EPC 10.7 återöppnad");
+    expect(punktlage(s, "36037").get("10.7").status).toBe("oppen");
+  });
+});
+
+describe("checklistsummering", () => {
+  it("summerar klara, kvar, hållpunkter och grindar över alla 286 punkter", () => {
+    const { totalt, faser, lopande } = checklistsummering(seed(), "36037", NU);
+    // Fas 0–9 är passerade: 22+21+17+20+15+18+13+16+9+13 punkter.
+    expect(totalt).toMatchObject({ punkter: 286, klara: 164, ejAktuella: 0, kvar: 122, hp: 47, hpKlara: 24, grindar: 10 });
+    expect(totalt.andel).toBe(57);
+    expect(faser[10]).toMatchObject({ punkter: 15, klara: 0, kvar: 15, hp: 5, hpKvar: 5 });
+    expect(lopande).toMatchObject({ punkter: 24, klara: 0 });
+  });
+
+  it("räknar andelen på det som är aktuellt", () => {
+    let s = seed();
+    for (const id of ["10.1", "10.2"]) s = punkt(s, "36037", id, "klar");
+    s = punkt(s, "36037", "10.3", "ejaktuell");
+    const { totalt, faser } = checklistsummering(s, "36037", NU);
+    expect(faser[10]).toMatchObject({ klara: 2, ejAktuella: 1, kvar: 12 });
+    expect(totalt.andel).toBe(Math.round((166 / 285) * 100));
+  });
+});
+
+/* ---------- Nästa uppgift ---------- */
+
+describe("nastaUppgifter", () => {
+  it("tar försenade och akuta ledtider först och sedan pågående fas i ordning", () => {
+    const k = nastaUppgifter(seed(), "36037", NU);
+    // Test- och kontrollplan (13.1) och provresurser (10.11) är försenade, kranytan (11.3) ska startas nu.
+    expect(k.slice(0, 4).map((x) => x.punkt.id)).toEqual(["13.1", "10.11", "11.3", "10.1"]);
+    expect(k[0]).toMatchObject({ typ: "punkt", ton: "bad" });
+    expect(k[0].orsak).toBe("Ledtid försenad — skulle ha startat 11 sep");
+    expect(k[2].orsak).toBe("Ledtid — starta senast 28 sep");
+    expect(k[3].orsak).toBe("Fas 10 pågår");
+  });
+
+  it("vaskar fram nästa punkt när den första bockas av", () => {
+    const s = punkt(seed(), "36037", "13.1", "klar");
+    expect(nastaUppgifter(s, "36037", NU)[0].punkt.id).toBe("10.11");
+  });
+
+  it("föreslår grinden när alla fasens punkter är klara", () => {
+    let s = seed();
+    for (const i of Array.from({ length: 15 }, (_, n) => n + 1)) s = punkt(s, "36037", `10.${i}`, "klar");
+    const g = nastaUppgifter(s, "36037", NU).find((x) => x.typ === "grind");
+    expect(g.fas.fas.grind.kod).toBe("G10");
+    expect(g.orsak).toMatch(/dags för G10/);
+  });
+
+  it("börjar från fas 0 i ett projekt utan datum", () => {
+    const k = nastaUppgifter(seed(), "goteborg", NU);
+    expect(k[0]).toMatchObject({ typ: "punkt", orsak: "Nästa fas: 0" });
+    expect(k[0].punkt.id).toBe("0.1");
+  });
+});
+
+/* ---------- Erfarenheter ---------- */
+
+const kommentar = (s, pid, id, typ, text, paverkan = 2, kostnad = "") =>
+  reducer(s, { type: "EPC_KOMMENTAR", pid, punkt: id, typ, text, gorSa: "Gör så", paverkan, kostnad });
+
+describe("erfarenheter", () => {
+  it("rangordnar avvikelser och lärdomar och hoppar över noteringar", () => {
+    let s = seed();
+    s = kommentar(s, "36037", "4.6", "lardom", "Kranen bokad för sent", 2);
+    s = kommentar(s, "36038", "7.3", "avvikelse", "Armering underkänd", 3, "45 000");
+    s = kommentar(s, "36038", "4.6", "avvikelse", "Kran saknades på lyftdagen", 2, "12 000");
+    s = kommentar(s, "36037", "10.1", "notering", "Bara en anteckning");
+    const e = erfarenheter(s);
+    expect(e.map((x) => x.text)).toEqual(["Armering underkänd", "Kran saknades på lyftdagen", "Kranen bokad för sent"]);
+    expect(e[1]).toMatchObject({ aterkommer: 2, kostnadKr: 12000 });
+    expect(erfarenheter(s, "36037").map((x) => x.punkt)).toEqual(["4.6"]);
+    expect(s.andringslogg[1].text).toBe("Avvikelse på EPC 4.6: Kran saknades på lyftdagen");
+  });
+
+  it("visar andra projekts erfarenheter på samma punkt", () => {
+    let s = seed();
+    s = kommentar(s, "36038", "4.6", "avvikelse", "Kran saknades på lyftdagen");
+    s = kommentar(s, "36037", "4.6", "lardom", "Egen lärdom");
+    expect(tidigareErfarenheter(s, "4.6", "36037").map((x) => x.projektId)).toEqual(["36038"]);
+  });
+
+  it("sparar ingen tom kommentar", () => {
+    const s = seed();
+    expect(kommentar(s, "36037", "4.6", "notering", "   ")).toBe(s);
   });
 });

@@ -4,7 +4,7 @@
 
 import { SEED } from "../data/seed.js";
 import { KANDA_MAPPAR, PILL, SLUTDOK_MALL } from "../data/konstanter.js";
-import { LEDTIDER } from "../data/bessChecklistData.ts";
+import { LEDTIDER, PUNKT_FOR_ID } from "../data/bessChecklistData.ts";
 import { migreraUr } from "../lib/berakningar.js";
 import { idag } from "../lib/datum.js";
 import { forslagText, kanTillampas, tillampaForslag } from "../lib/importera.js";
@@ -450,6 +450,54 @@ export function reducer(state, action) {
       const l = LEDTIDER.find((x) => x.id === ledtid);
       return loggat(nytt, pid, `Ledtid ${klar ? "klar" : "återöppnad"}: ${l ? l.arende : ledtid}`);
     }
+
+    /* EPC-checklistan: en punkt bockad av, satt som ej aktuell eller
+       återöppnad. Loggas — en godkänd hållpunkt är ett besked i sig. */
+    case "EPC_PUNKT": {
+      const { pid, punkt, status } = action;
+      const nytt = {
+        ...state,
+        epcPunkter: uppsatt(state.epcPunkter, (r) => r.projektId === pid && r.punkt === punkt, {
+          id: `ep-${pid}-${punkt}`,
+          projektId: pid,
+          punkt,
+        }, { status, datum: status ? idag() : "", av: status ? hamtaNamn() || "" : "" }),
+      };
+      const hp = PUNKT_FOR_ID.get(punkt)?.badges.includes("HP");
+      const vad =
+        status === "klar" ? (hp ? "hållpunkt godkänd" : "klar") : status === "ejaktuell" ? "ej aktuell" : "återöppnad";
+      return loggat(nytt, pid, `EPC ${punkt.replace("lop.", "∞.")} ${vad}`);
+    }
+
+    /* Kommentar, avvikelse eller lärdom på en punkt. Avvikelser och lärdomar
+       blir erfarenhetslistan när projektet är klart. */
+    case "EPC_KOMMENTAR": {
+      const { pid, punkt, typ = "notering", text, gorSa = "", paverkan = 2, kostnad = "" } = action;
+      const rad = {
+        id: action.id || "ek" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        projektId: pid,
+        punkt,
+        typ,
+        text: (text || "").trim(),
+        gorSa: (gorSa || "").trim(),
+        paverkan: Number(paverkan) || 2,
+        kostnad,
+        datum: idag(),
+        av: hamtaNamn() || "",
+      };
+      if (!rad.text) return state;
+      const nytt = { ...state, epcKommentarer: [...(state.epcKommentarer || []), rad] };
+      const namn = { notering: "Kommentar", avvikelse: "Avvikelse", lardom: "Lärdom" }[typ] || "Kommentar";
+      return loggat(nytt, pid, `${namn} på EPC ${punkt.replace("lop.", "∞.")}: ${rad.text.slice(0, 80)}`);
+    }
+
+    case "EPC_KOMMENTAR_UPPD": {
+      const { id, falt, varde } = action;
+      return { ...state, epcKommentarer: (state.epcKommentarer || []).map((k) => (k.id === id ? { ...k, [falt]: varde } : k)) };
+    }
+
+    case "EPC_KOMMENTAR_BORT":
+      return { ...state, epcKommentarer: (state.epcKommentarer || []).filter((k) => k.id !== action.id) };
 
     /* EPC-checklistan: fasens egna datum, passerad grind och anteckningar.
        Grindpassage loggas — den låser upp nästa fas och ibland en betalning. */

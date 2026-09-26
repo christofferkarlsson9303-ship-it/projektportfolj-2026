@@ -8,21 +8,31 @@ import { NuLage, Portfoljlage } from "../components/epc/Lagesbild.jsx";
 import { AttVerifiera, Lardomar, Ledtidstabell, Milstolpstabell, Nyckelvarden } from "../components/epc/Tabeller.jsx";
 import { LOPANDE, MARKERINGAR, SUMMERING, VERSION } from "../data/bessChecklistData.ts";
 import { projekt } from "../lib/berakningar.js";
-import { FAS_STATUS, faslage } from "../lib/epc.js";
+import { FAS_STATUS, erfarenheter, faslage, punktlage } from "../lib/epc.js";
+import { Summering } from "../components/epc/Summering.jsx";
+import { Erfarenhetslista } from "../components/epc/Erfarenheter.jsx";
 
 /* Bygga batteripark — hur en BESS-anläggning byggs som totalentreprenad
    (ABT 06), steg för steg, och var portföljens projekt står.
 
    Guiden är densamma för alla projekt: 16 faser som var och en avslutas med
-   en grind, med kontroll- och hållpunkterna som referens. Läget följs per
-   fas: när grinden är passerad är fasen klar. Det som sparas per projekt är
-   passerade grindar, egna fasdatum och anteckningar. */
+   en grind. Per projekt bockas varje punkt av (eller sätts som ej aktuell),
+   och en passerad grind gör fasens punkter klara. Kommentarer på punkterna
+   blir erfarenhetslistan, och andra projekts erfarenheter visas på samma
+   punkt i nästa projekt. */
 
 const MARKFILTER = [
   ["alla", "Alla"],
   ["HP", "Hållpunkter"],
   ["K", "Kontraktskrav"],
   ["L", "Lärdomar"],
+];
+
+const STATUSFILTER = [
+  ["alla", "Alla"],
+  ["kvar", "Kvar"],
+  ["klara", "Klara"],
+  ["kommenterade", "Kommenterade"],
 ];
 
 const LAGEN = ["klar", "pagar", "sen", "kommande", "odaterad"];
@@ -39,6 +49,20 @@ function Guide({ pid, mal }) {
   const [oppna, setOppna] = useState(() => new Set(aktuellaFaser(faser)));
   const [sok, setSok] = useState("");
   const [mark, setMark] = useState("alla");
+  const [statusfilter, setStatusfilter] = useState("alla");
+
+  /* Det raderna behöver, räknat en gång per render i stället för per rad. */
+  const ctx = useMemo(() => {
+    const pl = punktlage(state, pid, faser.map((f) => f.grind));
+    const antal = new Map();
+    for (const k of state.epcKommentarer || [])
+      if (k.projektId === pid) antal.set(k.punkt, (antal.get(k.punkt) || 0) + 1);
+    const tidigare = new Map();
+    for (const k of erfarenheter(state))
+      if (k.projektId !== pid) tidigare.set(k.punkt, (tidigare.get(k.punkt) || 0) + 1);
+    const grindkod = (id) => "G" + id.split(".")[0];
+    return { pid, pl, antal, tidigare, grindkod };
+  }, [state, pid, faser]);
 
   /* Byter man projekt i lägesbilden fälls det projektets pågående faser ut. */
   const [forraPid, setForraPid] = useState(pid);
@@ -70,9 +94,17 @@ function Guide({ pid, mal }) {
   }, [mal]);
 
   const sokord = sok.trim().toLowerCase();
-  const filterAktivt = !!sokord || mark !== "alla";
+  const filterAktivt = !!sokord || mark !== "alla" || statusfilter !== "alla";
+  const statusOk = (punkt) => {
+    const st = ctx.pl.get(punkt.id).status;
+    if (statusfilter === "kvar") return st === "oppen";
+    if (statusfilter === "klara") return st === "klar";
+    if (statusfilter === "kommenterade") return ctx.antal.has(punkt.id) || ctx.tidigare.has(punkt.id);
+    return true;
+  };
   const filter = (punkt) =>
     (mark === "alla" || punkt.badges.includes(mark)) &&
+    statusOk(punkt) &&
     (!sokord || `${punkt.id} ${punkt.text} ${punkt.ansvar} ${punkt.nar}`.toLowerCase().includes(sokord));
 
   const vaxla = (nr, oppen) =>
@@ -91,8 +123,9 @@ function Guide({ pid, mal }) {
       <div className="epc-stegrubrik">
         <h3 id="epc-steg">Steg för steg — från affär till garantitid</h3>
         <p className="lead">
-          Varje fas avslutas med en grind: nästa fas startar inte förrän grinden är passerad. Fälls en fas ut syns
-          vad som ska vara gjort, vem som äger det och när — och till höger hur det ser ut i {projektnamn}.
+          Varje fas avslutas med en grind: nästa fas startar inte förrän grinden är passerad. Bocka av punkterna
+          för {projektnamn} allt eftersom, sätt det som inte gäller som ej aktuellt och kommentera avvikelser och
+          lärdomar direkt på punkten — de blir erfarenhetslistan.
         </p>
         <ul className="epc-legend" aria-label="Markeringar">
           {Object.entries(MARKERINGAR).map(([k, m]) => (
@@ -114,6 +147,13 @@ function Guide({ pid, mal }) {
             placeholder="Sök kontrollpunkt, ansvar eller tidpunkt…"
           />
         </label>
+        <div className="ov-flikar" role="group" aria-label="Visa status">
+          {STATUSFILTER.map(([id, namn]) => (
+            <button key={id} type="button" aria-pressed={statusfilter === id} onClick={() => setStatusfilter(id)}>
+              {namn}
+            </button>
+          ))}
+        </div>
         <div className="ov-flikar" role="group" aria-label="Visa markering">
           {MARKFILTER.map(([id, namn]) => (
             <button key={id} type="button" aria-pressed={mark === id} onClick={() => setMark(id)}>
@@ -144,6 +184,7 @@ function Guide({ pid, mal }) {
             onVaxla={vaxla}
             filter={filter}
             tvingaOppen={filterAktivt}
+            ctx={ctx}
           />
         ))}
 
@@ -167,7 +208,7 @@ function Guide({ pid, mal }) {
             </summary>
             <div className="epc-faskropp">
               <div className="epc-guide">
-                <Sektioner sektioner={LOPANDE.sektioner} filter={filter} />
+                <Sektioner sektioner={LOPANDE.sektioner} filter={filter} ctx={ctx} />
               </div>
             </div>
           </details>
@@ -199,7 +240,7 @@ export function EpcChecklista() {
 
   if (!p) return <p className="lead">Inga projekt i portföljen.</p>;
 
-  const visaFas = (nr) => setMal({ id: `fas-${nr}`, tid: Date.now() });
+  const visaFas = (nr) => setMal({ id: nr === "lop" ? "fas-lopande" : `fas-${nr}`, tid: Date.now() });
 
   return (
     <>
@@ -257,7 +298,25 @@ export function EpcChecklista() {
         <NuLage pid={pid} onVisaFas={visaFas} />
       </section>
 
+      <section className="card epc-block" aria-labelledby="epc-summering">
+        <h3 id="epc-summering">Status — {(p.nr ? p.nr + " " : "") + (p.ort || p.namn)}</h3>
+        <p className="lead">
+          Exakt vad som är gjort och vad som återstår, per fas. En punkt är klar när den bockats av eller när fasens
+          grind är passerad; det som inte gäller projektet räknas inte.
+        </p>
+        <Summering pid={pid} onVisaFas={visaFas} />
+      </section>
+
       <Guide pid={pid} mal={mal} />
+
+      <section className="card epc-block" aria-labelledby="epc-erfarenheter">
+        <h3 id="epc-erfarenheter">Erfarenhetsåterföring — topp 10</h3>
+        <p className="lead">
+          Byggs automatiskt av avvikelser och lärdomar som kommenterats på punkterna, vassast först: påverkan, om
+          samma punkt gett problem i flera projekt, och kostnad. Samma erfarenheter visas på punkten i nästa projekt.
+        </p>
+        <Erfarenhetslista pid={pid} onVisaPunkt={(id) => setMal({ id: `kp-${id}`, tid: Date.now() })} />
+      </section>
 
       <section className="card epc-block" aria-labelledby="epc-nyckelvarden">
         <h3 id="epc-nyckelvarden">Nyckelvärden — snabbreferens</h3>

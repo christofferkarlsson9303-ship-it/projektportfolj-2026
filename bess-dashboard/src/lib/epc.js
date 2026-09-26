@@ -1,19 +1,23 @@
 /* BESS EPC-checklistan mot ett projekt: lägesbild, fasplan, grindar,
-   milstolpar, ledtider och hållpunkter. Rena funktioner som resten av lib/.
+   milstolpar, ledtider, hållpunkter, nästa uppgift och erfarenheter. Rena
+   funktioner som resten av lib/.
 
-   Datan om checklistan ligger i data/bessChecklistData.ts. Läget följs per
-   fas, inte per kontrollpunkt: en fas är klar när dess grind är passerad, och
-   då räknas fasens kontroll- och hållpunkter som genomförda. Per projekt
-   sparas bara det som avviker:
+   Datan om checklistan ligger i data/bessChecklistData.ts. Varje punkt
+   bockas av för sig, och en passerad grind gör dessutom alla fasens punkter
+   genomförda — grinden är det formella beskedet att fasen är klar. Per
+   projekt sparas bara det som avviker:
 
-   - state.epcFaser     en rad per fas med egna datum, passerad grind och
-                        anteckningar
-   - state.epcLedtider  en rad per ledtid som markerats klar i förväg
+   - state.epcFaser        en rad per fas med egna datum, passerad grind och
+                           anteckningar
+   - state.epcLedtider     en rad per ledtid som markerats klar i förväg
+   - state.epcPunkter      en rad per punkt som är klar eller ej aktuell
+   - state.epcKommentarer  kommentarer, avvikelser och lärdomar per punkt
 
    Fasplanen är en utgångspunkt, inte en tidplan. Den räknas fram ur start,
    BESS-leverans och slutbesiktning, och varje fas kan få egna datum. */
 
 import {
+  ALLA_PUNKTER,
   ANKARE_NAMN,
   FASER,
   LEDTIDER,
@@ -23,7 +27,7 @@ import {
   PUNKT_FOR_ID,
 } from "../data/bessChecklistData.ts";
 import { BESS_MATCH, betalRad, projekt } from "./berakningar.js";
-import { idag, lokaltDatum } from "./datum.js";
+import { datumKort, idag, lokaltDatum } from "./datum.js";
 
 /** Status → [ton, text] för faser och ledtider. Tonen är designsystemets
  *  (ok/info/warn/bad); texten står alltid bredvid färgen. */
@@ -36,6 +40,7 @@ export const FAS_STATUS = {
 };
 
 export const LEDTID_STATUS = {
+  ejaktuell: ["", "Ej aktuell"],
   sen: ["bad", "Försenad"],
   snart: ["warn", "Starta nu"],
   "i-tid": ["", "I tid"],
@@ -44,6 +49,15 @@ export const LEDTID_STATUS = {
   klar: ["ok", "Klar"],
   passerad: ["", "Fasen passerad"],
 };
+
+/** Kommentarstyper på en punkt. Avvikelser och lärdomar blir erfarenheter. */
+export const KOMMENTARTYP = {
+  notering: { namn: "Notering", ton: "" },
+  avvikelse: { namn: "Avvikelse", ton: "bad" },
+  lardom: { namn: "Lärdom", ton: "info" },
+};
+
+export const PAVERKAN = { 1: "Låg", 2: "Medel", 3: "Hög" };
 
 /** Så här många dagar före sista startdatum blir en ledtid gul. */
 export const VARNING_DAGAR = 14;
@@ -131,14 +145,53 @@ export function grindar(state, pid) {
   return ut.map((g) => (g.passerad || g.nr > hogsta ? g : { ...g, passerad: true, kalla: "följd" }));
 }
 
-/* ---------- Faser ---------- */
+/* ---------- Kontrollpunkter ---------- */
 
 const PUNKTER_I_FAS = FASER.map((f) => f.sektioner.flatMap((s) => s.punkter));
+
+/** Status per punkt: "klar", "ejaktuell" eller "oppen", med källa. En
+ *  passerad grind gör fasens öppna punkter klara (källa "grind"); det som
+ *  satts som ej aktuellt förblir det. Löpande punkter har ingen grind. */
+export function punktlage(state, pid, g = grindar(state, pid)) {
+  const rader = new Map(
+    (state.epcPunkter || []).filter((r) => r.projektId === pid && r.status).map((r) => [r.punkt, r])
+  );
+  const ut = new Map();
+  for (const kp of ALLA_PUNKTER) {
+    const r = rader.get(kp.id);
+    if (r) ut.set(kp.id, { status: r.status, kalla: "markerad", datum: r.datum || null, av: r.av || "" });
+    else if (kp.fas !== null && g[kp.fas].passerad)
+      ut.set(kp.id, { status: "klar", kalla: "grind", datum: g[kp.fas].datum, av: "" });
+    else ut.set(kp.id, { status: "oppen", kalla: null, datum: null, av: "" });
+  }
+  return ut;
+}
+
+/** Räknar klara, ej aktuella och öppna punkter och hållpunkter i en lista. */
+function rakna(punkter, pl) {
+  const r = { punkter: punkter.length, klara: 0, ejAktuella: 0, kvar: 0, hp: 0, hpKlara: 0, hpKvar: 0 };
+  for (const p of punkter) {
+    const st = pl.get(p.id).status;
+    const hp = p.badges.includes("HP");
+    if (st === "klar") r.klara++;
+    else if (st === "ejaktuell") r.ejAktuella++;
+    else r.kvar++;
+    if (hp) {
+      r.hp++;
+      if (st === "klar") r.hpKlara++;
+      else if (st === "oppen") r.hpKvar++;
+    }
+  }
+  return r;
+}
+
+/* ---------- Faser ---------- */
 
 /** Allt om projektets faser i ett svep — det Gantt-schemat och kapitlet ritar. */
 export function faslage(state, pid, nu = idag()) {
   const plan = fasplan(state, pid);
   const g = grindar(state, pid);
+  const pl = punktlage(state, pid, g);
 
   return FASER.map((f, i) => {
     const punkter = PUNKTER_I_FAS[i];
@@ -158,16 +211,9 @@ export function faslage(state, pid, nu = idag()) {
       egenPlan: egen,
       grind: g[i],
       status,
-      punkter: punkter.length,
-      hp: punkter.filter((p) => p.badges.includes("HP")).length,
+      ...rakna(punkter, pl),
     };
   });
-}
-
-/** Kontrollpunkten räknas som genomförd när dess fas har passerat sin grind. */
-export function punktGenomford(faser, punktId) {
-  const kp = PUNKT_FOR_ID.get(punktId);
-  return kp?.fas !== null && kp?.fas !== undefined ? faser[kp.fas].grind.passerad : false;
 }
 
 /* ---------- Milstolpar på tidslinjen ---------- */
@@ -219,7 +265,7 @@ export function ankardatum(state, pid, faser = faslage(state, pid)) {
   };
 }
 
-const ORDNING = { sen: 0, snart: 1, "i-tid": 2, bevaka: 3, odaterad: 4, klar: 5, passerad: 6 };
+const ORDNING = { sen: 0, snart: 1, "i-tid": 2, bevaka: 3, odaterad: 4, klar: 5, passerad: 6, ejaktuell: 7 };
 
 /** Varje ledtid mot projektet: sista startdatum, dagar kvar och läge.
  *  Röd när datumet passerat, gul inom VARNING_DAGAR. En ledtid vars ankare
@@ -228,14 +274,19 @@ const ORDNING = { sen: 0, snart: 1, "i-tid": 2, bevaka: 3, odaterad: 4, klar: 5,
 export function ledtidslage(state, pid, nu = idag()) {
   const faser = faslage(state, pid, nu);
   const ank = ankardatum(state, pid, faser);
+  const pl = punktlage(state, pid, faser.map((f) => f.grind));
   const markerade = new Set(
     (state.epcLedtider || []).filter((r) => r.projektId === pid && r.klar).map((r) => r.ledtid)
   );
 
   return LEDTIDER.map((l) => {
-    // Klar när den markerats i förväg, eller när fasen den hör till är passerad.
+    // Klar när den markerats i förväg, eller när dess punkt är klar (bockad
+    // eller via passerad grind). En punkt som inte är aktuell har ingen ledtid.
     const markerad = markerade.has(l.id);
-    const bas = { ...l, projektId: pid, markerad, klar: markerad || punktGenomford(faser, l.punkt) };
+    const punkt = pl.get(l.punkt).status;
+    const bas = { ...l, projektId: pid, markerad, klar: markerad || punkt === "klar" };
+    if (punkt === "ejaktuell" && !markerad)
+      return { ...bas, status: "ejaktuell", senast: null, dagarKvar: null, ank: null };
     if (!l.ankare) return { ...bas, status: bas.klar ? "klar" : "bevaka", senast: null, dagarKvar: null, ank: null };
 
     const a = ank[l.ankare];
@@ -269,12 +320,13 @@ export function ledtiderPortfolj(state, nu = idag()) {
  *  det som ska godkännas härnäst. Sorterade på fasens start. */
 export function kommandeHallpunkter(state, pid, inom = 30, nu = idag()) {
   const faser = faslage(state, pid, nu);
+  const pl = punktlage(state, pid, faser.map((f) => f.grind));
   const grans = plusDagar(nu, inom);
   return faser
     .filter((f) => ["pagar", "sen"].includes(f.status) || (f.status === "kommande" && f.start <= grans))
     .flatMap((f) =>
       PUNKTER_I_FAS[f.fas.nr]
-        .filter((p) => p.badges.includes("HP"))
+        .filter((p) => p.badges.includes("HP") && pl.get(p.id).status === "oppen")
         .map((p) => ({ punkt: p, fas: f, projektId: pid }))
     )
     .sort((a, b) => (a.fas.start || "9999").localeCompare(b.fas.start || "9999"));
@@ -283,7 +335,7 @@ export function kommandeHallpunkter(state, pid, inom = 30, nu = idag()) {
 /* ---------- Lägesbild ---------- */
 
 /** Var projektet står: pågående faser, nästa grind och betalning, passerade
- *  grindar och hållpunkter, dagar till slutbesiktning. */
+ *  grindar, klara hållpunkter, dagar till slutbesiktning. */
 export function lagesbild(state, pid, nu = idag()) {
   const p = projekt(state, pid);
   const faser = faslage(state, pid, nu);
@@ -303,7 +355,135 @@ export function lagesbild(state, pid, nu = idag()) {
         .sort((a, b) => (a.datum || "9999").localeCompare(b.datum || "9999"))[0] || null,
     grindarPasserade: passerade.length,
     hp: faser.reduce((n, f) => n + f.hp, 0),
-    hpPasserade: passerade.reduce((n, f) => n + f.hp, 0),
+    hpKlara: faser.reduce((n, f) => n + f.hpKlara, 0),
     dagarTillSlutbesiktning: sb,
   };
+}
+
+/* ---------- Summering ---------- */
+
+const LOPANDE_PUNKTER = ALLA_PUNKTER.filter((p) => p.fas === null);
+
+/** Exakt status för hela checklistan: per fas och totalt, löpande punkter
+ *  som en egen rad. Andel klart räknas på det som är aktuellt. */
+export function checklistsummering(state, pid, nu = idag()) {
+  const faser = faslage(state, pid, nu);
+  const pl = punktlage(state, pid, faser.map((f) => f.grind));
+  const lopande = rakna(LOPANDE_PUNKTER, pl);
+  const falt = ["punkter", "klara", "ejAktuella", "kvar", "hp", "hpKlara", "hpKvar"];
+  const totalt = Object.fromEntries(falt.map((k) => [k, faser.reduce((n, f) => n + f[k], 0) + lopande[k]]));
+  const aktuella = totalt.punkter - totalt.ejAktuella;
+  return {
+    faser,
+    lopande,
+    totalt: {
+      ...totalt,
+      grindar: faser.filter((f) => f.grind.passerad).length,
+      andel: aktuella ? Math.round((totalt.klara / aktuella) * 100) : 100,
+    },
+  };
+}
+
+/* ---------- Nästa uppgift ---------- */
+
+/** Kön av det som ska göras härnäst i projektet, viktigast först:
+ *  1. punkter med en ledtid som är försenad eller ska startas nu
+ *  2. öppna punkter i försenade och pågående faser, i checklistans ordning —
+ *     och grinden när alla fasens punkter är klara
+ *  3. om inget pågår: första fasen vars grind inte är passerad
+ *  4. förberedelse: nästa fas som startar
+ *  Varje post har en orsak i klartext och en ton (bad/warn/ok/""). */
+export function nastaUppgifter(state, pid, nu = idag()) {
+  const faser = faslage(state, pid, nu);
+  const pl = punktlage(state, pid, faser.map((f) => f.grind));
+  const oppen = (id) => pl.get(id).status === "oppen";
+  const ut = [];
+  const sedda = new Set();
+  const lagg = (post) => {
+    const nyckel = post.typ === "grind" ? "G" + post.fas.fas.nr : post.punkt.id;
+    if (sedda.has(nyckel)) return;
+    sedda.add(nyckel);
+    ut.push(post);
+  };
+
+  for (const l of ledtidslage(state, pid, nu)) {
+    if ((l.status !== "sen" && l.status !== "snart") || !oppen(l.punkt)) continue;
+    const kp = PUNKT_FOR_ID.get(l.punkt);
+    lagg({
+      typ: "punkt",
+      punkt: kp,
+      fas: faser[kp.fas],
+      ton: l.status === "sen" ? "bad" : "warn",
+      orsak:
+        l.status === "sen"
+          ? `Ledtid försenad — skulle ha startat ${datumKort(l.senast)}`
+          : `Ledtid — starta senast ${datumKort(l.senast)}`,
+    });
+  }
+
+  const fasPoster = (f, orsak, ton) => {
+    const oppna = PUNKTER_I_FAS[f.fas.nr].filter((p) => oppen(p.id));
+    for (const p of oppna) lagg({ typ: "punkt", punkt: p, fas: f, ton, orsak });
+    if (!oppna.length && !f.grind.passerad)
+      lagg({ typ: "grind", fas: f, ton: "ok", orsak: `Alla punkter i fas ${f.fas.nr} är klara — dags för ${f.fas.grind.kod}` });
+  };
+
+  const sena = faser.filter((f) => f.status === "sen");
+  const pagar = faser.filter((f) => f.status === "pagar");
+  for (const f of sena) fasPoster(f, `Fas ${f.fas.nr} är försenad`, "bad");
+  for (const f of pagar) fasPoster(f, `Fas ${f.fas.nr} pågår`, "");
+
+  const ejPasserade = faser.filter((f) => !f.grind.passerad && f.status !== "sen" && f.status !== "pagar");
+  if (!sena.length && !pagar.length && ejPasserade.length) {
+    const f = ejPasserade[0];
+    fasPoster(f, f.start ? `Fas ${f.fas.nr} startar ${datumKort(f.start)}` : `Nästa fas: ${f.fas.nr}`, "");
+  } else if (ejPasserade.length) {
+    const f = ejPasserade[0];
+    fasPoster(f, f.start ? `Förbered fas ${f.fas.nr} — startar ${datumKort(f.start)}` : `Förbered fas ${f.fas.nr}`, "");
+  }
+  return ut;
+}
+
+/* ---------- Erfarenheter ---------- */
+
+const TYPVIKT = { avvikelse: 1, lardom: 0 };
+const kronor = (v) => Number(String(v ?? "").replace(/\s/g, "").replace(",", ".").replace(/[^\d.-]/g, "")) || 0;
+
+/** Avvikelser och lärdomar som erfarenhetslista, vassast först: påverkan,
+ *  hur många projekt samma punkt gett problem i, kostnad, typ och datum.
+ *  Utan pid gäller den hela portföljen. */
+export function erfarenheter(state, pid = null) {
+  const alla = (state.epcKommentarer || []).filter((k) => k.typ === "avvikelse" || k.typ === "lardom");
+  const projektPerPunkt = new Map();
+  for (const k of alla) {
+    if (!projektPerPunkt.has(k.punkt)) projektPerPunkt.set(k.punkt, new Set());
+    projektPerPunkt.get(k.punkt).add(k.projektId);
+  }
+  return alla
+    .filter((k) => !pid || k.projektId === pid)
+    .map((k) => ({
+      ...k,
+      kp: PUNKT_FOR_ID.get(k.punkt) || null,
+      kostnadKr: kronor(k.kostnad),
+      aterkommer: projektPerPunkt.get(k.punkt).size,
+    }))
+    .sort(
+      (a, b) =>
+        (b.paverkan || 0) - (a.paverkan || 0) ||
+        b.aterkommer - a.aterkommer ||
+        b.kostnadKr - a.kostnadKr ||
+        TYPVIKT[b.typ] - TYPVIKT[a.typ] ||
+        (b.datum || "").localeCompare(a.datum || "")
+    );
+}
+
+/** Avvikelser och lärdomar på samma punkt från andra projekt — det som
+ *  ska göra nästa projekt bättre, visat där det behövs. */
+export function tidigareErfarenheter(state, punktId, pid) {
+  return erfarenheter(state).filter((k) => k.punkt === punktId && k.projektId !== pid);
+}
+
+/** Kommentarer på en punkt i projektet, äldst först. */
+export function kommentarerFor(state, pid, punktId) {
+  return (state.epcKommentarer || []).filter((k) => k.projektId === pid && k.punkt === punktId);
 }
