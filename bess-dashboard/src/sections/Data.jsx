@@ -27,8 +27,8 @@ import { hamtaNamn } from "../state/portfolj-reducer.js";
    förrän användaren tillämpar det, och en import tar aldrig bort något.
 
    Mötesprotokoll hamnar i protokollarkivet (lib/protokoll-arkiv.js). Det
-   senast inlästa blir MASTER för projektet, äldre arkiveras. Samma arkiv är
-   målet för det planerade Make-flödet från Google Drive. */
+   med högst mötesnummer är MASTER för projektet, övriga arkiveras. Samma
+   arkiv är målet för Make-flödet från Google Drive. */
 
 const LISTNAMN = Object.fromEntries(CSV_TABELLER);
 const FALTNAMN = {
@@ -226,7 +226,8 @@ function Protokollarkiv({ rader, projekt, status, onOppna }) {
         <div>
           <h3>Mötesprotokoll</h3>
           <div className="lead" style={{ margin: "4px 0 0" }}>
-            Det senast inlästa protokollet är MASTER — den gällande versionen för projektet. Äldre arkiveras.
+            Protokollet med högst mötesnummer är MASTER — den gällande versionen för projektet. Ett äldre
+            möte som laddas upp i efterhand arkiveras direkt.
           </div>
         </div>
       </div>
@@ -362,7 +363,11 @@ export function Data() {
         const rad = await arkiv.ladda(f.fil, { projektId: f.projektId, moteNr: f.moteNr });
         await laddaArkiv();
         if (f.nya.length || f.uppdateringar.length) dispatch({ type: "IMPORTERA", forslag: f });
-        visaToast(`${rad.filnamn} är MASTER för projektet`);
+        visaToast(
+          rad.status === "master"
+            ? `${rad.filnamn} är MASTER för projektet`
+            : `${rad.filnamn} arkiverades — projektet har redan ett protokoll med högre mötesnummer`
+        );
       } else {
         dispatch({ type: "IMPORTERA", forslag: f });
         visaToast(f.typ === "backup" ? "Portföljen återställd från säkerhetskopian" : "Importen är tillämpad och loggad");
@@ -441,7 +446,7 @@ export function Data() {
               <b>.xlsx</b> UR-logg → ÄTA och hinder
             </li>
             <li>
-              <b>.pdf / .docx</b> Mötesprotokoll → Byggmöten, blir MASTER
+              <b>.pdf / .docx</b> Mötesprotokoll → Byggmöten, MASTER om mötesnumret är högst
             </li>
             <li>
               <b>.csv</b> Tabell från appens egen export → samma flik
