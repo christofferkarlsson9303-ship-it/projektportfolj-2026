@@ -11,10 +11,10 @@ const lage = (page) => page.getByRole("region", { name: "Lägesbild — var proj
 const projektrad = (page, namn) => lage(page).getByRole("group", { name: "Välj projekt" }).getByRole("button", { name: namn });
 const rad = (page, id) => page.locator(`[id="kp-${id}"]`);
 
-test("guiden har 16 faser, de löpande punkterna och alla 199 kontrollpunkter som referens", async ({ page }) => {
+test("guiden har 16 faser, de löpande punkterna och alla 286 kontrollpunkter som referens", async ({ page }) => {
   await expect(page.locator("details.epc-fas")).toHaveCount(17);
-  await expect(page.locator(".epc-rad")).toHaveCount(199);
-  await expect(page.locator(".epc-rad.hp")).toHaveCount(33);
+  await expect(page.locator(".epc-rad")).toHaveCount(286);
+  await expect(page.locator(".epc-rad.hp")).toHaveCount(47);
   // Punkterna bockas inte av och skapar inga ärenden — läget följs per fas.
   await expect(page.locator(".epc-rad input[type=checkbox]")).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Skapa UR\/ÄTA/ })).toHaveCount(0);
@@ -26,7 +26,7 @@ test("lägesbilden har en rad per projekt och visar läget för valt projekt", a
   await expect(projektrad(page, /^36037 Växjö/)).toHaveAttribute("aria-pressed", "true");
   await expect(projektrad(page, /^36037 Växjö/)).toContainText(/av 16 grindar passerade/);
   await expect(projektrad(page, /^Göteborg/)).toContainText("Datum saknas");
-  await expect(lage(page)).toContainText(/\d+ av 16 grindar och \d+ av 33 hållpunkter passerade/);
+  await expect(lage(page)).toContainText(/\d+ av 16 grindar och \d+ av 47 hållpunkter passerade/);
 });
 
 test("ett annat projekt väljs i lägesbilden och guiden följer med", async ({ page }) => {
@@ -37,9 +37,19 @@ test("ett annat projekt väljs i lägesbilden och guiden följer med", async ({ 
   await expect(page.locator('aside[aria-label="Fas 0 i 36038 Alvesta"]')).toBeAttached();
 });
 
-test("filtret Hållpunkter visar bara de 33 hållpunkterna", async ({ page }) => {
+test("version 1.1: källgenomgången, nyckelvärdena och de tolv motsägelserna finns med", async ({ page }) => {
+  await expect(page.getByRole("region", { name: "Så byggs en batteripark" })).toContainText("Version 1.1");
+  await page.getByRole("searchbox", { name: "Sök i guiden" }).fill("3,21 V");
+  await expect(page.locator(".epc-rad")).toHaveCount(1);
+  await expect(rad(page, "15.17")).toBeVisible();
+  await expect(page.locator("#fas-15")).toContainText("Från källgenomgången");
+  await expect(page.getByRole("region", { name: "Nyckelvärden — snabbreferens" }).locator("dt")).toHaveCount(14);
+  await expect(page.locator(".epc-verifiera dt")).toHaveCount(12);
+});
+
+test("filtret Hållpunkter visar bara de 47 hållpunkterna", async ({ page }) => {
   await page.getByRole("group", { name: "Visa markering" }).getByRole("button", { name: "Hållpunkter" }).click();
-  await expect(page.locator(".epc-rad")).toHaveCount(33);
+  await expect(page.locator(".epc-rad")).toHaveCount(47);
   await expect(page.locator(".epc-rad:not(.hp)")).toHaveCount(0);
 });
 

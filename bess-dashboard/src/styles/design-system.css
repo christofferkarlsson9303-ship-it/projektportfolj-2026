@@ -2144,6 +2144,17 @@ button.epc-lage-rad[aria-pressed="true"]{border-color:var(--one-bla);box-shadow:
 .epc-lardomar b{font-size:13.5px;color:var(--ink)}
 .epc-lardomar p{margin:4px 0 0;font-size:13px;line-height:1.45;color:var(--ink-soft)}
 .epc-gorsa span{font-weight:700;color:var(--ok-ink)}
+.epc-version{margin:6px 0 0;font:600 11.5px/1.4 var(--font-b);color:var(--ink-faint)}
+.epc-nyckel{margin:12px 0 0;display:flex;flex-direction:column}
+.epc-nyckel>div{display:grid;grid-template-columns:minmax(120px,190px) minmax(0,1fr);gap:6px 16px;align-items:start;
+  padding:10px 0;border-top:1px solid var(--hairline)}
+.epc-nyckel>div:first-child{border-top:0}
+.epc-nyckel dt{font-weight:700;font-size:13px;line-height:1.5;color:var(--ink)}
+.epc-nyckel dd{margin:0;min-width:0}
+.epc-nyckel ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.epc-nyckel li{padding:3px 8px;border-radius:6px;background:var(--sunken);font-size:12.5px;line-height:1.45;color:var(--ink);
+  font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+@media(max-width:560px){.epc-nyckel>div{grid-template-columns:minmax(0,1fr)}}
 .epc-verifiera{margin:12px 0 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px}
 .epc-verifiera>div{border-left:3px solid var(--orange);padding:4px 0 4px 12px}
 .epc-verifiera dt{font-weight:700;font-size:13px;color:var(--ink)}

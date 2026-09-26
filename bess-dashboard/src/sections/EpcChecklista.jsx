@@ -5,8 +5,8 @@ import { Note } from "../components/ui/Primitiver.jsx";
 import { Fasruta, Sektioner } from "../components/epc/Fas.jsx";
 import { Markering } from "../components/epc/Delar.jsx";
 import { NuLage, Portfoljlage } from "../components/epc/Lagesbild.jsx";
-import { AttVerifiera, Lardomar, Ledtidstabell, Milstolpstabell } from "../components/epc/Tabeller.jsx";
-import { LOPANDE, MARKERINGAR, SUMMERING } from "../data/bessChecklistData.ts";
+import { AttVerifiera, Lardomar, Ledtidstabell, Milstolpstabell, Nyckelvarden } from "../components/epc/Tabeller.jsx";
+import { LOPANDE, MARKERINGAR, SUMMERING, VERSION } from "../data/bessChecklistData.ts";
 import { projekt } from "../lib/berakningar.js";
 import { FAS_STATUS, faslage } from "../lib/epc.js";
 
@@ -211,7 +211,11 @@ export function EpcChecklista() {
             </h2>
             <p className="lead m-0">
               Totalentreprenad enligt ABT 06 / ABT-U 07 — från anbud och nätanslutning via mark, leverans och
-              idrifttagning till slutbesiktning och garantitid. Byggd på erfarenheterna från Batch C.
+              idrifttagning till slutbesiktning och garantitid. Byggd på erfarenheterna från Batch C,
+              leverantörsmanualer och kontraktsunderlag.
+            </p>
+            <p className="epc-version">
+              Version {VERSION.nr} · {VERSION.datum} — samtliga källor i åtta NotebookLM-böcker genomgångna
             </p>
           </div>
           <ul className="epc-tal" aria-label="Guiden i siffror">
@@ -228,8 +232,8 @@ export function EpcChecklista() {
               <span>hållpunkter</span>
             </li>
             <li>
-              <b>{SUMMERING.milstolpar}</b>
-              <span>betalmilstolpar</span>
+              <b>{SUMMERING.motsagelser}</b>
+              <span>motsägelser att reda ut</span>
             </li>
           </ul>
         </div>
@@ -254,6 +258,15 @@ export function EpcChecklista() {
       </section>
 
       <Guide pid={pid} mal={mal} />
+
+      <section className="card epc-block" aria-labelledby="epc-nyckelvarden">
+        <h3 id="epc-nyckelvarden">Nyckelvärden — snabbreferens</h3>
+        <p className="lead">
+          Gränsvärden och frister ur kontrakt, leverantörsmanualer och EBR som oftast avgör om en hållpunkt passeras.
+          Där källorna säger olika står det under Att verifiera längst ned.
+        </p>
+        <Nyckelvarden />
+      </section>
 
       <section className="card epc-block" aria-labelledby="epc-ledtider">
         <h3 id="epc-ledtider">Ligg steget före – ledtider</h3>
@@ -284,6 +297,10 @@ export function EpcChecklista() {
 
       <section className="card epc-block" aria-labelledby="epc-verifiera">
         <h3 id="epc-verifiera">Att verifiera — källorna säger olika</h3>
+        <p className="lead">
+          {SUMMERING.motsagelser} motsägelser i källorna. Dimensionera för det strängaste värdet och få skriftligt
+          besked innan det byggs på.
+        </p>
         <AttVerifiera />
       </section>
 
