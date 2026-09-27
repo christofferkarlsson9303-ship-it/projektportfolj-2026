@@ -5,7 +5,7 @@ test.beforeEach(async ({ page }) => {
   await oppna(page, "Slutdokumentation");
 });
 
-const index = (page) => page.locator(".kpi", { hasText: "Överlämningsindex" });
+const index = (page) => page.getByRole("article", { name: "Överlämningsindex" });
 const handlingar = (page) => page.locator(".slutdok-rad");
 /* Första raden som går att ändra — slutbesiktningsprotokollet är låst. */
 const forsta = (page) => page.locator(".slutdok-rad", { has: page.locator(".slutdok-bock:enabled") }).first();
@@ -14,11 +14,11 @@ const forsta = (page) => page.locator(".slutdok-rad", { has: page.locator(".slut
    första gången någon öppnar fliken, utan att något klickas. */
 test("handlingarna finns utan att vyn behövt skriva något", async ({ page }) => {
   expect(await handlingar(page).count()).toBeGreaterThan(0);
-  await expect(page.locator(".kpi .label", { hasText: /^Överlämningsindex$/ })).toBeVisible();
+  await expect(page.getByRole("article", { name: "Överlämningsindex", exact: true })).toBeVisible();
 });
 
 test("M6-grinden är spärrad från början", async ({ page }) => {
-  const grind = page.locator(".kpi", { hasText: "M6-grind" });
+  const grind = page.getByRole("article", { name: "M6-grind" });
   await expect(grind).toContainText("Spärrad");
   await expect(page.getByText(/kräver 100 % godkända obligatoriska handlingar/)).toBeVisible();
 });
@@ -146,7 +146,7 @@ test("status är låst per projekt, inte globalt", async ({ page }) => {
   await annat.click();
   await expect(annat).toHaveAttribute("aria-pressed", "true");
   await expect(index(page)).toContainText("0 %");
-  await expect(page.locator(".kpi", { hasText: "M6-grind" })).toContainText("Spärrad");
+  await expect(page.getByRole("article", { name: "M6-grind" })).toContainText("Spärrad");
 });
 
 test("vyn renderar utan konsolfel", async ({ page }) => {

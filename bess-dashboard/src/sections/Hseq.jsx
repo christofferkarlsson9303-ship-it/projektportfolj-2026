@@ -385,7 +385,7 @@ export function Hseq() {
       ) : null}
 
       {id06Brist ? (
-        <Note>
+        <Note niva="warn">
           <b>
             {id06Brist} ID06-stickprov med anmärkning.
           </b>{" "}

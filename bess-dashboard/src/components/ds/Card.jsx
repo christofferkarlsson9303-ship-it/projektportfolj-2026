@@ -46,7 +46,7 @@ export function Card({
             {subtitle ? <p className="m-0 mt-1 text-[13px] leading-snug text-ink-soft">{subtitle}</p> : null}
           </div>
           {badge || action ? (
-            <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-2">
+            <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2">
               {badge}
               {action}
             </div>

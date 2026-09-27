@@ -14,7 +14,7 @@ test("vyn visar de fyra grindarna", async ({ page }) => {
     "Öppna rondavvikelser",
     "Incidenter utan rapport",
   ]) {
-    await expect(page.locator(".kpi .label", { hasText: new RegExp(`^${grind}$`) })).toBeVisible();
+    await expect(page.getByRole("article", { name: grind, exact: true })).toBeVisible();
   }
 });
 

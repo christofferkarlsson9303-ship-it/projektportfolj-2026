@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { Projektvaljare } from "../../components/ui/Projektvaljare.jsx";
 import { Tathetsvaljare } from "../../components/ui/Vyvaljare.jsx";
-import { Kpi, Note, Tabellyta } from "../../components/ui/Primitiver.jsx";
+import { Callout, Card, StatTile, StatusBadge } from "../../components/ds/index.js";
 import { fmtSEK } from "../../lib/format.js";
 import { nyAtaPost } from "../../lib/nyaPoster.js";
 import { ataSummering, prisGrind, projekt, underrattelseLage } from "../../lib/berakningar.js";
@@ -22,7 +22,9 @@ import { AtaDrawerDetails } from "./AtaDrawerDetails.jsx";
    bytts ut.
 
    Nyckeltalen och de två varningarna ovanför vyn ligger kvar oavsett läge.
-   De svarar på "hur ligger vi till" och ska inte gömmas bakom ett vyval. */
+   De svarar på "hur ligger vi till" och ska inte gömmas bakom ett vyval.
+   Allt står på designsystemet: StatTile, Callout och Card, med vyvalet i
+   registerkortets huvud. */
 
 const PROCESSEN = [
   ["1. Identifiera", "Ingår detta i kontraktet? Tveksamt fall — öppna posten direkt.", "Direkt vid ny omständighet"],
@@ -92,62 +94,58 @@ export function Ata() {
     <>
       <Projektvaljare />
 
-      <div className="grid g4">
-        <Kpi label="Poster i UR-serien" varde={n.s.antal} hint={`varav ${n.s.oppna} ej stängda`} />
-        <Kpi label="Godkänt belopp" varde={fmtSEK(n.s.belopp)} hint="godkänt, fakturerat eller stängt" />
-        <Kpi
-          label="Godkänt ej fakturerat"
-          varde={fmtSEK(n.s.ejFakt)}
-          hint={n.ejFakt.length ? "fakturera samma vecka" : "inget väntar"}
-          klass={n.ejFakt.length ? "warn" : ""}
-        />
-        <Kpi
-          label="Grindar som larmar"
-          varde={larm}
-          hint="24-timmarsfrist och prisgodkännande"
-          klass={larm ? "bad" : ""}
-        />
-      </div>
-
-      {n.utan24.length ? (
-        <Note niva="bad">
-          <b>
-            {n.utan24.length} post{n.utan24.length > 1 ? "er" : ""} saknar underrättelse mer än 24 timmar
-            efter händelsen.
-          </b>{" "}
-          Utan underrättelse kan rätten till ersättning gå förlorad (ABT 06 kap. 2 § 7 och kap. 5 § 4).
-          Skicka underrättelsen först — komplettera blanketten sedan.
-        </Note>
-      ) : null}
-
-      {n.utanPris.length ? (
-        <Note>
-          <b>
-            {n.utanPris.length} post{n.utanPris.length > 1 ? "er" : ""} har startat utan skriftligt godkänt
-            pris.
-          </b>{" "}
-          Enligt processen ska priset vara godkänt före start. Dokumentera i dagboken varje dag arbetet
-          pågår.
-        </Note>
-      ) : null}
-
-      <div className="card" style={{ marginTop: 16 }}>
-        <div className="kortrad">
-          <div style={{ minWidth: 0 }}>
-            <h3>UR- och ÄTA-register — {projektNamn}</h3>
-            <div className="lead" style={{ marginBottom: 0 }}>
-              Prissättning mot beställaren enligt Bilaga 06.1 (ABT 06). Bilaga 3 gäller mot egna UE under
-              ABT-U 07.
-            </div>
-          </div>
-          <div className="kortverktyg">
-            <ViewSwitcher vy={vy} onValj={setVy} />
-            {vy === "table" ? <Tathetsvaljare /> : null}
-            {vy !== "table" ? nyKnapp : null}
-          </div>
+      <div className="flex flex-col gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+          <StatTile label="Poster i UR-serien" value={n.s.antal} hint={`varav ${n.s.oppna} ej stängda`} />
+          <StatTile label="Godkänt belopp" value={fmtSEK(n.s.belopp)} hint="godkänt, fakturerat eller stängt" />
+          <StatTile
+            label="Godkänt ej fakturerat"
+            value={fmtSEK(n.s.ejFakt)}
+            hint={n.ejFakt.length ? "fakturera samma vecka" : "inget väntar"}
+            ton={n.ejFakt.length ? "warn" : ""}
+          />
+          <StatTile
+            label="Grindar som larmar"
+            value={larm}
+            hint="24-timmarsfrist och prisgodkännande"
+            ton={larm ? "bad" : ""}
+          />
         </div>
 
-        <div style={{ marginTop: 14 }}>
+        {n.utan24.length ? (
+          <Callout ton="bad">
+            <b>
+              {n.utan24.length} post{n.utan24.length > 1 ? "er" : ""} saknar underrättelse mer än 24 timmar
+              efter händelsen.
+            </b>{" "}
+            Utan underrättelse kan rätten till ersättning gå förlorad (ABT 06 kap. 2 § 7 och kap. 5 § 4).
+            Skicka underrättelsen först — komplettera blanketten sedan.
+          </Callout>
+        ) : null}
+
+        {n.utanPris.length ? (
+          <Callout ton="warn">
+            <b>
+              {n.utanPris.length} post{n.utanPris.length > 1 ? "er" : ""} har startat utan skriftligt godkänt
+              pris.
+            </b>{" "}
+            Enligt processen ska priset vara godkänt före start. Dokumentera i dagboken varje dag arbetet
+            pågår.
+          </Callout>
+        ) : null}
+
+        <Card
+          id="ata-register"
+          title={`UR- och ÄTA-register — ${projektNamn}`}
+          subtitle="Prissättning mot beställaren enligt Bilaga 06.1 (ABT 06). Bilaga 3 gäller mot egna UE under ABT-U 07."
+          action={
+            <>
+              <ViewSwitcher vy={vy} onValj={setVy} />
+              {vy === "table" ? <Tathetsvaljare /> : null}
+              {vy !== "table" ? nyKnapp : null}
+            </>
+          }
+        >
           {vy === "board" ? (
             <AtaKanbanView
               rader={n.rader}
@@ -169,38 +167,36 @@ export function Ata() {
           ) : null}
 
           {vy === "timeline" ? <AtaTimelineView rader={n.rader} onOppna={setOppen} /> : null}
-        </div>
-      </div>
+        </Card>
 
-      <div className="card" style={{ marginTop: 16 }}>
-        <h3>Processen i sju steg</h3>
-        <div className="lead">Så här ska varje post drivas — ur ÄTA-processen i projektmodellen.</div>
-        <Tabellyta etikett="ÄTA-processen i sju steg">
-          <table>
-            <thead>
-              <tr>
-                <th scope="col" style={{ width: 150 }}>
-                  Steg
-                </th>
-                <th scope="col">Åtgärd</th>
-                <th scope="col" style={{ width: 180 }}>
-                  När
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {PROCESSEN.map(([steg, atgard, nar]) => (
-                <tr key={steg}>
-                  <td data-label="Steg">
-                    <b>{steg}</b>
-                  </td>
-                  <td data-label="Åtgärd">{atgard}</td>
-                  <td data-label="När">{nar}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Tabellyta>
+        <Card
+          id="ata-processen"
+          title="Processen i sju steg"
+          subtitle="Så här ska varje post drivas — ur ÄTA-processen i projektmodellen."
+        >
+          <ol aria-label="ÄTA-processen i sju steg" className="m-0 list-none p-0">
+            {PROCESSEN.map(([steg, atgard, nar], i) => (
+              <li
+                key={steg}
+                className="grid grid-cols-[2rem_minmax(0,1fr)] items-start gap-x-3 gap-y-1 border-0 border-t border-solid border-hairline py-3 first:border-t-0 first:pt-0 last:pb-0 sm:grid-cols-[2rem_minmax(0,1fr)_auto]"
+              >
+                <span
+                  aria-hidden="true"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-info-bg font-head text-sm font-bold text-info-ink"
+                >
+                  {i + 1}
+                </span>
+                <div className="min-w-0">
+                  <b className="block text-[13.5px] text-ink">{steg.replace(/^\d+\. /, "")}</b>
+                  <span className="text-[13px] leading-snug text-ink-soft">{atgard}</span>
+                </div>
+                <div className="col-start-2 sm:col-start-auto">
+                  <StatusBadge label={nar} ton={i === 1 ? "warn" : "neutral"} />
+                </div>
+              </li>
+            ))}
+          </ol>
+        </Card>
       </div>
 
       {valdPost ? <AtaDrawerDetails u={valdPost} onStang={() => setOppen(null)} /> : null}
