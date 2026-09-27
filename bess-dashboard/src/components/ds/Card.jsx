@@ -6,7 +6,9 @@
    Rubriken namnger regionen (aria-labelledby = id), så varje kort är ett
    landmärke. `badge` och `action` hamnar till höger i huvudet. `icon` ritas
    i en rundad kvadrat som blir orange vid hover, enligt ONE Nordics
-   ikonregel. `i` styr i vilken ordning korten glider in. */
+   ikonregel. `i` styr i vilken ordning korten glider in. Alla barn får
+   min-width 0, så att breda tabeller och tidslinjer rullar i sidled inne i
+   kortet i stället för att spräcka det. */
 
 export function Card({
   as: Tag = "section",
@@ -25,7 +27,7 @@ export function Card({
   const harHuvud = title || badge || action;
   return (
     <Tag
-      className={`ds-card relative flex min-w-0 flex-col gap-4 rounded-xl border border-solid border-hairline bg-surface p-4 shadow-sm md:p-6 ${className}`.trim()}
+      className={`ds-card relative flex min-w-0 flex-col gap-4 rounded-xl border border-solid border-hairline bg-surface p-4 shadow-sm md:p-6 [&>*]:min-w-0 ${className}`.trim()}
       aria-labelledby={title && id ? id : undefined}
       style={i !== undefined ? { "--i": i } : undefined}
       {...rest}

@@ -77,8 +77,8 @@ ljust och mörkt läge och följer ONE Nordics profil. Avstånden följer en
 | `CheckList` | Avbockningslista för underlag, ronder och kontrollpunkter. |
 
 Översikten (`DashboardView`), Bygga batteripark, Milstolpar M1–M7, ÄTA och
-hinder, Dagbok, Ekonomi, Byggmöten, Störning, HSEQ, Risker och
-Slutdokumentation är byggda av dem. De äldre vyerna får samma statusmärke via
+hinder, Dagbok, Ekonomi, Byggmöten, Störning, HSEQ, Risker,
+Slutdokumentation, Idag, Tidplan och Veckokoll är byggda av dem. De äldre vyerna får samma statusmärke via
 `Pill`, samma nyckeltalsruta via `Kpi` (→ `StatTile`), samma upplysning via
 `Note` (→ `Callout`) och samma kortform via `.card`.
 

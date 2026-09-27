@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { usePortfolj, useUi } from "../state/hooks.js";
 import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
-import { Card, Pill, Prog, Tabellyta } from "../components/ui/Primitiver.jsx";
+import { Pill, Tabellyta } from "../components/ui/Primitiver.jsx";
+import { Callout, Card, Meter, StatusBadge } from "../components/ds/index.js";
 import { Falt } from "../components/ui/Falt.jsx";
 import { Slideover } from "../components/ui/Slideover.jsx";
 import { VECKOFRAGOR } from "../data/veckofragor.js";
@@ -23,7 +24,10 @@ import { hamtaNamn } from "../state/portfolj-reducer.js";
 
    Fördjupad kommentar vid avvikelse sparas i k1…k9 på samma rad. Det är nya
    fält, men de går genom SATT_VECKORAD som vilket fält som helst — reducern
-   behövde inte röras. */
+   behövde inte röras.
+
+   Vyn står på designsystemet: veckan som Card med veckoväxlaren i huvudet
+   och mätare, frågekorten i Cards form, anteckning och historik som kort. */
 
 const ANTAL_FRAGOR = VECKOFRAGOR.length;
 
@@ -156,139 +160,129 @@ export function Veckokoll() {
     <>
       <Projektvaljare />
 
-      <Card>
-        <div className="veckorad">
-          <button
-            type="button"
-            className="btn sec mini"
-            onClick={() => setVecka(veckaForskjut(vecka, -1))}
-          >
-            ‹ Föregående
-          </button>
-          <div style={{ flex: 1, minWidth: 180 }}>
-            <h3>
-              Veckochecklistan — {veckaEtikett(vecka)}
-              {nuvarande ? " (denna vecka)" : ""}
-            </h3>
-            <div className="lead" style={{ margin: 0 }}>
-              {p.nr} {p.namn} · {besvarade}/{ANTAL_FRAGOR} besvarade
-              {flaggor.length ? (
-                <>
-                  {" · "}
-                  <b style={{ color: "var(--rod)" }}>{flaggor.length} kräver åtgärd</b>
-                </>
+      <div className="flex flex-col gap-4 lg:gap-6">
+        <Card
+          id="vk-vecka"
+          title={`Veckochecklistan — ${veckaEtikett(vecka)}${nuvarande ? " (denna vecka)" : ""}`}
+          subtitle={`${p.nr} ${p.namn} · ${besvarade}/${ANTAL_FRAGOR} besvarade`}
+          badge={
+            flaggor.length ? (
+              <StatusBadge ton="bad" label={`${flaggor.length} kräver åtgärd`} />
+            ) : besvarade === ANTAL_FRAGOR ? (
+              <StatusBadge ton="ok" label="Alla besvarade" />
+            ) : null
+          }
+          action={
+            <>
+              <button type="button" className="btn sec mini" onClick={() => setVecka(veckaForskjut(vecka, -1))}>
+                ‹ Föregående
+              </button>
+              <button type="button" className="btn sec mini" onClick={() => setVecka(veckaForskjut(vecka, 1))}>
+                Nästa ›
+              </button>
+              {!nuvarande ? (
+                <button type="button" className="btn mini" onClick={() => setVecka(veckaNu())}>
+                  Till denna vecka
+                </button>
               ) : null}
-            </div>
-          </div>
-          <button
-            type="button"
-            className="btn sec mini"
-            onClick={() => setVecka(veckaForskjut(vecka, 1))}
+            </>
+          }
+        >
+          <Meter
+            value={besvarade}
+            max={ANTAL_FRAGOR}
+            label={`${besvarade} av ${ANTAL_FRAGOR} frågor besvarade`}
+          />
+          <p className="m-0 text-[13px] leading-snug text-ink-soft">
+            Checklistan ska gås igenom varje vecka för varje kontrakt. Reagerar du på någon punkt har du som
+            projektledare skyldighet att vidta åtgärd.
+          </p>
+        </Card>
+
+        <div className="veckokort-rutnat" role="group" aria-label={`Veckochecklistan ${veckaEtikett(vecka)}`}>
+          {VECKOFRAGOR.map((f) => (
+            <Fragekort
+              key={f.n}
+              f={f}
+              svar={rad?.["q" + f.n] || ""}
+              kommentar={rad?.["k" + f.n] || ""}
+              onSvara={svara}
+              onOppna={setOppenFraga}
+            />
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
+          <Card
+            id="vk-genomgang"
+            title="Veckans genomgång"
+            badge={rad?.klar ? <StatusBadge ton="ok" label="Genomgången" /> : null}
           >
-            Nästa ›
-          </button>
-          {!nuvarande ? (
-            <button type="button" className="btn mini" onClick={() => setVecka(veckaNu())}>
-              Till denna vecka
-            </button>
-          ) : null}
+            <div className="f mb-0">
+              <label htmlFor="vecka-anteckning">Anteckning för veckan</label>
+              <textarea
+                id="vecka-anteckning"
+                value={rad?.anteckning || ""}
+                placeholder="Egna noteringar, avstämningar, vem du pratat med."
+                onChange={(e) => satt("anteckning", e.target.value)}
+              />
+            </div>
+            <div>
+              <button type="button" className="btn" onClick={() => satt("klar", !rad?.klar)}>
+                {rad?.klar ? "Öppna veckan igen" : "Markera veckan som genomgången"}
+              </button>
+            </div>
+          </Card>
+
+          <Card id="vk-historik" title="Historik" subtitle={`Senaste genomgångarna för ${p.nr || p.namn}`}>
+            {historik.length ? (
+              <Tabellyta etikett="Veckokollens historik">
+                <table>
+                  <thead>
+                    <tr>
+                      <th scope="col">Vecka</th>
+                      <th scope="col">Genomgången</th>
+                      <th scope="col" className="num">
+                        Besvarade
+                      </th>
+                      <th scope="col" className="num">
+                        Åtgärder
+                      </th>
+                      <th scope="col" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {historik.map((r) => (
+                      <tr key={r.id || r.vecka}>
+                        <td data-label="Vecka">
+                          <b>{veckaEtikett(r.vecka)}</b>
+                        </td>
+                        <td data-label="Genomgången">
+                          <Pill status={r.klar ? "klarmarkerad" : "oppen"} />
+                          {r.datum ? <span className="ml-1.5 whitespace-nowrap text-xs text-ink-soft">{r.datum}</span> : null}
+                        </td>
+                        <td data-label="Besvarade" className="num">
+                          {veckaBesvarade(r)}/{ANTAL_FRAGOR}
+                        </td>
+                        <td data-label="Åtgärder" className="num">
+                          {veckaFlaggor(r).length || "—"}
+                        </td>
+                        <td>
+                          <button type="button" className="btn sec mini" onClick={() => setVecka(r.vecka)}>
+                            Öppna
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </Tabellyta>
+            ) : (
+              <p className="m-0 text-[13px] text-ink-soft">Ingen vecka registrerad ännu.</p>
+            )}
+          </Card>
         </div>
-
-        <Prog
-          procent={(besvarade / ANTAL_FRAGOR) * 100}
-          klart={besvarade === ANTAL_FRAGOR}
-          etikett={`${besvarade} av ${ANTAL_FRAGOR} frågor besvarade`}
-        />
-
-        <div className="lead" style={{ margin: "8px 0 0" }}>
-          Checklistan ska gås igenom varje vecka för varje kontrakt. Reagerar du på någon punkt har du
-          som projektledare skyldighet att vidta åtgärd.
-        </div>
-      </Card>
-
-      <div
-        className="veckokort-rutnat"
-        role="group"
-        aria-label={`Veckochecklistan ${veckaEtikett(vecka)}`}
-      >
-        {VECKOFRAGOR.map((f) => (
-          <Fragekort
-            key={f.n}
-            f={f}
-            svar={rad?.["q" + f.n] || ""}
-            kommentar={rad?.["k" + f.n] || ""}
-            onSvara={svara}
-            onOppna={setOppenFraga}
-          />
-        ))}
       </div>
-
-      <Card klass="mt-4">
-        <div className="f">
-          <label htmlFor="vecka-anteckning">Anteckning för veckan</label>
-          <textarea
-            id="vecka-anteckning"
-            value={rad?.anteckning || ""}
-            placeholder="Egna noteringar, avstämningar, vem du pratat med."
-            onChange={(e) => satt("anteckning", e.target.value)}
-          />
-        </div>
-        <div className="rowbtns">
-          <button type="button" className="btn" onClick={() => satt("klar", !rad?.klar)}>
-            {rad?.klar ? "Öppna veckan igen" : "Markera veckan som genomgången"}
-          </button>
-        </div>
-      </Card>
-
-      <Card klass="mt-4">
-        <h3>Historik</h3>
-        <div className="lead">Senaste genomgångarna för {p.nr || p.namn}</div>
-        {historik.length ? (
-          <Tabellyta etikett="Veckokollens historik">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Vecka</th>
-                  <th scope="col">Genomgången</th>
-                  <th scope="col" className="num">
-                    Besvarade
-                  </th>
-                  <th scope="col" className="num">
-                    Åtgärder
-                  </th>
-                  <th scope="col" />
-                </tr>
-              </thead>
-              <tbody>
-                {historik.map((r) => (
-                  <tr key={r.id || r.vecka}>
-                    <td data-label="Vecka">
-                      <b>{veckaEtikett(r.vecka)}</b>
-                    </td>
-                    <td data-label="Genomgången">
-                      <Pill status={r.klar ? "klarmarkerad" : "oppen"} />
-                      {r.datum ? <span className="veckodatum">{r.datum}</span> : null}
-                    </td>
-                    <td data-label="Besvarade" className="num">
-                      {veckaBesvarade(r)}/{ANTAL_FRAGOR}
-                    </td>
-                    <td data-label="Åtgärder" className="num">
-                      {veckaFlaggor(r).length || "—"}
-                    </td>
-                    <td>
-                      <button type="button" className="btn sec mini" onClick={() => setVecka(r.vecka)}>
-                        Öppna
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </Tabellyta>
-        ) : (
-          <p className="lead">Ingen vecka registrerad ännu.</p>
-        )}
-      </Card>
 
       {fragan ? (
         <Slideover
@@ -300,8 +294,12 @@ export function Veckokoll() {
             {fragan.fraga}
           </p>
 
-          {oppetSvar ? <div className="note">{fragan.svar[oppetSvar]}</div> : null}
-          {fragan.ref ? <span className="ref">{fragan.ref}</span> : null}
+          {oppetSvar ? (
+            <Callout ton={{ ok: "ok", varning: "warn", avvikelse: "bad" }[allvar(fragan, oppetSvar)] || "info"} className="mt-3">
+              {fragan.svar[oppetSvar]}
+            </Callout>
+          ) : null}
+          {fragan.ref ? <p className="m-0 mt-2 text-[11px] font-semibold text-ink-soft">{fragan.ref}</p> : null}
 
           <div className="f">
             <label htmlFor={`vecka-kommentar-${fragan.n}`}>Kommentar till avvikelsen</label>
@@ -320,7 +318,7 @@ export function Veckokoll() {
             />
           </div>
 
-          <div className="rowbtns">
+          <div className="flex flex-wrap gap-2">
             <button type="button" className="btn" onClick={() => punktFranFraga(fragan)}>
               Skapa öppen punkt
             </button>
