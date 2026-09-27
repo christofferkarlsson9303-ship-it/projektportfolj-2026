@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
 import { usePortfolj, useUi } from "../state/hooks.js";
 import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
-import { StatusBadge } from "../components/ds/StatusBadge.jsx";
+import { Callout, Card, StatTile, StatusBadge } from "../components/ds/index.js";
 import { PILL_TILL_TON } from "../lib/status.js";
 import { Tathetsvaljare, Vyvaljare } from "../components/ui/Vyvaljare.jsx";
 import { DataTable } from "../components/ui/DataTable.jsx";
-import { Kpi, Note, Riskvarde, Tabellyta } from "../components/ui/Primitiver.jsx";
+import { Riskvarde, Tabellyta } from "../components/ui/Primitiver.jsx";
 import { PTag } from "../components/ui/PTag.jsx";
 import { Falt, NumFalt } from "../components/ui/Falt.jsx";
 import { RISKAGARE, RISKKATEGORI, RISKSTATUS_NY } from "../data/konstanter.js";
@@ -30,6 +30,12 @@ const etikettAv = (lista, v, fallback) => {
 const NIVA_TEXT = { rod: "Röd", gul: "Gul", gron: "Grön" };
 const NIVA_PILL = { rod: "p-bad", gul: "p-warn", gron: "p-ok" };
 const NIVA_ORDNING = { rod: 0, gul: 1, gron: 2 };
+/** Riskkortets vänsterkant — nivån som en smal accent, inte som yta. */
+const NIVA_KANT = { rod: "border-l-rod", gul: "border-l-orange", gron: "border-l-turkos" };
+
+/* Risker på designsystemet: nyckeltal som StatTile, matrisen och
+   miniriskmetoden som kort, registret som kort med vyval i huvudet och
+   varje risk som en ruta med nivån i vänsterkanten. */
 
 /* ---------- Riskmatris ---------- */
 
@@ -67,7 +73,7 @@ function Riskmatris({ risker }) {
   }
 
   return (
-    <table className="matris">
+    <table className="matris self-start">
       <caption className="sr-only">
         Riskmatris. Rader är konsekvens 5 till 1, kolumner är sannolikhet 1 till 5.
       </caption>
@@ -96,20 +102,27 @@ function Riskkort({ r }) {
     falt === "status" ? uppdStatus("risker", r.id, falt, varde) : uppd("risker", r.id, falt, varde);
 
   return (
-    <article className={`riskkort n-${niva}`}>
-      <div className="rk-top">
+    <li
+      className={`flex flex-col gap-3 rounded-lg border border-l-[3px] border-solid border-hairline bg-sunken p-3 md:p-4 ${
+        NIVA_KANT[niva] || ""
+      }`}
+    >
+      <div className="flex flex-wrap items-center gap-2.5">
         <Riskvarde varde={rv} klass={rv >= 15 ? "h" : rv >= 8 ? "m" : "l"} />
-        <Falt
-          varde={r.titel || ""}
-          etikett="Riskens benämning"
-          className="rk-titel"
-          onCommit={(v) => satt("titel", v)}
-        />
+        <div className="min-w-[220px] flex-1">
+          <Falt
+            varde={r.titel || ""}
+            etikett="Riskens benämning"
+            className="font-semibold"
+            onCommit={(v) => satt("titel", v)}
+          />
+        </div>
         <PTag pid={r.projektId} />
+        <StatusBadge ton={PILL_TILL_TON[NIVA_PILL[niva]]} label={NIVA_TEXT[niva]} />
         <select
+          className="w-auto"
           value={r.status || "oppen"}
           onChange={(e) => satt("status", e.target.value)}
-          style={{ width: "auto" }}
           aria-label={`Status för risken ${r.titel}`}
         >
           {RISKSTATUS_NY.map(([v, n]) => (
@@ -120,128 +133,130 @@ function Riskkort({ r }) {
         </select>
       </div>
 
-      <div className="frow c5" style={{ marginTop: 12 }}>
-        <div className="f">
-          <label htmlFor={`kat-${r.id}`}>Kategori</label>
-          <select id={`kat-${r.id}`} value={r.kategori || ""} onChange={(e) => satt("kategori", e.target.value)}>
-            <option value="">— välj —</option>
-            {RISKKATEGORI.map(([v, n]) => (
-              <option value={v} key={v}>
-                {n}
-              </option>
-            ))}
-          </select>
+      <div>
+        <div className="frow c5">
+          <div className="f">
+            <label htmlFor={`kat-${r.id}`}>Kategori</label>
+            <select id={`kat-${r.id}`} value={r.kategori || ""} onChange={(e) => satt("kategori", e.target.value)}>
+              <option value="">— välj —</option>
+              {RISKKATEGORI.map(([v, n]) => (
+                <option value={v} key={v}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="f">
+            <label htmlFor={`ag-${r.id}`}>Riskägare</label>
+            <select id={`ag-${r.id}`} value={r.agarskap || ""} onChange={(e) => satt("agarskap", e.target.value)}>
+              <option value="">— välj —</option>
+              {RISKAGARE.map(([v, n]) => (
+                <option value={v} key={v}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="f">
+            <label htmlFor={`s-${r.id}`}>Sannolikhet 1–5</label>
+            <NumFalt
+              id={`s-${r.id}`}
+              typ="number"
+              min={1}
+              max={5}
+              varde={r.sannolikhet || 3}
+              etikett="Sannolikhet 1 till 5"
+              onCommit={(v) => satt("sannolikhet", Math.max(1, Math.min(5, Number(v) || 3)))}
+            />
+          </div>
+
+          <div className="f">
+            <label htmlFor={`k-${r.id}`}>Konsekvens 1–5</label>
+            <NumFalt
+              id={`k-${r.id}`}
+              typ="number"
+              min={1}
+              max={5}
+              varde={r.konsekvens || 3}
+              etikett="Konsekvens 1 till 5"
+              onCommit={(v) => satt("konsekvens", Math.max(1, Math.min(5, Number(v) || 3)))}
+            />
+          </div>
+
+          <div className="f">
+            <label htmlFor={`kost-${r.id}`}>Est. finansiell påverkan (SEK)</label>
+            <NumFalt
+              id={`kost-${r.id}`}
+              typ="number"
+              min={0}
+              step={1000}
+              placeholder="0"
+              varde={r.estimeradKostnadSEK || ""}
+              etikett="Estimerad finansiell påverkan i kronor"
+              onCommit={(v) => satt("estimeradKostnadSEK", Number(v) || 0)}
+            />
+          </div>
         </div>
 
-        <div className="f">
-          <label htmlFor={`ag-${r.id}`}>Riskägare</label>
-          <select id={`ag-${r.id}`} value={r.agarskap || ""} onChange={(e) => satt("agarskap", e.target.value)}>
-            <option value="">— välj —</option>
-            {RISKAGARE.map(([v, n]) => (
-              <option value={v} key={v}>
-                {n}
-              </option>
-            ))}
-          </select>
+        <div className="frow c2">
+          <div className="f">
+            <label htmlFor={`fore-${r.id}`}>Förebyggande åtgärd — minskar sannolikheten</label>
+            <Falt
+              id={`fore-${r.id}`}
+              flerrad
+              placeholder="Vad gör vi nu?"
+              varde={r.forebygg || r.atgard || ""}
+              etikett="Förebyggande åtgärd"
+              onCommit={(v) => satt("forebygg", v)}
+            />
+          </div>
+          <div className="f">
+            <label htmlFor={`hant-${r.id}`}>Hanterande åtgärd — om risken utlöses</label>
+            <Falt
+              id={`hant-${r.id}`}
+              flerrad
+              placeholder="Vad gör vi då?"
+              varde={r.hantera || ""}
+              etikett="Hanterande åtgärd"
+              onCommit={(v) => satt("hantera", v)}
+            />
+          </div>
         </div>
 
-        <div className="f">
-          <label htmlFor={`s-${r.id}`}>Sannolikhet 1–5</label>
-          <NumFalt
-            id={`s-${r.id}`}
-            typ="number"
-            min={1}
-            max={5}
-            varde={r.sannolikhet || 3}
-            etikett="Sannolikhet 1 till 5"
-            onCommit={(v) => satt("sannolikhet", Math.max(1, Math.min(5, Number(v) || 3)))}
-          />
-        </div>
-
-        <div className="f">
-          <label htmlFor={`k-${r.id}`}>Konsekvens 1–5</label>
-          <NumFalt
-            id={`k-${r.id}`}
-            typ="number"
-            min={1}
-            max={5}
-            varde={r.konsekvens || 3}
-            etikett="Konsekvens 1 till 5"
-            onCommit={(v) => satt("konsekvens", Math.max(1, Math.min(5, Number(v) || 3)))}
-          />
-        </div>
-
-        <div className="f">
-          <label htmlFor={`kost-${r.id}`}>Est. finansiell påverkan (SEK)</label>
-          <NumFalt
-            id={`kost-${r.id}`}
-            typ="number"
-            min={0}
-            step={1000}
-            placeholder="0"
-            varde={r.estimeradKostnadSEK || ""}
-            etikett="Estimerad finansiell påverkan i kronor"
-            onCommit={(v) => satt("estimeradKostnadSEK", Number(v) || 0)}
-          />
-        </div>
-      </div>
-
-      <div className="frow c2">
-        <div className="f">
-          <label htmlFor={`fore-${r.id}`}>Förebyggande åtgärd — minskar sannolikheten</label>
-          <Falt
-            id={`fore-${r.id}`}
-            flerrad
-            placeholder="Vad gör vi nu?"
-            varde={r.forebygg || r.atgard || ""}
-            etikett="Förebyggande åtgärd"
-            onCommit={(v) => satt("forebygg", v)}
-          />
-        </div>
-        <div className="f">
-          <label htmlFor={`hant-${r.id}`}>Hanterande åtgärd — om risken utlöses</label>
-          <Falt
-            id={`hant-${r.id}`}
-            flerrad
-            placeholder="Vad gör vi då?"
-            varde={r.hantera || ""}
-            etikett="Hanterande åtgärd"
-            onCommit={(v) => satt("hantera", v)}
-          />
-        </div>
-      </div>
-
-      <div className="frow c2">
-        <div className="f">
-          <label htmlFor={`ansv-${r.id}`}>Ansvarig</label>
-          <Falt
-            id={`ansv-${r.id}`}
-            varde={r.agare || ""}
-            etikett="Ansvarig för risken"
-            onCommit={(v) => satt("agare", v)}
-          />
-        </div>
-        <div className="f">
-          {r.arendeId ? (
-            <span className="lead">
-              Utlöst — ärende {(state.ur.find((u) => u.id === r.arendeId) || {}).nr || ""} skapat.
-            </span>
-          ) : r.status === "utlost" ? (
-            r.agarskap === "bestallare" ? (
-              <RiskTillArende r={r} />
-            ) : (
-              <span className="lead" style={{ color: "var(--ink-faint)" }}>
-                Utlöst men ägs av ONE Nordic — hanteras internt, ingen ÄTA-anmälan mot beställaren.
+        <div className="frow c2 items-end">
+          <div className="f mb-0">
+            <label htmlFor={`ansv-${r.id}`}>Ansvarig</label>
+            <Falt
+              id={`ansv-${r.id}`}
+              varde={r.agare || ""}
+              etikett="Ansvarig för risken"
+              onCommit={(v) => satt("agare", v)}
+            />
+          </div>
+          <div className="text-[13px] leading-snug">
+            {r.arendeId ? (
+              <span className="text-ink">
+                Utlöst — ärende {(state.ur.find((u) => u.id === r.arendeId) || {}).nr || ""} skapat.
               </span>
-            )
-          ) : (
-            <span className="lead" style={{ color: "var(--ink-faint)" }}>
-              Markera risken som "Utlöst" ovan för att kunna öppna en hinder-/ÄTA-anmälan.
-            </span>
-          )}
+            ) : r.status === "utlost" ? (
+              r.agarskap === "bestallare" ? (
+                <RiskTillArende r={r} />
+              ) : (
+                <span className="text-ink-faint">
+                  Utlöst men ägs av ONE Nordic — hanteras internt, ingen ÄTA-anmälan mot beställaren.
+                </span>
+              )
+            ) : (
+              <span className="text-ink-faint">
+                Markera risken som "Utlöst" ovan för att kunna öppna en hinder-/ÄTA-anmälan.
+              </span>
+            )}
+          </div>
         </div>
       </div>
-    </article>
+    </li>
   );
 }
 
@@ -332,120 +347,120 @@ export function Risker() {
     <>
       <Projektvaljare />
 
-      <div className="grid g5">
-        <Kpi label="Identifierade risker" varde={n.risker.length} hint={`${n.aktiva.length} aktiva`} />
-        <Kpi
-          label="Kritiska risker"
-          varde={n.kritiska.length}
-          hint="röda enligt riskmatrisen"
-          klass={n.kritiska.length ? "bad" : ""}
-        />
-        <Kpi
-          label="Exponentiellt Riskvärde"
-          varde={fmtSEK(n.exponering)}
-          hint="RV × est. finansiell påverkan"
-        />
-        <Kpi label="Beställarens risker" varde={n.bestallarens} hint="lyfts i beställarrapporten" />
-        <Kpi
-          label="Utan förebyggande åtgärd"
-          varde={n.utanForebygg.length}
-          hint="av de kritiska"
-          klass={n.utanForebygg.length ? "warn" : ""}
-        />
-      </div>
-
-      {n.utanForebygg.length ? (
-        <Note niva="bad">
-          <b>{n.utanForebygg.length} röd risk saknar förebyggande åtgärd.</b> Miniriskmetoden kräver att
-          röda risker (enligt riskmatrisen) har en konkret åtgärdsplan.
-        </Note>
-      ) : null}
-
-      <div className="grid g2" style={{ marginTop: 16 }}>
-        <div className="card">
-          <h3>Riskmatris</h3>
-          <div className="lead">
-            Konsekvens lodrätt, sannolikhet vågrätt. Siffran är antal aktiva risker i rutan.
-          </div>
-          <Riskmatris risker={n.risker} />
-          <div className="matleg">
-            <span>
-              <i className="gron" />
-              Grön — acceptabel
-            </span>
-            <span>
-              <i className="gul" />
-              Gul — kräver bevakning
-            </span>
-            <span>
-              <i className="rod" />
-              Röd — kräver omedelbar åtgärd
-            </span>
-          </div>
+      <div className="flex flex-col gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6 xl:grid-cols-5">
+          <StatTile label="Identifierade risker" value={n.risker.length} hint={`${n.aktiva.length} aktiva`} />
+          <StatTile
+            label="Kritiska risker"
+            value={n.kritiska.length}
+            hint="röda enligt riskmatrisen"
+            ton={n.kritiska.length ? "bad" : ""}
+          />
+          <StatTile label="Exponentiellt Riskvärde" value={fmtSEK(n.exponering)} hint="RV × est. finansiell påverkan" />
+          <StatTile label="Beställarens risker" value={n.bestallarens} hint="lyfts i beställarrapporten" />
+          <StatTile
+            label="Utan förebyggande åtgärd"
+            value={n.utanForebygg.length}
+            hint="av de kritiska"
+            ton={n.utanForebygg.length ? "warn" : ""}
+          />
         </div>
 
-        <div className="card">
-          <h3>Miniriskmetoden</h3>
-          <div className="lead">Identifiera → värdera → reagera → följ upp.</div>
-          <Tabellyta etikett="Miniriskmetoden">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Riskvärde</th>
-                  <th scope="col">Prioritet</th>
-                  <th scope="col">Åtgärd</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  ["h", "15–25", "Kritisk", "Omedelbar åtgärdsplan, eskalera till ledning"],
-                  ["m", "8–14", "Hög", "Konkret åtgärdsplan inom en vecka"],
-                  ["l", "4–7", "Medium", "Bevakas aktivt"],
-                  ["l", "1–3", "Låg", "Registreras utan aktiv åtgärd"],
-                ].map(([kl, spann, prio, atgard]) => (
-                  <tr key={spann}>
-                    <td data-label="Riskvärde">
-                      <span className={`rv ${kl}`}>{spann}</span>
-                    </td>
-                    <td data-label="Prioritet">{prio}</td>
-                    <td data-label="Åtgärd">{atgard}</td>
+        {n.utanForebygg.length ? (
+          <Callout ton="bad">
+            <b>{n.utanForebygg.length} röd risk saknar förebyggande åtgärd.</b> Miniriskmetoden kräver att
+            röda risker (enligt riskmatrisen) har en konkret åtgärdsplan.
+          </Callout>
+        ) : null}
+
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
+          <Card
+            id="risk-matris"
+            title="Riskmatris"
+            subtitle="Konsekvens lodrätt, sannolikhet vågrätt. Siffran är antal aktiva risker i rutan."
+          >
+            <Riskmatris risker={n.risker} />
+            <ul aria-label="Förklaring till riskmatrisen" className="matleg m-0 list-none p-0">
+              <li>
+                <i className="gron" />
+                Grön — acceptabel
+              </li>
+              <li>
+                <i className="gul" />
+                Gul — kräver bevakning
+              </li>
+              <li>
+                <i className="rod" />
+                Röd — kräver omedelbar åtgärd
+              </li>
+            </ul>
+          </Card>
+
+          <Card
+            id="risk-metod"
+            title="Miniriskmetoden"
+            subtitle="Identifiera → värdera → reagera → följ upp."
+            action={
+              <button type="button" className="btn sec mini" onClick={() => window.print()}>
+                Riskregister (A4)
+              </button>
+            }
+          >
+            <Tabellyta etikett="Miniriskmetoden">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Riskvärde</th>
+                    <th scope="col">Prioritet</th>
+                    <th scope="col">Åtgärd</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </Tabellyta>
-          <div className="rowbtns">
-            <button type="button" className="btn sec" onClick={() => window.print()}>
-              Riskregister (A4)
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="card" style={{ marginTop: 16 }}>
-        <div className="kortrad">
-          <div style={{ minWidth: 0 }}>
-            <h3>Riskregister — {(p.nr ? p.nr + " " : "") + p.namn}</h3>
-            <div className="lead" style={{ marginBottom: 0 }}>
-              Riskägaren avgör vem som bär konsekvensen enligt kontraktet.
-            </div>
-          </div>
-          <div className="kortverktyg">
-            {vy === "tabell" ? <Tathetsvaljare /> : null}
-            <Vyvaljare
-              etikett="Vy för riskregistret"
-              varde={vy}
-              onValj={setVy}
-              alternativ={[
-                ["kort", "Kort", "Fullständig redigering per risk"],
-                ["tabell", "Tabell", "Sortera, filtrera och exportera"],
-              ]}
-            />
-          </div>
+                </thead>
+                <tbody>
+                  {[
+                    ["h", "15–25", "Kritisk", "Omedelbar åtgärdsplan, eskalera till ledning"],
+                    ["m", "8–14", "Hög", "Konkret åtgärdsplan inom en vecka"],
+                    ["l", "4–7", "Medium", "Bevakas aktivt"],
+                    ["l", "1–3", "Låg", "Registreras utan aktiv åtgärd"],
+                  ].map(([kl, spann, prio, atgard]) => (
+                    <tr key={spann}>
+                      <td data-label="Riskvärde">
+                        <span className={`rv ${kl}`}>{spann}</span>
+                      </td>
+                      <td data-label="Prioritet">{prio}</td>
+                      <td data-label="Åtgärd">{atgard}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Tabellyta>
+          </Card>
         </div>
 
-        {vy === "tabell" ? (
-          <div style={{ marginTop: 14 }}>
+        <Card
+          id="risk-register"
+          title={`Riskregister — ${(p.nr ? p.nr + " " : "") + p.namn}`}
+          subtitle="Riskägaren avgör vem som bär konsekvensen enligt kontraktet."
+          action={
+            <>
+              {vy === "tabell" ? <Tathetsvaljare /> : null}
+              <Vyvaljare
+                etikett="Vy för riskregistret"
+                varde={vy}
+                onValj={setVy}
+                alternativ={[
+                  ["kort", "Kort", "Fullständig redigering per risk"],
+                  ["tabell", "Tabell", "Sortera, filtrera och exportera"],
+                ]}
+              />
+              {vy === "kort" ? (
+                <button type="button" className="btn mini" onClick={nyRisk}>
+                  + Ny risk
+                </button>
+              ) : null}
+            </>
+          }
+        >
+          {vy === "tabell" ? (
             <DataTable
               etikett="Riskregister"
               exportNamn="Riskregister"
@@ -532,21 +547,16 @@ export function Risker() {
                 { nyckel: "agare", rubrik: "Ansvarig", bredd: 150, filter: true },
               ]}
             />
-          </div>
-        ) : (
-          <>
-            {n.risker.length ? (
-              n.risker.map((r) => <Riskkort r={r} key={r.id} />)
-            ) : (
-              <p className="lead">Inga risker registrerade.</p>
-            )}
-            <div className="rowbtns">
-              <button type="button" className="btn" onClick={nyRisk}>
-                + Ny risk
-              </button>
-            </div>
-          </>
-        )}
+          ) : n.risker.length ? (
+            <ul aria-label="Risker" className="m-0 flex list-none flex-col gap-3 p-0">
+              {n.risker.map((r) => (
+                <Riskkort r={r} key={r.id} />
+              ))}
+            </ul>
+          ) : (
+            <p className="m-0 text-[13px] text-ink-soft">Inga risker registrerade.</p>
+          )}
+        </Card>
       </div>
     </>
   );

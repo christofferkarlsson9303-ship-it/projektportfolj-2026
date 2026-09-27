@@ -14,7 +14,9 @@
    StatTile        nyckeltalsruta: etikett, tal och förklaring
    StatGroup       samma nyckeltal inuti ett kort, utan egen ram
    Callout         upplysningsruta för antaganden, rutiner och varningar
-   Meter           mätare för andel av en helhet */
+   Meter           mätare för andel av en helhet
+   Overline        liten versal rubrik för ett avsnitt inuti ett kort
+   CheckList       avbockningslista med kryssrutor */
 
 export { Card } from "./Card.jsx";
 export { StatusBadge } from "./StatusBadge.jsx";
@@ -26,3 +28,5 @@ export { StatTile } from "./StatTile.jsx";
 export { StatGroup } from "./StatGroup.jsx";
 export { Callout } from "./Callout.jsx";
 export { Meter } from "./Meter.jsx";
+export { Overline } from "./Overline.jsx";
+export { CheckList } from "./CheckList.jsx";

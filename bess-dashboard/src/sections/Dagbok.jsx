@@ -4,7 +4,7 @@ import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
 import { Tathetsvaljare } from "../components/ui/Vyvaljare.jsx";
 import { DataTable } from "../components/ui/DataTable.jsx";
 import { Pill, Tabellyta } from "../components/ui/Primitiver.jsx";
-import { Callout, Card, StatTile } from "../components/ds/index.js";
+import { Callout, Card, Overline, StatTile } from "../components/ds/index.js";
 import { Falt, DatumFalt, Kryss } from "../components/ui/Falt.jsx";
 import { fmtSEK } from "../lib/format.js";
 import { nyDagboksrad } from "../lib/nyaPoster.js";
@@ -224,9 +224,7 @@ export function Dagbok() {
           }
         >
           <div className="flex flex-col gap-2">
-            <h4 className="m-0 font-body text-[11px] font-bold uppercase tracking-wider text-ink-soft">
-              Ska stå för varje enskilt ÄTA
-            </h4>
+            <Overline>Ska stå för varje enskilt ÄTA</Overline>
             <ul aria-label="Krav per ÄTA" className="m-0 flex list-none flex-wrap gap-2 p-0">
               {KRAV.map((k) => (
                 <li
