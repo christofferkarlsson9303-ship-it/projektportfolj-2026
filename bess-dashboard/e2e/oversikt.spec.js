@@ -63,14 +63,15 @@ test("ett projekt utan datum får fälten direkt i Gantt-schemat", async ({ page
 
 test("ledtidstrackern bockar av ett ärende med Klar", async ({ page }) => {
   const ruta = page.getByRole("region", { name: "Ligg steget före – ledtider" });
-  const rader = ruta.locator(".ov-ledlista > li");
-  test.skip((await rader.count()) === 0, "inga aktuella ledtider mot dagens datum");
+  const lista = ruta.getByRole("list", { name: "Ledtider att starta" });
+  test.skip((await lista.count()) === 0, "inga aktuella ledtider mot dagens datum");
+  const rader = lista.getByRole("listitem");
 
   const forsta = rader.first();
-  const text = await forsta.locator(".ov-led-text > b").innerText();
+  const text = await forsta.locator('[data-roll="titel"]').innerText();
   const projekt = await forsta.locator(".tag").innerText();
   await forsta.getByRole("button", { name: /^Klar/ }).click();
-  await expect(ruta.locator(".ov-ledlista > li", { hasText: text }).filter({ hasText: projekt })).toHaveCount(0);
+  await expect(rader.filter({ hasText: text }).filter({ hasText: projekt })).toHaveCount(0);
 });
 
 test("snabbåtgärden registrerar en ÄTA och öppnar den i ÄTA-vyn", async ({ page }) => {
@@ -160,7 +161,7 @@ test("ingen text i rutor, nyckeltal eller projektkort klipps", async ({ page }) 
     const ut = [];
     // Gantt-schemat ligger i en rullyta med flit — det som rullar är inte klippt.
     const rullar = (el) => ["auto", "scroll"].includes(getComputedStyle(el).overflowX);
-    document.querySelectorAll(".ov-hero, .ov-kpi, .ov-ruta, .projkort").forEach((kort) => {
+    document.querySelectorAll(".ov-hero, .ds-card, .projkort").forEach((kort) => {
       const ram = kort.getBoundingClientRect();
       kort.querySelectorAll("*").forEach((el) => {
         if (el.closest(".sr-only") || el.closest('[aria-hidden="true"]')) return;

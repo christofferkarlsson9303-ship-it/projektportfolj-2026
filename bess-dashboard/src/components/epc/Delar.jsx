@@ -1,9 +1,11 @@
 import { MARKERINGAR } from "../../data/bessChecklistData.ts";
 import { FAS_STATUS, LEDTID_STATUS } from "../../lib/epc.js";
+import { FAS_TILL_STATUS, LEDTID_TILL_STATUS } from "../../lib/status.js";
+import { StatusBadge } from "../ds/StatusBadge.jsx";
 
 /* Små delar som checklistkapitlet och översikten delar: markeringarna HP/K/L,
-   och statusetiketter för faser och ledtider. Status bärs alltid av både
-   färg och text — aldrig av färgen ensam. */
+   och statusmärken för faser och ledtider. Märkena är designsystemets
+   StatusBadge med domänens egna ord ("Grind passerad", "Starta nu"). */
 
 /** HP, K eller L som liten etikett. Förklaringen ligger i title och i text för skärmläsare. */
 export function Markering({ typ }) {
@@ -28,11 +30,11 @@ export function Markeringar({ badges }) {
 }
 
 export function FasStatus({ status }) {
-  const [ton, text] = FAS_STATUS[status] || ["", status];
-  return <span className={`epc-status ${ton}`.trim()}>{text}</span>;
+  const [, text] = FAS_STATUS[status] || ["", status];
+  return <StatusBadge status={FAS_TILL_STATUS[status]} label={text} />;
 }
 
 export function LedtidStatus({ status }) {
-  const [ton, text] = LEDTID_STATUS[status] || ["", status];
-  return <span className={`epc-status ${ton}`.trim()}>{text}</span>;
+  const [, text] = LEDTID_STATUS[status] || ["", status];
+  return <StatusBadge status={LEDTID_TILL_STATUS[status]} label={text} />;
 }

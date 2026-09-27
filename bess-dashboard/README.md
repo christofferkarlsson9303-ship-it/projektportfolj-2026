@@ -54,6 +54,25 @@ sparats.
 Lägg till appens adress under *Authentication → URL Configuration* i Supabase,
 annars skickar den magiska länken användaren till fel ställe.
 
+## Designsystemet
+
+Nya vyer byggs av komponenterna i `src/components/ds/` — Tailwind på
+designsystemets tokens (`tailwind.config.js`), så att samma komponent är rätt i
+ljust och mörkt läge och följer ONE Nordics profil. Avstånden följer en
+8 px-skala (`gap-4`, `gap-6`, `p-4`, `p-6`).
+
+| Komponent | Används till |
+| --- | --- |
+| `Card` | Varje avgränsad ruta: rubrik, underrubrik, statusmärke och åtgärd i huvudet. |
+| `StatusBadge` | All status (`forsenad`, `starta_nu`, `pagar`, `kommande`, `klar` …) — tonerna står i `src/lib/status.js`. |
+| `ProgressSummary` | Framdrift: kontrollpunkter, hållpunkter och grindar som tal och mätare. |
+| `LeadTimeList` | Åtgärdsrader med status, titel, datum och förskjutning linjerade. |
+| `DataList` | Nyckel–värde-rader i stället för löpande text. |
+| `SectionHeading` | Rubrik och ingress för en sektion utanför kort. |
+
+Översikten (`DashboardView`) och Bygga batteripark är byggda av dem. De äldre
+vyerna får samma statusmärke via `Pill` och samma kortform via `.card`.
+
 ## Bygga batteripark
 
 Kapitlet *Bygga batteripark* (vy-id `epc`) bygger på "Bygga batteripark som

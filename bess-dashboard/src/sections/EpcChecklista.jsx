@@ -10,6 +10,7 @@ import { LOPANDE, MARKERINGAR, SUMMERING, VERSION } from "../data/bessChecklistD
 import { projekt } from "../lib/berakningar.js";
 import { FAS_STATUS, erfarenheter, faslage, punktlage } from "../lib/epc.js";
 import { Summering } from "../components/epc/Summering.jsx";
+import { Card, SectionHeading } from "../components/ds/index.js";
 import { Erfarenhetslista } from "../components/epc/Erfarenheter.jsx";
 
 /* Bygga batteripark — hur en BESS-anläggning byggs som totalentreprenad
@@ -119,14 +120,14 @@ function Guide({ pid, mal }) {
   const projektnamn = p ? (p.nr ? p.nr + " " : "") + (p.ort || p.namn) : "projektet";
 
   return (
-    <section className="epc-block" aria-labelledby="epc-steg">
-      <div className="epc-stegrubrik">
-        <h3 id="epc-steg">Steg för steg — från affär till garantitid</h3>
-        <p className="lead">
-          Varje fas avslutas med en grind: nästa fas startar inte förrän grinden är passerad. Bocka av punkterna
-          för {projektnamn} allt eftersom, sätt det som inte gäller som ej aktuellt och kommentera avvikelser och
-          lärdomar direkt på punkten — de blir erfarenhetslistan.
-        </p>
+    <section className="flex flex-col gap-4" aria-labelledby="epc-steg">
+      <SectionHeading
+        as="h3"
+        id="epc-steg"
+        eyebrow="Guiden"
+        title="Steg för steg — från affär till garantitid"
+        lead={`Varje fas avslutas med en grind: nästa fas startar inte förrän grinden är passerad. Bocka av punkterna för ${projektnamn} allt eftersom, sätt det som inte gäller som ej aktuellt och kommentera avvikelser och lärdomar direkt på punkten — de blir erfarenhetslistan.`}
+      >
         <ul className="epc-legend" aria-label="Markeringar">
           {Object.entries(MARKERINGAR).map(([k, m]) => (
             <li key={k}>
@@ -134,7 +135,7 @@ function Guide({ pid, mal }) {
             </li>
           ))}
         </ul>
-      </div>
+      </SectionHeading>
 
       <div className="epc-filter" role="search">
         <label className="epc-sok">
@@ -242,50 +243,43 @@ export function EpcChecklista() {
 
   const visaFas = (nr) => setMal({ id: nr === "lop" ? "fas-lopande" : `fas-${nr}`, tid: Date.now() });
 
+  const projektnamn = (p.nr ? p.nr + " " : "") + (p.ort || p.namn);
+
   return (
-    <>
-      <section className="card epc-huvud" aria-labelledby="epc-rubrik">
-        <div className="epc-huvudrad">
-          <div className="min-w-0">
-            <h2 id="epc-rubrik" className="epc-rubrik">
-              Så byggs en batteripark
-            </h2>
-            <p className="lead m-0">
-              Totalentreprenad enligt ABT 06 / ABT-U 07 — från anbud och nätanslutning via mark, leverans och
-              idrifttagning till slutbesiktning och garantitid. Byggd på erfarenheterna från Batch C,
-              leverantörsmanualer och kontraktsunderlag.
-            </p>
-            <p className="epc-version">
+    <div className="flex flex-col gap-4 lg:gap-6">
+      <Card aria-labelledby="epc-rubrik">
+        <div className="flex flex-wrap items-start justify-between gap-6">
+          <SectionHeading
+            id="epc-rubrik"
+            className="min-w-0 max-w-2xl flex-1"
+            title="Så byggs en batteripark"
+            lead="Totalentreprenad enligt ABT 06 / ABT-U 07 — från anbud och nätanslutning via mark, leverans och idrifttagning till slutbesiktning och garantitid. Byggd på erfarenheterna från Batch C, leverantörsmanualer och kontraktsunderlag."
+          >
+            <p className="m-0 text-xs font-semibold text-ink-faint">
               Version {VERSION.nr} · {VERSION.datum} — samtliga källor i åtta NotebookLM-böcker genomgångna
             </p>
-          </div>
-          <ul className="epc-tal" aria-label="Guiden i siffror">
-            <li>
-              <b>{SUMMERING.faser}</b>
-              <span>faser med grind</span>
-            </li>
-            <li>
-              <b>{SUMMERING.punkter}</b>
-              <span>kontrollpunkter</span>
-            </li>
-            <li>
-              <b>{SUMMERING.hallpunkter}</b>
-              <span>hållpunkter</span>
-            </li>
-            <li>
-              <b>{SUMMERING.motsagelser}</b>
-              <span>motsägelser att reda ut</span>
-            </li>
+          </SectionHeading>
+          <ul aria-label="Guiden i siffror" className="m-0 grid list-none grid-cols-2 gap-4 p-0 sm:grid-cols-4">
+            {[
+              [SUMMERING.faser, "faser med grind"],
+              [SUMMERING.punkter, "kontrollpunkter"],
+              [SUMMERING.hallpunkter, "hållpunkter"],
+              [SUMMERING.motsagelser, "motsägelser att reda ut"],
+            ].map(([v, t]) => (
+              <li key={t} className="flex min-w-[6.5rem] flex-col gap-1">
+                <b className="text-2xl font-bold leading-none text-ink tabular-nums">{v}</b>
+                <span className="text-xs text-ink-soft">{t}</span>
+              </li>
+            ))}
           </ul>
         </div>
-      </section>
+      </Card>
 
-      <section className="card epc-block epc-lagesbild" aria-labelledby="epc-lage">
-        <h3 id="epc-lage">Lägesbild — var projekten står</h3>
-        <p className="lead">
-          En ruta per fas. Välj ett projekt för att se vad som pågår, vad som står näst på tur och vilka ledtider
-          som ska startas.
-        </p>
+      <Card
+        id="epc-lage"
+        title="Lägesbild — var projekten står"
+        subtitle="En ruta per fas. Välj ett projekt för att se läget nu, status per fas och guiden för just det projektet."
+      >
         <Portfoljlage valt={pid} onValj={setValtProjekt} />
         <ul className="ov-legend epc-lage-legend" aria-label="Lägen">
           {LAGEN.map((s) => (
@@ -295,79 +289,72 @@ export function EpcChecklista() {
             </li>
           ))}
         </ul>
+      </Card>
+
+      <section className="flex flex-col gap-4" aria-labelledby="epc-nu">
+        <SectionHeading as="h3" id="epc-nu" eyebrow="Valt projekt" title={`Läget nu — ${projektnamn}`} />
         <NuLage pid={pid} onVisaFas={visaFas} />
       </section>
 
-      <section className="card epc-block" aria-labelledby="epc-summering">
-        <h3 id="epc-summering">Status — {(p.nr ? p.nr + " " : "") + (p.ort || p.namn)}</h3>
-        <p className="lead">
-          Exakt vad som är gjort och vad som återstår, per fas. En punkt är klar när den bockats av eller när fasens
-          grind är passerad; det som inte gäller projektet räknas inte.
-        </p>
+      <Card
+        id="epc-summering"
+        title={`Status — ${projektnamn}`}
+        subtitle="Exakt vad som är gjort och vad som återstår, per fas. En punkt är klar när den bockats av eller när fasens grind är passerad; det som inte gäller projektet räknas inte."
+      >
         <Summering pid={pid} onVisaFas={visaFas} />
-      </section>
+      </Card>
 
       <Guide pid={pid} mal={mal} />
 
-      <section className="card epc-block" aria-labelledby="epc-erfarenheter">
-        <h3 id="epc-erfarenheter">Erfarenhetsåterföring — topp 10</h3>
-        <p className="lead">
-          Byggs automatiskt av avvikelser och lärdomar som kommenterats på punkterna, vassast först: påverkan, om
-          samma punkt gett problem i flera projekt, och kostnad. Samma erfarenheter visas på punkten i nästa projekt.
-        </p>
+      <Card
+        id="epc-erfarenheter"
+        title="Erfarenhetsåterföring — topp 10"
+        subtitle="Byggs automatiskt av avvikelser och lärdomar som kommenterats på punkterna, vassast först: påverkan, om samma punkt gett problem i flera projekt, och kostnad. Samma erfarenheter visas på punkten i nästa projekt."
+      >
         <Erfarenhetslista pid={pid} onVisaPunkt={(id) => setMal({ id: `kp-${id}`, tid: Date.now() })} />
-      </section>
+      </Card>
 
-      <section className="card epc-block" aria-labelledby="epc-nyckelvarden">
-        <h3 id="epc-nyckelvarden">Nyckelvärden — snabbreferens</h3>
-        <p className="lead">
-          Gränsvärden och frister ur kontrakt, leverantörsmanualer och EBR som oftast avgör om en hållpunkt passeras.
-          Där källorna säger olika står det under Att verifiera längst ned.
-        </p>
+      <Card
+        id="epc-nyckelvarden"
+        title="Nyckelvärden — snabbreferens"
+        subtitle="Gränsvärden och frister ur kontrakt, leverantörsmanualer och EBR som oftast avgör om en hållpunkt passeras. Där källorna säger olika står det under Att verifiera längst ned."
+      >
         <Nyckelvarden />
-      </section>
+      </Card>
 
-      <section className="card epc-block" aria-labelledby="epc-ledtider">
-        <h3 id="epc-ledtider">Ligg steget före – ledtider</h3>
-        <p className="lead">
-          Sista startdatum för {(p.nr ? p.nr + " " : "") + (p.ort || p.namn)}, räknat mot projektets datum. Kända datum ur
-          leveranslistan och tidplanen går före fasplanen. Röd = startdatumet har passerat, gul = inom två veckor. En
-          ledtid räknas som klar när dess fas är passerad, eller när du markerar den.
-        </p>
-        <Ledtidstabell
-          pid={pid}
-          onMarkera={(ledtid, klar) => dispatch({ type: "EPC_LEDTID", pid, ledtid, klar })}
-        />
-      </section>
+      <Card
+        id="epc-ledtider"
+        title="Ligg steget före – ledtider"
+        subtitle={`Sista startdatum för ${projektnamn}, räknat mot projektets datum. Kända datum ur leveranslistan och tidplanen går före fasplanen. Röd = startdatumet har passerat, orange = inom två veckor. En ledtid är klar när dess punkt är klar, eller när du markerar den.`}
+      >
+        <Ledtidstabell pid={pid} onMarkera={(ledtid, klar) => dispatch({ type: "EPC_LEDTID", pid, ledtid, klar })} />
+      </Card>
 
-      <section className="card epc-block" aria-labelledby="epc-milstolpar">
-        <h3 id="epc-milstolpar">Betalmilstolpar</h3>
-        <p className="lead">
-          Sju betalningar kopplade till grindarna. Rutin: avisering (Excel) → beställarens OK → faktura i IFS. Faser
-          med en betalning har orange kant i guiden.
-        </p>
+      <Card
+        id="epc-milstolpar"
+        title="Betalmilstolpar"
+        subtitle="Sju betalningar kopplade till grindarna. Rutin: avisering (Excel) → beställarens OK → faktura i IFS. Faser med en betalning har orange kant i guiden."
+      >
         <Milstolpstabell pid={pid} />
-      </section>
+      </Card>
 
-      <section className="card epc-block" aria-labelledby="epc-lardomar">
-        <h3 id="epc-lardomar">Lärdomar från Batch C — de 10 som kostat mest</h3>
+      <Card id="epc-lardomar" title="Lärdomar från Batch C — de 10 som kostat mest">
         <Lardomar />
-      </section>
+      </Card>
 
-      <section className="card epc-block" aria-labelledby="epc-verifiera">
-        <h3 id="epc-verifiera">Att verifiera — källorna säger olika</h3>
-        <p className="lead">
-          {SUMMERING.motsagelser} motsägelser i källorna. Dimensionera för det strängaste värdet och få skriftligt
-          besked innan det byggs på.
-        </p>
+      <Card
+        id="epc-verifiera"
+        title="Att verifiera — källorna säger olika"
+        subtitle={`${SUMMERING.motsagelser} motsägelser i källorna. Dimensionera för det strängaste värdet och få skriftligt besked innan det byggs på.`}
+      >
         <AttVerifiera />
-      </section>
+      </Card>
 
       <Note>
         Värden, frister och procentsatser är hämtade från Batch C-kontrakten och leverantörsmanualer.
         Kontrollera alltid mot aktuellt projekts kontrakt och bilagor. Standardplanens fasdatum är en
         utgångspunkt, inte en tidplan.
       </Note>
-    </>
+    </div>
   );
 }

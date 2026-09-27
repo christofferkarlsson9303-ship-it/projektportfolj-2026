@@ -2,7 +2,7 @@
    Sektioner som saknas här renderas som UnderMigrering. */
 
 import { Idag } from "./Idag.jsx";
-import { Oversikt } from "./Oversikt.jsx";
+import { DashboardView } from "./Oversikt.jsx";
 import { EpcChecklista } from "./EpcChecklista.jsx";
 import { Ekonomi } from "./Ekonomi.jsx";
 import { Milstolpar } from "./Milstolpar.jsx";
@@ -25,7 +25,7 @@ import { Data } from "./Data.jsx";
 
 export const SEKTIONER = {
   idag: Idag,
-  oversikt: Oversikt,
+  oversikt: DashboardView,
   epc: EpcChecklista,
   tavla: Tavla,
   tidplan: Tidplan,

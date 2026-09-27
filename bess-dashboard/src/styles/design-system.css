@@ -809,14 +809,25 @@ main{max-width:1320px;padding:32px 38px 80px}
   .pagelead{display:none}
 }
 
-/* ---------- Kort ---------- */
+/* ---------- Kort ----------
+   De äldre vyernas .card har samma ram, radie, skugga och luft som
+   designsystemets Card (components/ds/Card.jsx): 12 px radie, tunn ram,
+   liten skugga, 16 px luft på mobil och 24 px från 768 px. */
 .card,.pcard,.tl,.acc,.q,.riskkort,.atarad{
-  border-radius:var(--r);border:1px solid var(--hairline);box-shadow:none;background:var(--surface);
+  border-radius:12px;border:1px solid var(--hairline);box-shadow:var(--sh-sm);background:var(--surface);
 }
-.card{padding:24px}
-.card:hover,.pcard:hover{box-shadow:var(--sh-md);transform:none;border-color:var(--hairline-stark)}
-.card h3{font-size:17px;letter-spacing:-.01em;color:var(--ink)}
-.card .lead{font-size:13px;margin-bottom:18px;max-width:78ch}
+.card{padding:16px}
+@media(min-width:768px){.card{padding:24px}}
+.card:hover,.pcard:hover{box-shadow:var(--sh-sm);transform:none;border-color:var(--hairline-stark)}
+.card h3{font-size:16px;font-weight:700;line-height:1.35;letter-spacing:0;color:var(--ink)}
+.card .lead{font-size:13px;margin-bottom:16px;max-width:78ch}
+
+/* Designsystemets kort: inglidning i ordning (--i) och ONE Nordics ikonregel —
+   ikonen blir orange när man pekar på kortet. */
+.ds-card{animation:ovIn .45s var(--ease) both;animation-delay:calc(var(--i,0) * 50ms);
+  transition:border-color .2s var(--ease)}
+.ds-card:hover{border-color:var(--hairline-stark)}
+.ds-card:hover>header .ov-ikon:not(.bad):not(.warn){color:var(--orange)}
 .grid{gap:20px}
 .kpi .label{font-size:11px;letter-spacing:.09em;color:var(--ink-faint)}
 .kpi .val{font-size:34px;margin-top:10px}
@@ -1408,7 +1419,7 @@ tr.lastrad:hover{opacity:.8}
 .veckokort-svar button[aria-pressed="true"] .ord{color:inherit;opacity:.75}
 .veckokort-rad{font-size:12.5px;line-height:1.5;color:var(--ink-soft)}
 .veckokort-fot{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.veckokort-kommentar{font-size:12px;color:var(--ink-faint);font-style:italic}
+.veckokort-kommentar{font-size:12px;color:var(--ink-faint)}
 
 /* ---------- Slutdokumentation ---------- */
 .slutdok-sparr{margin-top:8px;color:var(--bad-ink);font-weight:600}
@@ -1430,7 +1441,7 @@ tr.lastrad:hover{opacity:.8}
 .slutdok-text{flex:1;min-width:0}
 .slutdok-krav{font-size:13.5px;line-height:1.4;color:var(--ink)}
 .slutdok-meta{font-size:12px;color:var(--ink-soft);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap}
-.slutdok-kommenterad{color:var(--ink-faint);font-style:italic}
+.slutdok-kommenterad{color:var(--ink-faint)}
 .slutdok-atgard{display:flex;align-items:center;gap:8px;flex:0 0 auto;flex-wrap:wrap;justify-content:flex-end}
 .slutdok-status{display:flex;gap:4px;flex-wrap:wrap}
 .slutdok-status button{font-family:var(--font-b);font-size:11.5px;font-weight:600;
@@ -1476,27 +1487,12 @@ tr.lastrad:hover{opacity:.8}
 @keyframes ovRita{to{stroke-dashoffset:0}}
 @keyframes ovPuls{from{transform:scale(1);opacity:.65}to{transform:scale(2.9);opacity:0}}
 
-/* ----- Ruta: grundkortet i rutnätet ----- */
-.ov-ruta,.ov-kpi{position:relative;min-width:0;display:flex;flex-direction:column;gap:16px;
-  background:var(--surface);border:1px solid var(--hairline);border-radius:12px;padding:20px 22px;
-  overflow-wrap:break-word;
-  transition:box-shadow .22s var(--ease),border-color .22s var(--ease),translate .22s var(--ease);
-  animation:ovIn .45s var(--ease) both;animation-delay:calc(var(--i,0) * 50ms)}
-.ov-ruta:hover,.ov-kpi:hover{border-color:var(--hairline-stark);box-shadow:var(--sh-md)}
-/* translate och inte transform: inglidningens slutläge (transform:none) ligger kvar
-   och skulle annars skriva över hover-lyftet. */
-.ov-kpi:hover{translate:0 -2px}
-.ov-ruta-huvud{display:flex;align-items:flex-start;gap:12px;min-width:0}
-.ov-ruta-titel{font-family:var(--font-h);font-size:15.5px;font-weight:600;line-height:1.3;color:var(--ink);margin:0}
-.ov-ruta-under{margin:2px 0 0;font-size:12.5px;line-height:1.4;color:var(--ink-faint)}
 
 .ov-ikon{flex:0 0 auto;width:34px;height:34px;border-radius:9px;display:inline-flex;align-items:center;
   justify-content:center;background:var(--info-bg);color:var(--one-bla);transition:color .18s,background .18s}
 .ov-ikon.bad{background:var(--bad-bg);color:var(--rod)}
 .ov-ikon.warn{background:var(--warn-bg);color:var(--orange)}
 .ov-ikon.ok{background:var(--ok-bg);color:var(--turkos)}
-.ov-ruta:hover .ov-ruta-huvud .ov-ikon:not(.bad):not(.warn),
-.ov-kpi:hover .ov-ikon:not(.bad):not(.warn){color:var(--orange)}
 
 .ov-lank{display:inline-flex;align-items:center;gap:5px;flex:0 0 auto;background:none;border:0;cursor:pointer;
   padding:6px 8px;margin:-6px 0;border-radius:8px;font:600 12.5px/1.2 var(--font-b);
@@ -1557,18 +1553,10 @@ button.ov-chip:hover{border-color:var(--one-bla);color:var(--ink)}
 @media(max-width:767px){.ov-kurva{width:90%;opacity:.35}.ov-valj{margin-left:0}}
 
 /* ----- Nyckeltalskort ----- */
-.ov-kpi{gap:14px}
-.ov-kpi-topp{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 10px}
-.ov-kpi-etikett{margin:0;font:600 12px/1.35 var(--font-b);letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft)}
 .ov-kpi-varde{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 8px;font:700 34px/1 var(--font-b);
   letter-spacing:-.02em;color:var(--ink)}
 .ov-kpi-enhet{font-size:14px;font-weight:600;letter-spacing:0;color:var(--ink-soft)}
 .ov-kpi-under{margin:-6px 0 0;font-size:12.5px;line-height:1.45;color:var(--ink-soft)}
-.ov-status{display:inline-flex;align-items:center;gap:5px;font:700 10.5px/1 var(--font-b);letter-spacing:.04em;
-  text-transform:uppercase;border-radius:999px;padding:4px 8px;white-space:nowrap}
-.ov-status.ok{background:var(--ok-bg);color:var(--ok-ink)}
-.ov-status.warn{background:var(--warn-bg);color:var(--warn-ink)}
-.ov-status.bad{background:var(--bad-bg);color:var(--bad-ink)}
 .ov-delar{list-style:none;margin:0;padding:12px 0 0;border-top:1px solid var(--hairline);display:flex;flex-direction:column;gap:6px}
 .ov-delar li{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:12.5px;color:var(--ink-soft);min-width:0}
 .ov-delar li>span{min-width:0}
@@ -1642,12 +1630,12 @@ button.ov-chip:hover{border-color:var(--one-bla);color:var(--ink)}
   color:var(--ok-ink);font-size:13px;font-weight:600}
 
 /* ----- Nästa BESS-leverans: den enda mörka rutan ----- */
-.ov-bess{background:linear-gradient(160deg,var(--sidebar-1) 0%,var(--sidebar-2) 100%);border-color:transparent;color:#fff;overflow:hidden}
-.ov-bess:hover{border-color:transparent}
-.ov-bess .ov-ruta-titel{color:#fff}
-.ov-bess .ov-ruta-under{color:rgba(255,255,255,.72)}
+.ds-card.ov-bess{background:linear-gradient(160deg,var(--sidebar-1) 0%,var(--sidebar-2) 100%);border-color:transparent;color:#fff;overflow:hidden}
+.ds-card.ov-bess:hover{border-color:transparent}
+.ov-bess h3{color:#fff}
+.ov-bess header p{color:rgba(255,255,255,.72)}
 .ov-bess .ov-ikon{background:rgba(255,255,255,.12);color:var(--himmel)}
-.ov-bess:hover .ov-ruta-huvud .ov-ikon:not(.bad):not(.warn){color:var(--orange)}
+.ov-bess:hover>header .ov-ikon:not(.bad):not(.warn){color:var(--orange)}
 .ov-bess .ov-lank{color:var(--himmel)}
 .ov-bess .ov-lank:hover{background:rgba(255,255,255,.1)}
 .ov-bess :focus-visible{outline-color:#fff}
@@ -1765,7 +1753,7 @@ button.ov-chip:hover{border-color:var(--one-bla);color:var(--ink)}
 .projkort-fakta li{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;line-height:1.35;
   color:var(--ink-soft);background:var(--sunken);border-radius:999px;padding:5px 11px;min-width:0}
 .projkort-fakta li svg{flex:0 0 auto;color:var(--accent)}
-.projkort-fakta li.tom{color:var(--ink-faint);font-style:italic}
+.projkort-fakta li.tom{color:var(--ink-faint)}
 .projkort-fakta li.tom svg{color:var(--ink-faint)}
 .projkort{container-type:inline-size}
 .projkort-tal{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr);gap:10px;margin:0}
@@ -1793,7 +1781,7 @@ button.ov-chip:hover{border-color:var(--one-bla);color:var(--ink)}
 .projkort-ekonomi-rad>div:last-child{text-align:right;margin-left:auto}
 .projkort-ekonomi-rad span{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint)}
 .projkort-ekonomi-rad b{font-size:13.5px;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
-.projkort-saknas{font-size:12px;color:var(--ink-faint);font-style:italic;margin-top:6px}
+.projkort-saknas{font-size:12px;color:var(--ink-faint);margin-top:6px}
 .projkort-anteckning{margin:0;font-size:13px;line-height:1.5;color:var(--ink-soft);
   border-top:1px solid var(--hairline);padding-top:14px}
 
@@ -1801,7 +1789,6 @@ button.ov-chip:hover{border-color:var(--one-bla);color:var(--ink)}
   .oversikt-sektion{margin:32px 0}
   .projkort-rutnat{gap:14px}
   .projkort{padding:20px 18px 18px}
-  .ov-ruta,.ov-kpi{padding:18px}
   .ov-hero{padding:20px 18px 18px}
   .ov-hjalte{font-size:48px}
   .oversikt-rubrik-knapp{margin-left:0}
@@ -1840,7 +1827,7 @@ textarea.hp-led-text{width:100%;min-height:52px;border:1px solid transparent;bac
 textarea.hp-led-text.stor{font-family:var(--font-h);font-size:17px;font-weight:700;min-height:60px}
 textarea.hp-led-text:hover{border-color:var(--hairline-stark)}
 textarea.hp-led-text:focus{border-color:var(--led);background:var(--surface);outline:none}
-textarea.hp-led-text::placeholder{color:var(--ink-faint);font-weight:400;font-style:italic}
+textarea.hp-led-text::placeholder{color:var(--ink-faint);font-weight:400}
 .hp-pil{width:2px;height:28px;background:var(--hairline-stark);align-self:center;position:relative}
 .hp-pil::after{content:"";position:absolute;left:50%;bottom:-1px;width:8px;height:8px;
   border-right:2px solid var(--hairline-stark);border-bottom:2px solid var(--hairline-stark);
@@ -1870,7 +1857,7 @@ textarea.hp-led-text::placeholder{color:var(--ink-faint);font-weight:400;font-st
 .hp-atgard-fakta dt{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint)}
 .hp-atgard-fakta dd{margin:2px 0 0;font-size:13px;color:var(--ink)}
 .hp-atgard-fakta dd.sen{color:var(--bad-ink);font-weight:700}
-.hp-tom{color:var(--ink-faint);font-style:italic}
+.hp-tom{color:var(--ink-faint)}
 .hp-status{display:flex;gap:4px;flex-wrap:wrap}
 .hp-status button{font-family:var(--font-b);font-size:11.5px;font-weight:600;border:1px solid var(--hairline-stark);
   background:var(--surface);color:var(--ink-soft);border-radius:999px;padding:4px 10px;cursor:pointer}
@@ -1963,26 +1950,10 @@ textarea.hp-led-text::placeholder{color:var(--ink-faint);font-weight:400;font-st
 .epc-markering.k{background:#005f76;color:#fff}
 .epc-markering.l{background:var(--info-bg);color:var(--info-ink);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--info-ink) 35%,transparent)}
 
-.epc-status{display:inline-flex;align-items:center;gap:6px;font:700 11px/1 var(--font-b);border-radius:999px;padding:5px 9px;
-  white-space:nowrap;background:var(--sunken);color:var(--ink-soft)}
-.epc-status::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:0 0 auto}
-.epc-status.ok{background:var(--ok-bg);color:var(--ok-ink)}
-.epc-status.info{background:var(--info-bg);color:var(--info-ink)}
-.epc-status.warn{background:var(--warn-bg);color:var(--warn-ink)}
-.epc-status.bad{background:var(--bad-bg);color:var(--bad-ink)}
 
-/* Huvudkortet */
-.epc-huvud{display:flex;flex-direction:column;gap:16px;margin-bottom:14px}
-.epc-huvudrad{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:16px 24px}
-.epc-rubrik{font-size:20px;line-height:1.25;color:var(--ink);margin:0 0 4px}
-.epc-tal{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,auto));gap:10px 28px}
-.epc-tal li{display:flex;flex-direction:column;gap:2px;min-width:0}
-.epc-tal b{font:700 22px/1.1 var(--font-b);color:var(--ink);white-space:nowrap}
-.epc-tal span{font-size:12px;color:var(--ink-faint)}
 .epc-projektplan{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 18px;padding-top:14px;border-top:1px solid var(--hairline)}
 .epc-legend{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12.5px;color:var(--ink-soft)}
 .epc-legend li{display:inline-flex;align-items:center;gap:7px}
-@media(max-width:760px){.epc-tal{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 .epc-falt{display:flex;flex-direction:column;gap:4px;min-width:0}
 .epc-falt label{display:flex;align-items:center;gap:6px;font:700 10.5px/1.3 var(--font-b);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint)}
@@ -2024,9 +1995,9 @@ textarea.hp-led-text::placeholder{color:var(--ink-faint);font-weight:400;font-st
 .epc-fastitel b{font:600 15px/1.3 var(--font-h);color:var(--ink)}
 .epc-fasdatum{font-size:12px;color:var(--ink-faint);font-variant-numeric:tabular-nums}
 .epc-fasinfo{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px 8px}
-.epc-mschip{font:700 11px/1 var(--font-b);border-radius:999px;padding:5px 9px;background:var(--warn-bg);color:var(--warn-ink);white-space:nowrap}
-.epc-hpchip{font:700 11px/1 var(--font-b);border-radius:999px;padding:5px 9px;background:var(--sunken);color:var(--ink-soft);white-space:nowrap}
-.epc-antalchip{font:600 11px/1 var(--font-b);border-radius:999px;padding:4px 8px;color:var(--ink-faint);white-space:nowrap;
+.epc-mschip{font:700 11px/1 var(--font-b);border-radius:999px;padding:4px 10px;background:var(--warn-bg);color:var(--warn-ink);white-space:nowrap}
+.epc-hpchip{font:700 11px/1 var(--font-b);border-radius:999px;padding:4px 10px;background:var(--sunken);color:var(--ink-soft);white-space:nowrap}
+.epc-antalchip{font:700 11px/1 var(--font-b);border-radius:999px;padding:4px 10px;color:var(--ink-faint);white-space:nowrap;
   box-shadow:inset 0 0 0 1px var(--hairline-stark)}
 .epc-pil{color:var(--ink-faint);transition:transform .2s var(--ease)}
 .epc-fas[open]>summary .epc-pil{transform:rotate(180deg)}
@@ -2077,7 +2048,7 @@ textarea.hp-led-text::placeholder{color:var(--ink-faint);font-weight:400;font-st
 .epc-rad.ejaktuell .epc-radtext>span:last-child{color:var(--ink-faint);text-decoration:line-through;text-decoration-color:var(--hairline-stark)}
 .epc-radmeta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-size:12px;color:var(--ink-soft)}
 .epc-klarinfo{color:var(--ok-ink);font-weight:600}
-.epc-ejinfo{color:var(--ink-faint);font-style:italic}
+.epc-ejinfo{color:var(--ink-faint);font-weight:600}
 .epc-radatgard{grid-area:atgard;display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px}
 .epc-kommknapp,.epc-erfchip{display:inline-flex;align-items:center;gap:4px;min-height:26px;padding:3px 8px;border-radius:999px;cursor:pointer;
   font:600 11.5px/1 var(--font-b);background:none;border:1px solid var(--hairline-stark);color:var(--ink-faint)}
@@ -2122,10 +2093,6 @@ textarea.hp-led-text::placeholder{color:var(--ink-faint);font-weight:400;font-st
 .epc-markerad{animation:epcMarkera 2.4s var(--ease)}
 @keyframes epcMarkera{0%,45%{box-shadow:0 0 0 3px var(--one-bla)}100%{box-shadow:0 0 0 3px transparent}}
 
-/* Guidens rubrik står utanför kort, som en mellanrubrik över faserna. */
-.epc-stegrubrik{display:flex;flex-direction:column;gap:8px;margin:28px 0 14px}
-.epc-stegrubrik h3{margin:0;font-size:18px;letter-spacing:-.01em;color:var(--ink)}
-.epc-stegrubrik .lead{margin:0;max-width:78ch;color:var(--ink-soft)}
 
 /* Lägesbilden: en rad per projekt med 16 rutor, samma toner som Gantt-schemat. */
 .epc-lage{display:flex;flex-direction:column;gap:6px;margin-top:12px}
@@ -2165,22 +2132,9 @@ button.epc-lage-rad[aria-pressed="true"]{border-color:var(--one-bla);box-shadow:
     font:700 10px/1.3 var(--font-b);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint)}
 }
 
-/* Nu-läget för valt projekt */
-.epc-nu{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 24px;margin-top:18px;padding-top:18px;
-  border-top:1px solid var(--hairline)}
-.epc-nu .epc-projektplan{grid-column:1 / -1}
-.epc-nu-kol{min-width:0}
-.epc-nu-kol h4{margin:0 0 8px;font:700 11px/1.3 var(--font-b);letter-spacing:.08em;text-transform:uppercase;color:var(--info-ink)}
-.epc-nu-lista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
-.epc-nu-lista li{display:flex;flex-direction:column;align-items:flex-start;gap:4px;font-size:13px;line-height:1.45;color:var(--ink)}
-.epc-nu-lista li>span{display:block;min-width:0}
-.epc-nu-lista .epc-textknapp{text-align:left}
-.epc-nu-kol .epc-plantext{flex:none}
-@media(max-width:860px){.epc-nu{grid-template-columns:minmax(0,1fr)}}
 
 /* Referensdelarna */
-.epc-block{margin-top:16px}
-.epc-block>h3,.epc-stegrubrik>h3{scroll-margin-top:96px}
+.ds-card h3[id],section>div>h3[id]{scroll-margin-top:96px}
 .epc-punktref{display:block;margin-top:2px;font-size:11.5px;font-weight:400;color:var(--ink-faint)}
 .epc-ledrad.sen td:first-child{box-shadow:inset 3px 0 0 var(--rod)}
 .epc-ledrad.snart td:first-child{box-shadow:inset 3px 0 0 var(--orange)}
@@ -2192,7 +2146,6 @@ button.epc-lage-rad[aria-pressed="true"]{border-color:var(--one-bla);box-shadow:
 .epc-lardomar b{font-size:13.5px;color:var(--ink)}
 .epc-lardomar p{margin:4px 0 0;font-size:13px;line-height:1.45;color:var(--ink-soft)}
 .epc-gorsa span{font-weight:700;color:var(--ok-ink)}
-.epc-sumtal{margin:6px 0 14px}
 .epc-matarcell{display:inline-flex;align-items:center;gap:8px;min-width:0}
 .epc-matare{display:block;width:110px;max-width:40vw;height:8px;border-radius:999px;background:var(--viz-spar);overflow:hidden}
 .epc-matare i{display:block;height:100%;border-radius:999px;background:var(--viz-klar)}
@@ -2209,7 +2162,6 @@ button.epc-lage-rad[aria-pressed="true"]{border-color:var(--one-bla);box-shadow:
 .epc-erftext{display:block;font-size:13.5px;line-height:1.45;color:var(--ink);overflow-wrap:anywhere}
 .epc-erfrad .epc-gorsa{margin:4px 0 0;font-size:13px;line-height:1.45;color:var(--ink-soft)}
 .epc-erfpunkt{margin-top:6px;text-align:left;font-size:12px;font-weight:600}
-.epc-version{margin:6px 0 0;font:600 11.5px/1.4 var(--font-b);color:var(--ink-faint)}
 .epc-nyckel{margin:12px 0 0;display:flex;flex-direction:column}
 .epc-nyckel>div{display:grid;grid-template-columns:minmax(120px,190px) minmax(0,1fr);gap:6px 16px;align-items:start;
   padding:10px 0;border-top:1px solid var(--hairline)}
@@ -2228,7 +2180,6 @@ button.epc-lage-rad[aria-pressed="true"]{border-color:var(--one-bla);box-shadow:
 /* ---------- Översikt: Gantt-schema ----------
    Etikettkolumn + spår. Spåret slutar --gantt-hoger före kanten så att
    grindkoden vid sista fasen får plats utan att rullytan växer. */
-.ov-gantt-ruta{gap:14px}
 .ov-gantt-verktyg{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
 .ov-gantt-rull{overflow-x:auto;padding-bottom:4px}
 .ov-gantt{--gantt-etikett:250px;--gantt-hoger:30px;position:relative;min-width:780px}
@@ -2293,13 +2244,11 @@ button.ov-gantt-rad:hover .ov-gantt-tips,button.ov-gantt-rad:focus-visible .ov-g
   font-size:13px;line-height:1.5;color:var(--ink-soft)}
 
 /* ---------- Översikt: nästa uppgift ---------- */
-.ov-nasta{gap:14px}
 .ov-nasta-grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:18px 28px;align-items:start}
 .ov-nasta-kort{display:flex;flex-direction:column;gap:10px;min-width:0;animation:ovNasta .35s var(--ease)}
 @keyframes ovNasta{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .ov-nasta-orsak{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
 .ov-nasta-fas{font-size:12px;color:var(--ink-faint)}
-.ov-nasta-orsak .ov-status{text-transform:none;letter-spacing:0;font-size:11.5px;white-space:normal;line-height:1.3}
 @media(max-width:560px){.ov-nasta-text{font-size:15.5px}}
 .ov-nasta-text{margin:0;display:flex;align-items:baseline;gap:10px;font:600 17px/1.45 var(--font-b);color:var(--ink);overflow-wrap:anywhere}
 .ov-nasta-id{flex:0 0 auto;padding:5px 8px;border-radius:7px;font:700 13px/1 var(--font-b);background:var(--info-bg);color:var(--info-ink);
@@ -2319,24 +2268,8 @@ button.ov-gantt-rad:hover .ov-gantt-tips,button.ov-gantt-rad:focus-visible .ov-g
 @media(max-width:900px){.ov-nasta-grid{grid-template-columns:minmax(0,1fr)}}
 
 /* ---------- Översikt: ledtider och hållpunkter ---------- */
-.ov-ledlista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
-.ov-ledlista li{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"huvud atgard" "text atgard";
-  gap:6px 12px;padding:11px 0 11px 12px;border-top:1px solid var(--hairline);box-shadow:inset 3px 0 0 var(--hairline-stark)}
-.ov-ledlista li:first-child{border-top:0}
-.ov-ledlista li.sen{box-shadow:inset 3px 0 0 var(--rod)}
-.ov-ledlista li.snart{box-shadow:inset 3px 0 0 var(--orange)}
-.ov-led-huvud{grid-area:huvud;display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
-.ov-led-agare{font-size:11.5px;color:var(--ink-faint)}
-.ov-led-text{grid-area:text;display:flex;flex-direction:column;gap:2px;min-width:0}
-.ov-led-text>b{font-size:13.5px;line-height:1.35;color:var(--ink)}
-.ov-led-text>span{font-size:12.5px;line-height:1.45;color:var(--ink-soft)}
-.ov-led-text>span b{color:var(--ink)}
-.ov-led-atgard{grid-area:atgard;align-self:center;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
-.ov-led-klar{display:inline-flex;align-items:center;gap:4px}
 @media(max-width:560px){
-  .ov-ledlista li{grid-template-columns:minmax(0,1fr);grid-template-areas:"huvud" "text" "atgard"}
-  .ov-led-atgard{justify-content:flex-start}
-}
+    }
 .ov-hplista{list-style:none;margin:0 -6px;padding:0;display:flex;flex-direction:column;gap:2px}
 .ov-hprad{display:flex;gap:10px;width:100%;padding:7px 6px;border:0;border-radius:8px;background:none;text-align:left;
   font:inherit;color:inherit;cursor:pointer;transition:background .15s}

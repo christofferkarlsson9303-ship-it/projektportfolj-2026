@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { usePortfolj, useUi } from "../state/hooks.js";
 import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
+import { StatusBadge } from "../components/ds/StatusBadge.jsx";
+import { PILL_TILL_TON } from "../lib/status.js";
 import { Tathetsvaljare, Vyvaljare } from "../components/ui/Vyvaljare.jsx";
 import { DataTable } from "../components/ui/DataTable.jsx";
 import { Kpi, Note, Riskvarde, Tabellyta } from "../components/ui/Primitiver.jsx";
@@ -480,7 +482,7 @@ export function Risker() {
                   textVarde: (r) => NIVA_TEXT[riskNiva(r)],
                   exportVarde: (r) => NIVA_TEXT[riskNiva(r)],
                   render: (r) => (
-                    <span className={`pill ${NIVA_PILL[riskNiva(r)]}`}>{NIVA_TEXT[riskNiva(r)]}</span>
+                    <StatusBadge ton={PILL_TILL_TON[NIVA_PILL[riskNiva(r)]]} label={NIVA_TEXT[riskNiva(r)]} />
                   ),
                 },
                 {

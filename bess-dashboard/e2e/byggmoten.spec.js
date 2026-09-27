@@ -94,6 +94,6 @@ test("registret räknar oregistrerade punkter", async ({ page }) => {
   await page.keyboard.press("Tab");
 
   const rad = page.getByRole("region", { name: REGISTER }).locator("tbody tr").first();
-  await expect(rad.locator(".pill.p-bad")).toHaveText(/1/);
+  await expect(rad.locator('[data-ton="bad"]')).toHaveText(/1/);
   await expect(rad).toHaveClass(/rad-sen/);
 });

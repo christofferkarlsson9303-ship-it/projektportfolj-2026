@@ -2,6 +2,7 @@ import { useState } from "react";
 import { usePortfolj, useUi } from "../state/hooks.js";
 import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
 import { Card, Kpi, Note } from "../components/ui/Primitiver.jsx";
+import { StatusBadge } from "../components/ds/StatusBadge.jsx";
 import { RUTINER } from "../data/rutiner.js";
 import { rutinAntal, rutinKlar, rutinNyckel } from "../lib/berakningar.js";
 
@@ -69,7 +70,7 @@ function Kapitel({ r, pid, state, oppen, onVaxlaKapitel, onVaxlaPunkt, onGaTill 
             </small>
           </span>
         ) : (
-          <span className="pill p-wait">Referens</span>
+          <StatusBadge ton="neutral" label="Referens" />
         )}
         <span className="kappil" aria-hidden="true">
           {oppen ? "▾" : "▸"}

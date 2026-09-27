@@ -3,6 +3,8 @@
    komponerbara och att tillgängligheten är inbyggd. */
 
 import { PILL } from "../../data/konstanter.js";
+import { PILL_TILL_TON } from "../../lib/status.js";
+import { StatusBadge } from "../ds/StatusBadge.jsx";
 
 export function Card({ children, klass = "", ...rest }) {
   return (
@@ -34,9 +36,10 @@ export function Kpi({ label, varde, hint, klass = "" }) {
   );
 }
 
+/** Status i de äldre vyerna — samma märke som i resten av appen (StatusBadge). */
 export function Pill({ status }) {
   const [c, t] = PILL[status] || ["p-wait", status];
-  return <span className={`pill ${c}`}>{t}</span>;
+  return <StatusBadge ton={PILL_TILL_TON[c]} label={t} />;
 }
 
 export function Tag({ children, klass = "" }) {

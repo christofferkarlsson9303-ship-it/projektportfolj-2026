@@ -2,6 +2,8 @@ import { useCallback, useMemo, useState } from "react";
 import { usePortfolj, useUi } from "../state/hooks.js";
 import { Note } from "../components/ui/Primitiver.jsx";
 import { PTag } from "../components/ui/PTag.jsx";
+import { StatusBadge } from "../components/ds/StatusBadge.jsx";
+import { PILL_TILL_TON } from "../lib/status.js";
 import { KANBAN, KOLUMNER, ROLLER } from "../data/konstanter.js";
 import { dagarTill } from "../lib/datum.js";
 import { hamtaNamn } from "../state/portfolj-reducer.js";
@@ -49,7 +51,7 @@ function Kanbankort({ k, onFlytta, onRoll, onDragStart, onDragEnd, dras }) {
       {k.rad.agare || k.rad.forfaller ? (
         <div className="kmeta">
           {k.rad.agare ? <span>{k.rad.agare}</span> : null}
-          {k.rad.forfaller ? <span className={`pill ${dlKlass}`}>{k.rad.forfaller}</span> : null}
+          {k.rad.forfaller ? <StatusBadge ton={PILL_TILL_TON[dlKlass]} label={k.rad.forfaller} /> : null}
         </div>
       ) : null}
 
