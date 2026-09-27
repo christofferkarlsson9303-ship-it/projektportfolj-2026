@@ -1,8 +1,7 @@
 import { useMemo, useState } from "react";
 import { usePortfolj, useUi } from "../state/hooks.js";
 import { PTag } from "../components/ui/PTag.jsx";
-import { Note } from "../components/ui/Primitiver.jsx";
-import { StatusBadge } from "../components/ds/StatusBadge.jsx";
+import { Callout, Card, StatusBadge } from "../components/ds/index.js";
 import { Vyvaljare } from "../components/ui/Vyvaljare.jsx";
 import { AGENDATYPER, arbetslage, dagsetikett } from "../lib/agenda.js";
 
@@ -13,7 +12,11 @@ import { AGENDATYPER, arbetslage, dagsetikett } from "../lib/agenda.js";
    samlar allt som kräver handling, sorterat på hur bråttom det är — frister
    först, sedan förfallet, sedan det närmaste i tiden.
 
-   Varje rad går direkt till rätt post, inte bara till rätt flik. */
+   Varje rad går direkt till rätt post, inte bara till rätt flik.
+
+   Vyn står på designsystemet: sammanfattningen är en mörk ruta i ONE Blå
+   (läget bärs av ett statusmärke, inte av en röd eller orange yta), varje
+   grupp är ett Card med antal som märke och en smal kant i gruppens ton. */
 
 const HORISONTER = [
   ["14", "14 dagar"],
@@ -24,35 +27,33 @@ const HORISONTER = [
 
 /* ---------- Byggstenar ---------- */
 
-function Grupp({ rubrik, antal, ton = "neutral", children, tom }) {
-  const toner = {
-    larm: "border-l-4 border-l-rod",
-    varning: "border-l-4 border-l-orange",
-    neutral: "",
-  };
+const GRUPPTON = {
+  larm: { kant: "border-l-[3px] border-l-rod", marke: "bad" },
+  varning: { kant: "border-l-[3px] border-l-orange", marke: "warn" },
+  neutral: { kant: "", marke: "neutral" },
+};
 
+function Grupp({ id, rubrik, antal, ton = "neutral", children, tom }) {
+  const t = GRUPPTON[antal ? ton : "neutral"];
   return (
-    <section className={`card ${toner[ton]}`} role="region" aria-label={rubrik} style={{ marginBottom: 16 }}>
-      <div className="kortrad">
-        <div style={{ minWidth: 0 }}>
-          <h3>
-            {rubrik}
-            {antal ? <span className="fcount ml-2">{antal}</span> : null}
-          </h3>
-        </div>
-      </div>
-      {antal ? <div className="mt-3">{children}</div> : <p className="lead mt-2">{tom}</p>}
-    </section>
+    <Card
+      id={id}
+      title={rubrik}
+      className={t.kant}
+      badge={antal ? <StatusBadge ton={t.marke} label={antal} /> : null}
+    >
+      {antal ? children : <p className="m-0 text-[13px] text-ink-soft">{tom}</p>}
+    </Card>
   );
 }
 
 /** En rad i arbetslistan. Hela raden är klickbar och leder till posten. */
 function Arbetsrad({ vansterKolumn, titel, undertext, pid, markering, onOppna, oppnaText }) {
   return (
-    <li className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-hairline py-2.5 last:border-b-0">
+    <li className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-0 border-t border-solid border-hairline py-2.5 first:border-t-0 first:pt-0 last:pb-0">
       <span
-        className={`w-[74px] shrink-0 font-head text-[12.5px] font-bold tabular-nums ${
-          markering === "larm" ? "text-rod" : markering === "varning" ? "text-warn-ink" : "text-ink-soft"
+        className={`w-[74px] shrink-0 text-[12.5px] font-bold tabular-nums ${
+          markering === "larm" ? "text-bad-ink" : markering === "varning" ? "text-warn-ink" : "text-ink-soft"
         }`}
       >
         {vansterKolumn}
@@ -130,20 +131,28 @@ export function Idag() {
         ? "varning"
         : "lugn";
 
+  const LAGE = {
+    larm: { ton: "bad", text: "Frist eller datum passerat" },
+    varning: { ton: "warn", text: "Frister löper" },
+    lugn: { ton: "ok", text: "Lugnt läge" },
+  };
+
   return (
-    <>
+    <div className="flex flex-col gap-4 lg:gap-6">
       {/* ---------- Sammanfattning ---------- */}
-      <div
-        className={`mb-4 flex flex-wrap items-center gap-5 rounded-card px-6 py-5 text-white ${
-          lage === "larm" ? "bg-rod" : lage === "varning" ? "bg-orange" : "bg-one-djup"
-        }`}
+      <section
+        aria-label="Sammanfattning"
+        className="flex flex-wrap items-center gap-x-6 gap-y-4 rounded-xl bg-one-djup px-5 py-5 text-white shadow-sm md:px-6"
       >
-        <div className="font-head text-[42px] font-bold leading-none">{attGora}</div>
-        <div className="min-w-0">
-          <div className="text-[12px] uppercase tracking-[.05em] opacity-85">
-            {attGora === 1 ? "sak kräver din åtgärd" : "saker kräver din åtgärd"}
+        <div className="text-[42px] font-bold leading-none tabular-nums">{attGora}</div>
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[12px] font-bold uppercase tracking-wider text-white/80">
+              {attGora === 1 ? "sak kräver din åtgärd" : "saker kräver din åtgärd"}
+            </span>
+            <StatusBadge ton={LAGE[lage].ton} label={LAGE[lage].text} />
           </div>
-          <div className="mt-1 text-[14px]">
+          <div className="text-[14px]">
             {l.forfallnaFrister.length
               ? `${l.forfallnaFrister.length} frist${l.forfallnaFrister.length > 1 ? "er" : ""} är överskriden — börja där.`
               : l.frister.length
@@ -155,20 +164,16 @@ export function Idag() {
         </div>
 
         <div className="ml-auto">
-          <Vyvaljare
-            etikett="Horisont"
-            varde={horisont}
-            onValj={setHorisont}
-            alternativ={HORISONTER}
-          />
+          <Vyvaljare etikett="Horisont" varde={horisont} onValj={setHorisont} alternativ={HORISONTER} />
         </div>
-      </div>
+      </section>
 
       {/* ---------- Frister ---------- */}
       <Grupp
+        id="idag-frister"
         rubrik="Frister som löper"
         antal={l.frister.length}
-        ton={l.forfallnaFrister.length ? "larm" : l.frister.length ? "varning" : "neutral"}
+        ton={l.forfallnaFrister.length ? "larm" : "varning"}
         tom="Alla ÄTA och hinder med händelsedatum är underrättade, alla incidenter rapporterade."
       >
         <Lista>
@@ -190,23 +195,24 @@ export function Idag() {
       </Grupp>
 
       {l.utanDatum.length ? (
-        <Note niva="bad">
+        <Callout ton="bad">
           <b>
             {l.utanDatum.length} post{l.utanDatum.length === 1 ? "" : "er"} saknar händelsedatum.
           </b>{" "}
           24-timmarsfristen kan inte räknas förrän datumet är ifyllt:{" "}
           {l.utanDatum.slice(0, 5).map((u) => u.nr).join(", ")}
           {l.utanDatum.length > 5 ? " m.fl." : ""}
-          <div className="rowbtns">
+          <div className="mt-2">
             <button type="button" className="btn mini" onClick={() => visa("ata")}>
               Öppna ÄTA och hinder
             </button>
           </div>
-        </Note>
+        </Callout>
       ) : null}
 
       {/* ---------- Förfallet ---------- */}
       <Grupp
+        id="idag-forfallet"
         rubrik="Har passerat sitt datum"
         antal={l.forfallet.length}
         ton="larm"
@@ -217,6 +223,7 @@ export function Idag() {
 
       {/* ---------- Idag och denna vecka ---------- */}
       <Grupp
+        id="idag-veckan"
         rubrik="Idag och inom sju dagar"
         antal={l.idag.length + l.veckan.length}
         ton={l.idag.length ? "varning" : "neutral"}
@@ -230,6 +237,7 @@ export function Idag() {
 
       {/* ---------- Längre fram ---------- */}
       <Grupp
+        id="idag-kommande"
         rubrik={`Längre fram — inom ${horisont} dagar`}
         antal={l.kommande.length}
         tom={`Inget mer med datum inom ${horisont} dagar.`}
@@ -237,12 +245,12 @@ export function Idag() {
         <Lista>{l.kommande.map(agendaRad)}</Lista>
       </Grupp>
 
-      <Note>
+      <Callout>
         <b>Vad som räknas här.</b> Frister mäts i timmar och kommer ur ABT 06: underrättelse om störning
         inom 24 timmar från händelsen, incidentrapport inom 24 timmar. Agendan mäts i dagar och samlar
         milstolpar, leveranser, faktureringstillfällen, öppna punkter, byggmöten och kontraktets
         färdigställandetid. Poster utan datum syns inte i listan — de ligger under respektive flik.
-      </Note>
-    </>
+      </Callout>
+    </div>
   );
 }

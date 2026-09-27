@@ -58,13 +58,14 @@ test("omfattningsväljaren går att styra med piltangenter", async ({ page }) =>
 });
 
 test("byggfaserna fälls ut och bockar av", async ({ page }) => {
-  const forstaFas = page.locator(".acc").first().getByRole("button").first();
+  const faser = page.getByRole("region", { name: /^Milstolpar → klart-kriterier/ });
+  const forstaFas = faser.locator("button[aria-expanded]").first();
   await expect(forstaFas).toHaveAttribute("aria-expanded", "false");
 
   await forstaFas.click();
   await expect(forstaFas).toHaveAttribute("aria-expanded", "true");
 
-  const kryss = page.locator(".accb input[type=checkbox]").first();
+  const kryss = faser.getByRole("checkbox").first();
   await expect(kryss).toBeVisible();
 
   const fore = await kryss.isChecked();

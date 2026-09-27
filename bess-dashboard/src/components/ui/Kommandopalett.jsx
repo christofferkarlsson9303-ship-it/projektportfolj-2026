@@ -169,7 +169,12 @@ export function Kommandopalett() {
                 id={`cmd-${i}`}
                 role="option"
                 aria-selected={i === vald}
-                onMouseEnter={() => setVald(i)}
+                /* Bara verklig musrörelse flyttar markeringen. mouseenter
+                   utlöses också när listan byggs om under en stilla pekare,
+                   och då kunde Enter hoppa till fel träff. */
+                onMouseMove={(e) => {
+                  if ((e.movementX || e.movementY) && i !== vald) setVald(i);
+                }}
                 onClick={() => kor(i)}
               >
                 <span className="ct">{c.t}</span>

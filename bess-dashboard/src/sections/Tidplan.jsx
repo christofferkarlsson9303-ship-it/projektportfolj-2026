@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { usePortfolj, useUi } from "../state/hooks.js";
 import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
 import { Tathetsvaljare, Vyvaljare } from "../components/ui/Vyvaljare.jsx";
 import { DataTable } from "../components/ui/DataTable.jsx";
 import { Tidslinje } from "../components/ui/Tidslinje.jsx";
-import { Note, Prog, SelStatus } from "../components/ui/Primitiver.jsx";
+import { SelStatus } from "../components/ui/Primitiver.jsx";
+import { Callout, Card, CheckList, Meter, Overline, StatusBadge } from "../components/ds/index.js";
 import { DatumFalt } from "../components/ui/Falt.jsx";
 import { BATTERIPARK_MILSTOLPAR } from "../data/batteripark-milstolpar.js";
 import { dagarTill } from "../lib/datum.js";
@@ -17,6 +19,10 @@ import {
   rutinNyckel,
 } from "../lib/berakningar.js";
 
+/* Tidplanen på designsystemet: tidslinjen, milstolparna och leveranserna som
+   kort, och byggfaserna som utfällbara rader i ett kort — varje fas med
+   mätare, räknare och avbockningslistor per grupp. */
+
 /* ---------- Byggfaser (klart-kriterier) ---------- */
 
 function Byggfas({ fas, pid }) {
@@ -25,61 +31,50 @@ function Byggfas({ fas, pid }) {
   const { tot, klar } = rutinAntal(state, pid, fas);
 
   return (
-    <div className="acc">
-      <h3 className="m-0">
+    <li className="border-0 border-t border-solid border-hairline first:border-t-0">
+      <h4 className="m-0">
         <button
           type="button"
-          className="acch w-full border-0 bg-transparent text-left font-[inherit]"
+          className="-mx-2 flex w-[calc(100%+1rem)] cursor-pointer items-center gap-3 rounded-lg border-0 bg-transparent px-2 py-3 text-left font-body hover:bg-sunken"
           onClick={() => setOppen((v) => !v)}
           aria-expanded={oppen}
           aria-controls={`fas-${fas.id}`}
         >
-          <span className="num">{fas.id}</span>
-          <span className="ttl">{fas.titel}</span>
-          <span className="prog-wrap w-20 shrink-0">
-            <Prog procent={tot ? (klar / tot) * 100 : 0} klart={klar === tot} etikett={`Klart i ${fas.titel}`} />
+          <span className="flex h-8 min-w-8 shrink-0 items-center justify-center rounded-md bg-one-djup px-1.5 text-xs font-bold text-white">
+            {fas.id}
           </span>
-          <span className="cnt">
+          <span className="min-w-0 flex-1 text-[14px] font-semibold leading-snug text-ink">{fas.titel}</span>
+          <Meter value={klar} max={tot} size="sm" className="w-16 shrink-0 sm:w-20" />
+          <span className="w-10 shrink-0 text-right text-xs tabular-nums text-ink-soft">
             {klar}/{tot}
           </span>
-          <span aria-hidden="true" className="ml-2 text-ink-faint">
-            {oppen ? "▲" : "▼"}
-          </span>
+          <ChevronDown
+            size={16}
+            aria-hidden="true"
+            className={`shrink-0 text-ink-faint transition-transform ${oppen ? "rotate-180" : ""}`}
+          />
         </button>
-      </h3>
+      </h4>
 
       {oppen ? (
-        <div className="accb" id={`fas-${fas.id}`}>
+        <div id={`fas-${fas.id}`} className="flex flex-col gap-4 pb-4 sm:pl-11">
           {fas.grupper.map((g, gi) => (
-            <div className="grp" key={g.namn}>
-              <h4>{g.namn}</h4>
-              {g.info ? <div className="info">{g.info}</div> : null}
-              {g.punkter.map((pt) => {
-                const nyckel = rutinNyckel(fas.id, gi, pt.n);
-                const kl = rutinKlar(state, pid, nyckel);
-                const cid = `b_${pid}_${nyckel.replace(/\|/g, "_")}`;
-                return (
-                  <div className="chk" key={pt.n}>
-                    <input
-                      type="checkbox"
-                      id={cid}
-                      checked={kl}
-                      onChange={(e) =>
-                        dispatch({ type: "VAXLA_RUTINPUNKT", pid, nyckel, klar: e.target.checked })
-                      }
-                    />
-                    <label htmlFor={cid}>
-                      {kl ? <s>{pt.t}</s> : pt.t}
-                      {pt.h ? <span className="hint">{pt.h}</span> : null}
-                    </label>
-                  </div>
-                );
-              })}
+            <div key={g.namn} className="flex flex-col gap-1.5">
+              <Overline as="h5">{g.namn}</Overline>
+              {g.info ? <p className="m-0 text-xs leading-snug text-ink-soft">{g.info}</p> : null}
+              <CheckList
+                label={`${fas.id} ${g.namn}`}
+                items={g.punkter.map((pt) => {
+                  const nyckel = rutinNyckel(fas.id, gi, pt.n);
+                  return { id: nyckel, label: pt.t, hint: pt.h, checked: rutinKlar(state, pid, nyckel) };
+                })}
+                onChange={(nyckel, klar) => dispatch({ type: "VAXLA_RUTINPUNKT", pid, nyckel, klar })}
+              />
             </div>
           ))}
         </div>
       ) : null}
-    </div>
+    </li>
   );
 }
 
@@ -197,60 +192,46 @@ export function Tidplan() {
     textVarde: (r) => (r.datum ? `${dagarTill(r.datum)} d` : "saknas"),
     render: (r) =>
       r.datum ? (
-        <span style={dagarTill(r.datum) < 0 ? { color: "var(--rod)", fontWeight: 700 } : undefined}>
-          {dagarTill(r.datum)} d
-        </span>
+        <span className={dagarTill(r.datum) < 0 ? "font-bold text-bad-ink" : undefined}>{dagarTill(r.datum)} d</span>
       ) : (
-        <span className="ant">SAKNAS</span>
+        <StatusBadge ton="warn" label="Saknas" />
       ),
     exportVarde: (r) => (r.datum ? dagarTill(r.datum) : ""),
   };
 
+  const projektNamn = (p.nr ? p.nr + " " : "") + p.namn;
+
   return (
     <>
-      <div className="card" style={{ marginBottom: 16 }}>
-        <div className="kortrad">
-          <div style={{ minWidth: 0 }}>
-            <h3>Tidslinje — milstolpar och leveranser</h3>
-            <div className="lead" style={{ marginBottom: 0 }}>
-              Klicka på en punkt för detaljer. Röd linje är i dag. Intervallet anpassas automatiskt efter
-              datan.
-            </div>
-          </div>
-          <div className="kortverktyg">
-            <Vyvaljare
-              etikett="Omfattning"
-              varde={omfang}
-              onValj={setOmfang}
-              alternativ={[
-                ["alla", "Alla projekt"],
-                ["ett", "Valt projekt"],
-              ]}
-            />
-          </div>
-        </div>
-
-        <div style={{ marginTop: 16 }}>
-          <Tidslinje rader={tidslinjeRader} etikett="Tidslinje över milstolpar och leveranser" />
-        </div>
-      </div>
+      <Card
+        id="tp-tidslinje"
+        className="mb-4 lg:mb-6"
+        title="Tidslinje — milstolpar och leveranser"
+        subtitle="Klicka på en punkt för detaljer. Röd linje är i dag. Intervallet anpassas automatiskt efter datan."
+        action={
+          <Vyvaljare
+            etikett="Omfattning"
+            varde={omfang}
+            onValj={setOmfang}
+            alternativ={[
+              ["alla", "Alla projekt"],
+              ["ett", "Valt projekt"],
+            ]}
+          />
+        }
+      >
+        <Tidslinje rader={tidslinjeRader} etikett="Tidslinje över milstolpar och leveranser" />
+      </Card>
 
       <Projektvaljare />
 
-      <div className="card" style={{ marginBottom: 20 }}>
-        <div className="kortrad">
-          <div style={{ minWidth: 0 }}>
-            <h3>{(p.nr ? p.nr + " " : "") + p.namn} — milstolpar</h3>
-            <div className="lead" style={{ marginBottom: 0 }}>
-              Redigera datum och status — sparas direkt.
-            </div>
-          </div>
-          <div className="kortverktyg">
-            <Tathetsvaljare />
-          </div>
-        </div>
-
-        <div style={{ marginTop: 14 }}>
+      <div className="flex flex-col gap-4 lg:gap-6">
+        <Card
+          id="tp-milstolpar"
+          title={`${projektNamn} — milstolpar`}
+          subtitle="Redigera datum och status — sparas direkt."
+          action={<Tathetsvaljare />}
+        >
           <DataTable
             etikett="Milstolpar"
             exportNamn="Milstolpar"
@@ -293,79 +274,76 @@ export function Tidplan() {
               },
             ]}
           />
-        </div>
+        </Card>
+
+        <Card id="tp-leveranser" title={`Leveransspårning — ${projektNamn}`} subtitle="Long lead och kritisk materiel.">
+          <DataTable
+            etikett="Leveranser"
+            exportNamn="Leveranser"
+            rader={leveranser}
+            tomText="Inga leveranser registrerade."
+            verktyg={
+              <button type="button" className="btn sec mini" onClick={nyLeverans}>
+                + Lägg till leverans
+              </button>
+            }
+            kolumner={[
+              { nyckel: "benamning", rubrik: "Materiel" },
+              { nyckel: "leverantor", rubrik: "Leverantör", bredd: 160, filter: true },
+              {
+                nyckel: "datum",
+                rubrik: "Datum",
+                bredd: 150,
+                render: (l) => (
+                  <DatumFalt
+                    varde={l.datum}
+                    etikett={`Leveransdatum för ${l.benamning}`}
+                    onCommit={(v) => uppd("leveranser", l.id, "datum", v)}
+                  />
+                ),
+              },
+              kvarKolumn,
+              {
+                nyckel: "status",
+                rubrik: "Status",
+                bredd: 150,
+                filter: true,
+                textVarde: (l) => l.status,
+                render: (l) => (
+                  <SelStatus
+                    alternativ={["bekraftad", "preliminar", "avvikelse", "klar"]}
+                    varde={l.status}
+                    etikett={`Status för ${l.benamning}`}
+                    onChange={(v) => uppdStatus("leveranser", l.id, "status", v)}
+                  />
+                ),
+              },
+            ]}
+          />
+        </Card>
+
+        <Card
+          id="tp-kriterier"
+          title={`Milstolpar → klart-kriterier — ${projektNamn}`}
+          subtitle="Byggsteg för batteripark mappade mot betalplanens milstolpar. Bocka av per moment — sparas per projekt."
+        >
+          <ul className="m-0 list-none p-0">
+            {BATTERIPARK_MILSTOLPAR.map((fas) => (
+              <Byggfas key={fas.id} fas={fas} pid={pid} />
+            ))}
+          </ul>
+        </Card>
+
+        <Callout>
+          <b>Underlag och antaganden.</b> Byggstegen ovan är hämtade ur Montörspärmen (Växjö Batteripark
+          36037) och är en generell mall för CATL EnerX-baserade BESS-bygg — samma faser och tekniska
+          klart-kriterier gäller i grunden för alla fyra projekt. <b>Antagande:</b> milstolpe-ID:n (M1–M7)
+          och betalningsandelarna (%) följer Batch C:s betalplan mot Ingrid Capacity — bekräfta att samma
+          milstolpemodell och andelar gäller innan de används för fakturering på Göteborg och Götene.
+          Leverantörsspecifika detaljer (t.ex. ställverksfabrikat) kan skilja per site — se projektets egen
+          Montörspärm för exakta referenser och signaturkrav.
+        </Callout>
       </div>
-
-      <div className="card" style={{ marginBottom: 20 }}>
-        <h3>Leveransspårning — {(p.nr ? p.nr + " " : "") + p.namn}</h3>
-        <div className="lead">Long lead och kritisk materiel.</div>
-
-        <DataTable
-          etikett="Leveranser"
-          exportNamn="Leveranser"
-          rader={leveranser}
-          tomText="Inga leveranser registrerade."
-          verktyg={
-            <button type="button" className="btn sec mini" onClick={nyLeverans}>
-              + Lägg till leverans
-            </button>
-          }
-          kolumner={[
-            { nyckel: "benamning", rubrik: "Materiel" },
-            { nyckel: "leverantor", rubrik: "Leverantör", bredd: 160, filter: true },
-            {
-              nyckel: "datum",
-              rubrik: "Datum",
-              bredd: 150,
-              render: (l) => (
-                <DatumFalt
-                  varde={l.datum}
-                  etikett={`Leveransdatum för ${l.benamning}`}
-                  onCommit={(v) => uppd("leveranser", l.id, "datum", v)}
-                />
-              ),
-            },
-            kvarKolumn,
-            {
-              nyckel: "status",
-              rubrik: "Status",
-              bredd: 150,
-              filter: true,
-              textVarde: (l) => l.status,
-              render: (l) => (
-                <SelStatus
-                  alternativ={["bekraftad", "preliminar", "avvikelse", "klar"]}
-                  varde={l.status}
-                  etikett={`Status för ${l.benamning}`}
-                  onChange={(v) => uppdStatus("leveranser", l.id, "status", v)}
-                />
-              ),
-            },
-          ]}
-        />
-      </div>
-
-      <div className="card" style={{ marginBottom: 14 }}>
-        <h3>Milstolpar → klart-kriterier — {(p.nr ? p.nr + " " : "") + p.namn}</h3>
-        <div className="lead">
-          Byggsteg för batteripark mappade mot betalplanens milstolpar. Bocka av per moment — sparas per
-          projekt.
-        </div>
-      </div>
-
-      {BATTERIPARK_MILSTOLPAR.map((fas) => (
-        <Byggfas key={fas.id} fas={fas} pid={pid} />
-      ))}
-
-      <Note>
-        <b>Underlag och antaganden.</b> Byggstegen ovan är hämtade ur Montörspärmen (Växjö Batteripark
-        36037) och är en generell mall för CATL EnerX-baserade BESS-bygg — samma faser och tekniska
-        klart-kriterier gäller i grunden för alla fyra projekt. <b>Antagande:</b> milstolpe-ID:n (M1–M7)
-        och betalningsandelarna (%) följer Batch C:s betalplan mot Ingrid Capacity — bekräfta att samma
-        milstolpemodell och andelar gäller innan de används för fakturering på Göteborg och Götene.
-        Leverantörsspecifika detaljer (t.ex. ställverksfabrikat) kan skilja per site — se projektets egen
-        Montörspärm för exakta referenser och signaturkrav.
-      </Note>
     </>
   );
 }

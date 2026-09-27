@@ -125,7 +125,7 @@ export function Tidslinje({ rader, etikett = "Tidslinje", onValjPost, minBredd =
   return (
     <div>
       <div
-        className="tscroll rounded-sm border border-hairline bg-surface"
+        className="tscroll rounded-sm border border-hairline bg-surface !overflow-x-auto"
         tabIndex={0}
         role="group"
         aria-label={etikett}
