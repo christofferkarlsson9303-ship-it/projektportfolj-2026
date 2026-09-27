@@ -78,7 +78,7 @@ const pdf = (namn) => ({ name: namn, mimeType: "application/pdf", buffer: Buffer
 
 test("vyn är flyttad till React och visar lagring, import och tabeller", async ({ page }) => {
   await expect(page.getByText("Den här sektionen är inte flyttad")).toHaveCount(0);
-  await expect(page.locator(".kpi", { hasText: "Lagring" })).toContainText("Lokalt läge");
+  await expect(page.getByRole("article", { name: "Lagring" })).toContainText("Lokalt läge");
   await expect(page.getByText("Släpp filer här")).toBeVisible();
   await expect(page.getByRole("button", { name: "Ladda ner säkerhetskopia (JSON)" })).toBeVisible();
   await expect(page.getByText(/Google Drive via Make — planerad/)).toBeVisible();

@@ -283,7 +283,7 @@ export function DataTable({
                       <button
                         type="button"
                         onClick={() => sortera(k.nyckel)}
-                        className="inline-flex w-full items-center gap-1 rounded bg-transparent p-0 font-[inherit] text-[inherit] uppercase tracking-[inherit] text-ink-faint transition-colors hover:text-one-djup"
+                        className="inline-flex w-full items-center gap-1 rounded border-0 bg-transparent p-0 font-[inherit] text-[inherit] uppercase tracking-[inherit] text-ink-faint transition-colors hover:text-one-djup"
                         style={{ justifyContent: k.typ === "num" || k.typ === "sek" ? "flex-end" : "flex-start" }}
                       >
                         <span>{k.rubrik}</span>

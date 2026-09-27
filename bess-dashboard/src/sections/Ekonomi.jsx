@@ -428,7 +428,7 @@ export function Ekonomi() {
             Öppna ÄTA och hinder
           </button>
         </div>
-        <Note>
+        <Note niva="warn">
           <b>Att bevaka.</b> Etableringen i Alvesta (Cramo) är kontrakterad i 20 veckor enligt
           Bilaga 3-reservationen. Hyresmaterial för veckor därefter ska in i ÄTA-underlaget till
           självkostnad + 10 % entreprenadarvode. Arbeten åt Alvesta Energi AB faktureras separat med EBR

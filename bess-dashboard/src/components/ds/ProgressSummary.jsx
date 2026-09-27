@@ -1,3 +1,5 @@
+import { Meter } from "./Meter.jsx";
+
 /* Framdrift i en blick: kontrollpunkter, hållpunkter och grindar som tal
    och mätare. Talet står alltid i klartext — mätaren är dekor för
    skärmläsare. Mätaren är andel av en helhet i designsystemets ton
@@ -18,9 +20,7 @@ function Matare({ etikett, varde, av }) {
         </b>
         <span className="text-xs font-semibold text-ink-soft tabular-nums">{andel} %</span>
       </span>
-      <span aria-hidden="true" className="block h-2 overflow-hidden rounded-full bg-viz-spar">
-        <span className="block h-full rounded-full bg-viz-klar" style={{ width: andel + "%" }} />
-      </span>
+      <Meter value={varde} max={av} />
     </li>
   );
 }

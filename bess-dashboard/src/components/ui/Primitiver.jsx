@@ -5,6 +5,8 @@
 import { PILL } from "../../data/konstanter.js";
 import { PILL_TILL_TON } from "../../lib/status.js";
 import { StatusBadge } from "../ds/StatusBadge.jsx";
+import { StatTile } from "../ds/StatTile.jsx";
+import { Callout } from "../ds/Callout.jsx";
 
 export function Card({ children, klass = "", ...rest }) {
   return (
@@ -26,14 +28,9 @@ export function Kortrubrik({ titel, lead, verktyg, id }) {
   );
 }
 
+/** Nyckeltal i de äldre vyerna — samma ruta som i resten av appen (StatTile). */
 export function Kpi({ label, varde, hint, klass = "" }) {
-  return (
-    <div className="card kpi">
-      <div className="label">{label}</div>
-      <div className={`val ${klass}`.trim()}>{varde}</div>
-      {hint ? <div className="hint">{hint}</div> : null}
-    </div>
-  );
+  return <StatTile label={label} value={varde} hint={hint} ton={klass} />;
 }
 
 /** Status i de äldre vyerna — samma märke som i resten av appen (StatusBadge). */
@@ -71,12 +68,13 @@ export function SelStatus({ alternativ, varde, onChange, etikett, ...rest }) {
   );
 }
 
+/** Upplysning i de äldre vyerna — samma ruta som i resten av appen (Callout).
+ *  Luften ovanför behålls, eftersom de äldre vyerna inte staplar med gap. */
 export function Note({ children, niva = "", ...rest }) {
-  const stil = niva === "bad" ? { borderLeftColor: "var(--rod)" } : undefined;
   return (
-    <div className="note" style={stil} {...rest}>
+    <Callout ton={niva || "info"} className="mt-4" {...rest}>
       {children}
-    </div>
+    </Callout>
   );
 }
 

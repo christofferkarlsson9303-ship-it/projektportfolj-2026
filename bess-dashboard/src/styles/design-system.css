@@ -147,10 +147,6 @@ main{max-width:1240px;margin:0 auto;padding:26px 30px 64px;width:100%}
 .card h3{font-size:15px;color:var(--one-djup);margin-bottom:4px}
 .card .lead{font-size:12px;color:var(--ink-soft);margin-bottom:14px}
 
-.kpi .label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);font-weight:600}
-.kpi .val{font-family:var(--font-h);font-size:30px;font-weight:700;color:var(--one-djup);margin-top:6px;line-height:1}
-.kpi .val.warn{color:var(--orange)}.kpi .val.bad{color:var(--rod)}
-.kpi .hint{font-size:12px;color:var(--ink-soft);margin-top:6px}
 
 /* ---------- Project card ---------- */
 .pcard{background:var(--surface);border-radius:var(--r);border:var(--border);border-top:4px solid var(--one-bla);padding:18px;min-width:0}
@@ -267,7 +263,7 @@ td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
   vertical-align:middle;margin-left:8px}
 
 /* ---------- Inputs ---------- */
-select,input[type=text],input[type=email],input[type=date],input[type=number],textarea{
+select,input[type=text],input[type=search],input[type=email],input[type=date],input[type=number],textarea{
   font-family:var(--font-b);font-size:13px;color:var(--ink);background:var(--surface);
   border:1px solid var(--hairline-stark);border-radius:5px;padding:5px 7px;width:100%}
 select:focus,input:focus,textarea:focus{outline:2px solid var(--one-bla);outline-offset:-1px;border-color:var(--one-bla)}
@@ -394,7 +390,6 @@ footer{background:var(--morkgra);color:#cfd8dc;font-size:12px;padding:16px 24px;
 .card,.pcard,.tl,.acc,.q,.atarad,.riskkort{border-radius:var(--r)}
 .card:hover,.pcard:hover{box-shadow:var(--sh-md);transform:translateY(-2px)}
 .card,.pcard{transition:box-shadow .22s var(--ease),transform .22s var(--ease),border-color .22s}
-.kpi .val{letter-spacing:-.02em}
 .btn{border-radius:9px;transition:transform .16s var(--ease),box-shadow .16s var(--ease),background .16s}
 .btn:active{transform:translateY(0) scale(.985)}
 th{border-bottom:1px solid var(--hairline-stark);background:transparent}
@@ -655,25 +650,11 @@ main{padding-top:30px}
 .grind.bad{background:#fde9e7;color:#b8322a}
 .grind.ok{background:#e3f4f4;color:#0f6b6d}
 .ataform{padding:14px 13px 4px;border-top:1px solid #eef2f4;background:var(--web1)}
-.ataform .note{background:#fff}
 
-/* ---------- Milstolpar M1–M7 ---------- */
-.mspine{display:flex;gap:4px;margin-top:14px;overflow-x:auto;padding-bottom:4px}
-.mstop{flex:1;min-width:78px;text-align:center;padding:10px 4px 8px;border-radius:8px;
-  background:var(--web1);border-top:3px solid #dfe6ea}
-.mstop.klar{border-top-color:var(--turkos);background:#eafaf7}
-.mstop.redo{border-top-color:var(--one-bla)}
-.mstop.nu{border-top-color:var(--orange);background:#fff8f0;box-shadow:var(--sh-sm)}
-.mdot{display:none}
-.mkod{display:block;font-family:var(--font-h);font-weight:700;font-size:15px;color:var(--one-djup)}
-.mandel{display:block;font-size:11px;color:#6c7d85;margin-top:2px}
+/* ---------- Milstolpar M1–M7 (rubrikrad delas med Byggmöten och Slutdok) ---------- */
 .mhead{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:flex-start}
 .mhead-h{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.mprocent{font-family:var(--font-h);font-weight:700;font-size:17px;color:var(--one-djup)}
 .mbelopp{font-size:12.5px;color:#6c7d85;font-variant-numeric:tabular-nums}
-.card.mnu{border-left:4px solid var(--orange)}
-.mgrid{display:grid;grid-template-columns:1fr 300px;gap:24px;margin-top:16px}
-@media(max-width:900px){.mgrid{grid-template-columns:1fr}}
 .mrub{font-family:var(--font-b);font-size:11px;text-transform:uppercase;letter-spacing:.06em;
   color:#6c7d85;margin:0 0 8px;font-weight:700}
 
@@ -829,10 +810,6 @@ main{max-width:1320px;padding:32px 38px 80px}
 .ds-card:hover{border-color:var(--hairline-stark)}
 .ds-card:hover>header .ov-ikon:not(.bad):not(.warn){color:var(--orange)}
 .grid{gap:20px}
-.kpi .label{font-size:11px;letter-spacing:.09em;color:var(--ink-faint)}
-.kpi .val{font-size:34px;margin-top:10px}
-.kpi .val .warn{color:var(--orange)}
-.kpi .val .bad{color:var(--rod)}
 .pcard{border-top-width:0;padding:22px;position:relative;overflow:hidden}
 .pcard::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:var(--one-bla)}
 .pcard.b::before{background:var(--turkos)}
@@ -852,7 +829,7 @@ main{max-width:1320px;padding:32px 38px 80px}
 th{font-size:10.5px;letter-spacing:.08em;padding:11px 12px;color:var(--ink-faint)}
 td{padding:11px 12px}
 tbody tr:hover{background:var(--sunken)}
-select,input[type=text],input[type=email],input[type=date],input[type=number],textarea{
+select,input[type=text],input[type=search],input[type=email],input[type=date],input[type=number],textarea{
   border-radius:9px;padding:7px 10px;border-color:var(--hairline-stark);
 }
 

@@ -10,7 +10,10 @@
    ProgressSummary framdrift: kontrollpunkter, hållpunkter och grindar
    LeadTimeList    åtgärdsrader med status, titel, datum och förskjutning
    DataList        nyckel–värde-rader i stället för löpande text
-   SectionHeading  rubrik och ingress för en sektion utanför kort */
+   SectionHeading  rubrik och ingress för en sektion utanför kort
+   StatTile        nyckeltalsruta: etikett, tal och förklaring
+   Callout         upplysningsruta för antaganden, rutiner och varningar
+   Meter           mätare för andel av en helhet */
 
 export { Card } from "./Card.jsx";
 export { StatusBadge } from "./StatusBadge.jsx";
@@ -18,3 +21,6 @@ export { ProgressSummary } from "./ProgressSummary.jsx";
 export { LeadTimeList } from "./LeadTimeList.jsx";
 export { DataList } from "./DataList.jsx";
 export { SectionHeading } from "./SectionHeading.jsx";
+export { StatTile } from "./StatTile.jsx";
+export { Callout } from "./Callout.jsx";
+export { Meter } from "./Meter.jsx";

@@ -12,7 +12,7 @@ test.beforeEach(async ({ page }) => {
    tabellen först — vyvalet är en radiogroup, så det görs som ett radioval. */
 async function visaTabell(page) {
   await page.getByRole("radio", { name: "Tabell" }).click();
-  await expect(page.getByRole("region", { name: REGISTER })).toBeVisible();
+  await expect(page.getByRole("region", { name: REGISTER, exact: true })).toBeVisible();
 }
 
 /* ---------- Tavlan ---------- */
@@ -42,14 +42,14 @@ test("ett kort på tavlan öppnar ärendepanelen", async ({ page }) => {
 test("vyvalet överlever omladdning", async ({ page }) => {
   await visaTabell(page);
   await page.reload();
-  await expect(page.getByRole("region", { name: REGISTER })).toBeVisible();
+  await expect(page.getByRole("region", { name: REGISTER, exact: true })).toBeVisible();
 });
 
 /* ---------- Registret ---------- */
 
 test("registret listar posterna med klass, status och grindar", async ({ page }) => {
   await visaTabell(page);
-  const tabell = page.getByRole("region", { name: REGISTER });
+  const tabell = page.getByRole("region", { name: REGISTER, exact: true });
   expect(await tabell.locator("tbody tr").count()).toBeGreaterThan(0);
 
   // Beloppskolumnen summeras i foten.
@@ -58,7 +58,7 @@ test("registret listar posterna med klass, status och grindar", async ({ page })
 
 test("klick på numret öppnar hela ärendet", async ({ page }) => {
   await visaTabell(page);
-  const forsta = page.getByRole("region", { name: REGISTER }).locator("tbody tr").first();
+  const forsta = page.getByRole("region", { name: REGISTER, exact: true }).locator("tbody tr").first();
   const nrKnapp = forsta.getByRole("button").first();
 
   await expect(nrKnapp).toHaveAttribute("aria-expanded", "false");
@@ -76,7 +76,7 @@ test("klick på numret öppnar hela ärendet", async ({ page }) => {
 
 test("orsaksvalet styr vägledningen om ÄTA eller hinder", async ({ page }) => {
   await visaTabell(page);
-  await page.getByRole("region", { name: REGISTER }).locator("tbody tr").first().getByRole("button").first().click();
+  await page.getByRole("region", { name: REGISTER, exact: true }).locator("tbody tr").first().getByRole("button").first().click();
 
   const form = page.getByRole("region", { name: ARENDE });
   const orsak = form.getByLabel("Orsak enligt flödesschema 2.4");
@@ -95,7 +95,7 @@ test("ändrad status skrivs till ändringsloggen", async ({ page }) => {
   await page.getByLabel("Ditt namn").fill("E2E-test");
   await visaTabell(page);
 
-  const forsta = page.getByRole("region", { name: REGISTER }).locator("tbody tr").first();
+  const forsta = page.getByRole("region", { name: REGISTER, exact: true }).locator("tbody tr").first();
   await forsta.getByRole("button").first().click();
 
   const form = page.getByRole("region", { name: ARENDE });
@@ -109,7 +109,7 @@ test("ändrad status skrivs till ändringsloggen", async ({ page }) => {
 
 test("grindarna visas för poster som bryter mot 24-timmarsfristen", async ({ page }) => {
   await visaTabell(page);
-  const grindar = page.getByRole("region", { name: REGISTER }).locator("tbody .grind");
+  const grindar = page.getByRole("region", { name: REGISTER, exact: true }).locator("tbody .grind");
   const antal = await grindar.count();
   test.skip(antal === 0, "ingen post larmar i grunddatan");
 
