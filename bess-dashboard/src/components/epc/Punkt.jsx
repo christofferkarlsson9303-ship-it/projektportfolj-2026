@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Lightbulb, Trash2 } from "lucide-react";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { PTag } from "../ui/PTag.jsx";
+import { StatusBadge } from "../ds/StatusBadge.jsx";
 import { KOMMENTARTYP, PAVERKAN, kommentarerFor, tidigareErfarenheter } from "../../lib/epc.js";
 
 /* Kommentarer, avvikelser och lärdomar på en kontrollpunkt.
@@ -24,7 +25,7 @@ function Kommentar({ k }) {
   return (
     <li className={`epc-komm ${k.typ}`}>
       <div className="epc-komm-huvud">
-        <span className={`epc-status ${typ.ton}`.trim()}>{typ.namn}</span>
+        <StatusBadge ton={typ.ton || "neutral"} label={typ.namn} />
         {k.typ !== "notering" ? <span className="epc-komm-meta">Påverkan {PAVERKAN[k.paverkan] || "Medel"}</span> : null}
         {k.kostnad ? <span className="epc-komm-meta">{k.kostnad} kr</span> : null}
         <span className="epc-komm-meta">

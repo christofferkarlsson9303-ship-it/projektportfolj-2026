@@ -2,10 +2,11 @@ import { useMemo } from "react";
 import { usePortfolj } from "../../state/hooks.js";
 import { Tabellyta } from "../ui/Primitiver.jsx";
 import { FasStatus } from "./Delar.jsx";
+import { ProgressSummary } from "../ds/ProgressSummary.jsx";
 import { checklistsummering } from "../../lib/epc.js";
 
-/* Summeringen av checklistan för valt projekt: fyra tal överst och en rad per
-   fas. Mätaren är andel klart av det som är aktuellt, i samma ton som
+/* Summeringen av checklistan för valt projekt: framdriften överst
+   (ProgressSummary) och en rad per fas. Mätaren är andel klart av det som är aktuellt, i samma ton som
    Gantt-schemat; siffrorna står alltid bredvid, så mätaren är dekor för
    skärmläsare. Fasnamnet är en knapp som öppnar fasen i guiden. */
 
@@ -30,28 +31,19 @@ export function Summering({ pid, onVisaFas }) {
 
   return (
     <>
-      <ul className="epc-tal epc-sumtal" aria-label="Status i checklistan">
-        <li>
-          <b>{t.andel} %</b>
-          <span>
-            klart — {t.klara} av {aktuella} punkter
-          </span>
-        </li>
-        <li>
-          <b>
-            {t.hpKlara}/{t.hp}
-          </b>
-          <span>hållpunkter klara</span>
-        </li>
-        <li>
-          <b>{t.grindar}/16</b>
-          <span>grindar passerade</span>
-        </li>
-        <li>
-          <b>{t.kvar}</b>
-          <span>kvar{t.ejAktuella ? ` · ${t.ejAktuella} ej aktuella` : ""}</span>
-        </li>
-      </ul>
+      <ProgressSummary
+        label="Framdrift i checklistan"
+        completedPoints={t.klara}
+        totalPoints={aktuella}
+        completedMilestones={t.hpKlara}
+        totalMilestones={t.hp}
+        passedGates={t.grindar}
+        totalGates={16}
+      />
+      <p className="m-0 text-sm text-ink-soft">
+        <b className="text-ink">{t.andel} % klart</b> · {t.kvar} punkter kvar
+        {t.ejAktuella ? ` · ${t.ejAktuella} ej aktuella` : ""}
+      </p>
 
       <Tabellyta etikett="Status per fas">
         <table className="epc-sumtabell">

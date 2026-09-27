@@ -2,9 +2,10 @@ import { useMemo, useState } from "react";
 import { Check, Hourglass } from "lucide-react";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { PTag } from "../ui/PTag.jsx";
-import { LedtidStatus } from "../epc/Delar.jsx";
+import { LeadTimeList } from "../ds/LeadTimeList.jsx";
 import { datumKort, dagarText, idag } from "../../lib/datum.js";
-import { ledtiderPortfolj, VARNING_DAGAR } from "../../lib/epc.js";
+import { LEDTID_STATUS, ledtiderPortfolj, VARNING_DAGAR } from "../../lib/epc.js";
+import { LEDTID_TILL_STATUS } from "../../lib/status.js";
 import { Lank, Ruta } from "./Ruta.jsx";
 
 /* Ligg steget före — ledtidskrävande moment räknade bakåt från projektets
@@ -67,35 +68,33 @@ export function Ledtider({ i }) {
       ) : null}
 
       {visade.length ? (
-        <ul className="ov-ledlista">
-          {visade.map((l) => (
-            <li key={`${l.projektId}-${l.id}`} className={l.status}>
-              <div className="ov-led-huvud">
-                <LedtidStatus status={l.status} />
+        <LeadTimeList
+          label="Ledtider att starta"
+          items={visade.map((l) => ({
+            id: `${l.projektId}-${l.id}`,
+            status: LEDTID_TILL_STATUS[l.status],
+            statusLabel: LEDTID_STATUS[l.status][1],
+            tag: (
+              <>
                 <PTag pid={l.projektId} />
-                <span className="ov-led-agare">{l.agare}</span>
-              </div>
-              <div className="ov-led-text">
-                <b>{l.arende}</b>
-                <span>
-                  {l.riktning === "fore" ? "Starta senast" : "Klart senast"} <b>{datumKort(l.senast)}</b> (
-                  {dagarText(l.dagarKvar)}) · {langd(l.dagar)} {l.riktning === "fore" ? "före" : "efter"} {l.ank.namn}{" "}
-                  {datumKort(l.ank.datum)}
-                  {l.ank.kalla === "fasplan" ? " enligt fasplanen" : ""}
-                </span>
-              </div>
-              <div className="ov-led-atgard">
-                <button
-                  type="button"
-                  className="btn sec mini"
-                  onClick={() => oppnaPost("epc", `kp-${l.punkt}`)}
-                >
+                <span className="text-xs text-ink-faint">{l.agare}</span>
+              </>
+            ),
+            title: l.arende,
+            meta: `${langd(l.dagar)} ${l.riktning === "fore" ? "före" : "efter"} ${l.ank.namn} ${datumKort(l.ank.datum)}${
+              l.ank.kalla === "fasplan" ? " enligt fasplanen" : ""
+            }`,
+            dueDate: `${l.riktning === "fore" ? "Starta" : "Klart"} ${datumKort(l.senast)}`,
+            delayText: dagarText(l.dagarKvar),
+            action: (
+              <div className="mt-1 flex flex-wrap justify-end gap-2">
+                <button type="button" className="btn sec mini" onClick={() => oppnaPost("epc", `kp-${l.punkt}`)}>
                   {l.punkt}
                   <span className="sr-only">: öppna kontrollpunkten i guiden</span>
                 </button>
                 <button
                   type="button"
-                  className="btn mini ov-led-klar"
+                  className="btn mini inline-flex items-center gap-1"
                   onClick={() => dispatch({ type: "EPC_LEDTID", pid: l.projektId, ledtid: l.id, klar: true })}
                 >
                   <Check size={13} aria-hidden="true" />
@@ -103,9 +102,9 @@ export function Ledtider({ i }) {
                   <span className="sr-only">: {l.arende}</span>
                 </button>
               </div>
-            </li>
-          ))}
-        </ul>
+            ),
+          }))}
+        />
       ) : alla.length ? (
         <div className="ov-tom">Inget ledtidskrävande att starta de kommande {FRAMFORHALLNING} dagarna.</div>
       ) : (

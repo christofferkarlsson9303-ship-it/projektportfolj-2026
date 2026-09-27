@@ -14,7 +14,11 @@ import { Projektkort, Projektredigering } from "../components/oversikt/Projekt.j
 import { uppmarksamhet } from "../lib/oversikt.js";
 import { projektUnderlag } from "../lib/berakningar.js";
 
-/* Översikten — läget i portföljen just nu.
+/* Översikten (DashboardView) — läget i portföljen just nu.
+
+   Byggd av designsystemets komponenter (components/ds): varje ruta är ett
+   Card, status är StatusBadge, åtgärdsrader är LeadTimeList. Avstånden
+   följer 8 px-skalan: gap-4 (16 px), gap-6 (24 px) från lg.
 
    Uppbyggd som ett bento-rutnät i fallande vikt: hälsning och snabbåtgärder,
    nästa uppgift i valt projekt, batteriparkens fasplan som Gantt-schema, ledtiderna som ska startas nu
@@ -25,7 +29,7 @@ import { projektUnderlag } from "../lib/berakningar.js";
 
 const kortNamn = (p) => p.nr || p.ort || p.namn;
 
-export function Oversikt() {
+export function DashboardView() {
   const { state } = usePortfolj();
   const { fokus } = useUi();
   const [visaRedigering, setVisaRedigering] = useState(false);
@@ -58,7 +62,7 @@ export function Oversikt() {
   };
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4 lg:gap-6">
       <Hero akuta={akuta} bevaka={lista.length - akuta} onVisaFlaggor={visaAkuta} />
 
       <NastaUppgift i={1} />
@@ -67,7 +71,7 @@ export function Oversikt() {
         <h2 id="ov-planen" className="sr-only">
           Fasplan och ledtider
         </h2>
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:gap-6 xl:grid-cols-3">
           <Gantt i={1} />
           <Ledtider i={2} />
           <Leveranser i={3} />
@@ -80,7 +84,7 @@ export function Oversikt() {
         <h2 id="ov-laget" className="sr-only">
           Läget i portföljen
         </h2>
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:gap-6 xl:grid-cols-3">
           <Uppmarksamhet lista={lista} flik={flik} setFlik={setFlik} i={4} />
           <Aktivitet i={5} />
           <Tidslinje i={6} />

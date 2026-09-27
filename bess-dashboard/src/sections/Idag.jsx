@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { usePortfolj, useUi } from "../state/hooks.js";
 import { PTag } from "../components/ui/PTag.jsx";
 import { Note } from "../components/ui/Primitiver.jsx";
+import { StatusBadge } from "../components/ds/StatusBadge.jsx";
 import { Vyvaljare } from "../components/ui/Vyvaljare.jsx";
 import { AGENDATYPER, arbetslage, dagsetikett } from "../lib/agenda.js";
 
@@ -109,7 +110,7 @@ export function Idag() {
             {(AGENDATYPER[r.typ] || {}).ikon || "•"}
           </span>
           {r.titel}
-          {r.extra === "avvikelse" ? <span className="pill p-bad ml-2">Avvikelse</span> : null}
+          {r.extra === "avvikelse" ? <StatusBadge status="forsenad" label="Avvikelse" className="ml-2" /> : null}
         </>
       }
       undertext={`${r.typ} · ${r.datum}`}

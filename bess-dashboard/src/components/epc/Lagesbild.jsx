@@ -1,9 +1,14 @@
 import { usePortfolj } from "../../state/hooks.js";
 import { DatumFalt } from "../ui/Falt.jsx";
-import { FasStatus, LedtidStatus } from "./Delar.jsx";
+import { FasStatus } from "./Delar.jsx";
+import { Card } from "../ds/Card.jsx";
+import { DataList } from "../ds/DataList.jsx";
+import { LeadTimeList } from "../ds/LeadTimeList.jsx";
+import { StatusBadge } from "../ds/StatusBadge.jsx";
+import { LEDTID_TILL_STATUS } from "../../lib/status.js";
 import { FASER } from "../../data/bessChecklistData.ts";
 import { datumKort, dagarText } from "../../lib/datum.js";
-import { FAS_STATUS, lagesbild, ledtidslage, planAnkare } from "../../lib/epc.js";
+import { FAS_STATUS, LEDTID_STATUS, lagesbild, ledtidslage, planAnkare } from "../../lib/epc.js";
 
 /* Lägesbilden: var varje projekt står i de 16 faserna, och för valt projekt
    vad som pågår, vilken grind och betalning som står näst på tur och vilka
@@ -89,121 +94,135 @@ export function Portfoljlage({ valt, onValj }) {
   );
 }
 
-/** Nu-läget för valt projekt: det som pågår, det som kommer och startdatumen. */
+/** Läget nu för valt projekt, i tre kort: det som pågår, det som står näst
+ *  på tur och ledtiderna som ska startas — och projektets datum under. */
 export function NuLage({ pid, onVisaFas }) {
   const { state, uppd } = usePortfolj();
   const p = state.projekt.find((x) => x.id === pid);
   const l = lagesbild(state, pid);
   const a = planAnkare(state, pid);
   const ledtider = l.harPlan ? ledtidslage(state, pid).filter((x) => x.status === "sen" || x.status === "snart") : [];
+  const nb = l.nastaBetalning;
+  const ng = l.nastaGrind;
+  const tom = (text) => <p className="m-0 text-sm text-ink-soft">{text}</p>;
 
   return (
-    <div className="epc-nu">
-      <div className="epc-nu-kol">
-        <h4>Pågår nu</h4>
-        {l.aktuella.length ? (
-          <ul className="epc-nu-lista">
-            {l.aktuella.map((f) => (
-              <li key={f.fas.nr}>
-                <button type="button" className="epc-textknapp" onClick={() => onVisaFas(f.fas.nr)}>
-                  Fas {f.fas.nr} · {f.fas.titel}
-                </button>
-                <span>
-                  <FasStatus status={f.status} /> {datumKort(f.start)} – {datumKort(f.slut)}
-                  {f.hp ? ` · ${f.hp} hållpunkter` : ""}
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="epc-plantext">{l.harPlan ? "Ingen fas pågår enligt planen." : "Ange datum nedan."}</p>
-        )}
-      </div>
-
-      <div className="epc-nu-kol">
-        <h4>Näst på tur</h4>
-        <ul className="epc-nu-lista">
-          {l.nastaGrind ? (
-            <li>
-              <span>
-                <b>{l.nastaGrind.fas.grind.kod}</b> {l.nastaGrind.fas.grind.text}
-              </span>
-            </li>
-          ) : null}
-          {l.nastaBetalning ? (
-            <li>
-              <span>
-                <b>{l.nastaBetalning.kod}</b> {l.nastaBetalning.namn} · {l.nastaBetalning.andel} % —{" "}
-                {l.nastaBetalning.utloses.toLowerCase()}
-                {l.nastaBetalning.datum ? ` (plan ${datumKort(l.nastaBetalning.datum)})` : ""}
-              </span>
-            </li>
-          ) : null}
-          <li>
-            <span>
-              {l.grindarPasserade} av 16 grindar passerade · {l.hpKlara} av {l.hp} hållpunkter klara
-            </span>
-          </li>
-        </ul>
-      </div>
-
-      <div className="epc-nu-kol">
-        <h4>Ledtider att starta</h4>
-        {ledtider.length ? (
-          <ul className="epc-nu-lista">
-            {ledtider.slice(0, 4).map((x) => (
-              <li key={x.id}>
-                <span>
-                  <LedtidStatus status={x.status} /> {x.arende}
-                </span>
-                <span className="epc-plantext">
-                  Senast {datumKort(x.senast)} ({dagarText(x.dagarKvar)})
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="epc-plantext">{l.harPlan ? "Inget försenat eller akut just nu." : "—"}</p>
-        )}
-      </div>
-
-      <div className="epc-projektplan">
-        <div className="epc-falt">
-          <label htmlFor={`epc-start-${pid}`}>
-            Startdatum (NTP)
-            {p.startdatumAntagande ? <span className="ant">ANTAGANDE</span> : null}
-          </label>
-          <DatumFalt
-            id={`epc-start-${pid}`}
-            varde={p.startdatum || ""}
-            etikett={`Startdatum för ${p.namn}`}
-            onCommit={(v) => {
-              uppd("projekt", pid, "startdatum", v);
-              uppd("projekt", pid, "startdatumAntagande", false);
-            }}
-          />
-        </div>
-        <div className="epc-falt">
-          <label htmlFor={`epc-slut-${pid}`}>Färdigställande / slutbesiktning</label>
-          <DatumFalt
-            id={`epc-slut-${pid}`}
-            varde={p.fardigstallande || ""}
-            etikett={`Färdigställande för ${p.namn}`}
-            onCommit={(v) => uppd("projekt", pid, "fardigstallande", v)}
-          />
-        </div>
-        <p className="epc-plantext">
-          {a ? (
-            <>
-              Faserna räknas från start, {a.mittKalla === "leverans" ? "BESS-leveransen" : "en antagen leverans"}{" "}
-              {datumKort(a.mitt)} och slutbesiktningen. Varje fas kan få egna datum i guiden.
-              {a.startAntagande ? " Startdatumet är antaget ur kontraktets milstolpar (feb–sep 2026) — ange det rätta." : ""}
-            </>
+    <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card
+          id={`epc-nu-pagar-${pid}`}
+          title="Pågår nu"
+          badge={l.sena.length ? <StatusBadge status="forsenad" label={`${l.sena.length} försenad`} /> : null}
+        >
+          {l.aktuella.length ? (
+            <ul className="m-0 flex list-none flex-col gap-3 p-0">
+              {l.aktuella.map((f) => (
+                <li key={f.fas.nr} className="flex flex-col gap-1.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <FasStatus status={f.status} />
+                    <span className="text-xs font-semibold text-ink-soft tabular-nums">
+                      {datumKort(f.start)} – {datumKort(f.slut)}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="epc-textknapp text-left text-sm"
+                    onClick={() => onVisaFas(f.fas.nr)}
+                  >
+                    Fas {f.fas.nr} · {f.fas.titel}
+                  </button>
+                  <span className="text-xs text-ink-soft tabular-nums">
+                    {f.klara} av {f.punkter - f.ejAktuella} klara{f.hp ? ` · HP ${f.hpKlara}/${f.hp}` : ""}
+                  </span>
+                </li>
+              ))}
+            </ul>
           ) : (
-            "Ange startdatum och färdigställande så räknas faserna, Gantt-schemat och ledtiderna fram."
+            tom(l.harPlan ? "Ingen fas pågår enligt planen." : "Ange projektets datum nedan.")
           )}
-        </p>
+        </Card>
+
+        <Card id={`epc-nu-nasta-${pid}`} title="Näst på tur">
+          <DataList
+            items={[
+              ng
+                ? { label: "Nästa grind", value: ng.fas.grind.kod, detail: ng.fas.grind.text }
+                : { label: "Nästa grind", value: "Alla passerade" },
+              nb
+                ? {
+                    label: "Nästa betalning",
+                    value: `${nb.kod} · ${nb.andel} %`,
+                    detail: `${nb.namn} — ${nb.utloses.toLowerCase()}${nb.datum ? ` · plan ${datumKort(nb.datum)}` : ""}`,
+                  }
+                : { label: "Nästa betalning", value: "—" },
+              {
+                label: "Slutbesiktning",
+                value: p.fardigstallande ? datumKort(p.fardigstallande) : "Datum saknas",
+                detail: l.dagarTillSlutbesiktning === null ? null : dagarText(l.dagarTillSlutbesiktning),
+              },
+            ]}
+          />
+        </Card>
+
+        <Card
+          id={`epc-nu-ledtider-${pid}`}
+          title="Ledtider att starta"
+          badge={ledtider.length ? <StatusBadge status="forsenad" label={`${ledtider.length} att hantera`} /> : null}
+        >
+          <LeadTimeList
+            label={`Ledtider att starta i ${p.namn}`}
+            items={ledtider.slice(0, 4).map((x) => ({
+              id: x.id,
+              status: LEDTID_TILL_STATUS[x.status],
+              statusLabel: LEDTID_STATUS[x.status][1],
+              title: x.arende,
+              dueDate: datumKort(x.senast),
+              delayText: dagarText(x.dagarKvar),
+            }))}
+            empty={tom(l.harPlan ? "Inget försenat eller akut just nu." : "—")}
+          />
+        </Card>
       </div>
+
+      <Card id={`epc-projektdatum-${pid}`} title="Projektets datum" subtitle="Styr fasplanen, Gantt-schemat och ledtiderna.">
+        <div className="epc-projektplan">
+          <div className="epc-falt">
+            <label htmlFor={`epc-start-${pid}`}>
+              Startdatum (NTP)
+              {p.startdatumAntagande ? <StatusBadge status="starta_nu" label="Antagande" className="normal-case tracking-normal" /> : null}
+            </label>
+            <DatumFalt
+              id={`epc-start-${pid}`}
+              varde={p.startdatum || ""}
+              etikett={`Startdatum för ${p.namn}`}
+              onCommit={(v) => {
+                uppd("projekt", pid, "startdatum", v);
+                uppd("projekt", pid, "startdatumAntagande", false);
+              }}
+            />
+          </div>
+          <div className="epc-falt">
+            <label htmlFor={`epc-slut-${pid}`}>Färdigställande / slutbesiktning</label>
+            <DatumFalt
+              id={`epc-slut-${pid}`}
+              varde={p.fardigstallande || ""}
+              etikett={`Färdigställande för ${p.namn}`}
+              onCommit={(v) => uppd("projekt", pid, "fardigstallande", v)}
+            />
+          </div>
+          <p className="epc-plantext">
+            {a ? (
+              <>
+                Faserna räknas från start, {a.mittKalla === "leverans" ? "BESS-leveransen" : "en antagen leverans"}{" "}
+                {datumKort(a.mitt)} och slutbesiktningen. Varje fas kan få egna datum i guiden.
+                {a.startAntagande ? " Startdatumet är antaget ur kontraktets milstolpar (feb–sep 2026) — ange det rätta." : ""}
+              </>
+            ) : (
+              "Ange startdatum och färdigställande så räknas faserna, Gantt-schemat och ledtiderna fram."
+            )}
+          </p>
+        </div>
+      </Card>
     </div>
   );
 }

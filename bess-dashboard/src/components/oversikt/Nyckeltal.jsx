@@ -1,10 +1,12 @@
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 import { FileDiff, HardHat, OctagonAlert, Wallet } from "lucide-react";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { fmtKompakt } from "../../lib/format.js";
 import { RONDINTERVALL, ataLage, budgetLage, hseqLage } from "../../lib/oversikt.js";
 import { kommandeHallpunkter, lagesbild, planAnkare } from "../../lib/epc.js";
 import { datumKort } from "../../lib/datum.js";
+import { Card } from "../ds/Card.jsx";
+import { StatusBadge } from "../ds/StatusBadge.jsx";
 
 /** Hur långt fram hållpunkterna räknas. */
 const HP_FONSTER = 30;
@@ -20,19 +22,20 @@ import { Lank } from "./Ruta.jsx";
 
 const kortNamn = (p) => p.nr || p.ort || p.namn;
 
-function Kpi({ i, ikon: Ikon, etikett, varde, enhet, under, ton = "", status, children, delar = [], fot, lank }) {
+function Kpi({ i, ikon, etikett, varde, enhet, under, ton = "", status, children, delar = [], fot, lank }) {
   const { visa } = useUi();
+  const id = useId();
   return (
-    <article className="ov-kpi" style={{ "--i": i }}>
-      <div className="ov-kpi-topp">
-        <div className="flex items-center gap-2.5">
-          <span className={`ov-ikon ${ton === "bad" || ton === "warn" ? ton : ""}`.trim()} aria-hidden="true">
-            <Ikon size={17} strokeWidth={2} />
-          </span>
-          <h3 className="ov-kpi-etikett">{etikett}</h3>
-        </div>
-        {status ? <span className={`ov-status ${ton}`.trim()}>{status}</span> : null}
-      </div>
+    <Card
+      as="article"
+      id={id}
+      i={i}
+      icon={ikon}
+      iconTon={ton === "bad" || ton === "warn" ? ton : ""}
+      title={etikett}
+      badge={status ? <StatusBadge ton={ton || "neutral"} label={status} /> : null}
+      className="ov-kpi"
+    >
 
       <div className="ov-kpi-varde">
         {varde}
@@ -61,7 +64,7 @@ function Kpi({ i, ikon: Ikon, etikett, varde, enhet, under, ton = "", status, ch
           </Lank>
         ) : null}
       </div>
-    </article>
+    </Card>
   );
 }
 
@@ -304,7 +307,7 @@ export function Nyckeltal() {
       <h2 id="ov-nyckeltal" className="sr-only">
         Nyckeltal
       </h2>
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:gap-6 xl:grid-cols-4">
         <Ata />
         <Hallpunkter />
         <Hseq />

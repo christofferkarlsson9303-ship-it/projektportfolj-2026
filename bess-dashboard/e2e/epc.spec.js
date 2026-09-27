@@ -31,13 +31,13 @@ test("guiden har 16 faser, de löpande punkterna och alla 286 kontrollpunkter at
 
 test("summeringen visar exakt status per fas och följer avbockningen", async ({ page }) => {
   // Fas 0–9 är passerade i Växjö: 164 punkter klara via grindarna.
-  await expect(status(page)).toContainText("164 av 286 punkter");
+  await expect(status(page)).toContainText("164/286");
   await expect(status(page).getByRole("row", { name: /^10 · Stationshus/ })).toContainText("0/15");
 
   await oppnaFas(page, 10);
   await rad(page, "10.7").getByRole("checkbox").check();
   await expect(status(page).getByRole("row", { name: /^10 · Stationshus/ })).toContainText("1/15");
-  await expect(status(page)).toContainText("165 av 286 punkter");
+  await expect(status(page)).toContainText("165/286");
   await expect(rad(page, "10.7")).toContainText(/Klar \d{4}-\d{2}-\d{2}/);
 
   // Ej aktuell räknas bort ur det som återstår.
@@ -90,13 +90,18 @@ test("lägesbilden har en rad per projekt och visar läget för valt projekt", a
   await expect(projektrad(page, /^36037 Växjö/)).toHaveAttribute("aria-pressed", "true");
   await expect(projektrad(page, /^36037 Växjö/)).toContainText(/av 16 grindar passerade/);
   await expect(projektrad(page, /^Göteborg/)).toContainText("Datum saknas");
-  await expect(lage(page)).toContainText(/\d+ av 16 grindar passerade · \d+ av 47 hållpunkter klara/);
+  const framdrift = status(page).getByRole("list", { name: "Framdrift i checklistan" });
+  await expect(framdrift).toContainText(/Grindar passerade\s*\d+\/16/);
+  await expect(framdrift).toContainText(/Hållpunkter klara\s*\d+\/47/);
+  // Läget nu för valt projekt står i tre kort.
+  for (const namn of ["Pågår nu", "Näst på tur", "Ledtider att starta"])
+    await expect(page.getByRole("region", { name: namn })).toBeVisible();
 });
 
 test("ett annat projekt väljs i lägesbilden och guiden följer med", async ({ page }) => {
   await projektrad(page, /^36038 Alvesta/).click();
   await expect(projektrad(page, /^36038 Alvesta/)).toHaveAttribute("aria-pressed", "true");
-  await expect(lage(page).getByLabel("Startdatum för Alvesta Batteripark")).toBeVisible();
+  await expect(page.getByLabel("Startdatum för Alvesta Batteripark")).toBeVisible();
   // Faserna är stängda <details>, så rutan söks på attributet.
   await expect(page.locator('aside[aria-label="Fas 0 i 36038 Alvesta"]')).toBeAttached();
 });
@@ -139,12 +144,12 @@ test("en grind markeras passerad, fasen byter läge och det loggas", async ({ pa
 });
 
 test("antaget startdatum är markerat tills någon anger det", async ({ page }) => {
-  const plan = lage(page);
-  await expect(plan.getByText("ANTAGANDE")).toBeVisible();
+  const plan = page.getByRole("region", { name: "Projektets datum" });
+  await expect(plan.getByText("Antagande", { exact: true })).toBeVisible();
   const falt = plan.getByLabel("Startdatum för Växjö Batteripark");
   await falt.fill("2026-02-09");
   await falt.press("Enter");
-  await expect(plan.getByText("ANTAGANDE")).toHaveCount(0);
+  await expect(plan.getByText("Antagande", { exact: true })).toHaveCount(0);
 });
 
 test("en ledtid markeras klar i förväg och går att ångra", async ({ page }) => {

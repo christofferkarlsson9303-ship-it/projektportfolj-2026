@@ -4,6 +4,7 @@ import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
 import { Tathetsvaljare } from "../components/ui/Vyvaljare.jsx";
 import { DataTable } from "../components/ui/DataTable.jsx";
 import { Note, SelStatus } from "../components/ui/Primitiver.jsx";
+import { StatusBadge } from "../components/ds/StatusBadge.jsx";
 import { Falt, DatumFalt } from "../components/ui/Falt.jsx";
 import { MOTESSTATUS, PARAGRAFER, PUNKTROLL } from "../data/konstanter.js";
 import { idag } from "../lib/datum.js";
@@ -523,9 +524,16 @@ export function Byggmoten() {
                   const n = motesFlagga(x).length;
                   if (!n) return <span className="text-ink-faint">—</span>;
                   return (
-                    <span className="pill p-bad" title="Punkter under §4/§5 utan registrerat ärende">
-                      {n}
-                      <span className="sr-only"> punkter under §4 eller §5 saknar ärende</span>
+                    <span title="Punkter under §4/§5 utan registrerat ärende">
+                      <StatusBadge
+                        ton="bad"
+                        label={
+                          <>
+                            {n}
+                            <span className="sr-only"> punkter under §4 eller §5 saknar ärende</span>
+                          </>
+                        }
+                      />
                     </span>
                   );
                 },

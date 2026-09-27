@@ -3,6 +3,7 @@ import { Printer } from "lucide-react";
 import logotyp from "../../assets/one-nordic-logo.png";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { PTag } from "../ui/PTag.jsx";
+import { StatusBadge } from "../ds/StatusBadge.jsx";
 import { idag } from "../../lib/datum.js";
 import { KOMMENTARTYP, PAVERKAN, erfarenheter, lagesbild } from "../../lib/epc.js";
 
@@ -24,7 +25,7 @@ function Rad({ e, nr, onVisaPunkt }) {
       </span>
       <div className="min-w-0">
         <div className="epc-erfhuvud">
-          <span className={`epc-status ${typ.ton}`.trim()}>{typ.namn}</span>
+          <StatusBadge ton={typ.ton || "neutral"} label={typ.namn} />
           <PTag pid={e.projektId} />
           <span className="epc-komm-meta">Påverkan {PAVERKAN[e.paverkan] || "Medel"}</span>
           {e.kostnadKr ? <span className="epc-komm-meta">{e.kostnadKr.toLocaleString("sv-SE")} kr</span> : null}

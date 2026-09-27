@@ -7,6 +7,7 @@ import { MILSTOLPAR } from "../../data/bessChecklistData.ts";
 import { idag } from "../../lib/datum.js";
 import { kommentarerFor, nastaUppgifter, tidigareErfarenheter } from "../../lib/epc.js";
 import { Lank, Ruta } from "./Ruta.jsx";
+import { StatusBadge } from "../ds/StatusBadge.jsx";
 
 /* Nästa uppgift — det enda som behöver göras just nu i valt projekt.
 
@@ -97,7 +98,7 @@ export function NastaUppgift({ i }) {
           {forsta ? (
             <>
               <div className="ov-nasta-orsak">
-                <span className={`ov-status ${forsta.ton}`.trim()}>{forsta.orsak}</span>
+                <StatusBadge ton={forsta.ton || "neutral"} label={forsta.orsak} wrap />
                 <span className="ov-nasta-fas">{fasText}</span>
               </div>
 
