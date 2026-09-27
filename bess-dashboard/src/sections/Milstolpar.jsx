@@ -2,7 +2,7 @@ import { usePortfolj, useUi } from "../state/hooks.js";
 import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
 import { Pill, SelStatus } from "../components/ui/Primitiver.jsx";
 import { DatumFalt } from "../components/ui/Falt.jsx";
-import { Callout, Card, Meter, StatGroup, StatusBadge } from "../components/ds/index.js";
+import { Callout, Card, CheckList, Meter, Overline, StatGroup, StatusBadge } from "../components/ds/index.js";
 import { MILSTOLPE_MODELL } from "../data/konstanter.js";
 import { fmtSEK } from "../lib/format.js";
 import { betalRad, ekonomi, mUnderlagKlart, mstatusRad, nastaMilstolpe, projekt } from "../lib/berakningar.js";
@@ -19,10 +19,6 @@ const LAGE = {
   redo: { text: "Underlag klart", kant: "border-t-duvbla" },
   vantar: { text: "Väntar", kant: "border-t-hairline-stark" },
 };
-
-const Overrad = ({ children }) => (
-  <h4 className="m-0 font-body text-[11px] font-bold uppercase tracking-wider text-ink-soft">{children}</h4>
-);
 
 function Remsa({ state, pid, nastaKod }) {
   return (
@@ -104,38 +100,21 @@ function Milstolpe({ m, state, pid, kv, ar, dispatch }) {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <div className="flex min-w-0 flex-col gap-3">
           <div className="flex items-baseline justify-between gap-2">
-            <Overrad>Underlag</Overrad>
+            <Overline>Underlag</Overline>
             <span className="text-xs font-semibold tabular-nums text-ink-soft">
               {u.klara}/{u.av}
             </span>
           </div>
           <Meter value={u.klara} max={u.av} size="sm" label={`Underlag klart för ${m.kod}`} />
-          <ul className="m-0 list-none p-0">
-            {m.underlag.map(([n, text]) => {
-              const id = `mu_${pid}_${m.kod}_${n}`;
-              const klar = !!(r.underlag || {})[n];
-              return (
-                <li key={n} className="flex items-start gap-3 border-0 border-t border-solid border-hairline py-2 first:border-t-0">
-                  <input
-                    type="checkbox"
-                    id={id}
-                    checked={klar}
-                    className="m-0 mt-0.5 h-[18px] w-[18px] shrink-0 accent-one-bla"
-                    onChange={(e) =>
-                      dispatch({ type: "UPPD_MUNDERLAG", pid, kod: m.kod, n, varde: e.target.checked })
-                    }
-                  />
-                  <label htmlFor={id} className={`flex-1 cursor-pointer text-[13px] leading-snug ${klar ? "text-ink-faint" : "text-ink"}`}>
-                    {text}
-                  </label>
-                </li>
-              );
-            })}
-          </ul>
+          <CheckList
+            label={`Underlag för ${m.kod}`}
+            items={m.underlag.map(([n, text]) => ({ id: n, label: text, checked: !!(r.underlag || {})[n] }))}
+            onChange={(n, varde) => dispatch({ type: "UPPD_MUNDERLAG", pid, kod: m.kod, n, varde })}
+          />
         </div>
 
         <div className="flex min-w-0 flex-col gap-3">
-          <Overrad>Fakturering</Overrad>
+          <Overline>Fakturering</Overline>
           <div className="f mb-0">
             <label htmlFor={`av_${pid}_${m.kod}`}>Förhandsavisering skickad</label>
             <DatumFalt

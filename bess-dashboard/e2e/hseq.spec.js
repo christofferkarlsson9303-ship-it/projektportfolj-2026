@@ -25,21 +25,22 @@ test("en ny skyddsrond öppnas direkt i panelen", async ({ page }) => {
   await expect(panel).toBeVisible();
 
   // Listan ska ligga kvar bakom panelen.
-  await expect(page.getByRole("region", { name: RONDER })).toBeVisible();
-  await expect(page.getByRole("region", { name: RONDER }).locator("tbody tr")).toHaveCount(1);
+  await expect(page.getByRole("region", { name: RONDER, exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: RONDER, exact: true }).locator("tbody tr")).toHaveCount(1);
 });
 
 test("checklistan bockas av och räknas i listan", async ({ page }) => {
   await page.getByRole("button", { name: "+ Ny skyddsrond" }).click();
   const panel = page.getByRole("region", { name: /^Skyddsrond \d{4}-/ });
 
-  const rutor = panel.locator('.chk input[type="checkbox"]');
+  const lista = panel.getByRole("list", { name: "Checklista — elkraft och BESS" });
+  const rutor = lista.getByRole("checkbox");
   await expect(rutor).toHaveCount(5);
-  await expect(page.getByRole("region", { name: RONDER }).locator("tbody tr td").nth(2)).toHaveText("0/5");
+  await expect(page.getByRole("region", { name: RONDER, exact: true }).locator("tbody tr td").nth(2)).toHaveText("0/5");
 
   await rutor.first().check();
-  await expect(panel.locator(".chk s").first()).toBeVisible();
-  await expect(page.getByRole("region", { name: RONDER }).locator("tbody tr td").nth(2)).toHaveText("1/5");
+  await expect(lista.locator("s").first()).toBeVisible();
+  await expect(page.getByRole("region", { name: RONDER, exact: true }).locator("tbody tr td").nth(2)).toHaveText("1/5");
 });
 
 test("en avvikelse läggs till och räknas som öppen", async ({ page }) => {
@@ -79,13 +80,15 @@ test("panelen stängs med Escape", async ({ page }) => {
 });
 
 test("arbetsmiljöplanen räknas upp vid revidering", async ({ page }) => {
-  await expect(page.getByText("Ingen AMP registrerad.")).toBeVisible();
+  const amp = page.getByRole("region", { name: "Arbetsmiljöplan och ID06" });
+  await expect(amp.getByText("Ingen AMP registrerad", { exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "Markera AMP som reviderad" }).click();
-  await expect(page.getByText("rev 1 — reviderad")).toBeVisible();
+  await expect(amp.locator("dd").first()).toContainText("rev 1");
+  await expect(amp.locator("dd").first()).toContainText(/reviderad \d{4}-\d{2}-\d{2}/);
 
   await page.getByRole("button", { name: "Markera AMP som reviderad" }).click();
-  await expect(page.getByText("rev 2 — reviderad")).toBeVisible();
+  await expect(amp.locator("dd").first()).toContainText("rev 2");
 });
 
 test("ett ID06-stickprov med anmärkning varnar om vite", async ({ page }) => {
@@ -102,12 +105,12 @@ test("en incident utan rapport larmar på 24-timmarskravet", async ({ page }) =>
   await page.getByRole("button", { name: "+ Registrera incident" }).click();
 
   // Datumet sätts till idag, så fristen löper men är inte bruten.
-  const grind = page.locator(".grind").first();
+  const grind = page.getByRole("region", { name: "Incidenter och tillbud" }).locator("li [data-ton]").first();
   await expect(grind).toBeVisible();
   await expect(grind).toContainText(/inom \d+ h/);
 
   await page.getByLabel("Rapport skickad till beställare och Arbetsmiljöverket").check();
-  await expect(page.locator(".grind").first()).toContainText("Rapporterad");
+  await expect(grind).toContainText("Rapporterad");
 });
 
 test("vyn renderar utan konsolfel", async ({ page }) => {

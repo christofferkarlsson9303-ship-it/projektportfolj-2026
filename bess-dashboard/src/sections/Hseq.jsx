@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { usePortfolj, useUi } from "../state/hooks.js";
 import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
-import { Card, Kpi, Note, Tabellyta } from "../components/ui/Primitiver.jsx";
+import { Tabellyta } from "../components/ui/Primitiver.jsx";
+import { Callout, Card, CheckList, DataList, Overline, StatTile, StatusBadge } from "../components/ds/index.js";
 import { DatumFalt, Falt } from "../components/ui/Falt.jsx";
 import { Slideover } from "../components/ui/Slideover.jsx";
 import { Skyddsrondsprotokoll } from "../components/ui/Rondprotokoll.jsx";
@@ -30,7 +31,9 @@ import { hamtaNamn } from "../state/portfolj-reducer.js";
    räcker; rondens nästlade checklista skrivs som ett helt objekt och
    avvikelserna går genom UPPD_RONDAVVIKELSE som redan fanns.
 
-   Ronden öppnas i en slide-over så att listan över ronder ligger kvar. */
+   Ronden öppnas i en slide-over så att listan över ronder ligger kvar.
+   Allt står på designsystemet: grindarna som StatTile, ronder, AMP/ID06 och
+   incidenter som kort, rondens checklista som CheckList. */
 
 const nyttId = (prefix) => prefix + Date.now();
 
@@ -38,8 +41,12 @@ function Incident({ i, onUppd }) {
   const lage = incidentLage(i);
 
   return (
-    <div className={`atarad${lage?.varning ? " flagg" : ""}`} style={{ marginBottom: 8 }}>
-      <div className="ataform" style={{ borderTop: "none", padding: 13 }}>
+    <li
+      className={`flex flex-col gap-3 rounded-lg border border-solid border-hairline bg-sunken p-3 md:p-4 ${
+        lage?.varning ? "border-l-[3px] border-l-rod" : ""
+      }`}
+    >
+      <div>
         <div className="frow c3">
           <div className="f">
             <label htmlFor={`ityp-${i.id}`}>Typ</label>
@@ -75,7 +82,7 @@ function Incident({ i, onUppd }) {
           </div>
         </div>
 
-        <div className="f">
+        <div className="f mb-0">
           <label htmlFor={`ibesk-${i.id}`}>Beskrivning</label>
           <Falt
             id={`ibesk-${i.id}`}
@@ -85,29 +92,21 @@ function Incident({ i, onUppd }) {
             onCommit={(v) => onUppd(i.id, "beskrivning", v)}
           />
         </div>
+      </div>
 
-        <div className="cbrow">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="cbrow p-0">
           <input
             id={`irap-${i.id}`}
             type="checkbox"
             checked={!!i.rapporterad}
             onChange={(e) => onUppd(i.id, "rapporterad", e.target.checked)}
           />
-          <label htmlFor={`irap-${i.id}`}>
-            Rapport skickad till beställare och Arbetsmiljöverket
-          </label>
+          <label htmlFor={`irap-${i.id}`}>Rapport skickad till beställare och Arbetsmiljöverket</label>
         </div>
-
-        {lage ? (
-          <div className="atagrindar" style={{ padding: "6px 0 0" }}>
-            <span className={`grind ${lage.varning ? "bad" : lage.ok ? "ok" : ""}`.trim()}>
-              <span aria-hidden="true">⏱ </span>
-              {lage.txt}
-            </span>
-          </div>
-        ) : null}
+        {lage ? <StatusBadge ton={lage.varning ? "bad" : lage.ok ? "ok" : "neutral"} label={lage.txt} wrap /> : null}
       </div>
-    </div>
+    </li>
   );
 }
 
@@ -147,27 +146,17 @@ function Rondpanel({ rond, projekt, onStang, onUppd, onPunkt, onAvvikelse, onNyA
         </div>
       </div>
 
-      <div>
-        <h4 className="mrub">Checklista — elkraft och BESS</h4>
-        {RONDPUNKTER.map(([n, txt]) => {
-          const id = `sr_${rond.id}_${n}`;
-          const klar = !!checklista[n];
-          return (
-            <div className="chk" key={n}>
-              <input
-                id={id}
-                type="checkbox"
-                checked={klar}
-                onChange={(e) => onPunkt(rond, n, e.target.checked)}
-              />
-              <label htmlFor={id}>{klar ? <s>{txt}</s> : txt}</label>
-            </div>
-          );
-        })}
+      <div className="flex flex-col gap-2">
+        <Overline>Checklista — elkraft och BESS</Overline>
+        <CheckList
+          label="Checklista — elkraft och BESS"
+          items={RONDPUNKTER.map(([n, txt]) => ({ id: n, label: txt, checked: !!checklista[n] }))}
+          onChange={(n, varde) => onPunkt(rond, n, varde)}
+        />
       </div>
 
-      <div>
-        <h4 className="mrub">Avvikelser</h4>
+      <div className="flex flex-col gap-2">
+        <Overline>Avvikelser</Overline>
         <Tabellyta etikett={`Avvikelser i skyddsronden ${rond.datum}`}>
           <table>
             <thead>
@@ -245,17 +234,17 @@ function Rondpanel({ rond, projekt, onStang, onUppd, onPunkt, onAvvikelse, onNyA
             </tbody>
           </table>
         </Tabellyta>
-        <div className="rowbtns">
+        <div>
           <button type="button" className="btn sec" onClick={() => onNyAvvikelse(rond)}>
             + Avvikelse
           </button>
         </div>
       </div>
 
-      <Note>
+      <Callout className="mt-4">
         Ronden ska dokumenteras i ENIA. Protokollet ovan är underlaget — ENIA är registret.{" "}
         {projekt?.namn}
-      </Note>
+      </Callout>
     </Slideover>
   );
 }
@@ -345,207 +334,220 @@ export function Hseq() {
     visaToast(`Arbetsmiljöplanen är nu rev ${ver}`);
   };
 
+  const akuta = avv.filter((a) => a.niva === "akut").length;
+
   return (
     <>
       <Projektvaljare />
 
-      <div className="grid g4">
-        <Kpi
-          label="Dagar sedan skyddsrond"
-          varde={dagar === null ? "—" : dagar}
-          hint={rondHint(dagar)}
-          klass={rondKlass(dagar)}
-        />
-        <Kpi
-          label="Arbetsmiljöplan"
-          varde={amp ? amp.version : "saknas"}
-          hint={amp ? "reviderad " + amp.datum : "upprätta AMP"}
-          klass={amp ? "" : "bad"}
-        />
-        <Kpi
-          label="Öppna rondavvikelser"
-          varde={avv.length}
-          hint={`${avv.filter((a) => a.niva === "akut").length} akuta`}
-          klass={avv.length ? "warn" : ""}
-        />
-        <Kpi
-          label="Incidenter utan rapport"
-          varde={incSen.length}
-          hint="24-timmarskravet"
-          klass={incSen.length ? "bad" : ""}
-        />
-      </div>
+      <div className="flex flex-col gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+          <StatTile
+            label="Dagar sedan skyddsrond"
+            value={dagar === null ? "—" : dagar}
+            hint={rondHint(dagar)}
+            ton={rondKlass(dagar)}
+          />
+          <StatTile
+            label="Arbetsmiljöplan"
+            value={amp ? amp.version : "saknas"}
+            hint={amp ? "reviderad " + amp.datum : "upprätta AMP"}
+            ton={amp ? "" : "bad"}
+          />
+          <StatTile
+            label="Öppna rondavvikelser"
+            value={avv.length}
+            hint={`${akuta} akuta`}
+            ton={avv.length ? "warn" : ""}
+          />
+          <StatTile
+            label="Incidenter utan rapport"
+            value={incSen.length}
+            hint="24-timmarskravet"
+            ton={incSen.length ? "bad" : ""}
+          />
+        </div>
 
-      {dagar !== null && dagar >= 14 ? (
-        <Note niva="bad">
-          <b>Skyddsronden är försenad — {dagar} dagar sedan senaste.</b> Kravet är minst varannan vecka
-          och ronden ska dokumenteras i ENIA. Brott mot arbetsmiljöplanen är vitesgrundande (
-          {fmtSEK(HSEQ_VITE)} per tillfälle enligt kontraktet).
-        </Note>
-      ) : null}
+        {dagar !== null && dagar >= 14 ? (
+          <Callout ton="bad">
+            <b>Skyddsronden är försenad — {dagar} dagar sedan senaste.</b> Kravet är minst varannan vecka
+            och ronden ska dokumenteras i ENIA. Brott mot arbetsmiljöplanen är vitesgrundande (
+            {fmtSEK(HSEQ_VITE)} per tillfälle enligt kontraktet).
+          </Callout>
+        ) : null}
 
-      {id06Brist ? (
-        <Note niva="warn">
-          <b>
-            {id06Brist} ID06-stickprov med anmärkning.
-          </b>{" "}
-          Saknad personalliggare eller ID06 riskerar vite {fmtSEK(HSEQ_VITE)} per tillfälle.
-        </Note>
-      ) : null}
+        {id06Brist ? (
+          <Callout ton="warn">
+            <b>{id06Brist} ID06-stickprov med anmärkning.</b> Saknad personalliggare eller ID06 riskerar vite{" "}
+            {fmtSEK(HSEQ_VITE)} per tillfälle.
+          </Callout>
+        ) : null}
 
-      <div className="grid g2" style={{ marginTop: 16 }}>
-        <Card>
-          <h3>Skyddsronder</h3>
-          <div className="lead">BAS-U ansvarar för samordningen. Ronden dokumenteras i ENIA.</div>
-          <Tabellyta etikett="Skyddsronder">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col" style={{ width: 110 }}>
-                    Datum
-                  </th>
-                  <th scope="col">Utförd av</th>
-                  <th scope="col" className="num" style={{ width: 90 }}>
-                    Punkter
-                  </th>
-                  <th scope="col" className="num" style={{ width: 80 }}>
-                    Avvik.
-                  </th>
-                  <th scope="col" style={{ width: 80 }} />
-                </tr>
-              </thead>
-              <tbody>
-                {ronder.length ? (
-                  ronder.map((x) => {
-                    const klara = RONDPUNKTER.filter(([n]) => x.checklista && x.checklista[n]).length;
-                    return (
-                      <tr key={x.id}>
-                        <td data-label="Datum">{x.datum}</td>
-                        <td data-label="Utförd av">{x.utfordAv || "—"}</td>
-                        <td data-label="Punkter" className="num">
-                          {klara}/{RONDPUNKTER.length}
-                        </td>
-                        <td data-label="Avvikelser" className="num">
-                          {(x.avvikelser || []).length}
-                        </td>
-                        <td>
-                          <button
-                            type="button"
-                            className="btn sec mini"
-                            aria-expanded={oppenRond === x.id}
-                            onClick={() => setOppenRond(oppenRond === x.id ? null : x.id)}
-                          >
-                            Öppna
-                            <span className="sr-only"> skyddsronden {x.datum}</span>
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })
-                ) : (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
+          <Card
+            id="hseq-ronder"
+            title={`Skyddsronder — ${(p.nr ? p.nr + " " : "") + p.namn}`}
+            subtitle="BAS-U ansvarar för samordningen. Ronden dokumenteras i ENIA."
+            action={
+              <button type="button" className="btn mini" onClick={nyRond}>
+                + Ny skyddsrond
+              </button>
+            }
+          >
+            <Tabellyta etikett="Skyddsronder">
+              <table>
+                <thead>
                   <tr>
-                    <td colSpan={5}>Ingen rond registrerad.</td>
+                    <th scope="col" style={{ width: 110 }}>
+                      Datum
+                    </th>
+                    <th scope="col">Utförd av</th>
+                    <th scope="col" className="num" style={{ width: 90 }}>
+                      Punkter
+                    </th>
+                    <th scope="col" className="num" style={{ width: 80 }}>
+                      Avvik.
+                    </th>
+                    <th scope="col" style={{ width: 80 }} />
                   </tr>
-                )}
-              </tbody>
-            </table>
-          </Tabellyta>
-          <div className="rowbtns">
-            <button type="button" className="btn" onClick={nyRond}>
-              + Ny skyddsrond
-            </button>
-          </div>
-        </Card>
-
-        <Card>
-          <h3>Arbetsmiljöplan och ID06</h3>
-          <div className="lead">
-            AMP är ett levande dokument. ID06 och personalliggare kontrolleras med stickprov.
-          </div>
-          <div className="f">
-            <span className="faltrubrik">Aktuell AMP</span>
-            <div style={{ fontSize: 13 }}>
-              {amp ? `${amp.version} — reviderad ${amp.datum}` : <b>Ingen AMP registrerad.</b>}
-            </div>
-          </div>
-          <div className="rowbtns" style={{ marginTop: 8 }}>
-            <button type="button" className="btn sec" onClick={revideraAmp}>
-              Markera AMP som reviderad
-            </button>
-          </div>
-
-          <h4 className="mrub" style={{ marginTop: 18 }}>
-            ID06-stickprov
-          </h4>
-          <Tabellyta etikett="ID06-stickprov">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col" style={{ width: 110 }}>
-                    Datum
-                  </th>
-                  <th scope="col">Notering</th>
-                  <th scope="col" style={{ width: 110 }}>
-                    Utfall
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {id06.length ? (
-                  id06.slice(0, 6).map((x) => (
-                    <tr key={x.id}>
-                      <td data-label="Datum">{x.datum}</td>
-                      <td data-label="Notering">
-                        <Falt
-                          varde={x.notering}
-                          etikett={`Notering för stickprov ${x.datum}`}
-                          onCommit={(v) => uppd("hseqId06", x.id, "notering", v)}
-                        />
-                      </td>
-                      <td data-label="Utfall">
-                        <select
-                          aria-label={`Utfall för stickprov ${x.datum}`}
-                          value={x.ok ? "ja" : "nej"}
-                          onChange={(e) => uppd("hseqId06", x.id, "ok", e.target.value === "ja")}
-                        >
-                          <option value="ja">Utan anmärkning</option>
-                          <option value="nej">Anmärkning</option>
-                        </select>
-                      </td>
+                </thead>
+                <tbody>
+                  {ronder.length ? (
+                    ronder.map((x) => {
+                      const klara = RONDPUNKTER.filter(([n]) => x.checklista && x.checklista[n]).length;
+                      return (
+                        <tr key={x.id}>
+                          <td data-label="Datum">{x.datum}</td>
+                          <td data-label="Utförd av">{x.utfordAv || "—"}</td>
+                          <td data-label="Punkter" className="num">
+                            {klara}/{RONDPUNKTER.length}
+                          </td>
+                          <td data-label="Avvikelser" className="num">
+                            {(x.avvikelser || []).length}
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              className="btn sec mini"
+                              aria-expanded={oppenRond === x.id}
+                              onClick={() => setOppenRond(oppenRond === x.id ? null : x.id)}
+                            >
+                              Öppna
+                              <span className="sr-only"> skyddsronden {x.datum}</span>
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={5}>Ingen rond registrerad.</td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={3}>Inga stickprov loggade.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </Tabellyta>
-          <div className="rowbtns">
-            <button type="button" className="btn sec" onClick={nyId06}>
-              + Logga stickprov
+                  )}
+                </tbody>
+              </table>
+            </Tabellyta>
+          </Card>
+
+          <Card
+            id="hseq-amp"
+            title="Arbetsmiljöplan och ID06"
+            subtitle="AMP är ett levande dokument. ID06 och personalliggare kontrolleras med stickprov."
+            badge={amp ? <StatusBadge ton="ok" label={amp.version} /> : <StatusBadge ton="bad" label="AMP saknas" />}
+          >
+            <DataList
+              items={[
+                {
+                  label: "Aktuell AMP",
+                  value: amp ? amp.version : "Ingen AMP registrerad",
+                  detail: amp ? `reviderad ${amp.datum}` : "upprätta arbetsmiljöplanen innan arbetet startar",
+                },
+              ]}
+            />
+            <div>
+              <button type="button" className="btn sec" onClick={revideraAmp}>
+                Markera AMP som reviderad
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Overline>ID06-stickprov</Overline>
+              <Tabellyta etikett="ID06-stickprov">
+                <table>
+                  <thead>
+                    <tr>
+                      <th scope="col" style={{ width: 110 }}>
+                        Datum
+                      </th>
+                      <th scope="col">Notering</th>
+                      <th scope="col" style={{ width: 110 }}>
+                        Utfall
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {id06.length ? (
+                      id06.slice(0, 6).map((x) => (
+                        <tr key={x.id}>
+                          <td data-label="Datum">{x.datum}</td>
+                          <td data-label="Notering">
+                            <Falt
+                              varde={x.notering}
+                              etikett={`Notering för stickprov ${x.datum}`}
+                              onCommit={(v) => uppd("hseqId06", x.id, "notering", v)}
+                            />
+                          </td>
+                          <td data-label="Utfall">
+                            <select
+                              aria-label={`Utfall för stickprov ${x.datum}`}
+                              value={x.ok ? "ja" : "nej"}
+                              onChange={(e) => uppd("hseqId06", x.id, "ok", e.target.value === "ja")}
+                            >
+                              <option value="ja">Utan anmärkning</option>
+                              <option value="nej">Anmärkning</option>
+                            </select>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={3}>Inga stickprov loggade.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </Tabellyta>
+              <div>
+                <button type="button" className="btn sec" onClick={nyId06}>
+                  + Logga stickprov
+                </button>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        <Card
+          id="hseq-incidenter"
+          title="Incidenter och tillbud"
+          subtitle="Rapport till beställare och Arbetsmiljöverket inom 24 timmar. Registrera även i ENIA."
+          badge={incSen.length ? <StatusBadge ton="bad" label={`${incSen.length} utan rapport`} /> : null}
+          action={
+            <button type="button" className="btn mini" onClick={nyIncident}>
+              + Registrera incident
             </button>
-          </div>
+          }
+        >
+          {inc.length ? (
+            <ul className="m-0 flex list-none flex-col gap-3 p-0">
+              {inc.map((i) => (
+                <Incident key={i.id} i={i} onUppd={uppdIncident} />
+              ))}
+            </ul>
+          ) : (
+            <p className="m-0 text-[13px] text-ink-soft">Inga incidenter registrerade.</p>
+          )}
         </Card>
       </div>
-
-      <Card klass="mt-4">
-        <h3>Incidenter och tillbud</h3>
-        <div className="lead">
-          Rapport till beställare och Arbetsmiljöverket inom 24 timmar. Registrera även i ENIA.
-        </div>
-        {inc.length ? (
-          inc.map((i) => <Incident key={i.id} i={i} onUppd={uppdIncident} />)
-        ) : (
-          <p className="lead">Inga incidenter registrerade.</p>
-        )}
-        <div className="rowbtns">
-          <button type="button" className="btn" onClick={nyIncident}>
-            + Registrera incident
-          </button>
-        </div>
-      </Card>
 
       {rond ? (
         <Rondpanel

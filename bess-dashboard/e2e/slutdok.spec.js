@@ -67,7 +67,7 @@ test("statusknapparna sätter mellanlägen utan att räknas som godkänt", async
 
 test("kategorins räknare följer med", async ({ page }) => {
   const kort = page.locator(".slutdok-kategori").first();
-  const raknare = kort.locator(".mbelopp");
+  const raknare = kort.locator('[data-roll="raknare"]');
   const fore = await raknare.textContent();
 
   await kort.locator(".slutdok-bock:enabled").first().click();

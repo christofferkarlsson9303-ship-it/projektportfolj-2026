@@ -170,7 +170,6 @@ main{max-width:1240px;margin:0 auto;padding:26px 30px 64px;width:100%}
 .pcard.b .bar>span{background:var(--turkos)}
 .pcard.c .bar>span{background:var(--duvbla)}
 .pcard.d .bar>span{background:var(--orange)}
-.barlab{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-soft);margin-top:5px}
 .pctop{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .pctop select{width:auto;font-size:11px;font-weight:700;letter-spacing:.03em;padding:4px 8px;
   border-radius:20px;background:var(--sunken);border-color:var(--hairline-stark);color:var(--ink)}
@@ -377,7 +376,7 @@ footer{background:var(--morkgra);color:#cfd8dc;font-size:12px;padding:16px 24px;
 
 
 /* ---------- Premiumpolish: kort, knappar, tabeller ---------- */
-.card,.pcard,.tl,.acc,.q,.atarad,.riskkort{border-radius:var(--r)}
+.card,.pcard,.tl,.acc,.q,.atarad{border-radius:var(--r)}
 .card:hover,.pcard:hover{box-shadow:var(--sh-md);transform:translateY(-2px)}
 .card,.pcard{transition:box-shadow .22s var(--ease),transform .22s var(--ease),border-color .22s}
 .btn{border-radius:9px;transition:transform .16s var(--ease),box-shadow .16s var(--ease),background .16s}
@@ -583,24 +582,18 @@ main{padding-top:30px}
 /* ---------- Byggmöten ---------- */
 
 /* ---------- Riskmatris ---------- */
-.matris{width:auto;border-collapse:separate;border-spacing:3px;margin:10px 0}
+.matris{width:auto;border-collapse:separate;border-spacing:3px;margin:0}
+.matris tbody tr:hover{background:none}
 .matris td.mtx{width:44px;height:38px;border-radius:6px;text-align:center;vertical-align:middle;
   font-weight:700;font-size:13px;color:#fff;border:none;padding:0}
 .matris td.mtx.gron{background:var(--turkos)}
 .matris td.mtx.gul{background:var(--orange)}
 .matris td.mtx.rod{background:var(--rod)}
-.matris th.mtxax{border:none;background:none;font-size:11px;color:#6c7d85;text-align:center;padding:2px}
-.matleg{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:#54666e;margin-top:8px}
+.matris th{border:none;background:none;font-size:11px;color:var(--ink-soft);text-align:center;padding:2px}
+.matleg{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:12px;color:var(--ink-soft)}
 .matleg i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
 .matleg i.gron{background:var(--turkos)}
 .matleg i.gul{background:var(--orange)}.matleg i.rod{background:var(--rod)}
-.riskkort{border:1px solid #e4eaed;border-left:4px solid var(--web2);border-radius:10px;
-  padding:14px;margin-bottom:12px;background:#fff}
-.riskkort.n-rod{border-left-color:var(--rod)}
-.riskkort.n-gul{border-left-color:var(--orange)}
-.riskkort.n-gron{border-left-color:var(--turkos)}
-.rk-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.rk-titel{flex:1;min-width:220px;font-weight:600;font-size:13.5px}
 .frow.c4{grid-template-columns:repeat(4,1fr)}
 .frow.c5{grid-template-columns:repeat(5,1fr)}
 @media(max-width:900px){.frow.c4,.frow.c5{grid-template-columns:1fr 1fr}}
@@ -631,10 +624,6 @@ main{padding-top:30px}
 .grind.ok{background:#e3f4f4;color:#0f6b6d}
 .ataform{padding:14px 13px 4px;border-top:1px solid #eef2f4;background:var(--web1)}
 
-/* ---------- Belopp och underrubrik (Slutdok, HSEQ) ---------- */
-.mbelopp{font-size:12.5px;color:#6c7d85;font-variant-numeric:tabular-nums}
-.mrub{font-family:var(--font-b);font-size:11px;text-transform:uppercase;letter-spacing:.06em;
-  color:#6c7d85;margin:0 0 8px;font-weight:700}
 
 /* ---------- Menysektioner ---------- */
 .navsek{font-size:9.5px;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.42);
@@ -772,7 +761,7 @@ main{max-width:1320px;padding:32px 38px 80px}
    De äldre vyernas .card har samma ram, radie, skugga och luft som
    designsystemets Card (components/ds/Card.jsx): 12 px radie, tunn ram,
    liten skugga, 16 px luft på mobil och 24 px från 768 px. */
-.card,.pcard,.tl,.acc,.q,.riskkort,.atarad{
+.card,.pcard,.tl,.acc,.q,.atarad{
   border-radius:12px;border:1px solid var(--hairline);box-shadow:var(--sh-sm);background:var(--surface);
 }
 .card{padding:16px}
@@ -1377,13 +1366,7 @@ tr.lastrad:hover{opacity:.8}
 .veckokort-kommentar{font-size:12px;color:var(--ink-faint)}
 
 /* ---------- Slutdokumentation ---------- */
-.slutdok-sparr{margin-top:8px;color:var(--bad-ink);font-weight:600}
-.slutdok-filter{margin-top:14px}
-.slutdok-katnr{color:var(--ink-faint);font-weight:700;margin-right:2px}
-.slutdok-kritisk{margin-left:8px;font-family:var(--font-b);font-size:10.5px;font-weight:700;
-  letter-spacing:.05em;text-transform:uppercase;color:var(--info-ink);background:var(--info-bg);
-  border-radius:999px;padding:2px 8px;vertical-align:middle}
-.slutdok-lista{list-style:none;margin:8px 0 0;padding:0}
+.slutdok-lista{list-style:none;margin:0;padding:0}
 .slutdok-rad{display:flex;align-items:center;gap:12px;padding:10px 4px;border-top:1px solid var(--hairline)}
 .slutdok-rad:first-child{border-top:none}
 .slutdok-rad.godkand .slutdok-krav{color:var(--ink-soft)}
