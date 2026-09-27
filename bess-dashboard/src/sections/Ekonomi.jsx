@@ -4,7 +4,6 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
-  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -14,11 +13,16 @@ import { usePortfolj, useUi } from "../state/hooks.js";
 import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
 import { Tathetsvaljare } from "../components/ui/Vyvaljare.jsx";
 import { DataTable } from "../components/ui/DataTable.jsx";
-import { Kpi, Note, SelStatus } from "../components/ui/Primitiver.jsx";
+import { SelStatus } from "../components/ui/Primitiver.jsx";
+import { Callout, Card, StatGroup, StatTile, StatusBadge } from "../components/ds/index.js";
 import { Falt } from "../components/ui/Falt.jsx";
 import { fmtSEK } from "../lib/format.js";
 import { ataSummering, ekonomi, projekt } from "../lib/berakningar.js";
 import { aprisKontroll, slutavrakning } from "../lib/kalkyl.js";
+
+/* Ekonomi på designsystemet: nyckeltal överst (StatTile), betalplanen som
+   kort med diagram och tabell, ÄTA-sammanfattningen med StatGroup och de två
+   kalkylerna som kort med ett resultatfält i samma form. */
 
 const FARG = {
   fakturerad: "var(--turkos)",
@@ -45,58 +49,82 @@ function BetalplanDiagram({ rader, kv }) {
   const visarKronor = kv !== null && kv !== undefined;
 
   return (
-    <div style={{ width: "100%", height: 240, marginBottom: 18 }}>
-      {/* Diagrammet är dekorativt gentemot tabellen nedanför, som bär samma
-          siffror i tillgänglig form. Därför role="img" med en sammanfattning. */}
-      <div
-        role="img"
-        aria-label={`Betalplan per lyft. ${data
-          .map((d) => `${d.kod} ${d.andel} procent, ${d.status}`)
-          .join(". ")}`}
-        style={{ width: "100%", height: "100%" }}
-      >
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--hairline)" vertical={false} />
-            <XAxis dataKey="kod" tick={{ fill: "var(--ink-soft)", fontSize: 12 }} stroke="var(--hairline-stark)" />
-            <YAxis
-              tick={{ fill: "var(--ink-soft)", fontSize: 12 }}
-              stroke="var(--hairline-stark)"
-              tickFormatter={(v) => (visarKronor ? `${Math.round(v / 1000)} tkr` : `${v} %`)}
-              width={64}
-            />
-            <Tooltip
-              cursor={{ fill: "var(--sunken)" }}
-              contentStyle={{
-                background: "var(--surface)",
-                border: "1px solid var(--hairline)",
-                borderRadius: 10,
-                color: "var(--ink)",
-                fontSize: 13,
-              }}
-              formatter={(v, _n, p) => [
-                visarKronor ? fmtSEK(v) : `${v} %`,
-                `${p.payload.kod} — ${p.payload.benamning}`,
-              ]}
-            />
-            <Legend
-              verticalAlign="bottom"
-              height={28}
-              payload={[
-                { value: "Fakturerad", type: "square", color: FARG.fakturerad },
-                { value: "Pågår", type: "square", color: FARG.pagaende },
-                { value: "Kvar", type: "square", color: FARG.kvar },
-              ]}
-              wrapperStyle={{ fontSize: 12, color: "var(--ink-soft)" }}
-            />
-            <RBar dataKey="belopp" radius={[6, 6, 0, 0]} isAnimationActive={false}>
-              {data.map((d) => (
-                <Cell key={d.kod} fill={FARG[d.status] || FARG.kvar} />
-              ))}
-            </RBar>
-          </BarChart>
-        </ResponsiveContainer>
+    <div className="flex flex-col gap-2">
+      <div className="h-60 w-full">
+        {/* Diagrammet är dekorativt gentemot tabellen nedanför, som bär samma
+            siffror i tillgänglig form. Därför role="img" med en sammanfattning. */}
+        <div
+          role="img"
+          aria-label={`Betalplan per lyft. ${data
+            .map((d) => `${d.kod} ${d.andel} procent, ${d.status}`)
+            .join(". ")}`}
+          style={{ width: "100%", height: "100%" }}
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--hairline)" vertical={false} />
+              <XAxis dataKey="kod" tick={{ fill: "var(--ink-soft)", fontSize: 12 }} stroke="var(--hairline-stark)" />
+              <YAxis
+                tick={{ fill: "var(--ink-soft)", fontSize: 12 }}
+                stroke="var(--hairline-stark)"
+                tickFormatter={(v) => (visarKronor ? `${Math.round(v / 1000)} tkr` : `${v} %`)}
+                width={64}
+              />
+              <Tooltip
+                cursor={{ fill: "var(--sunken)" }}
+                contentStyle={{
+                  background: "var(--surface)",
+                  border: "1px solid var(--hairline)",
+                  borderRadius: 10,
+                  color: "var(--ink)",
+                  fontSize: 13,
+                }}
+                formatter={(v, _n, p) => [
+                  visarKronor ? fmtSEK(v) : `${v} %`,
+                  `${p.payload.kod} — ${p.payload.benamning}`,
+                ]}
+              />
+              <RBar dataKey="belopp" radius={[6, 6, 0, 0]} isAnimationActive={false}>
+                {data.map((d) => (
+                  <Cell key={d.kod} fill={FARG[d.status] || FARG.kvar} />
+                ))}
+              </RBar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
+      {/* Förklaringen står i HTML: Recharts egen legend visade bara serienamnet. */}
+      <ul aria-hidden="true" className="m-0 flex list-none flex-wrap justify-center gap-x-4 gap-y-1 p-0 text-xs text-ink-soft">
+        {[
+          ["Fakturerad", FARG.fakturerad],
+          ["Pågår", FARG.pagaende],
+          ["Kvar", FARG.kvar],
+        ].map(([namn, farg]) => (
+          <li key={namn} className="inline-flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-sm" style={{ background: farg }} />
+            {namn}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/* ---------- Kalkylernas resultat ---------- */
+
+/** Resultatet av en kalkyl: grön yta när rätten finns, lugn yta annars.
+ *  Rubriken bär beskedet; färgen förstärker bara. */
+function Resultat({ lage, rubrik, children }) {
+  const ja = lage === "ja";
+  return (
+    <div
+      aria-live="polite"
+      className={`flex flex-col gap-2 rounded-lg border border-solid px-4 py-3 text-[13px] leading-relaxed text-ink [&_ul]:m-0 [&_ul]:pl-5 [&_p]:m-0 ${
+        ja ? "border-hairline bg-ok-bg" : "border-hairline bg-sunken"
+      }`}
+    >
+      {rubrik ? <b className={`text-[15px] leading-snug ${ja ? "text-ok-ink" : "text-ink"}`}>{rubrik}</b> : null}
+      {children}
     </div>
   );
 }
@@ -105,7 +133,7 @@ function BetalplanDiagram({ rader, kv }) {
 
 function Apriskontroll({ kontraktsvarde }) {
   const [v, setV] = useState({
-    kontraktssumma: kontraktsvarde ?? 5600000,
+    kontraktssumma: kontraktsvarde ?? 0,
     apris: 20,
     mangdFore: 600,
     mangdEfter: 1000,
@@ -114,13 +142,11 @@ function Apriskontroll({ kontraktsvarde }) {
   const num = (x) => Number(String(x).replace(",", ".")) || 0;
 
   return (
-    <div className="card calc">
-      <h3>Á-priskontroll</h3>
-      <div className="lead">
-        AB 04/ABT 06 kap. 6 § 6. Gäller per enskilt á-pris. Rätt att säga upp á-priset uppstår när mängden
-        ändrats med minst 25 % <b>och</b> värdet av ändringen överstiger 0,5 % av kontraktssumman.
-      </div>
-
+    <Card
+      id="ek-apris"
+      title="Á-priskontroll"
+      subtitle="AB 04/ABT 06 kap. 6 § 6. Gäller per enskilt á-pris. Rätt att säga upp á-priset uppstår när mängden ändrats med minst 25 % och värdet av ändringen överstiger 0,5 % av kontraktssumman."
+    >
       <div className="frow c2">
         {[
           ["kontraktssumma", "Kontraktssumma (kr)"],
@@ -128,7 +154,7 @@ function Apriskontroll({ kontraktsvarde }) {
           ["mangdFore", "Kontrakterad mängd"],
           ["mangdEfter", "Ny total mängd"],
         ].map(([k, etikett]) => (
-          <div className="f" key={k}>
+          <div className="f mb-0" key={k}>
             <label htmlFor={`ap-${k}`}>{etikett}</label>
             <Falt
               id={`ap-${k}`}
@@ -141,74 +167,69 @@ function Apriskontroll({ kontraktsvarde }) {
         ))}
       </div>
 
-      <div className={`out ${r.ofullstandig ? "" : r.uppfyllt ? "yes" : "no"}`.trim()} aria-live="polite">
-        {r.ofullstandig ? (
-          "Fyll i kontraktssumma, á-pris och kontrakterad mängd."
-        ) : (
-          <>
-            <span className="big">
-              {r.uppfyllt
-                ? "Rätt att påkalla förhandling om nytt á-pris"
-                : "Villkoren för omförhandling är inte uppfyllda"}
-            </span>
-            <ul>
+      {r.ofullstandig ? (
+        <Resultat>Fyll i kontraktssumma, á-pris och kontrakterad mängd.</Resultat>
+      ) : (
+        <Resultat
+          lage={r.uppfyllt ? "ja" : "nej"}
+          rubrik={
+            r.uppfyllt ? "Rätt att påkalla förhandling om nytt á-pris" : "Villkoren för omförhandling är inte uppfyllda"
+          }
+        >
+          <ul>
+            <li>
+              Mängdändring: <b>{`${r.dm > 0 ? "+" : ""}${r.dm.toLocaleString("sv-SE")}`}</b> enheter (
+              {r.dproc > 0 ? "+" : ""}
+              {r.dproc.toFixed(1)} %) — kravet är minst ±25 % {r.mangdUppfylld ? "✓" : "✗"}
+            </li>
+            <li>
+              Värde av ändringen: <b>{fmtSEK(Math.round(r.varde))}</b>
+            </li>
+            <li>
+              0,5 % av kontraktssumman: <b>{fmtSEK(Math.round(r.grans))}</b> — värdet måste överstiga detta{" "}
+              {r.vardeUppfyllt ? "✓" : "✗"}
+            </li>
+            {r.uppfyllt && r.dm > 0 ? (
               <li>
-                Mängdändring: <b>{`${r.dm > 0 ? "+" : ""}${r.dm.toLocaleString("sv-SE")}`}</b> enheter (
-                {r.dproc > 0 ? "+" : ""}
-                {r.dproc.toFixed(1)} %) — kravet är minst ±25 % {r.mangdUppfylld ? "✓" : "✗"}
+                Det avtalade á-priset gäller för högst{" "}
+                <b>{r.gransMangd.toLocaleString("sv-SE", { maximumFractionDigits: 0 })} enheter</b> tillkommande.
+                För överskjutande mängd gäller inte á-priset.
               </li>
-              <li>
-                Värde av ändringen: <b>{fmtSEK(Math.round(r.varde))}</b>
-              </li>
-              <li>
-                0,5 % av kontraktssumman: <b>{fmtSEK(Math.round(r.grans))}</b> — värdet måste överstiga
-                detta {r.vardeUppfyllt ? "✓" : "✗"}
-              </li>
-              {r.uppfyllt && r.dm > 0 ? (
-                <li>
-                  Det avtalade á-priset gäller för högst{" "}
-                  <b>{r.gransMangd.toLocaleString("sv-SE", { maximumFractionDigits: 0 })} enheter</b>{" "}
-                  tillkommande. För överskjutande mängd gäller inte á-priset.
-                </li>
-              ) : null}
-            </ul>
-            {r.uppfyllt ? (
-              <p style={{ margin: "10px 0 0" }}>
-                Anmäl skriftligen till beställaren att á-priset inte längre gäller och påkalla förhandling
-                om nytt á-pris. Nås ingen överenskommelse tillämpas självkostnadsprincipen (löpande
-                räkning). Spara underrättelsen på Ones SharePoint.
-              </p>
             ) : null}
-          </>
-        )}
-      </div>
-    </div>
+          </ul>
+          {r.uppfyllt ? (
+            <p>
+              Anmäl skriftligen till beställaren att á-priset inte längre gäller och påkalla förhandling om nytt
+              á-pris. Nås ingen överenskommelse tillämpas självkostnadsprincipen (löpande räkning). Spara
+              underrättelsen på Ones SharePoint.
+            </p>
+          ) : null}
+        </Resultat>
+      )}
+    </Card>
   );
 }
 
 /* ---------- Slutavräkning ---------- */
 
 function Slutavrakning({ kontraktsvarde }) {
-  const [v, setV] = useState({ kontraktssumma: kontraktsvarde ?? 5600000, tillkommande: 0, avgaende: 0 });
+  const [v, setV] = useState({ kontraktssumma: kontraktsvarde ?? 0, tillkommande: 0, avgaende: 0 });
   const r = slutavrakning(v);
   const num = (x) => Number(String(x).replace(",", ".")) || 0;
 
   return (
-    <div className="card calc">
-      <h3>Slutavräkning</h3>
-      <div className="lead">
-        Flödesschema 3.1. Är värdet av avgående arbeten större än tillkommande har One rätt till 10 % av
-        mellanskillnaden. Överstiger mellanskillnaden 20 % av kontraktssumman tillkommer rimlig ersättning
-        för utebliven vinst på det överskjutande beloppet.
-      </div>
-
+    <Card
+      id="ek-slutavrakning"
+      title="Slutavräkning"
+      subtitle="Flödesschema 3.1. Är värdet av avgående arbeten större än tillkommande har One rätt till 10 % av mellanskillnaden. Överstiger mellanskillnaden 20 % av kontraktssumman tillkommer rimlig ersättning för utebliven vinst på det överskjutande beloppet."
+    >
       <div className="frow c3">
         {[
           ["kontraktssumma", "Kontraktssumma (kr)"],
           ["tillkommande", "Tillkommande ÄTA (kr)"],
           ["avgaende", "Avgående arbeten (kr)"],
         ].map(([k, etikett]) => (
-          <div className="f" key={k}>
+          <div className="f mb-0" key={k}>
             <label htmlFor={`sl-${k}`}>{etikett}</label>
             <Falt
               id={`sl-${k}`}
@@ -221,44 +242,40 @@ function Slutavrakning({ kontraktsvarde }) {
         ))}
       </div>
 
-      <div className={`out ${r.ofullstandig ? "" : r.ratt ? "yes" : "no"}`.trim()} aria-live="polite">
-        {r.ofullstandig ? (
-          "Fyll i kontraktssumman."
-        ) : !r.ratt ? (
-          <>
-            <span className="big">Ingen särskild slutavräkning</span>
+      {r.ofullstandig ? (
+        <Resultat>Fyll i kontraktssumman.</Resultat>
+      ) : !r.ratt ? (
+        <Resultat lage="nej" rubrik="Ingen särskild slutavräkning">
+          <p>
             Värdet av tillkommande arbeten ({fmtSEK(r.till)}) är inte mindre än avgående ({fmtSEK(r.avg)}).
             Fakturera ÄTA som vanligt enligt kontraktet.
-          </>
-        ) : (
-          <>
-            <span className="big">
-              One har rätt till {fmtSEK(Math.round(r.tio))} — 10 % av mellanskillnaden
-            </span>
-            <ul>
+          </p>
+        </Resultat>
+      ) : (
+        <Resultat lage="ja" rubrik={`One har rätt till ${fmtSEK(Math.round(r.tio))} — 10 % av mellanskillnaden`}>
+          <ul>
+            <li>
+              Avgående arbeten överstiger tillkommande med <b>{fmtSEK(Math.round(r.mellan))}</b>
+            </li>
+            <li>
+              20 % av kontraktssumman: <b>{fmtSEK(Math.round(r.g20))}</b>
+            </li>
+            {r.over > 0 ? (
               <li>
-                Avgående arbeten överstiger tillkommande med <b>{fmtSEK(Math.round(r.mellan))}</b>
+                Mellanskillnaden överstiger 20 %-gränsen med <b>{fmtSEK(Math.round(r.over))}</b> — One har utöver
+                de 10 % även rätt till rimlig ersättning för utebliven vinst på det beloppet.
               </li>
-              <li>
-                20 % av kontraktssumman: <b>{fmtSEK(Math.round(r.g20))}</b>
-              </li>
-              {r.over > 0 ? (
-                <li>
-                  Mellanskillnaden överstiger 20 %-gränsen med <b>{fmtSEK(Math.round(r.over))}</b> — One har
-                  utöver de 10 % även rätt till rimlig ersättning för utebliven vinst på det beloppet.
-                </li>
-              ) : (
-                <li>Mellanskillnaden understiger 20 %-gränsen — enbart de 10 % gäller.</li>
-              )}
-            </ul>
-            <p style={{ margin: "10px 0 0" }}>
-              Fakturera beställaren. Kontrollera att samtliga ÄTA-fakturor är skickade och att säkerheten
-              satts ned efter godkänd slutbesiktning.
-            </p>
-          </>
-        )}
-      </div>
-    </div>
+            ) : (
+              <li>Mellanskillnaden understiger 20 %-gränsen — enbart de 10 % gäller.</li>
+            )}
+          </ul>
+          <p>
+            Fakturera beställaren. Kontrollera att samtliga ÄTA-fakturor är skickade och att säkerheten satts ned
+            efter godkänd slutbesiktning.
+          </p>
+        </Resultat>
+      )}
+    </Card>
   );
 }
 
@@ -296,149 +313,154 @@ export function Ekonomi() {
     });
   };
 
+  const harKv = p.kontraktsvarde !== null && p.kontraktsvarde !== undefined;
+  const projektNamn = (p.nr ? p.nr + " " : "") + p.namn;
+  const adminMarke = (
+    <span title="Kontraktsvärde och betalplan kan bara ändras av administratören">
+      <StatusBadge label="Endast administratör" />
+    </span>
+  );
+
   return (
     <>
       <Projektvaljare />
 
-      <div className="card" style={{ marginBottom: 20 }}>
-        <h3>
-          {(p.nr ? p.nr + " " : "") + p.namn} — betalplan{" "}
-          <span className="lockbadge" title="Kontraktsvärde och betalplan kan bara ändras av administratören">
-            🔒 Endast administratör
-          </span>
-        </h3>
-        <div className="lead">
-          Kontraktsvärde{" "}
-          {p.kontraktsvarde !== null && p.kontraktsvarde !== undefined ? (
-            fmtSEK(p.kontraktsvarde)
-          ) : (
-            <span className="ant">SAKNAS I UNDERLAGET</span>
-          )}
-        </div>
-
+      <div className="flex flex-col gap-4 lg:gap-6">
         {ekonomiFel ? (
-          <Note niva="bad" style={{ margin: "0 0 16px" }} role="alert">
-            <b>⚠ Ändringen sparades inte.</b> {ekonomiFel}
-          </Note>
+          <Callout ton="bad" role="alert">
+            <b>Ändringen sparades inte.</b> {ekonomiFel}
+          </Callout>
         ) : null}
 
-        <BetalplanDiagram rader={e.rader} kv={e.kv} />
-
-        <DataTable
-          etikett="Betalplan"
-          exportNamn="Betalplan"
-          rader={e.rader}
-          tomText="Ingen betalplan registrerad ännu."
-          radKlass={(b) => (b.status === "fakturerad" ? "fakturerad" : "")}
-          verktyg={
-            <>
-              <Tathetsvaljare />
-              <button type="button" className="btn sec mini" onClick={nyBetalplanrad}>
-                + Lägg till lyft
-              </button>
-            </>
-          }
-          kolumner={[
-            {
-              nyckel: "kod",
-              rubrik: "Lyft",
-              bredd: 80,
-              render: (b) => <b>{b.kod}</b>,
-            },
-            { nyckel: "benamning", rubrik: "Benämning" },
-            {
-              nyckel: "andel",
-              rubrik: "Andel",
-              bredd: 100,
-              typ: "num",
-              summera: true,
-              textVarde: (b) => `${b.andel} %`,
-              render: (b) => `${b.andel} %`,
-            },
-            {
-              nyckel: "belopp",
-              rubrik: "Belopp",
-              bredd: 140,
-              typ: "sek",
-              summera: true,
-              sortVarde: (b) => (e.kv ? Math.round((e.kv * b.andel) / 100) : 0),
-              exportVarde: (b) => (e.kv ? Math.round((e.kv * b.andel) / 100) : ""),
-              render: (b) =>
-                e.kv !== null && e.kv !== undefined ? fmtSEK(Math.round((e.kv * b.andel) / 100)) : "—",
-            },
-            {
-              nyckel: "status",
-              rubrik: "Status",
-              bredd: 150,
-              filter: true,
-              filterEtikett: (v) =>
-                ({ fakturerad: "Fakturerad", pagaende: "Pågår", kvar: "Kvar" })[v] || v,
-              render: (b) => (
-                <SelStatus
-                  alternativ={["fakturerad", "pagaende", "kvar"]}
-                  varde={b.status}
-                  etikett={`Status för ${b.kod} ${b.benamning}`}
-                  onChange={(v) => dispatch({ type: "UPPD_BETALPLAN", id: b.id, falt: "status", varde: v })}
-                />
-              ),
-            },
-          ]}
-        />
-
-        {e.rader.length ? (
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-sm border border-hairline bg-sunken px-4 py-3">
-              <div className="text-[10.5px] font-bold uppercase tracking-[.07em] text-ink-faint">
-                Fakturerat
-              </div>
-              <div className="mt-1 font-head text-[19px] font-bold text-one-djup">
-                {e.faktProc} % {e.faktSEK !== null ? `· ${fmtSEK(e.faktSEK)}` : ""}
-              </div>
-            </div>
-            <div className="rounded-sm border border-hairline bg-sunken px-4 py-3">
-              <div className="text-[10.5px] font-bold uppercase tracking-[.07em] text-ink-faint">
-                Kvar att fakturera
-              </div>
-              <div className="mt-1 font-head text-[19px] font-bold text-ink">
-                {100 - e.faktProc} % {e.kvarSEK !== null ? `· ${fmtSEK(e.kvarSEK)}` : ""}
-              </div>
-            </div>
-          </div>
-        ) : null}
-      </div>
-
-      <div className="card">
-        <h3>UR och ÄTA — sammanfattning</h3>
-        <div className="lead">
-          Hela ärendehanteringen med klassificering, 24-timmarsfrist, prissättning och fakturering ligger i
-          fliken ÄTA och hinder.
-        </div>
-        <div className="grid g3" style={{ marginBottom: 14 }}>
-          <Kpi label="Poster" varde={s.antal} hint={`${s.oppna} ej stängda`} />
-          <Kpi label="Godkänt belopp" varde={fmtSEK(s.belopp)} hint="godkänt, fakturerat eller stängt" />
-          <Kpi
-            label="Godkänt ej fakturerat"
-            varde={fmtSEK(s.ejFakt)}
-            hint={s.ejFakt ? "fakturera samma vecka" : "inget väntar"}
-            klass={s.ejFakt ? "warn" : ""}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+          <StatTile
+            label="Kontraktsvärde"
+            value={harKv ? fmtSEK(p.kontraktsvarde) : "Saknas"}
+            ton={harKv ? "" : "warn"}
+            hint={harKv ? "enligt kontraktet" : "saknas i underlaget"}
+          />
+          <StatTile
+            label="Fakturerat"
+            value={`${e.faktProc} %`}
+            hint={e.faktSEK !== null ? fmtSEK(e.faktSEK) : "belopp kräver kontraktsvärde"}
+          />
+          <StatTile
+            label="Pågår"
+            value={`${e.pagProc} %`}
+            hint={harKv ? fmtSEK(Math.round((e.kv * e.pagProc) / 100)) : "lyft som aviseras nu"}
+          />
+          <StatTile
+            label="Kvar att fakturera"
+            value={`${100 - e.faktProc} %`}
+            hint={e.kvarSEK !== null ? fmtSEK(e.kvarSEK) : "belopp kräver kontraktsvärde"}
           />
         </div>
-        <div className="rowbtns">
-          <button type="button" className="btn" onClick={() => visa("ata")}>
-            Öppna ÄTA och hinder
-          </button>
-        </div>
-        <Note niva="warn">
-          <b>Att bevaka.</b> Etableringen i Alvesta (Cramo) är kontrakterad i 20 veckor enligt
-          Bilaga 3-reservationen. Hyresmaterial för veckor därefter ska in i ÄTA-underlaget till
-          självkostnad + 10 % entreprenadarvode. Arbeten åt Alvesta Energi AB faktureras separat med EBR
-          Kostnadskatalog KLG 1:25 P2-priser och avtalad faktor.
-        </Note>
-      </div>
 
-      <div className="grid g2" style={{ marginTop: 20 }}>
-        <Apriskontroll kontraktsvarde={p.kontraktsvarde} />
-        <Slutavrakning kontraktsvarde={p.kontraktsvarde} />
+        <Card
+          id="ek-betalplan"
+          title={`Betalplan — ${projektNamn}`}
+          subtitle="Lyften i kontraktets betalningsplan. Status ändras här eller under Milstolpar M1–M7."
+          badge={adminMarke}
+        >
+          <BetalplanDiagram rader={e.rader} kv={e.kv} />
+
+          <DataTable
+            etikett="Betalplan"
+            exportNamn="Betalplan"
+            rader={e.rader}
+            tomText="Ingen betalplan registrerad ännu."
+            radKlass={(b) => (b.status === "fakturerad" ? "fakturerad" : "")}
+            verktyg={
+              <>
+                <Tathetsvaljare />
+                <button type="button" className="btn sec mini" onClick={nyBetalplanrad}>
+                  + Lägg till lyft
+                </button>
+              </>
+            }
+            kolumner={[
+              {
+                nyckel: "kod",
+                rubrik: "Lyft",
+                bredd: 80,
+                render: (b) => <b>{b.kod}</b>,
+              },
+              { nyckel: "benamning", rubrik: "Benämning" },
+              {
+                nyckel: "andel",
+                rubrik: "Andel",
+                bredd: 100,
+                typ: "num",
+                summera: true,
+                textVarde: (b) => `${b.andel} %`,
+                render: (b) => `${b.andel} %`,
+              },
+              {
+                nyckel: "belopp",
+                rubrik: "Belopp",
+                bredd: 140,
+                typ: "sek",
+                summera: true,
+                // Oavrundat, så att summaraden blir exakt kontraktsvärdet.
+                sortVarde: (b) => (e.kv ? (e.kv * b.andel) / 100 : 0),
+                exportVarde: (b) => (e.kv ? Math.round((e.kv * b.andel) / 100) : ""),
+                render: (b) =>
+                  e.kv !== null && e.kv !== undefined ? fmtSEK(Math.round((e.kv * b.andel) / 100)) : "—",
+              },
+              {
+                nyckel: "status",
+                rubrik: "Status",
+                bredd: 150,
+                filter: true,
+                filterEtikett: (v) =>
+                  ({ fakturerad: "Fakturerad", pagaende: "Pågår", kvar: "Kvar" })[v] || v,
+                render: (b) => (
+                  <SelStatus
+                    alternativ={["fakturerad", "pagaende", "kvar"]}
+                    varde={b.status}
+                    etikett={`Status för ${b.kod} ${b.benamning}`}
+                    onChange={(v) => dispatch({ type: "UPPD_BETALPLAN", id: b.id, falt: "status", varde: v })}
+                  />
+                ),
+              },
+            ]}
+          />
+        </Card>
+
+        <Card
+          id="ek-ata"
+          title="UR och ÄTA — sammanfattning"
+          subtitle="Hela ärendehanteringen med klassificering, 24-timmarsfrist, prissättning och fakturering ligger i ÄTA och hinder."
+          action={
+            <button type="button" className="btn sec mini" onClick={() => visa("ata")}>
+              Öppna ÄTA och hinder
+            </button>
+          }
+        >
+          <StatGroup
+            items={[
+              { label: "Poster", value: s.antal, detail: `${s.oppna} ej stängda` },
+              { label: "Godkänt belopp", value: fmtSEK(s.belopp), detail: "godkänt, fakturerat eller stängt" },
+              {
+                label: "Godkänt ej fakturerat",
+                value: fmtSEK(s.ejFakt),
+                ton: s.ejFakt ? "warn" : "",
+                detail: s.ejFakt ? "fakturera samma vecka" : "inget väntar",
+              },
+            ]}
+          />
+          <Callout ton="warn">
+            <b>Att bevaka.</b> Etableringen i Alvesta (Cramo) är kontrakterad i 20 veckor enligt
+            Bilaga 3-reservationen. Hyresmaterial för veckor därefter ska in i ÄTA-underlaget till
+            självkostnad + 10 % entreprenadarvode. Arbeten åt Alvesta Energi AB faktureras separat med EBR
+            Kostnadskatalog KLG 1:25 P2-priser och avtalad faktor.
+          </Callout>
+        </Card>
+
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
+          <Apriskontroll key={`ap-${p.id}`} kontraktsvarde={p.kontraktsvarde} />
+          <Slutavrakning key={`sl-${p.id}`} kontraktsvarde={p.kontraktsvarde} />
+        </div>
       </div>
     </>
   );

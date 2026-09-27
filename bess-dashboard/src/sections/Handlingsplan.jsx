@@ -251,8 +251,8 @@ export function Handlingsplan() {
           ) : (
             <div className="hp-tomt">
               <p>
-                Bryt ned strategin i konkreta åtgärder — till exempel <i>Slutföra cold commissioning</i>,{" "}
-                <i>Skicka underrättelse om ÄTA</i> eller <i>Genomföra skyddsrond</i>.
+                Bryt ned strategin i konkreta åtgärder — till exempel ”Slutföra cold commissioning”,{" "}
+                ”Skicka underrättelse om ÄTA” eller ”Genomföra skyddsrond”.
               </p>
               <button type="button" className="btn mini" onClick={nyAtgard}>
                 <Plus size={15} aria-hidden="true" />

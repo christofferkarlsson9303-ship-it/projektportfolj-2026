@@ -70,11 +70,12 @@ ljust och mörkt läge och följer ONE Nordics profil. Avstånden följer en
 | `DataList` | Nyckel–värde-rader i stället för löpande text. |
 | `SectionHeading` | Rubrik och ingress för en sektion utanför kort. |
 | `StatTile` | Nyckeltalsruta: etikett, tal och en rad om vad talet betyder. |
+| `StatGroup` | Samma nyckeltal inuti ett kort, utan egen ram. |
 | `Callout` | Upplysning, antagande eller varning — tonen sitter i kanten och ikonen, inte i ytan. |
 | `Meter` | Mätare för andel av en helhet, i samma ton som Gantt-schemat. |
 
 Översikten (`DashboardView`), Bygga batteripark, Milstolpar M1–M7, ÄTA och
-hinder och Dagbok är byggda av dem. De äldre vyerna får samma statusmärke via
+hinder, Dagbok, Ekonomi, Byggmöten och Störning är byggda av dem. De äldre vyerna får samma statusmärke via
 `Pill`, samma nyckeltalsruta via `Kpi` (→ `StatTile`), samma upplysning via
 `Note` (→ `Callout`) och samma kortform via `.card`.
 

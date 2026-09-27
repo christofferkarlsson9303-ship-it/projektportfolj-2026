@@ -3,7 +3,8 @@ import { usePortfolj, useUi } from "../state/hooks.js";
 import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
 import { Tathetsvaljare } from "../components/ui/Vyvaljare.jsx";
 import { DataTable } from "../components/ui/DataTable.jsx";
-import { Note, SelStatus } from "../components/ui/Primitiver.jsx";
+import { SelStatus } from "../components/ui/Primitiver.jsx";
+import { Callout, Card, DataList, StatTile, StatusBadge } from "../components/ds/index.js";
 import { Falt, DatumFalt, Kryss } from "../components/ui/Falt.jsx";
 import { Ruta } from "../components/ui/Utskrift.jsx";
 import { dagarTill, idag } from "../lib/datum.js";
@@ -12,7 +13,10 @@ import { hamtaNamn } from "../state/portfolj-reducer.js";
 
 /* Rutorna A–F i blanketten. Vägledningen är hämtad ur ONE Nordics mall och
    styr vad projektledaren faktiskt ska skriva — den är en del av dokumentet,
-   inte hjälptext som kan kortas bort. */
+   inte hjälptext som kan kortas bort.
+
+   Vyn står på designsystemet: nyckeltal överst, regeln för när en
+   underrättelse ska skickas som DataList, registret och blanketten som kort. */
 const RUTOR = [
   [
     "rutaA",
@@ -51,6 +55,18 @@ const RUTOR = [
     "Eftersom vi fick vänta på nycklar kunde vi inte utföra arbete under 4 timmar. Vi fick skjuta upp arbetet till nästa dag.",
   ],
 ];
+
+/** Underrättelsens status → märke. En passerad svarsfrist går före. */
+const STATUSMARKE = {
+  utkast: { ton: "neutral", label: "Utkast" },
+  skickad: { ton: "info", label: "Skickad" },
+  besvarad: { ton: "ok", label: "Besvarad" },
+};
+
+const svarsfristPasserad = (s) => {
+  const d = s.svarSenast ? dagarTill(s.svarSenast) : null;
+  return d !== null && d < 0 && s.status !== "besvarad";
+};
 
 const HUVUDFALT = [
   ["affarsId", "AffärsID"],
@@ -174,132 +190,133 @@ function Storningsformular({ s, onStang }) {
     oppnaPost("dagbok", id);
   };
 
+  const marke = svarsfristPasserad(s) ? { ton: "bad", label: "Svarsfrist passerad" } : STATUSMARKE[s.status];
+
   return (
-    <section className="card" role="region" aria-label={`Underrättelse ${s.nr}`} style={{ marginTop: 16 }}>
-      <div className="kortrad">
-        <div style={{ minWidth: 0 }}>
-          <h3>Underrättelse {s.nr}</h3>
-          <div className="lead" style={{ marginBottom: 0 }}>
-            Fyll i, skriv ut till PDF och skicka till beställaren. Spara ner den skickade underrättelsen på
-            Ones SharePoint.
-          </div>
-        </div>
-        <div className="kortverktyg">
-          <button type="button" className="btn sec mini" onClick={onStang}>
-            Stäng
-          </button>
-        </div>
-      </div>
-
-      <div className="frow" style={{ marginTop: 14 }}>
-        {HUVUDFALT.map(([nyckel, rubrik]) => (
-          <div className="f" key={nyckel}>
-            <label htmlFor={`${nyckel}-${s.id}`}>{rubrik}</label>
-            <Falt
-              id={`${nyckel}-${s.id}`}
-              varde={s[nyckel] || ""}
-              etikett={rubrik}
-              onCommit={(v) => uppd("storningar", s.id, nyckel, v)}
+    <Card
+      id={`underrattelse-${s.id}`}
+      title={`Underrättelse ${s.nr}`}
+      subtitle="Fyll i, skriv ut till PDF och skicka till beställaren. Spara ner den skickade underrättelsen på Ones SharePoint."
+      badge={marke ? <StatusBadge ton={marke.ton} label={marke.label} /> : null}
+      action={
+        <button type="button" className="btn sec mini" onClick={onStang}>
+          Stäng
+        </button>
+      }
+    >
+      <div>
+        <div className="frow">
+          {HUVUDFALT.map(([nyckel, rubrik]) => (
+            <div className="f" key={nyckel}>
+              <label htmlFor={`${nyckel}-${s.id}`}>{rubrik}</label>
+              <Falt
+                id={`${nyckel}-${s.id}`}
+                varde={s[nyckel] || ""}
+                etikett={rubrik}
+                onCommit={(v) => uppd("storningar", s.id, nyckel, v)}
+              />
+            </div>
+          ))}
+          <div className="f">
+            <label htmlFor={`datum-${s.id}`}>Datum / revdatum</label>
+            <DatumFalt
+              id={`datum-${s.id}`}
+              varde={s.datum}
+              etikett="Datum eller revideringsdatum"
+              onCommit={(v) => uppd("storningar", s.id, "datum", v)}
             />
           </div>
-        ))}
+        </div>
+
+        <div className="frow">
+          {ANSVARSFALT.map(([nyckel, rubrik]) => (
+            <div className="f" key={nyckel}>
+              <label htmlFor={`${nyckel}-${s.id}`}>{rubrik}</label>
+              <Falt
+                id={`${nyckel}-${s.id}`}
+                varde={s[nyckel] || ""}
+                etikett={rubrik}
+                onCommit={(v) => uppd("storningar", s.id, nyckel, v)}
+              />
+            </div>
+          ))}
+        </div>
+
         <div className="f">
-          <label htmlFor={`datum-${s.id}`}>Datum / revdatum</label>
-          <DatumFalt
-            id={`datum-${s.id}`}
-            varde={s.datum}
-            etikett="Datum eller revideringsdatum"
-            onCommit={(v) => uppd("storningar", s.id, "datum", v)}
+          <label htmlFor={`till-${s.id}`}>Till</label>
+          <Falt
+            id={`till-${s.id}`}
+            varde={s.till || ""}
+            placeholder="Beställarens mottagare"
+            etikett="Mottagare hos beställaren"
+            onCommit={(v) => uppd("storningar", s.id, "till", v)}
           />
         </div>
-      </div>
 
-      <div className="frow">
-        {ANSVARSFALT.map(([nyckel, rubrik]) => (
+        {RUTOR.map(([nyckel, rubrik, guide, exempel]) => (
           <div className="f" key={nyckel}>
             <label htmlFor={`${nyckel}-${s.id}`}>{rubrik}</label>
+            <p className="guide">
+              {guide}
+              {exempel ? (
+                <>
+                  <br />
+                  <span className="text-ink-soft">
+                    <b className="font-semibold">Exempel:</b> {exempel}
+                  </span>
+                </>
+              ) : null}
+            </p>
             <Falt
               id={`${nyckel}-${s.id}`}
+              flerrad
               varde={s[nyckel] || ""}
               etikett={rubrik}
               onCommit={(v) => uppd("storningar", s.id, nyckel, v)}
             />
           </div>
         ))}
-      </div>
 
-      <div className="f">
-        <label htmlFor={`till-${s.id}`}>Till</label>
-        <Falt
-          id={`till-${s.id}`}
-          varde={s.till || ""}
-          placeholder="Beställarens mottagare"
-          etikett="Mottagare hos beställaren"
-          onCommit={(v) => uppd("storningar", s.id, "till", v)}
-        />
-      </div>
-
-      {RUTOR.map(([nyckel, rubrik, guide, exempel]) => (
-        <div className="f" key={nyckel}>
-          <label htmlFor={`${nyckel}-${s.id}`}>{rubrik}</label>
+        <div className="f">
+          <span className="block text-[11px] font-bold uppercase tracking-[.06em] text-ink-soft">
+            Ruta G — Övrigt / behov av besked
+          </span>
           <p className="guide">
-            {guide}
-            {exempel ? (
-              <>
-                <br />
-                <i>Exempel: {exempel}</i>
-              </>
-            ) : null}
+            Kryssa i begäran om synpunkter när störningen utgjort ett ÄTA-arbete. Rutan om försening ska
+            alltid kryssas i — därefter måste ni på nästa byggmöte förhandla om förlängd tidplan, och att
+            omförhandling begärts måste framgå av byggmötesprotokollet.
           </p>
-          <Falt
-            id={`${nyckel}-${s.id}`}
-            flerrad
-            varde={s[nyckel] || ""}
-            etikett={rubrik}
-            onCommit={(v) => uppd("storningar", s.id, nyckel, v)}
+          <Kryss
+            id={`cbG1-${s.id}`}
+            checked={s.begarSynpunkter}
+            onChange={(v) => uppdBool("storningar", s.id, "begarSynpunkter", v)}
+          >
+            One begär att beställaren återkommer med synpunkter gällande Ones plan för hantering av
+            störningen.
+          </Kryss>
+          <Kryss
+            id={`cbG2-${s.id}`}
+            checked={s.innebarForsening}
+            onChange={(v) => uppdBool("storningar", s.id, "innebarForsening", v)}
+          >
+            Vi bedömer att arbetet kommer att försena projektets del- och/eller sluttider och begär därför
+            förlängning av dessa tider.
+          </Kryss>
+        </div>
+
+        <div className="f mb-0" style={{ maxWidth: 280 }}>
+          <label htmlFor={`svar-${s.id}`}>Ruta H — Besked önskas senast</label>
+          <p className="guide">Datum då beställaren måste ha återkommit med synpunkter.</p>
+          <DatumFalt
+            id={`svar-${s.id}`}
+            varde={s.svarSenast}
+            etikett="Besked önskas senast"
+            onCommit={(v) => uppd("storningar", s.id, "svarSenast", v)}
           />
         </div>
-      ))}
-
-      <div className="f">
-        <span className="block text-[11px] font-bold uppercase tracking-[.06em] text-ink-soft">
-          Ruta G — Övrigt / behov av besked
-        </span>
-        <p className="guide">
-          Kryssa i begäran om synpunkter när störningen utgjort ett ÄTA-arbete. Rutan om försening ska
-          alltid kryssas i — därefter måste ni på nästa byggmöte förhandla om förlängd tidplan, och att
-          omförhandling begärts måste framgå av byggmötesprotokollet.
-        </p>
-        <Kryss
-          id={`cbG1-${s.id}`}
-          checked={s.begarSynpunkter}
-          onChange={(v) => uppdBool("storningar", s.id, "begarSynpunkter", v)}
-        >
-          One begär att beställaren återkommer med synpunkter gällande Ones plan för hantering av
-          störningen.
-        </Kryss>
-        <Kryss
-          id={`cbG2-${s.id}`}
-          checked={s.innebarForsening}
-          onChange={(v) => uppdBool("storningar", s.id, "innebarForsening", v)}
-        >
-          Vi bedömer att arbetet kommer att försena projektets del- och/eller sluttider och begär därför
-          förlängning av dessa tider.
-        </Kryss>
       </div>
 
-      <div className="f" style={{ maxWidth: 280 }}>
-        <label htmlFor={`svar-${s.id}`}>Ruta H — Besked önskas senast</label>
-        <p className="guide">Datum då beställaren måste ha återkommit med synpunkter.</p>
-        <DatumFalt
-          id={`svar-${s.id}`}
-          varde={s.svarSenast}
-          etikett="Besked önskas senast"
-          onCommit={(v) => uppd("storningar", s.id, "svarSenast", v)}
-        />
-      </div>
-
-      <div className="rowbtns">
+      <div className="flex flex-wrap gap-2">
         <button type="button" className="btn" onClick={() => skrivUt(<StorningUtskrift s={s} />)}>
           Skriv ut / spara som PDF
         </button>
@@ -311,13 +328,13 @@ function Storningsformular({ s, onStang }) {
         </button>
       </div>
 
-      <Note>
+      <Callout>
         <b>Efter utskick.</b> Spara den skickade underrättelsen på Ones SharePoint och dokumentera i
         dagboken: startdatum, omfattning, väder och temperatur, kostnad samt förväntad och faktisk
         tidsåtgång. Ska beställaren signera dagboken enligt kontraktet — skicka den för signering och ange
         i följemejlet ett svarsdatum, annars betraktas dagboken som undertecknad.
-      </Note>
-    </section>
+      </Callout>
+    </Card>
   );
 }
 
@@ -380,44 +397,66 @@ export function Storning() {
     setOppen(id);
   };
 
-  const arSen = (s) => {
-    const d = s.svarSenast ? dagarTill(s.svarSenast) : null;
-    return d !== null && d < 0 && s.status !== "besvarad";
-  };
+  const arSen = svarsfristPasserad;
+  const utkast = lista.filter((s) => s.status === "utkast").length;
+  const vantar = lista.filter((s) => s.status === "skickad").length;
+  const sena = lista.filter(arSen).length;
 
   return (
     <>
       <Projektvaljare />
 
-      <div className="card" style={{ marginBottom: 16 }}>
-        <h3>Underrättelse om störning (AB 04/ABT 06)</h3>
-        <div className="lead">
-          En störning är allt som gör att arbetet inte fungerat som tänkt. Beror störningen på One som
-          entreprenör ska ingen underrättelse skickas. I övriga fall ska beställaren alltid underrättas —
-          även när störningen är ett hinder på Ones sida som ni inte kunnat förutse eller påverka. Utan
-          underrättelse finns ingen rätt till ersättning.
-        </div>
-        <div className="rowbtns">
-          <button type="button" className="btn" onClick={nyUnderrattelse}>
-            + Ny underrättelse
-          </button>
-        </div>
-      </div>
+      <div className="flex flex-col gap-4 lg:gap-6">
+        <Card
+          id="st-rubrik"
+          title="Underrättelse om störning (AB 04/ABT 06)"
+          subtitle="En störning är allt som gör att arbetet inte fungerat som tänkt."
+          action={
+            <button type="button" className="btn" onClick={nyUnderrattelse}>
+              + Ny underrättelse
+            </button>
+          }
+        >
+          <DataList
+            items={[
+              { label: "Beror på One", value: "Ingen underrättelse skickas." },
+              {
+                label: "Övriga fall",
+                value: "Underrätta alltid beställaren.",
+                detail: "Även när störningen är ett hinder på Ones sida som ni inte kunnat förutse eller påverka.",
+              },
+              {
+                label: "Utan underrättelse",
+                value: "Ingen rätt till ersättning.",
+                badge: <StatusBadge ton="warn" label="Inom 24 timmar" />,
+              },
+            ]}
+          />
+        </Card>
 
-      <div className="card">
-        <div className="kortrad">
-          <div style={{ minWidth: 0 }}>
-            <h3>Register</h3>
-            <div className="lead" style={{ marginBottom: 0 }}>
-              {lista.length} underrättelser för {p.nr || p.namn}
-            </div>
-          </div>
-          <div className="kortverktyg">
-            <Tathetsvaljare />
-          </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+          <StatTile label="Underrättelser" value={lista.length} hint={`registrerade för ${p.nr || p.namn}`} />
+          <StatTile
+            label="Utkast"
+            value={utkast}
+            ton={utkast ? "warn" : ""}
+            hint={utkast ? "ej skickade till beställaren" : "inget ligger kvar"}
+          />
+          <StatTile label="Väntar på svar" value={vantar} hint="skickade, ej besvarade" />
+          <StatTile
+            label="Svarsfrist passerad"
+            value={sena}
+            ton={sena ? "bad" : ""}
+            hint={sena ? "påminn beställaren och ta upp på byggmötet" : "inga passerade frister"}
+          />
         </div>
 
-        <div style={{ marginTop: 14 }}>
+        <Card
+          id="st-register"
+          title={`Register — ${(p.nr ? p.nr + " " : "") + p.namn}`}
+          subtitle={`${lista.length} underrättelser för ${p.nr || p.namn}`}
+          action={<Tathetsvaljare />}
+        >
           <DataTable
             etikett="Underrättelser om störning"
             exportNamn="Storningar"
@@ -461,7 +500,7 @@ export function Storning() {
                   const d = s.svarSenast ? dagarTill(s.svarSenast) : null;
                   if (d === null) return "—";
                   return (
-                    <span style={arSen(s) ? { color: "var(--rod)", fontWeight: 700 } : undefined}>
+                    <span className={arSen(s) ? "font-bold text-bad-ink" : undefined}>
                       {d} d{arSen(s) ? <span className="sr-only"> — svarsfristen passerad</span> : null}
                     </span>
                   );
@@ -485,10 +524,10 @@ export function Storning() {
               },
             ]}
           />
-        </div>
-      </div>
+        </Card>
 
-      {oppet ? <Storningsformular s={oppet} onStang={() => setOppen(null)} /> : null}
+        {oppet ? <Storningsformular s={oppet} onStang={() => setOppen(null)} /> : null}
+      </div>
     </>
   );
 }

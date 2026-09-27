@@ -55,6 +55,10 @@ export function efterInlasning(state) {
        underlaget; kontraktets milstolpar låg feb–sep 2026, så början av
        februari sätts som ANTAGANDE och markeras tills någon anger rätt datum.
        Bara när fältet aldrig funnits — ett tömt fält är ett medvetet val. */
+    /* Alvestas kontraktssumma var 5 600 000 kr i det första underlaget; rätt
+       värde enligt kontraktet är 6 614 187 kr (bekräftat 2026-09-27). Bara
+       det kända felvärdet rättas — ett annat värde är ett medvetet val. */
+    if (p.id === "36038" && nytt.kontraktsvarde === 5600000) nytt.kontraktsvarde = 6614187;
     if (nytt.startdatum === undefined) {
       const batchC = p.id === "36037" || p.id === "36038";
       nytt.startdatum = batchC ? "2026-02-02" : "";
