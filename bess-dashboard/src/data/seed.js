@@ -7,7 +7,7 @@ export const SEED = {
       kontraktsvarde:11446000, natagare:"Växjö Energi", natkontakt:"Tina Strömberg",
       fiber:"Vexnet", fardigstallande:"2026-12-02", status:"Produktion", anteckning:"" },
     { id:"36038", nr:"36038", namn:"Alvesta Batteripark", ort:"Alvesta", mw:8, mwh:16,
-      kontraktsvarde:5600000, natagare:"Alvesta Energi AB", natkontakt:"Robin Carlsson",
+      kontraktsvarde:6614187, natagare:"Alvesta Energi AB", natkontakt:"Robin Carlsson",
       fiber:"Vexnet", fardigstallande:"2026-12-04", status:"Produktion", anteckning:"" },
     { id:"goteborg", nr:"", namn:"Göteborg Skogome", ort:"Göteborg", mw:null, mwh:null,
       kontraktsvarde:null, natagare:"", natkontakt:"",

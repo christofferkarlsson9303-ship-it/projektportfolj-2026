@@ -80,7 +80,7 @@ test("nytt möte ärver öppna punkter från föregående", async ({ page }) => 
   await page.keyboard.press("Tab");
 
   const andra = await nyttMote(page);
-  await expect(andra.getByRole("heading", { level: 3 })).toHaveText("BM-02");
+  await expect(andra.getByRole("heading", { level: 3 })).toHaveText("Protokoll BM-02");
   await expect(andra.getByText("Innestående punkt")).toBeVisible();
   await expect(andra.getByLabel("Punkt under §3")).toHaveValue("Kvarstående: inmätning terrass");
 });
@@ -93,7 +93,7 @@ test("registret räknar oregistrerade punkter", async ({ page }) => {
   await form.getByLabel("Punkt under §4").fill("Oregistrerad ÄTA-diskussion");
   await page.keyboard.press("Tab");
 
-  const rad = page.getByRole("region", { name: REGISTER }).locator("tbody tr").first();
+  const rad = page.getByRole("region", { name: REGISTER, exact: true }).locator("tbody tr").first();
   await expect(rad.locator('[data-ton="bad"]')).toHaveText(/1/);
   await expect(rad).toHaveClass(/rad-sen/);
 });

@@ -258,9 +258,6 @@ td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .tag.d{background:var(--warn-bg);color:var(--warn-ink)}
 .ant{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.04em;padding:2px 7px;
   border-radius:4px;background:var(--warn-bg);color:var(--warn-ink);border:1px solid #f6d5b4}
-.lockbadge{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.02em;padding:2px 8px;
-  border-radius:4px;background:var(--sunken);color:var(--ink);border:1px solid var(--hairline-stark);
-  vertical-align:middle;margin-left:8px}
 
 /* ---------- Inputs ---------- */
 select,input[type=text],input[type=search],input[type=email],input[type=date],input[type=number],textarea{
@@ -374,16 +371,9 @@ footer{background:var(--morkgra);color:#cfd8dc;font-size:12px;padding:16px 24px;
 .cbrow{display:flex;gap:10px;align-items:flex-start;padding:9px 0}
 .cbrow input{width:19px;height:19px;margin:1px 0 0;flex-shrink:0;accent-color:var(--one-bla)}
 .cbrow label{font-size:13px}
+/* En kryssruta inuti ett fält är löptext, inte en fältrubrik. */
+.f .cbrow label{text-transform:none;letter-spacing:0;font-weight:400;color:var(--ink);margin:0;cursor:pointer}
 
-/* ---------- Kalkylator ---------- */
-.calc .out{background:var(--sunken);border-radius:6px;padding:14px;margin-top:12px;font-size:13px}
-.calc .out .big{font-family:var(--font-h);font-size:16px;font-weight:700;color:var(--one-djup);
-  display:block;margin-bottom:6px}
-.calc .out.yes{background:var(--ok-bg)}
-.calc .out.yes .big{color:var(--ok-ink)}
-.calc .out.no{background:var(--hairline)}
-.calc .out ul{margin:8px 0 0;padding-left:18px}
-.calc .out li{margin:3px 0}
 
 
 /* ---------- Premiumpolish: kort, knappar, tabeller ---------- */
@@ -497,7 +487,7 @@ main{padding-top:30px}
   main td input,main td select,main td textarea{max-width:58%}
   main .tscroll{overflow:visible}
   .btn,.qf{min-height:40px}
-  .kcard select,.punktmeta select{min-height:36px}
+  .kcard select{min-height:36px}
 }
 
 /* ---------- Tidslinje: kommande leveranser och grindar ---------- */
@@ -591,16 +581,6 @@ main{padding-top:30px}
 .ksum .ktot b{font-family:var(--font-h);font-size:18px;color:var(--one-djup)}
 
 /* ---------- Byggmöten ---------- */
-.para{border-top:1px solid #eef2f4;padding:14px 0 4px;margin-top:6px}
-.parahead{display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600;margin-bottom:10px}
-.parahead b{color:var(--one-djup);font-family:var(--font-h)}
-.parahead .btn{margin-left:auto}
-.punkt{background:var(--web1);border-radius:8px;padding:11px 12px;margin-bottom:8px}
-.punkt.saknar{background:#fdece9;border:1px solid #f3c9c4}
-.punkttext textarea{background:#fff;min-height:46px}
-.punktmeta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
-.punktmeta select{width:auto;font-size:12px;padding:4px 7px}
-.punktvarning{font-size:11.5px;color:#b8322a;font-weight:600;margin-top:8px}
 
 /* ---------- Riskmatris ---------- */
 .matris{width:auto;border-collapse:separate;border-spacing:3px;margin:10px 0}
@@ -651,9 +631,7 @@ main{padding-top:30px}
 .grind.ok{background:#e3f4f4;color:#0f6b6d}
 .ataform{padding:14px 13px 4px;border-top:1px solid #eef2f4;background:var(--web1)}
 
-/* ---------- Milstolpar M1–M7 (rubrikrad delas med Byggmöten och Slutdok) ---------- */
-.mhead{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:flex-start}
-.mhead-h{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+/* ---------- Belopp och underrubrik (Slutdok, HSEQ) ---------- */
 .mbelopp{font-size:12.5px;color:#6c7d85;font-variant-numeric:tabular-nums}
 .mrub{font-family:var(--font-b);font-size:11px;text-transform:uppercase;letter-spacing:.06em;
   color:#6c7d85;margin:0 0 8px;font-weight:700}
@@ -876,7 +854,7 @@ table.belaggning td{vertical-align:middle}
 .note{border-radius:0 12px 12px 0;padding:14px 16px}
 footer{background:var(--morkgra);color:#cfd8dc;border-top:none}
 footer a{color:#fff}
-.gchip,.pstat,.matare,.styr,.punkt,.kalkyl{border-radius:12px}
+.gchip,.pstat,.matare,.styr,.kalkyl{border-radius:12px}
 .kcol{background:var(--sunken);border:1px solid var(--hairline)}
 .kcard{border-radius:12px;box-shadow:none;border:1px solid var(--hairline);border-left-width:3px}
 .bhero{border-radius:var(--r);box-shadow:none;padding:24px 26px}

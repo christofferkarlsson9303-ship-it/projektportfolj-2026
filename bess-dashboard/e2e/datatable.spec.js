@@ -127,7 +127,7 @@ test("CSV-exporten laddar ner det filtrerade urvalet", async ({ page }) => {
 test("summeringsraden räknar på det filtrerade urvalet", async ({ page }) => {
   await gaTill(page, "Ekonomi");
 
-  const tfoot = page.getByRole("region", { name: "Betalplan" }).locator("tfoot tr");
+  const tfoot = page.getByRole("region", { name: "Betalplan", exact: true }).locator("tfoot tr");
   await expect(tfoot).toBeVisible();
 
   // Betalplanens andelar ska summera till 100 % när inget är bortfiltrerat.

@@ -363,7 +363,7 @@ export const FASER: Fas[] = [
         punkter: [
           { id: "4.11", text: "Förankring M16 A4-70 för MV-skid/PCS ingår INTE i PE-leveransen – beställ själv", badges: ["L"], ansvar: "PL", nar: "Före lyft" },
           { id: "4.12", text: "Harju: kWh-mätare (DSO) och SIM-kort (kund) ingår inte; site-driftsättning KA1 offereras separat", badges: ["L"], ansvar: "PL", nar: "Vid beställning" },
-          { id: "4.13", text: "FAT KA1 i Västerås (3–4 AD) – ritningsunderlag ska vara godkänt innan", badges: ["HP"], ansvar: "PL", nar: "Före FAT" },
+          { id: "4.13", text: "FAT KA1 i Västerås (3–4 AD) – ritningsunderlag ska vara godkänt innan FAT", badges: ["HP"], ansvar: "PL", nar: "Före FAT" },
           { id: "4.14", text: "Kranfirma: lyftok c/c 2 500–2 700 mm, schacklar 6,5 t + 13,5 t; räkna MV-skid som 13 t", badges: ["L"], ansvar: "PL", nar: "Vid bokning" },
           { id: "4.15", text: "Hitta CATL-shims vid mottagning (ligger vid vattenrörens skydd i elrummet)", badges: [], ansvar: "Platschef", nar: "Vid leverans" },
         ],
@@ -954,7 +954,7 @@ export const LARDOMAR: Lardom[] = [
 export const ATT_VERIFIERA: { amne: string; text: string }[] = [
   { amne: "Hinderanmälan", text: "Egen rutin 24 h (ABT 06 kap. 2 § 7) mot kontraktets preklusionsfrist 10 AD (AF cl. 18.2). Tillämpa 24 h – fristen är ytterkanten." },
   { amne: "Milstolpedatum", text: "Batch C-AF (cl. 6.3) anger 2025, huvudkontrakt och tidplaner 2026. Få skriftlig bekräftelse – annars teoretisk vitesrisk." },
-  { amne: "Alvesta kontraktssumma", text: "NotebookLM läser 6 614 187 kr i kontraktet, tidigare underlag anger 5 600 000 kr. Kontrollera mot signerat kontrakt." },
+  { amne: "Alvesta kontraktssumma", text: "Klarlagt 2026-09-27: kontraktssumman är 6 614 187 kr enligt kontraktet (tidigare underlag angav 5 600 000 kr). Inlagt i appen." },
   { amne: "Alvesta storlek", text: "'General info' anger 12 MW / ca 1 000 m², kontraktet 8 MW / 16 MWh; miljörapport 3 batterirack mot 4 containrar i teknisk beskrivning." },
   { amne: "TA-plan", text: "Reservationsbilagan säger 'ingår ej' (eBoP generellt) och 'ingår' (Alvesta)." },
   { amne: "Betalplan", text: "M1–M7 enligt Batch C (10/25/25/20/15/3/2 %). Andra källor visar andra fördelningar – kontrollera alltid aktuellt kontrakt." },

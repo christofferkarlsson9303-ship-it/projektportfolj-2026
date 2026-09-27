@@ -2,7 +2,7 @@ import { usePortfolj, useUi } from "../state/hooks.js";
 import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
 import { Pill, SelStatus } from "../components/ui/Primitiver.jsx";
 import { DatumFalt } from "../components/ui/Falt.jsx";
-import { Callout, Card, Meter, StatusBadge } from "../components/ds/index.js";
+import { Callout, Card, Meter, StatGroup, StatusBadge } from "../components/ds/index.js";
 import { MILSTOLPE_MODELL } from "../data/konstanter.js";
 import { fmtSEK } from "../lib/format.js";
 import { betalRad, ekonomi, mUnderlagKlart, mstatusRad, nastaMilstolpe, projekt } from "../lib/berakningar.js";
@@ -56,29 +56,22 @@ function Oversikt({ state, pid, p, nastaKod }) {
   const e = ekonomi(state, pid);
   const nasta = MILSTOLPE_MODELL.find((m) => m.kod === nastaKod);
   const tal = [
-    { etikett: "Fakturerat", varde: `${e.faktProc} %`, detalj: e.faktSEK !== null ? fmtSEK(e.faktSEK) : "kontraktsvärde saknas" },
+    { label: "Fakturerat", value: `${e.faktProc} %`, detail: e.faktSEK !== null ? fmtSEK(e.faktSEK) : "kontraktsvärde saknas" },
     {
-      etikett: "Nästa lyft",
-      varde: nasta ? nasta.kod : "—",
-      detalj: nasta ? `${nasta.namn} · ${nasta.andel} %` : "alla milstolpar fakturerade",
+      label: "Nästa lyft",
+      value: nasta ? nasta.kod : "—",
+      detail: nasta ? `${nasta.namn} · ${nasta.andel} %` : "alla milstolpar fakturerade",
     },
-    { etikett: "Kvar att fakturera", varde: `${100 - e.faktProc} %`, detalj: e.kvarSEK !== null ? fmtSEK(e.kvarSEK) : "—" },
+    { label: "Kvar att fakturera", value: `${100 - e.faktProc} %`, detail: e.kvarSEK !== null ? fmtSEK(e.kvarSEK) : "—" },
   ];
+
   return (
     <Card
       id="ms-rubrik"
       title={`Betalningsmilstolpar M1–M7 — ${(p.nr ? p.nr + " " : "") + p.namn}`}
       subtitle="Kontraktets betalningsplan. Utlösande krav och andelar kommer ur projektmodellen; underlagen bockas av här och styr när lyftet kan aviseras."
     >
-      <dl className="m-0 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {tal.map((t) => (
-          <div key={t.etikett} className="flex min-w-0 flex-col gap-1">
-            <dt className="text-[11px] font-bold uppercase tracking-wider text-ink-soft">{t.etikett}</dt>
-            <dd className="m-0 text-2xl font-bold leading-none tabular-nums text-ink">{t.varde}</dd>
-            <dd className="m-0 text-xs text-ink-soft">{t.detalj}</dd>
-          </div>
-        ))}
-      </dl>
+      <StatGroup items={tal} />
       <Meter value={e.faktProc} label={`Fakturerat av kontraktet för ${p.namn}`} />
       <Remsa state={state} pid={pid} nastaKod={nastaKod} />
     </Card>

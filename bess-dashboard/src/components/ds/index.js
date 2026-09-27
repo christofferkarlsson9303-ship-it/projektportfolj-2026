@@ -12,6 +12,7 @@
    DataList        nyckel–värde-rader i stället för löpande text
    SectionHeading  rubrik och ingress för en sektion utanför kort
    StatTile        nyckeltalsruta: etikett, tal och förklaring
+   StatGroup       samma nyckeltal inuti ett kort, utan egen ram
    Callout         upplysningsruta för antaganden, rutiner och varningar
    Meter           mätare för andel av en helhet */
 
@@ -22,5 +23,6 @@ export { LeadTimeList } from "./LeadTimeList.jsx";
 export { DataList } from "./DataList.jsx";
 export { SectionHeading } from "./SectionHeading.jsx";
 export { StatTile } from "./StatTile.jsx";
+export { StatGroup } from "./StatGroup.jsx";
 export { Callout } from "./Callout.jsx";
 export { Meter } from "./Meter.jsx";

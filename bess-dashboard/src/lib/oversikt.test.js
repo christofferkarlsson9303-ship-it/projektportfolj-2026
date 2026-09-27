@@ -29,12 +29,12 @@ const seed = () => efterInlasning(normalisera(structuredClone(SEED)));
 describe("budgetLage", () => {
   it("väger fakturerad andel med kontraktsvärdet", () => {
     const s = seed();
-    // Växjö 11 446 000 och Alvesta 5 600 000, båda 80 % fakturerat, 15 % pågår.
+    // Växjö 11 446 000 och Alvesta 6 614 187, båda 80 % fakturerat, 15 % pågår.
     const b = budgetLage(s);
-    expect(b.kv).toBe(11446000 + 5600000);
+    expect(b.kv).toBe(11446000 + 6614187);
     expect(b.faktProc).toBe(80);
     expect(b.pagProc).toBe(15);
-    expect(b.fakt).toBe(Math.round((11446000 + 5600000) * 0.8));
+    expect(b.fakt).toBe(Math.round((11446000 + 6614187) * 0.8));
   });
 
   it("räknar inte in projekt utan kontraktsvärde, men redovisar dem", () => {
