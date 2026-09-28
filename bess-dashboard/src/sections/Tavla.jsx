@@ -1,12 +1,15 @@
 import { useCallback, useMemo, useState } from "react";
 import { usePortfolj, useUi } from "../state/hooks.js";
-import { Note } from "../components/ui/Primitiver.jsx";
 import { PTag } from "../components/ui/PTag.jsx";
-import { StatusBadge } from "../components/ds/StatusBadge.jsx";
+import { Callout, Card, StatusBadge } from "../components/ds/index.js";
 import { PILL_TILL_TON } from "../lib/status.js";
 import { KANBAN, KOLUMNER, ROLLER } from "../data/konstanter.js";
 import { dagarTill } from "../lib/datum.js";
 import { hamtaNamn } from "../state/portfolj-reducer.js";
+
+/* Tavlan på designsystemet: filter och "+ Ny uppgift" i ett Card, kolumnerna
+   i designsystemets toner (sunken, surface, hairline) så att tavlan följer
+   mörkt läge, antal per kolumn som StatusBadge och förklaringen som Callout. */
 
 /* Ansvarig roll: satt värde vinner, annars härleds den ur ägare/leverantör.
    Härledningen är en gissning — ändra på kortet när den blir fel. */
@@ -218,23 +221,18 @@ export function Tavla() {
   };
 
   return (
-    <>
-      <div className="card">
-        <div className="kortrad">
-          <div style={{ minWidth: 0 }}>
-            <h3>Tavla — ÄTA/UR, uppgifter och avvikelser</h3>
-            <div className="lead" style={{ marginBottom: 0 }}>
-              Dra ett kort mellan kolumnerna, eller använd menyn på kortet. Varje flytt sätter radens
-              riktiga status och skrivs in i ändringsloggen.
-            </div>
-          </div>
-          <div className="kortverktyg">
-            <button type="button" className="btn mini" onClick={() => nyUppgift("ej")}>
-              + Ny uppgift
-            </button>
-          </div>
-        </div>
-
+    <div className="flex flex-col gap-4 lg:gap-6">
+      <Card
+        id="tavla-rubrik"
+        title="Tavla — ÄTA/UR, uppgifter och avvikelser"
+        subtitle="Dra ett kort mellan kolumnerna, eller använd menyn på kortet. Varje flytt sätter radens riktiga status och skrivs in i ändringsloggen."
+        badge={<StatusBadge label={`${rader.length} kort`} />}
+        action={
+          <button type="button" className="btn mini" onClick={() => nyUppgift("ej")}>
+            + Ny uppgift
+          </button>
+        }
+      >
         <div className="kfilter">
           <Valj
             vilket="projekt"
@@ -262,15 +260,13 @@ export function Tavla() {
               ["storningar", "Avvikelser"],
             ]}
           />
-          <div className="f">
-            <span style={{ fontSize: 12, color: "var(--ink-soft)" }} role="status">
-              {rader.length} kort
-            </span>
-          </div>
+          <p className="sr-only" role="status">
+            {rader.length} kort
+          </p>
         </div>
-      </div>
+      </Card>
 
-      <div className="kboard" style={{ marginTop: 16 }}>
+      <div className="kboard">
         {KOLUMNER.map(([kol, namn]) => {
           const i = rader.filter((r) => r.kol === kol);
           return (
@@ -310,7 +306,7 @@ export function Tavla() {
               <div className="kcolh">
                 <b>{namn}</b>
                 <span className="kspace" />
-                <span className="kcount">{i.length}</span>
+                <StatusBadge label={i.length} />
                 <button
                   type="button"
                   className="kplus"
@@ -323,7 +319,7 @@ export function Tavla() {
               </div>
 
               {i.length ? (
-                <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                <ul className="m-0 list-none p-0">
                   {i.map((k) => (
                     <Kanbankort
                       key={`${k.lista}-${k.rad.id}`}
@@ -356,10 +352,10 @@ export function Tavla() {
         })}
       </div>
 
-      <Note>
+      <Callout>
         <b>Om ansvarig roll.</b> Rollen härleds ur ägare/leverantör när den inte är satt — det är en
         gissning, inte hämtat ur underlaget. Ändra den på kortet så sparas den.
-      </Note>
-    </>
+      </Callout>
+    </div>
   );
 }

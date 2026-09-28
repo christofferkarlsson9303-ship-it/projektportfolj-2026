@@ -4,11 +4,15 @@ import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
 import { Tathetsvaljare } from "../components/ui/Vyvaljare.jsx";
 import { DataTable } from "../components/ui/DataTable.jsx";
 import { SelStatus } from "../components/ui/Primitiver.jsx";
+import { Card, StatTile } from "../components/ds/index.js";
 import { PTag } from "../components/ui/PTag.jsx";
 import { DatumFalt } from "../components/ui/Falt.jsx";
 import { dagarTill } from "../lib/datum.js";
 import { gallerFor, projekt } from "../lib/berakningar.js";
 import { hamtaNamn } from "../state/portfolj-reducer.js";
+
+/* Öppna punkter på designsystemet: nyckeltal överst och registret som Card
+   med täthetsväljaren i huvudet. */
 
 export function Punkter() {
   const { state, uppd, uppdStatus, laggTill } = usePortfolj();
@@ -51,25 +55,42 @@ export function Punkter() {
     return d !== null && d < 0 && pt.status === "oppen";
   };
 
+  const oppna = rader.filter((pt) => pt.status === "oppen");
+  const sena = oppna.filter(arSen).length;
+  const veckan = oppna.filter((pt) => {
+    const d = pt.forfaller ? dagarTill(pt.forfaller) : null;
+    return d !== null && d >= 0 && d <= 7;
+  }).length;
+  const utanDatum = oppna.filter((pt) => !pt.forfaller).length;
+
   return (
     <>
       <Projektvaljare />
 
-      <div className="card">
-        <div className="kortrad">
-          <div style={{ minWidth: 0 }}>
-            <h3>Öppna punkter — {(proj.nr ? proj.nr + " " : "") + proj.namn}</h3>
-            <div className="lead" style={{ marginBottom: 0 }}>
-              Sortera på valfri kolumn, filtrera på status eller sök i fritext. Rader som passerat sitt
-              datum är markerade.
-            </div>
-          </div>
-          <div className="kortverktyg">
-            <Tathetsvaljare />
-          </div>
+      <div className="flex flex-col gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+          <StatTile label="Öppna punkter" value={oppna.length} hint={`av ${rader.length} totalt`} />
+          <StatTile
+            label="Förfallna"
+            value={sena}
+            ton={sena ? "bad" : ""}
+            hint={sena ? "har passerat sitt datum" : "inga förfallna"}
+          />
+          <StatTile
+            label="Inom sju dagar"
+            value={veckan}
+            ton={veckan ? "warn" : ""}
+            hint="förfaller den närmaste veckan"
+          />
+          <StatTile label="Utan datum" value={utanDatum} hint="sätt förfallodatum så syns de i Idag" />
         </div>
 
-        <div style={{ marginTop: 14 }}>
+        <Card
+          id="punkter-rubrik"
+          title={`Öppna punkter — ${(proj.nr ? proj.nr + " " : "") + proj.namn}`}
+          subtitle="Sortera på valfri kolumn, filtrera på status eller sök i fritext. Rader som passerat sitt datum är markerade."
+          action={<Tathetsvaljare />}
+        >
           <DataTable
             etikett="Öppna punkter"
             exportNamn="Oppna_punkter"
@@ -125,7 +146,7 @@ export function Punkter() {
                   const d = pt.forfaller ? dagarTill(pt.forfaller) : null;
                   if (d === null) return "—";
                   return (
-                    <span style={arSen(pt) ? { color: "var(--rod)", fontWeight: 700 } : undefined}>
+                    <span className={arSen(pt) ? "font-bold text-bad-ink" : undefined}>
                       {d} d{arSen(pt) ? <span className="sr-only"> — förfallen</span> : null}
                     </span>
                   );
@@ -148,7 +169,7 @@ export function Punkter() {
               },
             ]}
           />
-        </div>
+        </Card>
       </div>
     </>
   );

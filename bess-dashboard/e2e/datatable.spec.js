@@ -28,7 +28,7 @@ test("sortering växlar stigande → fallande → av och speglas i aria-sort", a
 });
 
 test("sortering ordnar raderna på riktigt", async ({ page }, testInfo) => {
-  const celler = page.getByRole("region", { name: TABELL }).locator("tbody tr td:nth-child(2)");
+  const celler = page.getByRole("region", { name: TABELL, exact: true }).locator("tbody tr td:nth-child(2)");
 
   const sortera = async () => {
     if (arMobil(testInfo)) {
@@ -63,7 +63,7 @@ test("mobil: sorteringsväljaren finns när rubrikraden är dold", async ({ page
 });
 
 test("snabbsökning filtrerar och antalet annonseras", async ({ page }) => {
-  const rader = page.getByRole("region", { name: TABELL }).locator("tbody tr");
+  const rader = page.getByRole("region", { name: TABELL, exact: true }).locator("tbody tr");
   const fore = await rader.count();
 
   await page.getByLabel("Sök i tabellen").fill("zzz-finns-inte");
@@ -75,7 +75,7 @@ test("snabbsökning filtrerar och antalet annonseras", async ({ page }) => {
 });
 
 test("kolumnfilter begränsar urvalet", async ({ page }) => {
-  const rader = page.getByRole("region", { name: TABELL }).locator("tbody tr");
+  const rader = page.getByRole("region", { name: TABELL, exact: true }).locator("tbody tr");
   const fore = await rader.count();
 
   const filter = page.getByLabel("Status", { exact: true });
@@ -91,7 +91,7 @@ test("kolumnfilter begränsar urvalet", async ({ page }) => {
 });
 
 test("kompakt vy minskar radhöjden och sparas", async ({ page }) => {
-  const forstaCell = page.getByRole("region", { name: TABELL }).locator("tbody tr td").first();
+  const forstaCell = page.getByRole("region", { name: TABELL, exact: true }).locator("tbody tr td").first();
   const hogNormal = (await forstaCell.boundingBox()).height;
 
   await page.getByRole("radiogroup", { name: "Radtäthet" }).getByRole("radio", { name: "Kompakt" }).click();
@@ -137,11 +137,11 @@ test("summeringsraden räknar på det filtrerade urvalet", async ({ page }) => {
 test("mobil: tabellen blir kort med fältetiketter", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobil", "gäller bara mobilvyn");
 
-  const forstaRad = page.getByRole("region", { name: TABELL }).locator("tbody tr").first();
+  const forstaRad = page.getByRole("region", { name: TABELL, exact: true }).locator("tbody tr").first();
   // I kortvyn läggs rubriken in som ::before ur data-label.
   const etikett = await forstaRad.locator("td").first().getAttribute("data-label");
   expect(etikett).toBeTruthy();
 
-  const thead = page.getByRole("region", { name: TABELL }).locator("thead");
+  const thead = page.getByRole("region", { name: TABELL, exact: true }).locator("thead");
   await expect(thead).not.toBeInViewport();
 });
