@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Check, ChevronDown, Lightbulb, MessageSquare, RotateCcw } from "lucide-react";
+import { Ban, CalendarDays, Check, ChevronDown, CircleCheck, Clock3, Flag, Lightbulb, MessageSquare, RotateCcw, Undo2, UserRound } from "lucide-react";
 import { usePortfolj } from "../../state/hooks.js";
 import { MILSTOLPAR } from "../../data/bessChecklistData.ts";
 import { DatumFalt, Falt } from "../ui/Falt.jsx";
 import { datumKort, idag } from "../../lib/datum.js";
 import { fasRad, mallDatum, planAnkare } from "../../lib/epc.js";
 import { FasStatus, Markeringar } from "./Delar.jsx";
+import { Meter } from "../ds/Meter.jsx";
 import { Kommentarer } from "./Punkt.jsx";
 
 /* Ett steg i guiden: vad fasen går ut på, vilken grind som avslutar den och
@@ -30,6 +31,8 @@ function Punktrad({ punkt, ctx }) {
   const lage = pl.get(punkt.id);
   const hp = punkt.badges.includes("HP");
   const viaGrind = lage.kalla === "grind";
+  const klar = lage.status === "klar";
+  const ej = lage.status === "ejaktuell";
   const nKomm = antal.get(punkt.id) || 0;
   const nTidigare = tidigare.get(punkt.id) || 0;
   const satt = (status) => dispatch({ type: "EPC_PUNKT", pid, punkt: punkt.id, status });
@@ -38,28 +41,42 @@ function Punktrad({ punkt, ctx }) {
 
   return (
     <li id={`kp-${punkt.id}`} className={`epc-rad${hp ? " hp" : ""} ${lage.status}`}>
-      <input
-        id={idCb}
-        type="checkbox"
-        checked={lage.status === "klar"}
-        disabled={viaGrind || lage.status === "ejaktuell"}
-        onChange={(e) => satt(e.target.checked ? "klar" : "")}
-        title={viaGrind ? `Klar via passerad ${grindkod(punkt.id)}` : undefined}
-      />
+      {/* Etiketten runt rutan ger en träffyta på hela radens höjd — lätt att
+          pricka med tummen eller med handske. */}
+      <label className="epc-bock">
+        <input
+          id={idCb}
+          type="checkbox"
+          checked={klar}
+          disabled={viaGrind || ej}
+          onChange={(e) => satt(e.target.checked ? "klar" : "")}
+          title={viaGrind ? `Klar via passerad ${grindkod(punkt.id)}` : undefined}
+        />
+        <Check className="epc-bock-ikon" size={15} strokeWidth={3.2} aria-hidden="true" />
+      </label>
       <div className="epc-radkropp">
         <label htmlFor={idCb} className="epc-radtext">
           <span className="epc-id">{nr}</span>
           <span>{punkt.text}</span>
         </label>
         <span className="epc-radmeta">
-          <Markeringar badges={punkt.badges} />
-          <span className="epc-ansvar">{punkt.ansvar}</span>
-          {punkt.nar && punkt.nar !== "—" ? <span className="epc-nar">{punkt.nar}</span> : null}
-          {lage.status === "klar" ? (
+          <Markeringar badges={punkt.badges} lang />
+          <span className="epc-ansvar">
+            <UserRound size={13} aria-hidden="true" />
+            {punkt.ansvar}
+          </span>
+          {punkt.nar && punkt.nar !== "—" ? (
+            <span className="epc-nar">
+              <Clock3 size={13} aria-hidden="true" />
+              {punkt.nar}
+            </span>
+          ) : null}
+          {klar ? (
             <span className="epc-klarinfo">
+              <CircleCheck size={13} aria-hidden="true" />
               {viaGrind ? `Klar via ${grindkod(punkt.id)}` : `Klar ${lage.datum || ""}${lage.av ? " · " + lage.av : ""}`}
             </span>
-          ) : lage.status === "ejaktuell" ? (
+          ) : ej ? (
             <span className="epc-ejinfo">Ej aktuell</span>
           ) : null}
         </span>
@@ -67,7 +84,7 @@ function Punktrad({ punkt, ctx }) {
       <div className="epc-radatgard">
         {nTidigare ? (
           <button type="button" className="epc-erfchip" onClick={() => setOppen(true)} title="Andra projekt har avvikelser eller lärdomar på den här punkten">
-            <Lightbulb size={13} aria-hidden="true" />
+            <Lightbulb size={14} aria-hidden="true" />
             {nTidigare}
             <span className="sr-only"> erfarenheter från tidigare projekt på {nr}</span>
           </button>
@@ -77,19 +94,16 @@ function Punktrad({ punkt, ctx }) {
           className={`epc-kommknapp${nKomm ? " har" : ""}`}
           aria-expanded={oppen}
           onClick={() => setOppen((v) => !v)}
+          title="Kommentera: avvikelse, lärdom eller notering"
         >
-          <MessageSquare size={14} aria-hidden="true" />
+          <MessageSquare size={15} aria-hidden="true" />
           {nKomm || ""}
           <span className="sr-only">Kommentarer på {nr}</span>
         </button>
-        {!viaGrind && lage.status !== "klar" ? (
-          <button
-            type="button"
-            className="epc-textknapp epc-ejknapp"
-            aria-pressed={lage.status === "ejaktuell"}
-            onClick={() => satt(lage.status === "ejaktuell" ? "" : "ejaktuell")}
-          >
-            {lage.status === "ejaktuell" ? "Aktuell igen" : "Ej aktuell"}
+        {!viaGrind && !klar ? (
+          <button type="button" className="epc-ejknapp" aria-pressed={ej} onClick={() => satt(ej ? "" : "ejaktuell")}>
+            {ej ? <Undo2 size={14} aria-hidden="true" /> : <Ban size={14} aria-hidden="true" />}
+            {ej ? "Aktuell igen" : "Ej aktuell"}
             <span className="sr-only">: {nr}</span>
           </button>
         ) : null}
@@ -109,9 +123,19 @@ export function Sektioner({ sektioner, filter, ctx }) {
   return sektioner.map((s) => {
     const punkter = s.punkter.filter(filter);
     if (!punkter.length) return null;
+    // Räknas på hela sektionen, inte bara det filtret visar.
+    const aktuella = s.punkter.filter((p) => ctx.pl.get(p.id).status !== "ejaktuell");
+    const klara = aktuella.filter((p) => ctx.pl.get(p.id).status === "klar").length;
     return (
       <div className="epc-sektion" key={s.namn || "lista"}>
-        {s.namn ? <h4>{s.namn}</h4> : null}
+        {s.namn ? (
+          <h4>
+            {s.namn}
+            <span className="epc-sektion-antal">
+              {klara} av {aktuella.length} klara
+            </span>
+          </h4>
+        ) : null}
         <ul className="epc-lista">
           {punkter.map((p) => (
             <Punktrad key={p.id} punkt={p} ctx={ctx} />
@@ -124,109 +148,150 @@ export function Sektioner({ sektioner, filter, ctx }) {
 
 /* ---------- Läget i projektet ---------- */
 
+/** Andel klara med talet i klartext — mätaren är dekor bredvid. */
+function Framsteg({ etikett, klara, av }) {
+  return (
+    <div className="epc-framsteg">
+      <span className="epc-framsteg-rad">
+        <span>{etikett}</span>
+        <b>
+          {klara} av {av}
+        </b>
+      </span>
+      <Meter value={klara} max={av} size="sm" />
+    </div>
+  );
+}
+
 function IProjektet({ lage, pid, projektnamn }) {
   const { state, dispatch } = usePortfolj();
   const f = lage.fas;
   const rad = fasRad(state, pid, f.nr);
   const a = planAnkare(state, pid);
   const satt = (falt, varde) => dispatch({ type: "EPC_FAS", pid, fas: f.nr, falt, varde });
+  /* Planering och anteckningar används sällan jämfört med grinden — de står
+     infällda, men utfällda från början när det finns något att se. */
+  const [visaPlan, setVisaPlan] = useState(() => !!(lage.egenPlan || rad?.anteckning));
+  const standardplan = a ? `${datumKort(mallDatum(f.mall.fran, a))} – ${datumKort(mallDatum(f.mall.till, a))}` : "";
+  const period = lage.egenPlan
+    ? `${rad?.start ? datumKort(rad.start) : "…"} – ${rad?.slut ? datumKort(rad.slut) : "…"}`
+    : standardplan;
 
   return (
     <aside className="epc-iprojekt" aria-label={`Fas ${f.nr} i ${projektnamn}`}>
       <div className="epc-iprojekt-huvud">
-        <b>I {projektnamn}</b>
+        <span className="epc-iprojekt-namn">
+          <span className="epc-overline">Fas {f.nr} i projektet</span>
+          <b>{projektnamn}</b>
+        </span>
         <FasStatus status={lage.status} />
       </div>
 
-      <p className="epc-framsteg">
-        <b>
-          {lage.klara} av {lage.punkter - lage.ejAktuella}
-        </b>{" "}
-        punkter klara
-        {lage.hp ? ` · HP ${lage.hpKlara}/${lage.hp}` : ""}
-        {lage.ejAktuella ? ` · ${lage.ejAktuella} ej aktuella` : ""}
-      </p>
-      {!lage.grind.passerad && !lage.kvar ? (
-        <p className="epc-grindforslag">Alla punkter är klara — {f.grind.kod} kan passeras.</p>
-      ) : null}
+      <div className="epc-iprojekt-block">
+        <Framsteg etikett="Kontrollpunkter" klara={lage.klara} av={lage.punkter - lage.ejAktuella} />
+        {lage.hp ? <Framsteg etikett="Hållpunkter" klara={lage.hpKlara} av={lage.hp} /> : null}
+        {lage.ejAktuella ? <p className="epc-plantext">{lage.ejAktuella} ej aktuella räknas inte.</p> : null}
+      </div>
 
-      <div className="epc-grind">
+      <div className="epc-iprojekt-block epc-grind">
+        <h5 className="epc-overline">
+          <Flag size={13} aria-hidden="true" /> Grind {f.grind.kod}
+        </h5>
+        {!lage.grind.passerad && !lage.kvar ? (
+          <p className="epc-grindforslag">Alla punkter är klara — {f.grind.kod} kan passeras.</p>
+        ) : null}
         {lage.grind.passerad ? (
           <p className="epc-grindlage ok">
-            <Check size={15} aria-hidden="true" />
-            {f.grind.kod} passerad{lage.grind.datum ? ` ${lage.grind.datum}` : ""} —{" "}
-            {GRIND_KALLA[lage.grind.kalla].toLowerCase()}
+            <Check size={16} aria-hidden="true" />
+            <span>
+              {f.grind.kod} passerad{lage.grind.datum ? ` ${lage.grind.datum}` : ""} —{" "}
+              {GRIND_KALLA[lage.grind.kalla].toLowerCase()}
+            </span>
           </p>
         ) : (
-          <button type="button" className="btn mini" onClick={() => satt("grindDatum", idag())}>
+          <button type="button" className="btn epc-grindknapp" onClick={() => satt("grindDatum", idag())}>
+            <Check size={16} strokeWidth={2.6} aria-hidden="true" />
             Markera {f.grind.kod} passerad idag
           </button>
         )}
         <div className="epc-falt">
-          <label htmlFor={`fg-${pid}-${f.nr}`}>Datum {f.grind.kod} passerad</label>
+          <label htmlFor={`fg-${pid}-${f.nr}`}>{lage.grind.passerad ? "Datum passerad" : "…eller ange datum"}</label>
           <DatumFalt
             id={`fg-${pid}-${f.nr}`}
             varde={rad?.grindDatum || ""}
             etikett={`Datum då grind ${f.grind.kod} passerades`}
+            platshallare="Inte passerad"
             onCommit={(v) => satt("grindDatum", v)}
           />
         </div>
       </div>
 
-      <div className="epc-planering">
-        <div className="epc-falt">
-          <label htmlFor={`fs-${pid}-${f.nr}`}>Start</label>
-          <DatumFalt
-            id={`fs-${pid}-${f.nr}`}
-            varde={rad?.start || ""}
-            etikett={`Start för fas ${f.nr}`}
-            onCommit={(v) => satt("start", v)}
-          />
+      <details className="epc-iprojekt-plan" open={visaPlan} onToggle={(e) => setVisaPlan(e.currentTarget.open)}>
+        <summary>
+          <CalendarDays size={15} aria-hidden="true" />
+          <span className="epc-iprojekt-plan-titel">
+            Planering och anteckningar
+            {period ? <span className="epc-iprojekt-plan-period">{lage.egenPlan ? "Egna datum" : "Standardplan"} {period}</span> : null}
+          </span>
+          <ChevronDown className="epc-pil" size={16} aria-hidden="true" />
+        </summary>
+        <div className="epc-iprojekt-plan-kropp">
+          <div className="epc-planering">
+            <div className="epc-falt">
+              <label htmlFor={`fs-${pid}-${f.nr}`}>Start</label>
+              <DatumFalt
+                id={`fs-${pid}-${f.nr}`}
+                varde={rad?.start || ""}
+                etikett={`Start för fas ${f.nr}`}
+                platshallare="Standardplan"
+                onCommit={(v) => satt("start", v)}
+              />
+            </div>
+            <div className="epc-falt">
+              <label htmlFor={`fe-${pid}-${f.nr}`}>Slut</label>
+              <DatumFalt
+                id={`fe-${pid}-${f.nr}`}
+                varde={rad?.slut || ""}
+                etikett={`Slut för fas ${f.nr}`}
+                platshallare="Standardplan"
+                onCommit={(v) => satt("slut", v)}
+              />
+            </div>
+          </div>
+          <p className="epc-plantext">
+            {lage.egenPlan ? (
+              <>
+                Egna datum{standardplan ? ` (standardplan ${standardplan})` : ""}.{" "}
+                <button
+                  type="button"
+                  className="epc-textknapp"
+                  onClick={() => {
+                    satt("start", "");
+                    satt("slut", "");
+                  }}
+                >
+                  <RotateCcw size={12} aria-hidden="true" /> Återställ standardplan
+                </button>
+              </>
+            ) : a ? (
+              <>Standardplan {standardplan}. Ange egna datum om fasen avviker.</>
+            ) : (
+              "Ange projektets start och färdigställande i lägesbilden för en standardplan."
+            )}
+          </p>
+          <div className="epc-falt epc-anteckning">
+            <label htmlFor={`fa-${pid}-${f.nr}`}>Anteckningar</label>
+            <Falt
+              id={`fa-${pid}-${f.nr}`}
+              flerrad
+              varde={rad?.anteckning || ""}
+              etikett={`Anteckningar för fas ${f.nr}`}
+              placeholder="Beslut, avvikelser eller sådant nästa person behöver veta…"
+              onCommit={(v) => satt("anteckning", v)}
+            />
+          </div>
         </div>
-        <div className="epc-falt">
-          <label htmlFor={`fe-${pid}-${f.nr}`}>Slut</label>
-          <DatumFalt
-            id={`fe-${pid}-${f.nr}`}
-            varde={rad?.slut || ""}
-            etikett={`Slut för fas ${f.nr}`}
-            onCommit={(v) => satt("slut", v)}
-          />
-        </div>
-      </div>
-      <p className="epc-plantext">
-        {lage.egenPlan ? (
-          <>
-            Egna datum.{" "}
-            <button
-              type="button"
-              className="epc-textknapp"
-              onClick={() => {
-                satt("start", "");
-                satt("slut", "");
-              }}
-            >
-              <RotateCcw size={12} aria-hidden="true" /> Återställ standardplan
-            </button>
-          </>
-        ) : a ? (
-          <>
-            Standardplan {datumKort(mallDatum(f.mall.fran, a))} – {datumKort(mallDatum(f.mall.till, a))}.
-          </>
-        ) : (
-          "Ange projektets start och färdigställande i lägesbilden för en standardplan."
-        )}
-      </p>
-
-      <div className="f epc-anteckning">
-        <label htmlFor={`fa-${pid}-${f.nr}`}>Anteckningar</label>
-        <Falt
-          id={`fa-${pid}-${f.nr}`}
-          flerrad
-          varde={rad?.anteckning || ""}
-          etikett={`Anteckningar för fas ${f.nr}`}
-          onCommit={(v) => satt("anteckning", v)}
-        />
-      </div>
+      </details>
     </aside>
   );
 }
@@ -238,6 +303,7 @@ export function Fasruta({ lage, pid, projektnamn, oppen, onVaxla, filter, tvinga
   const ms = f.milstolpe ? MILSTOLPAR.find((m) => m.kod === f.milstolpe) : null;
   const synliga = f.sektioner.reduce((n, s) => n + s.punkter.filter(filter).length, 0);
   if (tvingaOppen && !synliga) return null;
+  const aktuella = lage.punkter - lage.ejAktuella;
 
   return (
     <details
@@ -265,12 +331,13 @@ export function Fasruta({ lage, pid, projektnamn, oppen, onVaxla, filter, tvinga
             </span>
           ) : null}
           {lage.hp ? (
-            <span className="epc-hpchip">
+            <span className="epc-hpchip" title="Hållpunkter klara">
               HP {lage.hpKlara}/{lage.hp}
             </span>
           ) : null}
           <span className="epc-antalchip">
-            {lage.klara}/{lage.punkter - lage.ejAktuella} klara
+            <Meter value={lage.klara} max={aktuella} size="sm" className="epc-antalmatare" />
+            {lage.klara}/{aktuella} klara
           </span>
         </span>
         <ChevronDown className="epc-pil" size={18} aria-hidden="true" />
@@ -278,18 +345,24 @@ export function Fasruta({ lage, pid, projektnamn, oppen, onVaxla, filter, tvinga
 
       <div className="epc-faskropp">
         <div className="epc-guide">
-          <p className="epc-grindtext">
-            <b>Klart när:</b> {f.grind.text} <span className="epc-grindkod">({f.grind.kod})</span>
-            {ms ? (
-              <>
-                <br />
-                <b>Låser betalning:</b> {ms.kod} · {ms.andel} % — {ms.utloses.toLowerCase()}
-              </>
-            ) : null}
-          </p>
+          <div className="epc-grindtext">
+            <Flag size={18} aria-hidden="true" />
+            <div>
+              <p>
+                <b>Klart när</b> <span className="epc-grindkod">{f.grind.kod}</span>
+              </p>
+              <p>{f.grind.text}</p>
+              {ms ? (
+                <p className="epc-grindtext-ms">
+                  <b>Låser betalning:</b> {ms.kod} · {ms.andel} % — {ms.utloses.toLowerCase()}
+                </p>
+              ) : null}
+            </div>
+          </div>
           <Sektioner sektioner={f.sektioner} filter={filter} ctx={ctx} />
         </div>
-        <IProjektet lage={lage} pid={pid} projektnamn={projektnamn} />
+        {/* key: byter man projekt börjar rutan om, med projektets egna utgångsläge. */}
+        <IProjektet key={pid} lage={lage} pid={pid} projektnamn={projektnamn} />
       </div>
     </details>
   );

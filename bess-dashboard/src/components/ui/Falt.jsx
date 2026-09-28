@@ -105,8 +105,23 @@ export function NumFalt({ varde, onCommit, etikett, ...rest }) {
   );
 }
 
-export function DatumFalt({ varde, onCommit, etikett, ...rest }) {
-  return <Falt typ="date" varde={varde || ""} onCommit={onCommit} etikett={etikett} {...rest} />;
+/** Datumfält med webbläsarens egen väljare (bäst på mobil).
+ *  Ett tomt fält visar webbläsarens mask — på svenska "åååå-mm-dd", som ser
+ *  ut som trasiga tecken. data-tom tonar ner masken överallt, och med
+ *  `platshallare` byts den mot en läsbar text tills fältet får fokus. */
+export function DatumFalt({ varde, onCommit, etikett, platshallare, ...rest }) {
+  const falt = (
+    <Falt typ="date" varde={varde || ""} onCommit={onCommit} etikett={etikett} data-tom={varde ? undefined : ""} {...rest} />
+  );
+  if (!platshallare) return falt;
+  return (
+    <span className="datumfalt">
+      {falt}
+      <span className="datumfalt-tom" aria-hidden="true">
+        {platshallare}
+      </span>
+    </span>
+  );
 }
 
 /** Kryssruta med synlig etikett. */

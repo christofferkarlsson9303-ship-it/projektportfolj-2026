@@ -131,7 +131,7 @@ function Guide({ pid, mal }) {
         <ul className="epc-legend" aria-label="Markeringar">
           {Object.entries(MARKERINGAR).map(([k, m]) => (
             <li key={k}>
-              <Markering typ={k} /> {m.beskrivning}
+              <Markering typ={k} lang /> {m.beskrivning}
             </li>
           ))}
         </ul>

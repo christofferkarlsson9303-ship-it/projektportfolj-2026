@@ -45,7 +45,11 @@
     --sh-lift:0 14px 34px rgba(0,0,0,.5);
   }
 }
+/* Tvingat tema styr också webbläsarens egna kontroller — annars ritas
+   datumfältets kalenderikon mörk på mörkt när systemet står på ljust. */
+:root[data-theme="light"]{color-scheme:light}
 :root[data-theme="dark"]{
+  color-scheme:dark;
   --surface:#16272e; --ground:#0d1b21; --sunken:#11222a; --raised:#1b2f37;
   --ink:#e8f1f4; --ink-soft:#9ab0b9; --ink-faint:#7b929c;
   --hairline:#24404a; --hairline-stark:#2e4d58;
@@ -1871,123 +1875,215 @@ textarea.hp-led-text::placeholder{color:var(--ink-faint);font-weight:400}
    som i checklistans flödesbild. Markeringarna har fasta färger: vit text på
    röd/blågrön håller kontrast i båda lägena. */
 
-.epc-markeringar{display:inline-flex;gap:4px;flex-wrap:wrap}
-.epc-markering{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:18px;padding:0 5px;
+.epc-markeringar{display:inline-flex;gap:6px;flex-wrap:wrap}
+.epc-markering{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-width:22px;height:18px;padding:0 5px;
   border-radius:5px;font:800 10px/1 var(--font-b);letter-spacing:.04em;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+/* Lång variant i guiden: ikon + utskrivet namn, samma färger. */
+.epc-markering.lang{height:22px;padding:0 9px 0 7px;border-radius:999px;font:700 11.5px/1 var(--font-b);letter-spacing:0}
 .epc-markering.hp{background:#b8322a;color:#fff}
 .epc-markering.k{background:#005f76;color:#fff}
 .epc-markering.l{background:var(--info-bg);color:var(--info-ink);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--info-ink) 35%,transparent)}
 
 
 .epc-projektplan{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 18px;padding-top:14px;border-top:1px solid var(--hairline)}
-.epc-legend{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12.5px;color:var(--ink-soft)}
-.epc-legend li{display:inline-flex;align-items:center;gap:7px}
+.epc-legend{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px 20px;font-size:12.5px;color:var(--ink-soft)}
+.epc-legend li{display:inline-flex;align-items:center;gap:8px}
 
-.epc-falt{display:flex;flex-direction:column;gap:4px;min-width:0}
-.epc-falt label{display:flex;align-items:center;gap:6px;font:700 10.5px/1.3 var(--font-b);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint)}
-.epc-falt input{width:170px;max-width:100%;min-height:36px}
-.epc-plantext{margin:0;flex:1 1 240px;font-size:12px;line-height:1.5;color:var(--ink-faint)}
+/* Etiketter och hjälptext i ink-soft, inte ink-faint: faint klarar inte
+   4.5:1 mot vitt och försvinner i solljus på en platsdator. */
+.epc-falt{display:flex;flex-direction:column;gap:5px;min-width:0}
+.epc-falt label{display:flex;align-items:center;gap:6px;font:700 10.5px/1.3 var(--font-b);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft)}
+.epc-falt input{width:170px;max-width:100%;min-height:40px}
+.epc-plantext{margin:0;flex:1 1 240px;font-size:12.5px;line-height:1.5;color:var(--ink-soft)}
 .epc-textknapp{background:none;border:0;padding:0;font:inherit;font-weight:600;color:var(--info-ink);cursor:pointer;
   display:inline-flex;align-items:center;gap:4px}
 .epc-textknapp:hover{text-decoration:underline}
 
+/* Tomt datumfält: webbläsarens mask ("åååå-mm-dd") tonas ned överallt och
+   byts mot en läsbar platshållare där DatumFalt fått `platshallare`. */
+input[type=date][data-tom]:not(:focus){color:var(--ink-faint)}
+.datumfalt{position:relative;display:block;min-width:0}
+.datumfalt>input{width:100%}
+.datumfalt>input[data-tom]:not(:focus){color:transparent}
+.datumfalt-tom{display:none;position:absolute;left:11px;top:50%;transform:translateY(-50%);pointer-events:none;
+  font-size:13px;color:var(--ink-soft)}
+.datumfalt>input[data-tom]:not(:focus)+.datumfalt-tom{display:block}
+
 /* Filterraden */
 .epc-filter{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin:0 0 14px}
-.epc-sok{display:flex;align-items:center;gap:8px;flex:1 1 260px;min-height:40px;padding:0 12px;border-radius:10px;
-  background:var(--surface);border:1px solid var(--hairline-stark);color:var(--ink-faint)}
+.epc-sok{display:flex;align-items:center;gap:8px;flex:1 1 260px;min-height:44px;padding:0 12px;border-radius:10px;
+  background:var(--surface);border:1px solid var(--hairline-stark);color:var(--ink-soft)}
 .epc-sok:focus-within{border-color:var(--one-bla)}
-.epc-sok input{flex:1;min-width:0;border:0;background:none;padding:9px 0;font:13.5px var(--font-b);color:var(--ink)}
+.epc-sok input{flex:1;min-width:0;border:0;background:none;padding:9px 0;font:14px var(--font-b);color:var(--ink)}
 .epc-sok input:focus{outline:none}
 .epc-fallknappar{display:flex;gap:6px;margin-left:auto}
 
-/* Faserna */
-.epc-faser{display:flex;flex-direction:column;gap:10px}
-.epc-fas{--accent:var(--hairline-stark);background:var(--surface);border:1px solid var(--hairline);
-  border-left:4px solid var(--accent);border-radius:12px;min-width:0;scroll-margin-top:96px}
+/* Faserna. Fasen är en container: layouten inuti följer kortets bredd, inte
+   fönstrets — med sidomenyn utfälld är kortet smalt långt innan fönstret är. */
+.epc-faser{display:flex;flex-direction:column;gap:12px}
+.epc-fas{--accent:var(--hairline-stark);container:epcfas/inline-size;background:var(--surface);border:1px solid var(--hairline);
+  border-left:4px solid var(--accent);border-radius:14px;min-width:0;scroll-margin-top:96px}
 .epc-fas.klar{--accent:var(--viz-klar)}
 .epc-fas.pagar{--accent:var(--one-bla)}
 .epc-fas.sen{--accent:var(--rod)}
 .epc-fas.betalning{border-top-color:color-mix(in srgb,var(--orange) 60%,var(--hairline));
   border-right-color:color-mix(in srgb,var(--orange) 60%,var(--hairline));
   border-bottom-color:color-mix(in srgb,var(--orange) 60%,var(--hairline))}
-.epc-fas>summary{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:10px 14px;
-  padding:14px 16px;cursor:pointer;list-style:none;border-radius:10px}
+.epc-fas>summary{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:10px 16px;
+  padding:16px 18px;cursor:pointer;list-style:none;border-radius:12px}
 .epc-fas>summary::-webkit-details-marker{display:none}
 .epc-fas>summary:hover{background:var(--sunken)}
-.epc-fasnr{width:34px;height:34px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;
-  font:700 15px/1 var(--font-h);background:var(--sunken);color:var(--ink-soft)}
+.epc-fasnr{width:38px;height:38px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;
+  font:700 16px/1 var(--font-h);background:var(--sunken);color:var(--ink-soft)}
 .epc-fas.klar .epc-fasnr{background:var(--viz-klar);color:var(--surface)}
 .epc-fas.pagar .epc-fasnr{background:var(--info-bg);color:var(--info-ink);box-shadow:inset 0 0 0 2px var(--one-bla)}
 .epc-fas.sen .epc-fasnr{background:var(--bad-bg);color:var(--bad-ink)}
-.epc-fastitel{display:flex;flex-direction:column;gap:2px;min-width:0}
-.epc-fastitel b{font:600 15px/1.3 var(--font-h);color:var(--ink)}
-.epc-fasdatum{font-size:12px;color:var(--ink-faint);font-variant-numeric:tabular-nums}
+.epc-fastitel{display:flex;flex-direction:column;gap:3px;min-width:0}
+.epc-fastitel b{font:600 16px/1.3 var(--font-h);color:var(--ink)}
+.epc-fasdatum{font-size:12.5px;line-height:1.45;color:var(--ink-soft);font-variant-numeric:tabular-nums}
 .epc-fasinfo{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px 8px}
 .epc-mschip{font:700 11px/1 var(--font-b);border-radius:999px;padding:4px 10px;background:var(--warn-bg);color:var(--warn-ink);white-space:nowrap}
-.epc-hpchip{font:700 11px/1 var(--font-b);border-radius:999px;padding:4px 10px;background:var(--sunken);color:var(--ink-soft);white-space:nowrap}
-.epc-antalchip{font:700 11px/1 var(--font-b);border-radius:999px;padding:4px 10px;color:var(--ink-faint);white-space:nowrap;
-  box-shadow:inset 0 0 0 1px var(--hairline-stark)}
-.epc-pil{color:var(--ink-faint);transition:transform .2s var(--ease)}
+.epc-hpchip{font:700 11px/1 var(--font-b);border-radius:999px;padding:4px 10px;background:var(--bad-bg);color:var(--bad-ink);white-space:nowrap}
+.epc-antalchip{display:inline-flex;align-items:center;gap:8px;padding-left:4px;font:700 11.5px/1 var(--font-b);color:var(--ink-soft);
+  white-space:nowrap;font-variant-numeric:tabular-nums}
+.epc-antalmatare{width:60px}
+.epc-pil{flex:0 0 auto;color:var(--ink-soft);transition:transform .2s var(--ease)}
 .epc-fas[open]>summary .epc-pil{transform:rotate(180deg)}
 .epc-fas.lopande>summary{grid-template-columns:auto minmax(0,1fr)}
-@media(max-width:760px){
-  .epc-fas>summary{grid-template-columns:auto minmax(0,1fr) auto}
+@container epcfas (max-width:700px){
+  .epc-fas>summary{grid-template-columns:auto minmax(0,1fr) auto;padding:14px}
   .epc-fasinfo{grid-column:1 / -1;justify-content:flex-start}
   .epc-fas>summary .epc-pil{grid-row:1;grid-column:3}
 }
+/* Under den fasta topplisten (129 px med ingress) när man hoppar till en fas. */
+@media(min-width:981px){.epc-fas,.epc-rad{scroll-margin-top:150px}}
 
-.epc-faskropp{display:grid;grid-template-columns:minmax(0,1fr) 290px;align-items:start;gap:18px 22px;padding:16px 18px 18px;
+.epc-faskropp{display:grid;grid-template-columns:minmax(0,1fr) 320px;align-items:start;gap:20px 28px;padding:20px 22px 22px;
   border-top:1px solid var(--hairline)}
 .epc-fas.lopande .epc-faskropp{grid-template-columns:minmax(0,1fr)}
-.epc-guide{display:flex;flex-direction:column;gap:14px;min-width:0}
-.epc-grindtext{margin:0;font-size:13px;line-height:1.55;color:var(--ink);padding:10px 12px;border-radius:9px;background:var(--sunken)}
-.epc-grindkod{font-weight:700;color:var(--ink-faint)}
-.epc-iprojekt{display:flex;flex-direction:column;gap:12px;min-width:0;padding:14px;border-radius:10px;
-  background:var(--sunken);border:1px solid var(--hairline)}
-.epc-iprojekt-huvud{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px}
-.epc-iprojekt-huvud b{font-size:13.5px;color:var(--ink)}
-.epc-grind{display:flex;flex-direction:column;align-items:flex-start;gap:10px}
-.epc-framsteg{margin:0;font-size:12.5px;line-height:1.45;color:var(--ink-soft)}
-.epc-framsteg b{color:var(--ink)}
-.epc-grindforslag{margin:0;padding:8px 10px;border-radius:8px;background:var(--ok-bg);color:var(--ok-ink);font-size:12.5px;font-weight:600;line-height:1.45}
-.epc-grindlage{margin:0;display:flex;align-items:flex-start;gap:6px;font-size:12.5px;line-height:1.45;color:var(--ink-soft)}
-.epc-grindlage.ok{color:var(--ok-ink);font-weight:600}
+.epc-guide{display:flex;flex-direction:column;gap:22px;min-width:0}
+
+/* Grinden — målet för fasen, överst som en tydlig ruta. */
+.epc-grindtext{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-radius:12px;background:var(--info-bg);
+  border:1px solid color-mix(in srgb,var(--one-bla) 35%,transparent);color:var(--ink)}
+.epc-grindtext>svg{flex:0 0 auto;margin-top:1px;color:var(--info-ink)}
+.epc-grindtext p{margin:0;font-size:14px;line-height:1.55}
+.epc-grindtext p:first-child{display:flex;align-items:center;gap:8px;margin-bottom:3px;font:700 11px/1.3 var(--font-b);
+  letter-spacing:.08em;text-transform:uppercase;color:var(--info-ink)}
+.epc-grindtext p:nth-child(2){font-weight:600}
+.epc-grindtext-ms{margin-top:6px!important;font-size:13px!important;color:var(--warn-ink)}
+.epc-grindkod{font:800 11px/1 var(--font-b);letter-spacing:.02em;padding:3px 8px;border-radius:999px;background:var(--info-ink);color:var(--surface)}
+
+/* Projektrutan: tre tydliga block — läget, grinden, planeringen. */
+.epc-iprojekt{display:flex;flex-direction:column;min-width:0;border-radius:14px;background:var(--surface);
+  border:1px solid var(--hairline-stark);box-shadow:var(--sh-sm)}
+.epc-iprojekt>*+*{border-top:1px solid var(--hairline)}
+.epc-iprojekt-huvud{display:flex;align-items:flex-start;justify-content:space-between;gap:8px 12px;padding:16px 18px 14px}
+.epc-iprojekt-namn{display:flex;flex-direction:column;gap:3px;min-width:0}
+.epc-iprojekt-namn b{font:600 16px/1.3 var(--font-h);color:var(--ink)}
+.epc-overline{display:inline-flex;align-items:center;gap:6px;margin:0;font:700 11px/1.3 var(--font-b);letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink-soft)}
+.epc-iprojekt-block{display:flex;flex-direction:column;gap:12px;padding:16px 18px}
+.epc-framsteg{display:flex;flex-direction:column;gap:6px}
+.epc-framsteg-rad{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-size:13px;color:var(--ink-soft)}
+.epc-framsteg-rad b{font-size:14px;color:var(--ink);font-variant-numeric:tabular-nums}
+.epc-grindforslag{margin:0;padding:10px 12px;border-radius:10px;background:var(--ok-bg);color:var(--ok-ink);font-size:13px;font-weight:600;line-height:1.45}
+.epc-grindlage{margin:0;display:flex;align-items:flex-start;gap:8px;font-size:13px;line-height:1.45;color:var(--ink-soft)}
+.epc-grindlage.ok{padding:10px 12px;border-radius:10px;background:var(--ok-bg);color:var(--ok-ink);font-weight:600}
 .epc-grindlage svg{flex:0 0 auto;margin-top:1px}
-.epc-planering{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding-top:12px;border-top:1px solid var(--hairline)}
+/* Mörk knapp: vitt på one-bla (#00b6de) når bara 2,4:1. */
+.btn.epc-grindknapp{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:44px;
+  font-size:14px;background:var(--one-djup);color:#fff}
+.btn.epc-grindknapp:hover{background:#004b5d}
 .epc-iprojekt .epc-falt,.epc-iprojekt .epc-falt input{width:100%}
 .epc-iprojekt .epc-plantext{flex:none}
-/* Brett: projektrutan följer med när man läser fasens punkter. Smalt: den
-   står först, så att läget syns utan att rulla förbi alla punkter. */
-@media(min-width:901px){.epc-iprojekt{position:sticky;top:16px}}
-@media(max-width:900px){.epc-faskropp{grid-template-columns:minmax(0,1fr)}.epc-iprojekt{order:-1}}
-.epc-sektion h4{margin:0 0 4px;font:700 11px/1.3 var(--font-b);letter-spacing:.08em;text-transform:uppercase;color:var(--info-ink)}
+.epc-iprojekt-plan>summary{display:flex;align-items:center;gap:8px;padding:14px 18px;cursor:pointer;list-style:none;
+  font-size:13px;font-weight:600;color:var(--ink);border-radius:0 0 14px 14px}
+.epc-iprojekt-plan[open]>summary{border-radius:0}
+.epc-iprojekt-plan>summary::-webkit-details-marker{display:none}
+.epc-iprojekt-plan>summary:hover{background:var(--sunken)}
+.epc-iprojekt-plan>summary>svg:first-child{flex:0 0 auto;color:var(--ink-soft)}
+.epc-iprojekt-plan-titel{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.epc-iprojekt-plan-period{font-size:12px;font-weight:400;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+.epc-iprojekt-plan[open]>summary .epc-pil{transform:rotate(180deg)}
+.epc-iprojekt-plan-kropp{display:flex;flex-direction:column;gap:12px;padding:4px 18px 18px}
+.epc-planering{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+
+/* Brett: projektrutan står till höger och följer med när man läser fasens
+   punkter. Smalt: punkterna först — det är dem man jobbar med i fält, och
+   läget syns redan i fasens huvud. Rutan läggs då i två spalter. */
+.epc-iprojekt{position:sticky;top:84px}
+@media(min-width:981px){.epc-iprojekt{top:146px}}
+@container epcfas (max-width:860px){
+  .epc-faskropp{grid-template-columns:minmax(0,1fr);padding:16px 16px 18px}
+  .epc-iprojekt{position:static}
+}
+@container epcfas (min-width:561px) and (max-width:860px){
+  .epc-iprojekt{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .epc-iprojekt-huvud,.epc-iprojekt-plan{grid-column:1 / -1}
+  .epc-iprojekt>.epc-grind{border-left:1px solid var(--hairline)}
+}
+
+.epc-sektion h4{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 4px;padding:0 2px 8px;
+  border-bottom:2px solid var(--hairline);font:700 11.5px/1.3 var(--font-b);letter-spacing:.08em;text-transform:uppercase;color:var(--info-ink)}
+.epc-sektion-antal{font:600 12px/1.3 var(--font-b);letter-spacing:0;text-transform:none;color:var(--ink-soft);
+  white-space:nowrap;font-variant-numeric:tabular-nums}
 .epc-lista{list-style:none;margin:0;padding:0}
-.epc-rad{display:grid;grid-template-columns:20px minmax(0,1fr) auto;grid-template-areas:"cb kropp atgard" "panel panel panel";
-  gap:4px 10px;align-items:start;padding:9px 8px 9px 11px;border-top:1px solid var(--hairline);scroll-margin-top:96px}
+
+/* En kontrollpunkt: stor bock till vänster, text och metadata i mitten,
+   åtgärderna till höger. Träffytorna är minst 36–44 px. */
+.epc-rad{display:grid;grid-template-columns:44px minmax(0,1fr) auto;grid-template-areas:"cb kropp atgard" "panel panel panel";
+  gap:0 12px;align-items:start;padding:12px 12px 12px 0;border-top:1px solid var(--hairline);scroll-margin-top:96px;
+  transition:background .15s var(--ease)}
 .epc-rad:first-child{border-top:0}
+@media(hover:hover){.epc-rad:hover{background:color-mix(in srgb,var(--sunken) 60%,transparent)}}
 .epc-rad.hp{box-shadow:inset 3px 0 0 #b8322a}
-.epc-rad>input{grid-area:cb;width:18px;height:18px;margin:2px 0 0;accent-color:var(--one-djup);cursor:pointer}
-.epc-rad>input:disabled{cursor:default}
-.epc-id{flex:0 0 auto;min-width:34px;font:700 12px/1.6 var(--font-b);color:var(--ink-faint);font-variant-numeric:tabular-nums}
-.epc-radkropp{grid-area:kropp;display:flex;flex-direction:column;gap:4px;min-width:0}
-.epc-radtext{display:flex;gap:8px;font-size:13.5px;line-height:1.45;color:var(--ink);overflow-wrap:anywhere;cursor:pointer}
+.epc-bock{grid-area:cb;display:grid;justify-items:center;align-content:start;align-self:stretch;margin:-12px 0;padding:12px 0;cursor:pointer}
+.epc-bock>*{grid-area:1 / 1}
+.epc-bock>input{appearance:none;-webkit-appearance:none;width:24px;height:24px;margin:0;border-radius:7px;cursor:pointer;
+  border:2px solid var(--ink-soft);background:var(--surface);transition:background .15s,border-color .15s}
+.epc-bock:hover>input:not(:disabled){border-color:var(--one-djup);background:var(--info-bg)}
+.epc-bock>input:checked{border-color:var(--viz-klar);background:var(--viz-klar)}
+.epc-bock>input:disabled{cursor:default}
+.epc-bock>input:disabled:not(:checked){border-color:var(--hairline-stark);background:var(--sunken)}
+.epc-bock>input:focus{outline:none}
+.epc-bock>input:focus-visible{outline:3px solid var(--one-bla);outline-offset:2px}
+.epc-bock-ikon{align-self:center;color:var(--surface);opacity:0;pointer-events:none;transition:opacity .12s}
+.epc-bock>input:checked+.epc-bock-ikon{opacity:1}
+/* Högkontrastläge: webbläsarens egen ruta, den egna ritningen syns inte där. */
+@media(forced-colors:active){.epc-bock>input{appearance:auto;-webkit-appearance:auto}.epc-bock-ikon{display:none}}
+.epc-id{flex:0 0 auto;min-width:38px;font:700 12.5px/1.75 var(--font-b);color:var(--ink-soft);font-variant-numeric:tabular-nums}
+.epc-radkropp{grid-area:kropp;display:flex;flex-direction:column;gap:8px;min-width:0;padding-top:1px}
+.epc-radtext{display:flex;gap:10px;font-size:14px;line-height:1.5;color:var(--ink);overflow-wrap:anywhere;cursor:pointer}
 .epc-radtext>span:last-child{min-width:0}
 .epc-rad.klar .epc-radtext>span:last-child{color:var(--ink-soft)}
-.epc-rad.ejaktuell .epc-radtext>span:last-child{color:var(--ink-faint);text-decoration:line-through;text-decoration-color:var(--hairline-stark)}
-.epc-radmeta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-size:12px;color:var(--ink-soft)}
-.epc-klarinfo{color:var(--ok-ink);font-weight:600}
-.epc-ejinfo{color:var(--ink-faint);font-weight:600}
-.epc-radatgard{grid-area:atgard;display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px}
-.epc-kommknapp,.epc-erfchip{display:inline-flex;align-items:center;gap:4px;min-height:26px;padding:3px 8px;border-radius:999px;cursor:pointer;
-  font:600 11.5px/1 var(--font-b);background:none;border:1px solid var(--hairline-stark);color:var(--ink-faint)}
+.epc-rad.ejaktuell .epc-radtext>span:last-child{color:var(--ink-soft);text-decoration:line-through;text-decoration-color:var(--ink-faint)}
+.epc-radmeta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;padding-left:48px;font-size:12.5px;line-height:1.4;color:var(--ink-soft)}
+.epc-ansvar,.epc-nar{display:inline-flex;align-items:center;gap:5px}
+.epc-ansvar{font-weight:600;color:var(--ink)}
+.epc-ansvar svg,.epc-nar svg{flex:0 0 auto;color:var(--ink-soft)}
+.epc-klarinfo,.epc-ejinfo{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700}
+.epc-klarinfo{background:var(--ok-bg);color:var(--ok-ink)}
+.epc-ejinfo{background:var(--sunken);color:var(--ink-soft)}
+.epc-radatgard{grid-area:atgard;display:flex;align-items:center;justify-content:flex-end;gap:6px}
+/* Åtgärderna är spökknappar tills man pekar på dem — en kolumn av ramade
+   knappar på varje rad blir brus. Kommentarer som finns syns i färg. */
+.epc-kommknapp,.epc-erfchip,.epc-ejknapp{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:36px;min-height:36px;
+  padding:0 10px;border-radius:9px;cursor:pointer;font:600 12.5px/1 var(--font-b);white-space:nowrap;
+  background:none;border:1px solid transparent;color:var(--ink-soft);transition:border-color .15s,color .15s,background .15s}
+.epc-kommknapp:hover,.epc-ejknapp:hover{border-color:var(--hairline-stark);background:var(--surface);color:var(--ink)}
 .epc-kommknapp.har{border-color:var(--one-bla);color:var(--info-ink);background:var(--info-bg)}
 .epc-kommknapp[aria-expanded="true"]{border-color:var(--one-bla);color:var(--info-ink)}
 .epc-erfchip{border-color:color-mix(in srgb,var(--orange) 55%,var(--hairline));color:var(--warn-ink);background:var(--warn-bg)}
-.epc-ejknapp{font-size:11.5px;color:var(--ink-faint);font-weight:600}
-.epc-radpanel{grid-area:panel;padding:8px 0 4px 30px;min-width:0}
-@media(max-width:640px){
-  .epc-rad{grid-template-columns:20px minmax(0,1fr);grid-template-areas:"cb kropp" "cb atgard" "panel panel"}
-  .epc-radatgard{justify-content:flex-start}
+.epc-ejknapp[aria-pressed="true"]{background:var(--sunken);color:var(--ink)}
+.epc-radpanel{grid-area:panel;padding:12px 0 4px 56px;min-width:0}
+/* Smalt: åtgärderna under texten, numret i löptexten. */
+@container epcfas (max-width:600px){
+  .epc-rad{grid-template-columns:40px minmax(0,1fr);grid-template-areas:"cb kropp" "cb atgard" "panel panel";gap:0 8px;padding-right:4px}
+  .epc-radtext{display:block}
+  .epc-id{display:inline;min-width:0;margin-right:8px}
+  .epc-radmeta{padding-left:0}
+  .epc-radatgard{justify-content:flex-start;flex-wrap:wrap;margin-top:10px}
   .epc-radpanel{padding-left:0}
 }
 
@@ -2014,10 +2110,7 @@ textarea.hp-led-text::placeholder{color:var(--ink-faint);font-weight:400}
   background:color-mix(in srgb,var(--orange) 7%,var(--surface));font-size:12.5px;line-height:1.5;color:var(--ink)}
 .epc-tidigare>b{display:inline-flex;align-items:center;gap:6px;color:var(--warn-ink)}
 .epc-tidigare ul{margin:6px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
-.epc-ansvar{font-weight:600}
-.epc-nar{color:var(--ink-faint)}
-.epc-nar::before{content:"· ";color:var(--hairline-stark)}
-.epc-anteckning textarea{min-height:64px}
+.epc-anteckning textarea{min-height:72px}
 .epc-markerad{animation:epcMarkera 2.4s var(--ease)}
 @keyframes epcMarkera{0%,45%{box-shadow:0 0 0 3px var(--one-bla)}100%{box-shadow:0 0 0 3px transparent}}
 

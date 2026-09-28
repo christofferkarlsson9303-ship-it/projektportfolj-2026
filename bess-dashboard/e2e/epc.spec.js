@@ -10,10 +10,12 @@ test.beforeEach(async ({ page }) => {
 const lage = (page) => page.getByRole("region", { name: "Lägesbild — var projekten står" });
 const projektrad = (page, namn) => lage(page).getByRole("group", { name: "Välj projekt" }).getByRole("button", { name: namn });
 const rad = (page, id) => page.locator(`[id="kp-${id}"]`);
+/** Fasens egen rubrik — projektrutan i fasen har en egen, infällbar <details>. */
+const fasrubrik = (fas) => fas.locator(":scope > summary");
 /** Fäller ut en fas om den inte redan är utfälld — pågående faser är öppna från början. */
 async function oppnaFas(page, nr) {
   const fas = page.locator(`#fas-${nr}`);
-  if ((await fas.getAttribute("open")) === null) await fas.locator("summary").click();
+  if ((await fas.getAttribute("open")) === null) await fasrubrik(fas).click();
   await expect(fas).toHaveAttribute("open", "");
 }
 
@@ -131,10 +133,10 @@ test("sökningen hittar lärdomen om CT-fönster", async ({ page }) => {
 
 test("en grind markeras passerad, fasen byter läge och det loggas", async ({ page }) => {
   const fas = page.locator("#fas-11");
-  await fas.locator("summary").click();
+  await fasrubrik(fas).click();
   const iProjektet = fas.getByRole("complementary", { name: "Fas 11 i 36037 Växjö" });
   await iProjektet.getByRole("button", { name: "Markera G11 passerad idag" }).click();
-  await expect(fas.locator("summary")).toContainText("Grind passerad");
+  await expect(fasrubrik(fas)).toContainText("Grind passerad");
   await expect(iProjektet).toContainText(/G11 passerad \d{4}-\d{2}-\d{2}/);
   // En senare grind gör alla tidigare passerade.
   await expect(projektrad(page, /^36037 Växjö/)).toContainText("12 av 16 grindar passerade");
