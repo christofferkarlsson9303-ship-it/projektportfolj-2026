@@ -1,88 +1,76 @@
 import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { usePortfolj, useUi } from "../state/hooks.js";
 import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
-import { Card, Kpi, Note } from "../components/ui/Primitiver.jsx";
-import { StatusBadge } from "../components/ds/StatusBadge.jsx";
+import { Callout, Card, CheckList, Meter, Overline, StatTile, StatusBadge } from "../components/ds/index.js";
 import { RUTINER } from "../data/rutiner.js";
 import { rutinAntal, rutinKlar, rutinNyckel } from "../lib/berakningar.js";
 
-/* Projektledarens handbok.
+/* Projektledarens handbok på designsystemet.
 
    ONE Nordics rollbeskrivning och entreprenadjuridiska flödesscheman som egna
    kapitel, avbockade separat per projekt. Kapitlen är regelverket — själva
    arbetet registreras i de flikar kapitlen länkar till.
 
-   Ett kapitel i taget är utfällt, som i originalet. Skillnaden mot
-   standalone-versionen är att kapitelrubriken är en riktig knapp med
-   aria-expanded i stället för en div med onclick: accordionen gick inte att
-   fälla ut med tangentbord förut. */
-
-/* Stabilt id per kryssruta. Nyckeln innehåller | och punkter, som inte hör
-   hemma i ett DOM-id. */
-const kryssId = (pid, nyckel) => `rutin_${pid}_${nyckel.replace(/[|.]/g, "_")}`;
-
-function Punkt({ pid, rutinId, gruppIndex, punkt, klar, onVaxla }) {
-  const nyckel = rutinNyckel(rutinId, gruppIndex, punkt.n);
-  const id = kryssId(pid, nyckel);
-
-  return (
-    <div className="chk">
-      <input
-        id={id}
-        type="checkbox"
-        checked={klar}
-        onChange={(e) => onVaxla(nyckel, e.target.checked)}
-      />
-      <label htmlFor={id}>
-        {klar ? <s>{punkt.t}</s> : punkt.t}
-        {punkt.h ? <span className="hint">{punkt.h}</span> : null}
-      </label>
-    </div>
-  );
-}
+   Ett kapitel i taget är utfällt, som i originalet. Kapitelrubriken är en
+   knapp med aria-expanded och aria-controls; mätaren visar hur långt
+   projektet har kommit i kapitlet. */
 
 function Kapitel({ r, pid, state, oppen, onVaxlaKapitel, onVaxlaPunkt, onGaTill }) {
   const { tot, klar } = rutinAntal(state, pid, r);
   const fardigt = tot > 0 && klar === tot;
-  const proc = tot ? Math.round((klar / tot) * 100) : 0;
+  const panelId = `kapitel-${r.id.replace(/\W/g, "_")}`;
 
   return (
-    <div className={`kap ${oppen ? "oppen" : ""} ${fardigt ? "klar" : ""}`.replace(/\s+/g, " ").trim()}>
-      {/* Knapp, inte div med onclick — annars når man inte kapitlet med tangentbord. */}
-      <button
-        type="button"
-        className="kaph"
-        aria-expanded={oppen}
-        onClick={() => onVaxlaKapitel(r.id)}
-      >
-        <span className="kapnr">{r.id}</span>
-        <span className="kaptxt">
-          <b>{r.titel}</b>
-          {r.kalla ? <small>{r.kalla}</small> : null}
-        </span>
-        {tot ? (
-          <span className="kapprog">
-            <span className={`prog ${fardigt ? "done" : ""}`.trim()} aria-hidden="true">
-              <span style={{ width: proc + "%" }} />
-            </span>
-            <small>
-              {klar}/{tot} punkter
-            </small>
+    <li
+      data-roll="kapitel"
+      data-punkter={tot}
+      className="border-0 border-t border-solid border-hairline first:border-t-0"
+    >
+      <h4 className="m-0">
+        <button
+          type="button"
+          className="-mx-2 flex w-[calc(100%+1rem)] cursor-pointer items-center gap-3 rounded-lg border-0 bg-transparent px-2 py-3 text-left font-body hover:bg-sunken"
+          aria-expanded={oppen}
+          aria-controls={panelId}
+          onClick={() => onVaxlaKapitel(r.id)}
+        >
+          <span
+            className={`flex h-8 min-w-8 shrink-0 items-center justify-center rounded-md px-1.5 text-xs font-bold ${
+              fardigt ? "bg-ok-bg text-ok-ink" : "bg-one-djup text-white"
+            }`}
+          >
+            {r.id}
           </span>
-        ) : (
-          <StatusBadge ton="neutral" label="Referens" />
-        )}
-        <span className="kappil" aria-hidden="true">
-          {oppen ? "▾" : "▸"}
-        </span>
-      </button>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[14px] font-semibold leading-snug text-ink">{r.titel}</span>
+            {r.kalla ? <span className="mt-0.5 block text-xs text-ink-soft">{r.kalla}</span> : null}
+          </span>
+          {tot ? (
+            <>
+              <Meter value={klar} max={tot} size="sm" className="hidden w-20 shrink-0 sm:block" />
+              <span className="w-12 shrink-0 text-right text-xs tabular-nums text-ink-soft">
+                {klar}/{tot}
+                <span className="sr-only"> punkter avbockade</span>
+              </span>
+            </>
+          ) : (
+            <StatusBadge ton="neutral" label="Referens" />
+          )}
+          <ChevronDown
+            size={16}
+            aria-hidden="true"
+            className={`shrink-0 text-ink-faint transition-transform ${oppen ? "rotate-180" : ""}`}
+          />
+        </button>
+      </h4>
 
       {oppen ? (
-        <div className="kapb">
-          {r.ingress ? <div className="kapingress">{r.ingress}</div> : null}
+        <div id={panelId} className="flex flex-col gap-4 pb-5 sm:pl-11">
+          {r.ingress ? <p className="m-0 text-[13px] leading-relaxed text-ink-soft">{r.ingress}</p> : null}
 
           {r.lank ? (
-            <div className="rowbtns" style={{ margin: "0 0 18px" }}>
+            <div>
               <button type="button" className="btn mini" onClick={() => onGaTill(r.lank[0])}>
                 {r.lank[1]} →
               </button>
@@ -90,32 +78,31 @@ function Kapitel({ r, pid, state, oppen, onVaxlaKapitel, onVaxlaPunkt, onGaTill 
           ) : null}
 
           {r.grupper.map((g, gi) => (
-            <div className="grp" key={g.namn || gi}>
-              <h4>{g.namn}</h4>
-              {g.info ? <div className="info">{g.info}</div> : null}
+            <div key={g.namn || gi} className="flex flex-col gap-1.5">
+              {g.namn ? <Overline as="h5">{g.namn}</Overline> : null}
+              {g.info ? <p className="m-0 text-xs leading-snug text-ink-soft">{g.info}</p> : null}
               {g.text ? (
-                <ul className="kaplista">
+                <ul className="m-0 flex list-disc flex-col gap-1 pl-5 text-[13px] leading-snug text-ink marker:text-one-bla">
                   {g.text.map((t) => (
                     <li key={t}>{t}</li>
                   ))}
                 </ul>
               ) : null}
-              {(g.punkter || []).map((pt) => (
-                <Punkt
-                  key={pt.n}
-                  pid={pid}
-                  rutinId={r.id}
-                  gruppIndex={gi}
-                  punkt={pt}
-                  klar={rutinKlar(state, pid, rutinNyckel(r.id, gi, pt.n))}
-                  onVaxla={onVaxlaPunkt}
+              {g.punkter?.length ? (
+                <CheckList
+                  label={`${r.id} ${g.namn || "Punkter"}`}
+                  items={g.punkter.map((pt) => {
+                    const nyckel = rutinNyckel(r.id, gi, pt.n);
+                    return { id: nyckel, label: pt.t, hint: pt.h, checked: rutinKlar(state, pid, nyckel) };
+                  })}
+                  onChange={onVaxlaPunkt}
                 />
-              ))}
+              ) : null}
             </div>
           ))}
         </div>
       ) : null}
-    </div>
+    </li>
   );
 }
 
@@ -127,77 +114,66 @@ export function Rutiner() {
   const p = state.projekt.find((x) => x.id === pid);
   if (!p) return null;
 
-  const summa = RUTINER.reduce(
-    (s, r) => {
-      const a = rutinAntal(state, pid, r);
-      return { tot: s.tot + a.tot, klar: s.klar + a.klar };
-    },
-    { tot: 0, klar: 0 }
-  );
+  const antal = RUTINER.map((r) => rutinAntal(state, pid, r));
+  const summa = antal.reduce((s, a) => ({ tot: s.tot + a.tot, klar: s.klar + a.klar }), { tot: 0, klar: 0 });
   const proc = summa.tot ? Math.round((summa.klar / summa.tot) * 100) : 0;
-
-  const medPunkter = RUTINER.filter((r) => rutinAntal(state, pid, r).tot > 0);
-  const klaraKap = medPunkter.filter((r) => {
-    const a = rutinAntal(state, pid, r);
-    return a.klar === a.tot;
-  }).length;
-  const pabörjade = medPunkter.filter((r) => {
-    const a = rutinAntal(state, pid, r);
-    return a.klar > 0 && a.klar < a.tot;
-  }).length;
+  const medPunkter = antal.filter((a) => a.tot > 0);
+  const klaraKap = medPunkter.filter((a) => a.klar === a.tot).length;
+  const paborjade = medPunkter.filter((a) => a.klar > 0 && a.klar < a.tot).length;
 
   const vaxlaPunkt = (nyckel, klar) => dispatch({ type: "VAXLA_RUTINPUNKT", pid, nyckel, klar });
+  const projektNamn = (p.nr ? p.nr + " " : "") + p.namn;
 
   return (
     <>
       <Projektvaljare />
 
-      <div className="grid g4" style={{ marginBottom: 20 }}>
-        <Kpi
-          label="Genomgånget"
-          varde={`${proc} %`}
-          hint={`${summa.klar} av ${summa.tot} punkter i ${p.nr || p.namn}`}
-          klass={proc >= 80 ? "" : proc >= 40 ? "warn" : "bad"}
-        />
-        <Kpi
-          label="Färdiga kapitel"
-          varde={`${klaraKap}/${medPunkter.length}`}
-          hint="kapitel med alla punkter avbockade"
-        />
-        <Kpi label="Påbörjade" varde={pabörjade} hint="kapitel där arbetet är igång" />
-        <Kpi label="Kapitel totalt" varde={RUTINER.length} hint="hela projektledarens handbok" />
-      </div>
-
-      <Card klass="mb-5">
-        <h3>Projektledarens handbok — {(p.nr ? p.nr + " " : "") + p.namn}</h3>
-        <div className="lead">
-          ONE Nordics rollbeskrivning och entreprenadjuridiska flödesscheman som egna kapitel, avbockade
-          separat för varje projekt. Det som sägs om entreprenaden gäller även DUS-avtal. Kapitel med egen
-          arbetsflik har en genväg dit.
-        </div>
-      </Card>
-
-      <div className="kaplist">
-        {RUTINER.map((r) => (
-          <Kapitel
-            key={r.id}
-            r={r}
-            pid={pid}
-            state={state}
-            oppen={oppet === r.id}
-            onVaxlaKapitel={(id) => setOppet(oppet === id ? null : id)}
-            onVaxlaPunkt={vaxlaPunkt}
-            onGaTill={visa}
+      <div className="flex flex-col gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+          <StatTile
+            label="Genomgånget"
+            value={`${proc} %`}
+            ton={proc >= 80 ? "" : proc >= 40 ? "warn" : "bad"}
+            hint={`${summa.klar} av ${summa.tot} punkter i ${p.nr || p.namn}`}
           />
-        ))}
-      </div>
+          <StatTile
+            label="Färdiga kapitel"
+            value={`${klaraKap}/${medPunkter.length}`}
+            hint="kapitel med alla punkter avbockade"
+          />
+          <StatTile label="Påbörjade" value={paborjade} hint="kapitel där arbetet är igång" />
+          <StatTile label="Kapitel totalt" value={RUTINER.length} hint="hela projektledarens handbok" />
+        </div>
 
-      <Note>
-        <b>Så hänger det ihop:</b> kapitel 2.4 och 2.4.1 arbetas operativt i fliken <b>Störning</b>,
-        ÄTA-dokumentationen i <b>Dagbok</b> och <b>ÄTA och hinder</b>, veckogenomgången i{" "}
-        <b>Veckokoll</b> och avslutet i <b>Slutdokumentation</b>. Kapitlen här är regelverket och
-        avbockningen — flikarna är där arbetet registreras.
-      </Note>
+        <Card
+          id="handbok-kapitel"
+          title={`Projektledarens handbok — ${projektNamn}`}
+          subtitle="ONE Nordics rollbeskrivning och entreprenadjuridiska flödesscheman som egna kapitel, avbockade separat för varje projekt. Det som sägs om entreprenaden gäller även DUS-avtal. Kapitel med egen arbetsflik har en genväg dit."
+        >
+          <Meter value={summa.klar} max={summa.tot} label={`${summa.klar} av ${summa.tot} punkter genomgångna`} />
+          <ul aria-label="Kapitel i handboken" className="m-0 list-none p-0">
+            {RUTINER.map((r) => (
+              <Kapitel
+                key={r.id}
+                r={r}
+                pid={pid}
+                state={state}
+                oppen={oppet === r.id}
+                onVaxlaKapitel={(id) => setOppet(oppet === id ? null : id)}
+                onVaxlaPunkt={vaxlaPunkt}
+                onGaTill={visa}
+              />
+            ))}
+          </ul>
+        </Card>
+
+        <Callout ton="info">
+          <b>Så hänger det ihop:</b> kapitel 2.4 och 2.4.1 arbetas operativt i fliken <b>Störning</b>,
+          ÄTA-dokumentationen i <b>Dagbok</b> och <b>ÄTA och hinder</b>, veckogenomgången i <b>Veckokoll</b>{" "}
+          och avslutet i <b>Slutdokumentation</b>. Kapitlen här är regelverket och avbockningen — flikarna är
+          där arbetet registreras.
+        </Callout>
+      </div>
     </>
   );
 }

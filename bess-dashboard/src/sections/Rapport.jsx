@@ -1,22 +1,25 @@
+import { Printer } from "lucide-react";
 import { usePortfolj, useUi } from "../state/hooks.js";
+import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
 import { Bestallarrapport } from "../components/ui/Bestallarrapport.jsx";
-import { Card, Kortrubrik, Kpi } from "../components/ui/Primitiver.jsx";
+import { Callout, Card, DataList, Overline, StatTile, StatusBadge } from "../components/ds/index.js";
 import { ataSummering, slutdokIndex } from "../lib/berakningar.js";
 import { berakFlaggor } from "../lib/flaggor.js";
 import { dagarTill } from "../lib/datum.js";
 import { fmtProcent, fmtSEK } from "../lib/format.js";
-import { VYMETA } from "../data/vyer.js";
 
-/* Beställarrapporten. Vyn visar vad rapporten kommer att innehålla och låter
-   den skrivas ut som PDF — själva dokumentet ligger i Bestallarrapport.jsx och
-   renderas i utskriftsytan, inte här. */
+/* Beställarrapporten på designsystemet. Vyn är en förhandsgranskning av
+   vad rapporten tar med — nyckeltal, ÄTA-läget och det som kräver beslut —
+   och skriver ut den som PDF. Själva dokumentet ligger i
+   Bestallarrapport.jsx och renderas i utskriftsytan, inte här. */
+
 export function Rapport() {
   const { state } = usePortfolj();
   const { valtProjekt: pid, skrivUt } = useUi();
-  const meta = VYMETA.rapport || { namn: "Beställarrapport", lead: "" };
 
   const projekt = state.projekt.find((p) => p.id === pid) || null;
   const horTill = (r) => !pid || r.projektId === pid;
+  const projektNamn = projekt ? (projekt.nr ? projekt.nr + " " : "") + projekt.namn : "Hela portföljen";
 
   const milstolpar = state.milstolpar.filter(horTill);
   const kvar = milstolpar.filter((m) => m.status !== "klar");
@@ -27,59 +30,105 @@ export function Rapport() {
   const slutdok = pid ? slutdokIndex(state, pid) : null;
   const hoga = berakFlaggor(state).filter((f) => f.niva === "hog" && (!pid || f.projektId === pid));
 
-  const nyckeltal = [
-    ["Milstolpar kvar", String(kvar.length)],
-    ["Varav försenade", String(forsenade.length)],
-    ["Öppna punkter", String(oppnaPunkter.length)],
-    ["Öppna risker", String(risker.length)],
-    ["Slutdokumentation", slutdok ? fmtProcent(slutdok.proc) : "—"],
-  ];
-
   return (
-    <Card>
-      <Kortrubrik
-        titel={meta.namn}
-        lead={meta.lead}
-        verktyg={
-          <button type="button" className="btn" onClick={() => skrivUt(<Bestallarrapport state={state} pid={pid} />)}>
-            Skriv ut som PDF
-          </button>
-        }
-      />
+    <>
+      <Projektvaljare />
 
-      <div className="note">
-        Rapporten speglar läget just nu och tar med det som är försenat eller kräver beslut. Välj projekt
-        i projektväljaren för en projektrapport — utan val omfattar den hela portföljen.
+      <div className="flex flex-col gap-4 lg:gap-6">
+        <Card
+          id="rapport-rubrik"
+          title={`Beställarrapport — ${projektNamn}`}
+          subtitle="Rapporten speglar läget just nu och tar med det som är försenat eller kräver beslut."
+          action={
+            <button
+              type="button"
+              className="btn inline-flex items-center gap-2"
+              onClick={() => skrivUt(<Bestallarrapport state={state} pid={pid} />)}
+            >
+              <Printer size={16} aria-hidden="true" />
+              Skriv ut som PDF
+            </button>
+          }
+        >
+          <Callout ton="info">
+            Granska innehållet här innan rapporten går till beställaren. Internkalkyler, á-priser och
+            tidrapporter kommer inte med — bara det beställaren ska se.
+          </Callout>
+        </Card>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5 lg:gap-6">
+          <StatTile label="Milstolpar kvar" value={kvar.length} hint={`av ${milstolpar.length} i planen`} />
+          <StatTile
+            label="Varav försenade"
+            value={forsenade.length}
+            ton={forsenade.length ? "bad" : ""}
+            hint={forsenade.length ? "har passerat sitt datum" : "inga försenade"}
+          />
+          <StatTile label="Öppna punkter" value={oppnaPunkter.length} hint="som ligger på någon" />
+          <StatTile label="Öppna risker" value={risker.length} hint="i riskregistret" />
+          <StatTile
+            label="Slutdokumentation"
+            value={slutdok ? fmtProcent(slutdok.proc) : "—"}
+            hint={slutdok ? "av dokumentkraven klara" : "välj ett projekt"}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
+          <Card id="rapport-ata" title="ÄTA i rapporten" subtitle="Summering av ärenden och belopp.">
+            {ata ? (
+              <DataList
+                items={[
+                  { label: "Ärenden", value: `${ata.antal} st`, detail: `${ata.oppna} öppna` },
+                  { label: "Godkänt", value: fmtSEK(ata.godkant) },
+                  {
+                    label: "Ej fakturerat",
+                    value: fmtSEK(ata.ejFakt),
+                    badge: ata.ejFakt ? <StatusBadge ton="warn" label="Att fakturera" /> : null,
+                  },
+                  projekt?.kontraktsvarde
+                    ? { label: "Kontraktsvärde", value: fmtSEK(projekt.kontraktsvarde) }
+                    : null,
+                ].filter(Boolean)}
+              />
+            ) : (
+              <p className="m-0 text-[13px] text-ink-soft">
+                Välj ett projekt i projektväljaren för att se ÄTA-läget i rapporten.
+              </p>
+            )}
+          </Card>
+
+          <Card
+            id="rapport-beslut"
+            title="Kräver beslut eller åtgärd"
+            subtitle="Det som är flaggat som högt kommer med i rapporten."
+            badge={
+              hoga.length ? (
+                <StatusBadge ton="bad" label={`${hoga.length} flaggor`} />
+              ) : (
+                <StatusBadge ton="ok" label="Inget högt" />
+              )
+            }
+          >
+            {hoga.length ? (
+              <div className="flex flex-col gap-2">
+                <Overline>Kommer med ({Math.min(hoga.length, 12)} av {hoga.length})</Overline>
+                <ul aria-label="Flaggor i rapporten" className="m-0 list-none p-0">
+                  {hoga.slice(0, 12).map((f, i) => (
+                    <li
+                      key={i}
+                      className="border-0 border-t border-solid border-hairline py-2 text-[13px] leading-snug text-ink first:border-t-0 first:pt-0"
+                    >
+                      {f.text}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <p className="m-0 text-[13px] text-ink-soft">Inget är flaggat som högt just nu — rapporten blir kort.</p>
+            )}
+          </Card>
+        </div>
       </div>
-
-      <div className="grid g4" style={{ marginTop: 16 }}>
-        {nyckeltal.map(([namn, varde]) => (
-          <Kpi key={namn} label={namn} varde={varde} />
-        ))}
-      </div>
-
-      {ata ? (
-        <p className="lead" style={{ marginTop: 16 }}>
-          ÄTA: {ata.antal} ärenden varav {ata.oppna} öppna. Godkänt {fmtSEK(ata.godkant)}, varav{" "}
-          {fmtSEK(ata.ejFakt)} ännu inte fakturerat.
-          {projekt?.kontraktsvarde ? ` Kontraktsvärde ${fmtSEK(projekt.kontraktsvarde)}.` : ""}
-        </p>
-      ) : null}
-
-      {hoga.length ? (
-        <>
-          <h3 style={{ marginTop: 20 }}>Kommer med som &quot;kräver beslut eller åtgärd&quot; ({hoga.length})</h3>
-          <ul>
-            {hoga.slice(0, 12).map((f, i) => (
-              <li key={i}>{f.text}</li>
-            ))}
-          </ul>
-        </>
-      ) : (
-        <p className="lead" style={{ marginTop: 16 }}>
-          Inget är flaggat som högt just nu — rapporten blir kort.
-        </p>
-      )}
-    </Card>
+    </>
   );
 }
