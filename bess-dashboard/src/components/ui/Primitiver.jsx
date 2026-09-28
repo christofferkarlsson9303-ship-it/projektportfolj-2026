@@ -2,6 +2,7 @@
    utseendet är identiskt med standalone-versionen — skillnaden är att de är
    komponerbara och att tillgängligheten är inbyggd. */
 
+import { Trash2 } from "lucide-react";
 import { PILL } from "../../data/konstanter.js";
 import { PILL_TILL_TON } from "../../lib/status.js";
 import { StatusBadge } from "../ds/StatusBadge.jsx";
@@ -136,6 +137,16 @@ export function Btn({ children, variant = "", mini = false, ...rest }) {
   return (
     <button type="button" className={klasser} {...rest}>
       {children}
+    </button>
+  );
+}
+
+/** Ikonknapp för att ta bort en tabellrad. Etiketten namnger raden, så att
+ *  skärmläsare och verktygstips säger vad som tas bort. */
+export function TaBortKnapp({ etikett, onClick }) {
+  return (
+    <button type="button" className="btn sec mini !px-2" aria-label={etikett} title={etikett} onClick={onClick}>
+      <Trash2 size={14} aria-hidden="true" />
     </button>
   );
 }
