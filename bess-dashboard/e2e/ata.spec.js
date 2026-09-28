@@ -125,3 +125,22 @@ test("ÄTA-registret går att exportera", async ({ page }) => {
   ]);
   expect(nedladdning.suggestedFilename()).toMatch(/^Portfolj_ATA_register_\d{4}-\d{2}-\d{2}\.csv$/);
 });
+
+test("tidslinjen placerar en post med datum som händelse i Gantt-schemat", async ({ page }) => {
+  await visaTabell(page);
+  await page.getByRole("region", { name: REGISTER, exact: true }).locator("tbody tr").first().getByRole("button").first().click();
+  const form = page.getByRole("region", { name: ARENDE });
+  const datum = form.getByLabel("Händelsedatum");
+  await datum.fill("2026-09-01");
+  await datum.press("Enter");
+  await form.getByRole("button", { name: "Stäng" }).click();
+
+  await page.getByRole("radio", { name: "Tidslinje" }).click();
+  const gantt = page.getByRole("group", { name: "ÄTA-ärenden på tidsaxel" });
+  const post = gantt.getByRole("button", { name: /, 2026-09-01, / });
+  await expect(post).toHaveCount(1);
+
+  // Klick på posten öppnar ärendet, som i tavlan och registret.
+  await post.click();
+  await expect(page.getByRole("region", { name: ARENDE })).toBeVisible();
+});

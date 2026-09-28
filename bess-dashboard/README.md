@@ -83,6 +83,27 @@ punkter är byggda av dem. De äldre vyerna får samma statusmärke via
 `Pill`, samma nyckeltalsruta via `Kpi` (→ `StatTile`), samma upplysning via
 `Note` (→ `Callout`) och samma kortform via `.card`.
 
+### Gantt-schemat
+
+`src/components/ui/Tidslinje.jsx` ritar Tidplanen (och ÄTA-vyns tidslinje)
+som ett Gantt-schema: ett kollapsbart spår per projekt, en rad per post,
+staplar från start till slut och en romb för händelser på ett enda datum.
+Zoom Dag / Vecka / Månad / Kvartal byter skala och rutnät (veckonummer i
+rubriken), och den orange i dag-linjen rullas i bild när schemat ritas.
+
+| Läge | Färg | Ikon |
+| --- | --- | --- |
+| Klar | Blågrön | bock |
+| Pågående | ONE Blå | punkt i ring |
+| Försenad | Röd | varningstriangel |
+| Planerad | Grå | ring |
+
+Läget visas alltid som färg, ikon och text. Verktygstipset (hovring och
+tangentbordsfokus) visar datum, läge och ansvarig; klick öppnar
+detaljpanelen där anroparen kan lägga till redigering via `redigera`. I
+Tidplanen hämtas byggfaserna ur Bygga batteripark (start, slut och läge),
+och milstolpar och leveranser blir staplar när de har ett startdatum.
+
 ## Bygga batteripark
 
 Kapitlet *Bygga batteripark* (vy-id `epc`) bygger på "Bygga batteripark som

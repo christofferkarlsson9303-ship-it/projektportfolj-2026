@@ -7,21 +7,142 @@ import { DataTable } from "../components/ui/DataTable.jsx";
 import { Tidslinje } from "../components/ui/Tidslinje.jsx";
 import { SelStatus } from "../components/ui/Primitiver.jsx";
 import { Callout, Card, CheckList, Meter, Overline, StatusBadge } from "../components/ds/index.js";
-import { DatumFalt } from "../components/ui/Falt.jsx";
+import { DatumFalt, Falt } from "../components/ui/Falt.jsx";
 import { BATTERIPARK_MILSTOLPAR } from "../data/batteripark-milstolpar.js";
 import { dagarTill } from "../lib/datum.js";
+import { faslage } from "../lib/epc.js";
 import {
   gallerFor,
   projekt,
-  projektKlass,
   rutinAntal,
   rutinKlar,
   rutinNyckel,
 } from "../lib/berakningar.js";
 
-/* Tidplanen på designsystemet: tidslinjen, milstolparna och leveranserna som
-   kort, och byggfaserna som utfällbara rader i ett kort — varje fas med
+/* Tidplanen på designsystemet: Gantt-schemat, milstolparna och leveranserna
+   som kort, och byggfaserna som utfällbara rader i ett kort — varje fas med
    mätare, räknare och avbockningslistor per grupp. */
+
+/* ---------- Gantt: data och redigering ---------- */
+
+/** Byggfasens läge i Bygga batteripark → stapelns läge i Gantt-schemat. */
+const FAS_TILL_LAGE = { klar: "klar", pagar: "pagaende", sen: "forsenad", kommande: "planerad" };
+
+const MS_STATUS = ["planerad", "pagaende", "klar", "forsenad"];
+const LEV_STATUS = ["bekraftad", "preliminar", "avvikelse", "klar"];
+
+/** En milstolpe eller leverans som post i Gantt-schemat. Med startdatum blir
+ *  den en stapel från start till datum; utan är den en händelse (romb). */
+function somPost(rad, lista, typ, titel) {
+  const start = rad.start && rad.start < rad.datum ? rad.start : null;
+  return {
+    id: `${lista}-${rad.id}`,
+    titel,
+    datum: start || rad.datum,
+    slutdatum: start ? rad.datum : undefined,
+    status: rad.status,
+    typ,
+    ansvarig: rad.ansvarig || "",
+    leverantor: rad.leverantor || "",
+    kalla: { lista, id: rad.id },
+  };
+}
+
+/** Redigering i detaljpanelen när en stapel är vald. Byggfaser ändras i
+ *  EPC-planen; milstolpar och leveranser i sina egna listor. */
+function Redigering({ post, rad }) {
+  const { state, uppd, uppdStatus, dispatch } = usePortfolj();
+  const { oppnaPost, setValtProjekt } = useUi();
+  const k = post.kalla;
+  if (!k) return null;
+  const idBas = `gantt-${post.id}`;
+
+  if (k.typ === "fas") {
+    const satt = (falt) => (v) => dispatch({ type: "EPC_FAS", pid: k.pid, fas: k.nr, falt, varde: v });
+    return (
+      <div className="flex flex-col gap-3 border-0 border-t border-solid border-hairline pt-3">
+        <Overline>Ändra planen</Overline>
+        <div className="frow c3 items-end">
+          <div className="f mb-0">
+            <label htmlFor={`${idBas}-start`}>Start</label>
+            <DatumFalt id={`${idBas}-start`} varde={post.datum} etikett={`Start för ${post.titel}`} onCommit={satt("start")} />
+          </div>
+          <div className="f mb-0">
+            <label htmlFor={`${idBas}-slut`}>Slut</label>
+            <DatumFalt id={`${idBas}-slut`} varde={post.slutdatum} etikett={`Slut för ${post.titel}`} onCommit={satt("slut")} />
+          </div>
+          <div>
+            <button
+              type="button"
+              className="btn sec mini"
+              onClick={() => {
+                setValtProjekt(k.pid);
+                oppnaPost("epc", `fas-${k.nr}`);
+              }}
+            >
+              Öppna fasen i Bygga batteripark
+            </button>
+          </div>
+        </div>
+        <p className="m-0 text-xs text-ink-soft">
+          Läget följer grinden och datumen för {rad.namn} i Bygga batteripark.
+        </p>
+      </div>
+    );
+  }
+
+  const kalla = (state[k.lista] || []).find((x) => x.id === k.id);
+  if (!kalla) return null;
+  const alternativ = k.lista === "leveranser" ? LEV_STATUS : MS_STATUS;
+  return (
+    <div className="flex flex-col gap-3 border-0 border-t border-solid border-hairline pt-3">
+      <Overline>Ändra</Overline>
+      <div className="frow c4">
+        <div className="f mb-0">
+          <label htmlFor={`${idBas}-start`}>Start</label>
+          <DatumFalt
+            id={`${idBas}-start`}
+            varde={kalla.start || ""}
+            etikett={`Start för ${post.titel}`}
+            onCommit={(v) => uppd(k.lista, k.id, "start", v)}
+          />
+        </div>
+        <div className="f mb-0">
+          <label htmlFor={`${idBas}-datum`}>{k.lista === "leveranser" ? "Leveransdatum" : "Datum"}</label>
+          <DatumFalt
+            id={`${idBas}-datum`}
+            varde={kalla.datum || ""}
+            etikett={`Datum för ${post.titel}`}
+            onCommit={(v) => uppd(k.lista, k.id, "datum", v)}
+          />
+        </div>
+        <div className="f mb-0">
+          <label htmlFor={`${idBas}-status`}>Status</label>
+          <SelStatus
+            id={`${idBas}-status`}
+            alternativ={alternativ}
+            varde={kalla.status}
+            etikett={`Status för ${post.titel}`}
+            onChange={(v) => uppdStatus(k.lista, k.id, "status", v)}
+          />
+        </div>
+        <div className="f mb-0">
+          <label htmlFor={`${idBas}-ansvarig`}>Ansvarig</label>
+          <Falt
+            id={`${idBas}-ansvarig`}
+            varde={kalla.ansvarig || ""}
+            etikett={`Ansvarig för ${post.titel}`}
+            placeholder={kalla.leverantor || "Roll eller namn"}
+            onCommit={(v) => uppd(k.lista, k.id, "ansvarig", v)}
+          />
+        </div>
+      </div>
+      <p className="m-0 text-xs text-ink-soft">
+        Med ett startdatum ritas posten som en stapel från start till {k.lista === "leveranser" ? "leverans" : "datum"}.
+      </p>
+    </div>
+  );
+}
 
 /* ---------- Byggfaser (klart-kriterier) ---------- */
 
@@ -87,46 +208,46 @@ export function Tidplan() {
 
   const p = projekt(state, pid);
 
-  /* Tidslinjens rader: ett spår per projekt med milstolpar och leveranser. */
+  /* Gantt-schemats spår: ett per projekt, med byggfaserna ur Bygga
+     batteripark som staplar och milstolpar och leveranser under dem. */
   const tidslinjeRader = useMemo(() => {
     const projektLista = omfang === "alla" ? state.projekt : state.projekt.filter((x) => x.id === pid);
 
     return projektLista.map((pr) => {
-      const poster = [];
+      const faser = faslage(state, pr.id)
+        .filter((f) => f.start && f.slut)
+        .map((f) => ({
+          id: `fas-${f.fas.nr}`,
+          titel: `${f.fas.nr} · ${f.fas.kort}`,
+          datum: f.start,
+          slutdatum: f.slut,
+          lage: FAS_TILL_LAGE[f.status] || "planerad",
+          typ: "Byggfas",
+          anteckning: f.fas.syfte,
+          kalla: { typ: "fas", pid: pr.id, nr: f.fas.nr },
+        }));
 
-      state.milstolpar
-        .filter((m) => m.projektId === pr.id && m.datum)
-        .forEach((m) =>
-          poster.push({
-            id: "m-" + m.id,
-            datum: m.datum,
-            titel: m.titel,
-            status: m.status,
-            typ: "Milstolpe",
+      const handelser = [
+        ...state.milstolpar
+          .filter((m) => m.projektId === pr.id && m.datum)
+          .map((m) => ({
+            ...somPost(m, "milstolpar", "Milstolpe", m.titel),
             anteckning: /färdigställ|slutbesikt/i.test(m.titel)
               ? "Kontraktets färdigställandetid — styr viten och slutbesiktning."
               : "",
-          })
-        );
-
-      state.leveranser
-        .filter((l) => gallerFor(l, pr.id) && l.datum)
-        .forEach((l) =>
-          poster.push({
-            id: "l-" + l.id,
-            datum: l.datum,
-            titel: l.benamning,
-            status: l.status,
-            typ: "Leverans",
-            leverantor: l.leverantor,
-          })
-        );
+          })),
+        ...state.leveranser
+          .filter((l) => gallerFor(l, pr.id) && l.datum)
+          .map((l) => somPost(l, "leveranser", "Leverans", l.benamning)),
+      ];
 
       return {
         id: pr.id,
         namn: (pr.nr ? pr.nr + " " : "") + pr.namn,
-        klass: projektKlass(state, pr.id),
-        poster,
+        grupper: [
+          { id: "faser", namn: "Byggfaser", poster: faser },
+          { id: "handelser", namn: "Milstolpar och leveranser", poster: handelser },
+        ],
       };
     });
   }, [state, omfang, pid]);
@@ -206,8 +327,8 @@ export function Tidplan() {
       <Card
         id="tp-tidslinje"
         className="mb-4 lg:mb-6"
-        title="Tidslinje — milstolpar och leveranser"
-        subtitle="Klicka på en punkt för detaljer. Röd linje är i dag. Intervallet anpassas automatiskt efter datan."
+        title="Tidplan — Gantt"
+        subtitle="Byggfaser, milstolpar och leveranser per projekt. Peka på en stapel för detaljer, klicka för att ändra. Orange linje är i dag."
         action={
           <Vyvaljare
             etikett="Omfattning"
@@ -220,7 +341,11 @@ export function Tidplan() {
           />
         }
       >
-        <Tidslinje rader={tidslinjeRader} etikett="Tidslinje över milstolpar och leveranser" />
+        <Tidslinje
+          rader={tidslinjeRader}
+          etikett="Gantt över byggfaser, milstolpar och leveranser"
+          redigera={(post, rad) => <Redigering post={post} rad={rad} />}
+        />
       </Card>
 
       <Projektvaljare />
@@ -245,6 +370,19 @@ export function Tidplan() {
             kolumner={[
               { nyckel: "titel", rubrik: "Händelse" },
               {
+                nyckel: "start",
+                rubrik: "Start",
+                bredd: 150,
+                sortVarde: (m) => m.start || "",
+                render: (m) => (
+                  <DatumFalt
+                    varde={m.start || ""}
+                    etikett={`Start för ${m.titel}`}
+                    onCommit={(v) => uppd("milstolpar", m.id, "start", v)}
+                  />
+                ),
+              },
+              {
                 nyckel: "datum",
                 rubrik: "Datum",
                 bredd: 150,
@@ -265,7 +403,7 @@ export function Tidplan() {
                 filterEtikett: (v) => ({ planerad: "Planerad", klar: "Klar", forsenad: "Försenad" })[v] || v,
                 render: (m) => (
                   <SelStatus
-                    alternativ={["planerad", "klar", "forsenad"]}
+                    alternativ={MS_STATUS}
                     varde={m.status}
                     etikett={`Status för ${m.titel}`}
                     onChange={(v) => uppdStatus("milstolpar", m.id, "status", v)}
@@ -291,6 +429,19 @@ export function Tidplan() {
               { nyckel: "benamning", rubrik: "Materiel" },
               { nyckel: "leverantor", rubrik: "Leverantör", bredd: 160, filter: true },
               {
+                nyckel: "start",
+                rubrik: "Start",
+                bredd: 150,
+                sortVarde: (l) => l.start || "",
+                render: (l) => (
+                  <DatumFalt
+                    varde={l.start || ""}
+                    etikett={`Start för ${l.benamning}`}
+                    onCommit={(v) => uppd("leveranser", l.id, "start", v)}
+                  />
+                ),
+              },
+              {
                 nyckel: "datum",
                 rubrik: "Datum",
                 bredd: 150,
@@ -311,7 +462,7 @@ export function Tidplan() {
                 textVarde: (l) => l.status,
                 render: (l) => (
                   <SelStatus
-                    alternativ={["bekraftad", "preliminar", "avvikelse", "klar"]}
+                    alternativ={LEV_STATUS}
                     varde={l.status}
                     etikett={`Status för ${l.benamning}`}
                     onChange={(v) => uppdStatus("leveranser", l.id, "status", v)}
