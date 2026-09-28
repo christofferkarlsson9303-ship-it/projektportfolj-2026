@@ -2042,7 +2042,7 @@ input[type=date][data-tom]:not(:focus){color:var(--ink-faint)}
 .epc-bock>*{grid-area:1 / 1}
 .epc-bock>input{appearance:none;-webkit-appearance:none;width:24px;height:24px;margin:0;border-radius:7px;cursor:pointer;
   border:2px solid var(--ink-soft);background:var(--surface);transition:background .15s,border-color .15s}
-.epc-bock:hover>input:not(:disabled){border-color:var(--one-djup);background:var(--info-bg)}
+@media(hover:hover){.epc-bock:hover>input:not(:disabled){border-color:var(--one-djup);background:var(--info-bg)}}
 .epc-bock>input:checked{border-color:var(--viz-klar);background:var(--viz-klar)}
 .epc-bock>input:disabled{cursor:default}
 .epc-bock>input:disabled:not(:checked){border-color:var(--hairline-stark);background:var(--sunken)}
