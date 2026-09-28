@@ -1,3 +1,5 @@
+import { PILL } from "../data/konstanter.js";
+
 /* Status i hela appen — en nyckel, en ton, en text.
 
    Tonerna är designsystemets: bad (röd, försenat), warn (orange, åtgärd nu),
@@ -61,6 +63,14 @@ export const LEDTID_TILL_STATUS = {
 
 /** De äldre pill-klasserna (data/konstanter.js PILL) → ton. */
 export const PILL_TILL_TON = { "p-ok": "ok", "p-go": "info", "p-wait": "neutral", "p-warn": "warn", "p-bad": "bad" };
+
+/** Ton och text för en status ur registrens statuslistor (PILL i
+ *  data/konstanter.js) — "fakturerad", "oppen", "godkand" … — som props till
+ *  StatusBadge: <StatusBadge {...registerStatus(rad.status)} />. */
+export function registerStatus(status) {
+  const [c, t] = PILL[status] || ["p-wait", status];
+  return { ton: PILL_TILL_TON[c], label: t };
+}
 
 /** Tonen för en status (eller en ton som redan är en ton). */
 export const tonFor = (status) => STATUS[status]?.ton || (TON_KLASS[status] ? status : "neutral");

@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { usePortfolj, useUi } from "../state/hooks.js";
 import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
-import { Pill, Tabellyta } from "../components/ui/Primitiver.jsx";
-import { Callout, Card, Meter, StatusBadge } from "../components/ds/index.js";
+import { Callout, Card, Meter, StatusBadge, TableRegion } from "../components/ds/index.js";
 import { Falt } from "../components/ui/Falt.jsx";
 import { Slideover } from "../components/ui/Slideover.jsx";
 import { VECKOFRAGOR } from "../data/veckofragor.js";
@@ -10,6 +9,7 @@ import { veckaBesvarade, veckaFlaggor, veckorad } from "../lib/berakningar.js";
 import { idag, veckaEtikett, veckaForskjut, veckaNu } from "../lib/datum.js";
 import { allvar, ALLVARSNAMN, SVARSORD } from "../lib/veckotriage.js";
 import { hamtaNamn } from "../state/portfolj-reducer.js";
+import { registerStatus } from "../lib/status.js";
 
 /* Veckokollen — projektledarens checklista, en vecka i taget.
 
@@ -236,7 +236,7 @@ export function Veckokoll() {
 
           <Card id="vk-historik" title="Historik" subtitle={`Senaste genomgångarna för ${p.nr || p.namn}`}>
             {historik.length ? (
-              <Tabellyta etikett="Veckokollens historik">
+              <TableRegion label="Veckokollens historik">
                 <table>
                   <thead>
                     <tr>
@@ -258,7 +258,7 @@ export function Veckokoll() {
                           <b>{veckaEtikett(r.vecka)}</b>
                         </td>
                         <td data-label="Genomgången">
-                          <Pill status={r.klar ? "klarmarkerad" : "oppen"} />
+                          <StatusBadge {...registerStatus(r.klar ? "klarmarkerad" : "oppen")} />
                           {r.datum ? <span className="ml-1.5 whitespace-nowrap text-xs text-ink-soft">{r.datum}</span> : null}
                         </td>
                         <td data-label="Besvarade" className="num">
@@ -276,7 +276,7 @@ export function Veckokoll() {
                     ))}
                   </tbody>
                 </table>
-              </Tabellyta>
+              </TableRegion>
             ) : (
               <p className="m-0 text-[13px] text-ink-soft">Ingen vecka registrerad ännu.</p>
             )}

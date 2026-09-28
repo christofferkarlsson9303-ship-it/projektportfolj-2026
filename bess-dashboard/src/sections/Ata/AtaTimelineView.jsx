@@ -1,7 +1,7 @@
 import { useMemo } from "react";
-import { Note } from "../../components/ui/Primitiver.jsx";
 import { Tidslinje } from "../../components/ui/Tidslinje.jsx";
 import { KOLUMNER, datumFor, kolumnFor } from "./flode.js";
+import { Callout } from "../../components/ds/index.js";
 
 /* Tidslinjevyn. Återanvänder gantt-komponenten från Tidplan i stället för en
    egen — den har redan i-dag-linjen, körfältsuppdelning, detaljpanel och
@@ -39,12 +39,12 @@ export function AtaTimelineView({ rader, onOppna }) {
 
   if (!spar.length) {
     return (
-      <Note niva="bad">
+      <Callout ton="bad">
         <b>Ingen post går att placera på tidsaxeln.</b> Tidslinjen behöver minst ett datum per ärende —
         händelsedatum, underrättelse, godkänt pris eller fakturadatum. Just nu saknar samtliga{" "}
         {rader.length} poster alla fyra. Fyll i händelsedatum i ärendepanelen, så blir både tidslinjen och
         24-timmarsfristen användbara.
-      </Note>
+      </Callout>
     );
   }
 
@@ -56,7 +56,7 @@ export function AtaTimelineView({ rader, onOppna }) {
         onValjPost={(post) => onOppna(post.id)}
       />
       {utanDatum.length ? (
-        <p className="lead" style={{ marginTop: 12 }}>
+        <p className="m-0 text-[13px] leading-snug text-ink-soft">
           {utanDatum.length} post{utanDatum.length > 1 ? "er" : ""} saknar datum helt och visas inte här:{" "}
           {utanDatum.map((u) => u.nr).join(", ")}.
         </p>

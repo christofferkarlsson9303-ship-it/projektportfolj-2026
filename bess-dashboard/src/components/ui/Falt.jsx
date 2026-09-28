@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { Trash2 } from "lucide-react";
+import { PILL } from "../../data/konstanter.js";
 
 /* Fält som skriver tillbaka först vid blur eller Enter.
    Varför inte rak onChange mot state: originalets onchange-attribut commitade
@@ -116,5 +118,33 @@ export function Kryss({ id, checked, onChange, children }) {
       <input id={id} type="checkbox" checked={!!checked} onChange={(e) => onChange(e.target.checked)} />
       <label htmlFor={id}>{children}</label>
     </div>
+  );
+}
+
+/** Statusväljare. Kräver etikett — en naken <select> är otillgänglig.
+ *  Alternativ är statusnycklar (texten hämtas ur PILL) eller [värde, text]. */
+export function SelStatus({ alternativ, varde, onChange, etikett, ...rest }) {
+  return (
+    <select value={varde ?? ""} onChange={(e) => onChange(e.target.value)} aria-label={etikett} {...rest}>
+      {alternativ.map((a) => {
+        const v = Array.isArray(a) ? a[0] : a;
+        const t = Array.isArray(a) ? a[1] : (PILL[a] || [undefined, a])[1];
+        return (
+          <option key={v} value={v}>
+            {t}
+          </option>
+        );
+      })}
+    </select>
+  );
+}
+
+/** Ikonknapp för att ta bort en tabellrad. Etiketten namnger raden, så att
+ *  skärmläsare och verktygstips säger vad som tas bort. */
+export function TaBortKnapp({ etikett, onClick }) {
+  return (
+    <button type="button" className="btn sec mini !px-2" aria-label={etikett} title={etikett} onClick={onClick}>
+      <Trash2 size={14} aria-hidden="true" />
+    </button>
   );
 }

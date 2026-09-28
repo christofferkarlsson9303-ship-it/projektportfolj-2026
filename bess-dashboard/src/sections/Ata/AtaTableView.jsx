@@ -1,8 +1,9 @@
 import { DataTable } from "../../components/ui/DataTable.jsx";
-import { Pill } from "../../components/ui/Primitiver.jsx";
 import { ATA_KLASS } from "../../data/konstanter.js";
 import { prisGrind, underrattelseLage } from "../../lib/berakningar.js";
+import { registerStatus } from "../../lib/status.js";
 
+import { StatusBadge } from "../../components/ds/index.js";
 /* Tabellvyn — kalkylbladskänslan. DataTable bär redan sortering, snabbsökning,
    kolumnfilter, summeringsrad, mobilens kortvy och CSV-export, så den här filen
    är bara kolumndefinitionen.
@@ -56,7 +57,7 @@ export function AtaTableView({ rader, tomText, vald, onOppna, verktyg }) {
           rubrik: "Status",
           bredd: 170,
           filter: true,
-          render: (u) => <Pill status={u.status} />,
+          render: (u) => <StatusBadge {...registerStatus(u.status)} />,
         },
         { nyckel: "belopp", rubrik: "Belopp", bredd: 130, typ: "sek", summera: true },
         {

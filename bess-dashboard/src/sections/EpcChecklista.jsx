@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { usePortfolj, useUi } from "../state/hooks.js";
-import { Note } from "../components/ui/Primitiver.jsx";
 import { Fasruta, Sektioner } from "../components/epc/Fas.jsx";
 import { Markering } from "../components/epc/Delar.jsx";
 import { NuLage, Portfoljlage } from "../components/epc/Lagesbild.jsx";
@@ -10,7 +9,7 @@ import { LOPANDE, MARKERINGAR, SUMMERING, VERSION } from "../data/bessChecklistD
 import { projekt } from "../lib/berakningar.js";
 import { FAS_STATUS, erfarenheter, faslage, punktlage } from "../lib/epc.js";
 import { Summering } from "../components/epc/Summering.jsx";
-import { Card, SectionHeading } from "../components/ds/index.js";
+import { Callout, Card, SectionHeading } from "../components/ds/index.js";
 import { Erfarenhetslista } from "../components/epc/Erfarenheter.jsx";
 
 /* Bygga batteripark — hur en BESS-anläggning byggs som totalentreprenad
@@ -350,11 +349,11 @@ export function EpcChecklista() {
         <AttVerifiera />
       </Card>
 
-      <Note>
+      <Callout ton="info">
         Värden, frister och procentsatser är hämtade från Batch C-kontrakten och leverantörsmanualer.
         Kontrollera alltid mot aktuellt projekts kontrakt och bilagor. Standardplanens fasdatum är en
         utgångspunkt, inte en tidplan.
-      </Note>
+      </Callout>
     </div>
   );
 }

@@ -1,5 +1,6 @@
-/* Sektionsregister — kopplar vy-id från VYER till komponent.
-   Sektioner som saknas här renderas som UnderMigrering. */
+/* Sektionsregister — kopplar vy-id från VYER till komponent. Alla vyer i
+   standalone-filen är flyttade hit; en ny vy läggs till både här och i
+   data/vyer.js. */
 
 import { Idag } from "./Idag.jsx";
 import { DashboardView } from "./Oversikt.jsx";
@@ -22,6 +23,10 @@ import { Hseq } from "./Hseq.jsx";
 import { Slutdok } from "./Slutdok.jsx";
 import { Handlingsplan } from "./Handlingsplan.jsx";
 import { Data } from "./Data.jsx";
+import { Resurser } from "./Resurser.jsx";
+import { Tidrapport } from "./Tidrapport.jsx";
+import { Budget } from "./Budget.jsx";
+import { Faktura } from "./Faktura.jsx";
 
 export const SEKTIONER = {
   idag: Idag,
@@ -29,6 +34,10 @@ export const SEKTIONER = {
   epc: EpcChecklista,
   tavla: Tavla,
   tidplan: Tidplan,
+  resurser: Resurser,
+  tid: Tidrapport,
+  budget: Budget,
+  faktura: Faktura,
   milstolpar: Milstolpar,
   ata: Ata,
   ekonomi: Ekonomi,

@@ -138,13 +138,13 @@ test("nästa möte blir MASTER och det föregående arkiveras", async ({ page })
   await kort(page, "Byggmöte_10_-_Växjö.pdf").getByRole("button", { name: "Tillämpa" }).click();
 
   const grupp = page.getByRole("region", { name: /Protokoll för 36037/ });
-  await expect(grupp.locator("li.master")).toHaveCount(1);
-  await expect(grupp.locator("li.master")).toContainText("Byggmöte_10_-_Växjö.pdf");
-  await expect(grupp.locator("li.arkiverad")).toContainText("Byggmöte_9_-_Växjö.pdf");
+  await expect(grupp.locator('li[data-status="master"]')).toHaveCount(1);
+  await expect(grupp.locator('li[data-status="master"]')).toContainText("Byggmöte_10_-_Växjö.pdf");
+  await expect(grupp.locator('li[data-status="arkiverad"]')).toContainText("Byggmöte_9_-_Växjö.pdf");
 
   // Arkivet ligger kvar efter omladdning.
   await page.reload();
-  await expect(page.getByRole("region", { name: /Protokoll för 36037/ }).locator("li.master")).toContainText("Byggmöte_10");
+  await expect(page.getByRole("region", { name: /Protokoll för 36037/ }).locator('li[data-status="master"]')).toContainText("Byggmöte_10");
 
   // Mötena finns i Byggmöten.
   await gaTill(page, "Byggmöten");
@@ -165,8 +165,8 @@ test("ett äldre möte som laddas upp i efterhand tar inte över som MASTER", as
   await expect(page.getByText(/Byggmöte_9_-_Växjö\.pdf arkiverades/)).toBeVisible();
 
   const grupp = page.getByRole("region", { name: /Protokoll för 36037/ });
-  await expect(grupp.locator("li.master")).toContainText("Byggmöte_10_-_Växjö.pdf");
-  await expect(grupp.locator("li.arkiverad")).toContainText("Byggmöte_9_-_Växjö.pdf");
+  await expect(grupp.locator('li[data-status="master"]')).toContainText("Byggmöte_10_-_Växjö.pdf");
+  await expect(grupp.locator('li[data-status="arkiverad"]')).toContainText("Byggmöte_9_-_Växjö.pdf");
 });
 
 test("protokoll för ett projekt påverkar inte ett annat projekts MASTER", async ({ page }) => {
@@ -175,8 +175,8 @@ test("protokoll för ett projekt påverkar inte ett annat projekts MASTER", asyn
   await valjFiler(page, pdf("Byggmöte_10_-_Alvesta.pdf"));
   await kort(page, "Byggmöte_10_-_Alvesta.pdf").getByRole("button", { name: "Tillämpa" }).click();
 
-  await expect(page.getByRole("region", { name: /Protokoll för 36037/ }).locator("li.master")).toHaveCount(1);
-  await expect(page.getByRole("region", { name: /Protokoll för 36038/ }).locator("li.master")).toHaveCount(1);
+  await expect(page.getByRole("region", { name: /Protokoll för 36037/ }).locator('li[data-status="master"]')).toHaveCount(1);
+  await expect(page.getByRole("region", { name: /Protokoll för 36038/ }).locator('li[data-status="master"]')).toHaveCount(1);
 });
 
 test("en säkerhetskopia återställs först efter bekräftelse", async ({ page }) => {

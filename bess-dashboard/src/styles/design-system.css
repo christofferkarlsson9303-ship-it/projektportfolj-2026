@@ -148,36 +148,6 @@ main{max-width:1240px;margin:0 auto;padding:26px 30px 64px;width:100%}
 .card .lead{font-size:12px;color:var(--ink-soft);margin-bottom:14px}
 
 
-/* ---------- Project card ---------- */
-.pcard{background:var(--surface);border-radius:var(--r);border:var(--border);border-top:4px solid var(--one-bla);padding:18px;min-width:0}
-.pcard.b{border-top-color:var(--turkos)}
-.pcard.c{border-top-color:var(--duvbla)}
-.pcard.d{border-top-color:var(--orange)}
-.pnr{font-family:var(--font-b);font-weight:700;font-size:11px;letter-spacing:.12em;color:var(--one-bla)}
-.pcard.b .pnr{color:var(--turkos)}
-.pcard.c .pnr{color:var(--duvbla)}
-.pcard.d .pnr{color:var(--orange)}
-.pcard h2{font-size:19px;margin:4px 0 2px}
-.pcard h2 a{transition:color .15s}
-.pcard h2 a:hover{color:var(--one-bla)}
-.pmeta{font-size:12px;color:var(--ink-soft)}
-.pstats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0 6px}
-.pstat{background:var(--sunken);border-radius:6px;padding:10px}
-.pstat .l{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);font-weight:600}
-.pstat .v{font-family:var(--font-h);font-size:17px;font-weight:700;color:var(--ink);margin-top:3px}
-.bar{height:8px;background:var(--hairline);border-radius:4px;overflow:hidden;margin-top:12px}
-.bar>span{display:block;height:100%;background:var(--one-bla)}
-.pcard.b .bar>span{background:var(--turkos)}
-.pcard.c .bar>span{background:var(--duvbla)}
-.pcard.d .bar>span{background:var(--orange)}
-.pctop{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.pctop select{width:auto;font-size:11px;font-weight:700;letter-spacing:.03em;padding:4px 8px;
-  border-radius:20px;background:var(--sunken);border-color:var(--hairline-stark);color:var(--ink)}
-.pnext{display:flex;align-items:center;gap:8px;font-size:12px;background:var(--sunken);
-  border-radius:6px;padding:8px 10px;margin:12px 0}
-.pnext.bess{background:var(--ok-bg);border:1px solid #bfe9de}
-.pnext-d{font-family:var(--font-h);font-weight:700;font-size:14px;color:var(--one-djup);white-space:nowrap}
-
 /* ---------- Hub: BESS-nedräkning + gantt ---------- */
 .bhero{display:flex;align-items:center;gap:18px;background:var(--one-djup);color:#fff;
   border-radius:var(--r);padding:18px 22px;margin-bottom:16px}
@@ -272,9 +242,6 @@ select:focus,input:focus,textarea:focus{outline:2px solid var(--one-bla);outline
 .rowbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 
 /* ---------- Risk matrix ---------- */
-.rv{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:24px;
-  border-radius:5px;font-weight:700;font-size:13px;color:#fff}
-.rv.l{background:var(--turkos)}.rv.m{background:var(--orange)}.rv.h{background:var(--rod)}
 
 /* ---------- Timeline ---------- */
 .tl{position:relative;background:var(--surface);border:var(--border);border-radius:var(--r);padding:18px 18px 8px;overflow-x:auto}
@@ -331,21 +298,6 @@ footer{background:var(--morkgra);color:#cfd8dc;font-size:12px;padding:16px 24px;
 .qa .ref{display:block;margin-top:6px;font-size:11px;color:var(--ink-soft);font-weight:600}
 
 /* ---------- Progress ---------- */
-.prog{height:6px;background:var(--hairline);border-radius:3px;overflow:hidden}
-.prog>span{display:block;height:100%;background:var(--one-bla)}
-.prog.done>span{background:var(--turkos)}
-
-/* ---------- Accordion ---------- */
-.grp{margin-top:14px}
-.grp h4{font-family:var(--font-b);font-size:12px;text-transform:uppercase;letter-spacing:.06em;
-  color:var(--ink-soft);margin:0 0 4px}
-.grp .info{font-size:12px;color:var(--ink-soft);margin-bottom:8px;font-style:normal}
-.chk{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--hairline)}
-.chk:last-child{border-bottom:none}
-.chk input[type=checkbox]{width:19px;height:19px;margin:1px 0 0;flex-shrink:0;accent-color:var(--one-bla)}
-.chk label{font-size:13px;flex:1;cursor:pointer}
-.chk label s{color:var(--ink-faint);text-decoration:none}
-.chk .hint{display:block;font-size:11.5px;color:var(--ink-soft);margin-top:2px}
 
 /* ---------- Formulär ---------- */
 .f{margin-bottom:14px}
@@ -685,7 +637,7 @@ main{padding-top:30px}
 .btn{transition:transform .14s ease,box-shadow .14s ease,background .14s ease}
 .btn:not(.sec):hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,182,222,.35)}
 .btn.sec:hover{transform:translateY(-1px)}
-.pill,.tag,.rv{transition:transform .12s ease}
+.pill,.tag{transition:transform .12s ease}
 tbody tr{transition:background .12s ease}
 .fitem{transition:background .15s ease,transform .15s ease}
 .gchip{transition:transform .15s ease,box-shadow .15s ease}
@@ -797,37 +749,6 @@ select,input[type=text],input[type=search],input[type=email],input[type=date],in
 .sumrad td{border-top:1px solid var(--hairline-stark);border-bottom:none}
 td.neg,.neg{color:var(--rod)}
 tr.fakturerad{opacity:.62}
-
-/* ---------- Beläggning ---------- */
-.blcell{display:inline-flex;flex-direction:column;align-items:flex-end;gap:1px;
-  min-width:62px;padding:6px 10px;border-radius:9px;font-weight:700;font-size:13px;line-height:1.15}
-.blcell i{font-style:normal;font-weight:600;font-size:10px;opacity:.8}
-.bl-tom{background:var(--sunken);color:var(--ink-faint)}
-.bl-del{background:var(--info-bg);color:var(--info-ink)}
-.bl-full{background:var(--ok-bg);color:var(--ok-ink)}
-.bl-over{background:var(--bad-bg);color:var(--bad-ink)}
-.belleg{display:flex;gap:18px;flex-wrap:wrap;font-size:11.5px;color:var(--ink-soft);margin-top:14px}
-.belleg i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
-.belleg i.bl-del{background:#aee0e8}.belleg i.bl-full{background:#3cb8ba}.belleg i.bl-over{background:#ea5549}
-table.belaggning td{vertical-align:middle}
-
-/* ---------- Minibar (budgetförbrukning) ---------- */
-.minibar{height:7px;border-radius:4px;background:var(--hairline);overflow:hidden;min-width:64px;margin-bottom:3px}
-.minibar>span{display:block;height:100%;background:var(--turkos)}
-.minibar>span.over{background:var(--rod)}
-.budgettab td small{font-size:10.5px;color:var(--ink-soft)}
-
-/* ---------- Tidrapportens veckorad ---------- */
-.dagrad{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin:4px 0 20px}
-@media(max-width:760px){.dagrad{grid-template-columns:repeat(4,1fr)}}
-@media(max-width:460px){.dagrad{grid-template-columns:repeat(2,1fr)}}
-.dagkol{background:var(--sunken);border:1px solid var(--hairline);border-radius:12px;
-  padding:12px 10px;text-align:center}
-.dagkol.har{background:var(--info-bg);border-color:#bde4f0}
-.dagkol.helg{opacity:.72}
-.dagnamn{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-faint);font-weight:700}
-.dagdat{font-size:11px;color:var(--ink-soft);margin-top:2px}
-.dagtim{font-family:var(--font-h);font-weight:700;font-size:17px;color:var(--one-djup);margin:6px 0 8px}
 
 /* ---------- Diverse justeringar ---------- */
 .note{border-radius:0 12px 12px 0;padding:14px 16px}
@@ -1181,52 +1102,6 @@ tr.lastrad:hover{opacity:.8}
 }
 #rapportutskrift{display:none}
 
-
-/* ---------- Data och backup ---------- */
-.datalist{display:flex;flex-direction:column;gap:14px}
-.datarad{display:grid;grid-template-columns:230px 1fr;gap:18px;padding:15px 0;
-  border-top:1px solid var(--hairline)}
-.datarad:first-child{border-top:none;padding-top:4px}
-.datarad b{font-size:13.5px;color:var(--one-djup)}
-.datarad.ok b::before{content:"● ";color:var(--turkos)}
-.datarad span{font-size:13px;color:var(--ink-soft);line-height:1.6}
-.datarad code{background:var(--sunken);border-radius:5px;padding:1px 6px;font-size:12px;color:var(--ink)}
-@media(max-width:760px){.datarad{grid-template-columns:1fr;gap:5px}}
-
-/* ---------- Projektledarens handbok — kapitel ---------- */
-.kaplist{display:flex;flex-direction:column;gap:12px}
-.kap{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r);overflow:hidden;
-  transition:border-color .18s var(--ease),box-shadow .18s var(--ease)}
-.kap:hover{border-color:var(--hairline-stark)}
-.kap.oppen{border-color:var(--one-bla);box-shadow:var(--sh-md)}
-.kaph{display:flex;align-items:center;gap:16px;padding:17px 20px;cursor:pointer;user-select:none;
-  width:100%;background:none;border:0;font:inherit;color:inherit;text-align:left}
-.kaph:focus-visible{outline:2px solid var(--one-bla);outline-offset:-2px}
-.kaph:hover{background:var(--sunken)}
-.kapnr{flex:0 0 auto;min-width:52px;text-align:center;font-family:var(--font-h);font-weight:700;
-  font-size:13px;color:#fff;background:var(--one-djup);border-radius:8px;padding:6px 9px;letter-spacing:.01em}
-.kap.klar .kapnr{background:var(--turkos)}
-.kaptxt{flex:1;min-width:0}
-.kaptxt b{display:block;font-size:14.5px;color:var(--ink);line-height:1.4}
-.kaptxt small{display:block;font-size:11.5px;color:var(--ink-faint);margin-top:2px}
-.kapprog{flex:0 0 auto;display:flex;align-items:center;gap:10px;min-width:132px;justify-content:flex-end}
-.kapprog .prog{width:82px}
-.kapprog small{font-size:11.5px;color:var(--ink-soft);font-variant-numeric:tabular-nums;min-width:40px;text-align:right}
-.kappil{flex:0 0 auto;color:var(--ink-faint);font-size:13px;width:14px;text-align:center}
-.kapb{padding:4px 22px 20px;border-top:1px solid var(--hairline)}
-.kapingress{font-size:13.5px;color:var(--ink-soft);line-height:1.6;max-width:84ch;margin:18px 0 16px;
-  padding-left:14px;border-left:3px solid var(--himmel)}
-.kaplista{margin:6px 0 4px;padding-left:20px}
-.kaplista li{font-size:13px;color:var(--ink);line-height:1.6;margin:5px 0}
-.kap .grp{margin-top:20px}
-.kap .grp h4{font-size:12px;color:var(--one-djup);letter-spacing:.05em}
-@media(max-width:700px){
-  .kaph{flex-wrap:wrap;gap:11px;padding:15px 16px}
-  .kaptxt{flex:1 1 100%;order:2}
-  .kapprog{order:3;justify-content:flex-start;min-width:0}
-  .kappil{order:4;margin-left:auto}
-  .kapb{padding:4px 16px 18px}
-}
 
 .toast{border-radius:14px}
 
@@ -1653,7 +1528,6 @@ button.ov-chip:hover{border-color:var(--one-bla);color:var(--ink)}
 .ov-risklista li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;padding:9px 0;
   border-top:1px solid var(--hairline)}
 .ov-risklista li:first-child{border-top:0;padding-top:0}
-.ov-risklista .rv{margin-top:1px}
 .ov-risklista p{margin:0 0 4px;font-size:13px;line-height:1.4;color:var(--ink)}
 
 /* Projektkort */
@@ -1704,8 +1578,6 @@ button.ov-chip:hover{border-color:var(--one-bla);color:var(--ink)}
 .projkort-nasta-t{display:inline-flex;align-items:baseline;gap:6px;flex-wrap:wrap;color:var(--ink);min-width:0}
 .projkort-nasta-t svg{align-self:center;color:var(--ok-ink)}
 .projkort-nasta-datum{color:var(--ink-soft);white-space:nowrap}
-.projkort-ekonomi .bar{margin-top:0}
-.projkort-ekonomi .bar>span{background:var(--accent)}
 .projkort-ekonomi-rad{display:flex;justify-content:space-between;gap:6px 16px;flex-wrap:wrap;margin-top:10px}
 .projkort-ekonomi-rad>div{display:flex;flex-direction:column;gap:2px;min-width:0}
 .projkort-ekonomi-rad>div:last-child{text-align:right;margin-left:auto}
@@ -1804,66 +1676,9 @@ textarea.hp-led-text::placeholder{color:var(--ink-faint);font-weight:400}
   .hp-kedja{margin-top:20px}
 }
 
-/* ---------- Data och backup ---------- */
-.data-sektion{margin-top:24px}
-.dropzon{margin-top:4px;border:2px dashed var(--hairline-stark);border-radius:var(--r);background:var(--ground);
-  padding:24px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;color:var(--ink-soft);
-  transition:border-color .15s,background .15s}
-.dropzon svg{color:var(--info-ink)}
-.dropzon.aktiv{border-color:var(--one-bla);background:var(--info-bg)}
-.dropzon b{color:var(--ink)}
-.lanklik{background:none;border:0;padding:0;font:inherit;color:var(--info-ink);text-decoration:underline;cursor:pointer}
-.dropzon-typer{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;font-size:12px}
-.dropzon-typer b{font-family:ui-monospace,Menlo,Consolas,monospace;color:var(--info-ink)}
-.importlista{display:flex;flex-direction:column;gap:14px;margin-top:18px}
-.importkort{border:1px solid var(--hairline-stark);border-left:3px solid var(--one-bla);border-radius:var(--r-sm);
-  background:var(--surface);padding:16px 18px;display:flex;flex-direction:column;gap:10px;min-width:0;overflow-wrap:break-word}
-.importkort.fel{border-left-color:var(--rod)}
-.importkort-topp{display:flex;justify-content:space-between;align-items:flex-start;gap:8px 16px;flex-wrap:wrap}
-.importkort-titel{font-family:var(--font-h);font-weight:700;font-size:15px;color:var(--ink)}
-.importkort-fil{font-size:12.5px;color:var(--ink-soft);word-break:break-all}
-.importkort-siffror{display:flex;gap:6px;flex-wrap:wrap}
-.importkort-siffror span{font-size:12px;font-weight:700;border-radius:999px;padding:3px 10px;background:var(--sunken);color:var(--ink-soft)}
-.importkort-siffror .ny{background:var(--ok-bg);color:var(--ok-ink)}
-.importkort-siffror .upd{background:var(--info-bg);color:var(--info-ink)}
-.importkort-projekt{margin:0;max-width:340px}
-.importkort-varning,.importkort-info{font-size:13px;line-height:1.45;border-radius:8px;padding:8px 12px}
-.importkort-varning{background:var(--warn-bg);color:var(--warn-ink)}
-.importkort-info{background:var(--sunken);color:var(--ink-soft)}
-.importkort-lista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:13px}
-.importkort-lista li{padding:8px 0;border-top:1px solid var(--hairline)}
-.importkort-lista li:first-child{border-top:none}
-.importkort-tagg{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
-  border-radius:999px;padding:2px 8px;margin-right:8px}
-.importkort-tagg.ny{background:var(--ok-bg);color:var(--ok-ink)}
-.importkort-tagg.upd{background:var(--info-bg);color:var(--info-ink)}
-.importkort-diff{margin:6px 0 0;display:grid;grid-template-columns:minmax(90px,max-content) 1fr;gap:3px 12px}
-.importkort-diff>div{display:contents}
-.importkort-diff dt{font-size:11.5px;color:var(--ink-faint)}
-.importkort-diff dd{margin:0;font-size:12.5px;color:var(--ink);white-space:pre-line}
-.importkort-diff s{color:var(--ink-faint)}
-.importkort-tabell{font-size:13px}
-.importkort-tabell td.minskar{color:var(--bad-ink);font-weight:700}
+/* ---------- Farlig åtgärd (återställ, ta bort) ---------- */
 .btn.fara{background:var(--rod)}
 .btn.fara:hover:not([disabled]){background:#d8443a;box-shadow:0 6px 18px rgba(234,85,73,.3)}
-.protokoll-grupp{margin-top:18px}
-.protokoll-grupp h4{margin:0 0 8px;font-size:13px;font-weight:700;color:var(--ink-soft);letter-spacing:.02em}
-.protokoll-lista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
-.protokoll-lista li{display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap;padding:10px 12px;border-radius:10px;
-  background:var(--sunken);min-width:0}
-.protokoll-lista li.master{background:var(--ok-bg)}
-.protokoll-status{font-size:10.5px;font-weight:800;letter-spacing:.08em;border-radius:999px;padding:3px 9px;flex:0 0 auto}
-.protokoll-status.master{background:var(--turkos);color:#fff}
-.protokoll-status.arkiverad{background:var(--hairline);color:var(--ink-soft);text-transform:uppercase}
-.protokoll-namn{flex:1;min-width:0;font-size:13.5px;color:var(--ink);word-break:break-word}
-.protokoll-lista li.arkiverad .protokoll-namn{color:var(--ink-soft)}
-.protokoll-meta{font-size:12px;color:var(--ink-faint);white-space:nowrap}
-.datalista{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:10px}
-.datalista li{border-left:3px solid var(--hairline-stark);padding:2px 0 2px 12px;display:flex;flex-direction:column;gap:3px}
-.datalista li.ok{border-left-color:var(--turkos)}
-.datalista li.planerad{border-left-color:var(--orange)}
-.datalista b{font-size:13.5px;color:var(--ink);display:inline-flex;align-items:center;gap:6px}
-.datalista span{font-size:13px;line-height:1.5;color:var(--ink-soft)}
 
 /* ---------- Bygga batteripark (BESS EPC) ----------
    Lägesbilden överst, sedan guiden: faserna är <details>-kort med

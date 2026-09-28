@@ -1,11 +1,11 @@
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { ArrowUpRight, BatteryCharging, MapPin, PlugZap, Zap } from "lucide-react";
-import { Falt, NumFalt, DatumFalt } from "../ui/Falt.jsx";
-import { SelStatus, Bar, Tabellyta } from "../ui/Primitiver.jsx";
+import { DatumFalt, Falt, NumFalt, SelStatus } from "../ui/Falt.jsx";
 import { PROJEKTSTATUS } from "../../data/konstanter.js";
 import { fmtSEK } from "../../lib/format.js";
 import { dagarTill, idag } from "../../lib/datum.js";
 import { ekonomi, nastaHandelse, oppnaUR, projektKlass, projektUnderlag } from "../../lib/berakningar.js";
+import { Meter, TableRegion } from "../ds/index.js";
 
 /* ---------- Projektkort ---------- */
 
@@ -99,7 +99,7 @@ export function Projektkort({ p }) {
       ) : null}
 
       <div className="projkort-ekonomi">
-        <Bar procent={e.faktProc} etikett={`Fakturerat av kontraktet för ${p.namn}`} />
+        <Meter value={e.faktProc} label={`Fakturerat av kontraktet för ${p.namn}`} />
         <div className="projkort-ekonomi-rad">
           <div>
             <span>Fakturerat</span>
@@ -159,7 +159,7 @@ export function Projektredigering() {
       <h3>Projektuppgifter</h3>
       <div className="lead">Grunddata per projekt. Ändringar sparas direkt.</div>
 
-      <Tabellyta etikett="Projektuppgifter">
+      <TableRegion label="Projektuppgifter">
         <table>
           <caption className="sr-only">
             Redigerbara grunduppgifter per projekt. Kontraktssumman kan bara ändras av administratören.
@@ -274,7 +274,7 @@ export function Projektredigering() {
             ))}
           </tbody>
         </table>
-      </Tabellyta>
+      </TableRegion>
     </div>
   );
 }

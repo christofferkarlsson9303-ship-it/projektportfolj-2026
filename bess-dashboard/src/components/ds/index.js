@@ -16,7 +16,9 @@
    Callout         upplysningsruta för antaganden, rutiner och varningar
    Meter           mätare för andel av en helhet
    Overline        liten versal rubrik för ett avsnitt inuti ett kort
-   CheckList       avbockningslista med kryssrutor */
+   CheckList       avbockningslista med kryssrutor
+   TableRegion     rullbar, namngiven yta för en tabell utanför DataTable
+   RiskScore       riskvärde som märke, med nivån i text */
 
 export { Card } from "./Card.jsx";
 export { StatusBadge } from "./StatusBadge.jsx";
@@ -30,3 +32,5 @@ export { Callout } from "./Callout.jsx";
 export { Meter } from "./Meter.jsx";
 export { Overline } from "./Overline.jsx";
 export { CheckList } from "./CheckList.jsx";
+export { TableRegion } from "./TableRegion.jsx";
+export { RiskScore } from "./RiskScore.jsx";
