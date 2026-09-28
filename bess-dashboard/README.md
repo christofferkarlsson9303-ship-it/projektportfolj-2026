@@ -49,6 +49,19 @@ när RLS nekar en `UPDATE` — den returnerar noll rader. Adaptern räknar därf
 rader och kastar själv, annars skulle en nekad ekonomiändring se ut att ha
 sparats.
 
+### Samtidiga ändringar
+
+Varje rad i `app_state` har en version. En skrivning går bara igenom om
+versionen är den klienten senast *tog in* — en realtidsändring som inte lästs
+in (för att användaren stod i ett fält) räknas inte. Hinner någon annan före
+blir det konflikt, och då slås ändringarna ihop mot senast gemensamma läge
+(`src/lib/sammanfoga.js`): rader med id slås ihop fält för fält, så två
+personer som ändrar olika saker får båda behålla sina ändringar. Har båda
+ändrat samma fält gäller den egna versionen, och en toast säger till.
+
+`src/state/PortfolioProvider.test.js` provar detta med två användare mot en
+falsk Supabase i minnet (`src/test/falskSupabase.js`).
+
 ### Innan delat läge fungerar
 
 Lägg till appens adress under *Authentication → URL Configuration* i Supabase,
