@@ -5,6 +5,8 @@ import { PortfolioContext } from "./kontexter.js";
 import { skapaDb } from "./db-supabase.js";
 import { useUi } from "./hooks.js";
 import { arEkonomiAtgard, efterInlasning, normalisera, reducer } from "./portfolj-reducer.js";
+import { sammanfoga } from "../lib/sammanfoga.js";
+import { feltyp, loggNyckel, nyaLoggposter, sammanslagningsText } from "./synk.js";
 
 export const CONFIG = {
   autosaveMs: 1200,
@@ -25,6 +27,7 @@ function laddaLokalt() {
 }
 
 const packa = (s) => JSON.parse(JSON.stringify(s));
+const lika = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 /** Ekonomidata som egen payload — {kontraktsvarde:{id:kr}, betalplan:[...]}. */
 function packaEkonomi(state) {
@@ -81,12 +84,38 @@ export function PortfolioProvider({ children }) {
   const sparTimerEk = useRef(null);
   const koadKanal = useRef(null); // "state" | "ekonomi" | null
 
+  /* Senast gemensamma läge med databasen (normaliserad payload). Det är basen
+     i tre-vägs-sammanslagningen när någon annan har sparat samtidigt. */
+  const basState = useRef(null);
+  // Payloads vi själva skickat — deras realtidseko ska inte läsas in igen.
+  const skickade = useRef([]);
+  // En delad ändring kom medan användaren skrev och väntar på att läsas in.
+  const vantar = useRef(false);
+  // Loggposter som redan finns i tabellen — de ska aldrig skickas upp igen.
+  const kandaLogg = useRef(new Set());
+  const tillampaFjarr = useRef(null); // sätts nedan, efter sparaState
+
   /* Håll en färsk referens till state för de asynkrona callbackerna (autospar
      och db-snapshots). Deklarerad före autospar-effekten så att den hinner
      uppdateras innan payloaden packas. */
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  /** Fullt state ur en portföljpayload. Ekonomi och logg ligger i egna
+   *  källor och tas från det vi redan har. */
+  const franPayload = useCallback((payload) => {
+    const nytt = efterInlasning(normalisera(structuredClone(payload)));
+    const kv = new Map(stateRef.current.projekt.map((p) => [p.id, p.kontraktsvarde]));
+    nytt.projekt = nytt.projekt.map((p) => (kv.has(p.id) ? { ...p, kontraktsvarde: kv.get(p.id) } : p));
+    nytt.betalplan = stateRef.current.betalplan;
+    nytt.andringslogg = stateRef.current.andringslogg || [];
+    return nytt;
+  }, []);
+
+  const komIhagSkickad = (str) => {
+    skickade.current = [...skickade.current.slice(-9), str];
+  };
 
   /* ---------- Spara ---------- */
 
@@ -104,34 +133,26 @@ export function PortfolioProvider({ children }) {
     try {
       setConn({ kl: "", txt: "Sparar…" });
       const payload = packaStatePayload(s);
-      senastSynkad.current = JSON.stringify(payload);
+      const str = JSON.stringify(payload);
+      senastSynkad.current = str;
+      komIhagSkickad(str);
       await dbRef.current.doc(CONFIG.dbPath).set(payload);
+      basState.current = payload;
       setConn({ kl: "ok", txt: "Delad · sparad " + nu() });
     } catch (e) {
       /* Konflikt betyder att någon hann spara mellan vår läsning och vår
-         skrivning. Tidigare skrevs den ändringen över utan ett ord; nu läser vi
-         om och säger till. Ändringen finns kvar lokalt, men den delade bilden
-         är nu någon annans — full sammanslagning kräver att portföljen delas
-         upp i riktiga rader, vilket är nästa steg. */
-      if (e.code === "konflikt") {
+         skrivning. Tidigare lästes den andras version in och den egna ändringen
+         försvann. Nu slås de ihop mot senast gemensamma läge, och resultatet
+         sparas om — båda ändringarna finns kvar. */
+      if (feltyp(e) === "konflikt") {
         try {
           const snap = await dbRef.current.doc(CONFIG.dbPath).get();
           if (snap.exists && snap.data()) {
-            senastSynkad.current = JSON.stringify(packa(snap.data()));
-            const inlast = efterInlasning(normalisera(snap.data()));
-            inlast.andringslogg = stateRef.current.andringslogg || [];
-            // Ekonomifälten ligger i eget dokument — behåll det vi redan vet.
-            const kv = stateRef.current.projekt.map((p) => [p.id, p.kontraktsvarde]);
-            inlast.projekt = inlast.projekt.map((p) => {
-              const träff = kv.find(([id]) => id === p.id);
-              return träff ? { ...p, kontraktsvarde: träff[1] } : p;
-            });
-            inlast.betalplan = stateRef.current.betalplan;
-            rawDispatch({ type: "SATT_STATE", state: inlast });
+            const konflikter = tillampaFjarr.current(snap.data(), undefined);
+            setConn({ kl: konflikter.length ? "err" : "ok", txt: sammanslagningsText(konflikter) });
           }
-          setConn({ kl: "err", txt: "Någon annan sparade samtidigt — vyn är omläst, kontrollera din ändring" });
         } catch {
-          setConn({ kl: "err", txt: "Någon annan sparade samtidigt — kunde inte läsa om" });
+          setConn({ kl: "err", txt: "Någon annan sparade samtidigt — kunde inte läsa om, din ändring finns lokalt" });
         }
         return;
       }
@@ -139,7 +160,38 @@ export function PortfolioProvider({ children }) {
     }
   }, []);
 
-  const sparaEkonomi = useCallback(async () => {
+  /* Tar in en version av portföljen från databasen utan att tappa det som
+     ändrats lokalt men inte sparats: tre-vägs-sammanslagning mot basen.
+     Skiljer sig resultatet från databasens version sparas det om.
+     Returnerar sökvägarna där båda ändrat samma fält. Nås via en ref, eftersom
+     sparaState (som anropar den) och den (som schemalägger sparaState)
+     refererar till varandra. */
+  const tillampaFjarrFn = useCallback((raw, version) => {
+    const deras = packaStatePayload(franPayload(raw));
+    const mina = packaStatePayload(stateRef.current);
+    const bas = basState.current ?? mina;
+    const { varde, konflikter } = sammanfoga(bas, mina, deras);
+
+    dbRef.current?.doc(CONFIG.dbPath).antaVersion?.(version);
+    basState.current = deras;
+    senastSynkad.current = JSON.stringify(packa(raw));
+    vantar.current = false;
+
+    rawDispatch({ type: "SATT_STATE", state: franPayload(varde) });
+    if (!lika(varde, deras)) {
+      clearTimeout(sparTimer.current);
+      sparTimer.current = setTimeout(sparaState, CONFIG.autosaveMs);
+    }
+    // Statusraden skrivs över av omsparningen direkt — toasten syns.
+    if (konflikter.length) visaToast(sammanslagningsText(konflikter), "warn");
+    return konflikter;
+  }, [franPayload, sparaState, visaToast]);
+
+  useEffect(() => {
+    tillampaFjarr.current = tillampaFjarrFn;
+  }, [tillampaFjarrFn]);
+
+  const sparaEkonomi = useCallback(async function sparaEkonomiNu() {
     const s = stateRef.current;
     try {
       localStorage.setItem(CONFIG.storageKey, JSON.stringify(s));
@@ -152,23 +204,62 @@ export function PortfolioProvider({ children }) {
       setConn({ kl: "", txt: "Lokalt läge · sparad " + nu() });
       return;
     }
+    const doc = dbRef.current.doc(CONFIG.dbPathEkonomi);
     try {
       setConn({ kl: "", txt: "Sparar…" });
       senastSynkadEk.current = JSON.stringify(forsok);
-      await dbRef.current.doc(CONFIG.dbPathEkonomi).set(forsok);
+      await doc.set(forsok);
       ekonomiLast.current = forsok;
       setEkonomiFel("");
       setConn({ kl: "ok", txt: "Delad · sparad " + nu() });
-    } catch {
-      // Nekad skrivning: återställ vyn till senast bekräftade värden.
-      if (ekonomiLast.current) {
-        rawDispatch({ type: "SATT_STATE", state: tillampaEkonomi(stateRef.current, ekonomiLast.current) });
+    } catch (e) {
+      const typ = feltyp(e);
+
+      if (typ === "konflikt") {
+        // En annan administratör hann spara. Slå ihop och spara om.
+        try {
+          const snap = await doc.get();
+          const deras = snap.exists ? snap.data() : null;
+          if (deras) {
+            const { varde, konflikter } = sammanfoga(ekonomiLast.current ?? deras, forsok, deras);
+            ekonomiLast.current = deras;
+            senastSynkadEk.current = JSON.stringify(deras);
+            rawDispatch({ type: "SATT_STATE", state: tillampaEkonomi(stateRef.current, varde) });
+            if (!lika(varde, deras)) {
+              clearTimeout(sparTimerEk.current);
+              sparTimerEk.current = setTimeout(sparaEkonomiNu, CONFIG.autosaveMs);
+            }
+            setConn({ kl: konflikter.length ? "err" : "ok", txt: sammanslagningsText(konflikter) });
+          }
+        } catch {
+          setConn({ kl: "err", txt: "Ekonomin: någon annan sparade samtidigt — kunde inte läsa om" });
+        }
+        return;
       }
-      senastSynkadEk.current = JSON.stringify(ekonomiLast.current || forsok);
+
+      if (typ === "nekad") {
+        // Behörigheten sa nej: återställ vyn till senast bekräftade värden.
+        if (ekonomiLast.current) {
+          rawDispatch({ type: "SATT_STATE", state: tillampaEkonomi(stateRef.current, ekonomiLast.current) });
+        }
+        senastSynkadEk.current = JSON.stringify(ekonomiLast.current || forsok);
+        setEkonomiFel(
+          "Kunde inte spara — kontraktsvärde och betalplan kan bara ändras av administratören. Ändringen har återställts."
+        );
+        setConn({ kl: "err", txt: "Ekonomiändring nekad — endast administratör" });
+        return;
+      }
+
+      /* Nätverk, tidsgräns, serverfel. Tidigare tolkades även detta som nekad
+         behörighet och ändringen rullades tillbaka — administratören tappade
+         sin ändring vid ett kort avbrott. Nu ligger den kvar och vi försöker
+         igen. */
       setEkonomiFel(
-        "Kunde inte spara — kontraktsvärde och betalplan kan bara ändras av administratören. Ändringen har återställts."
+        `Kunde inte spara ekonomin (${e?.code || e?.message || "fel"}). Ändringen finns kvar lokalt — nytt försök om en stund.`
       );
-      setConn({ kl: "err", txt: "Ekonomiändring nekad — endast administratör" });
+      setConn({ kl: "err", txt: "Ekonomin kunde inte sparas — försöker igen" });
+      clearTimeout(sparTimerEk.current);
+      sparTimerEk.current = setTimeout(sparaEkonomiNu, 10_000);
     }
   }, []);
 
@@ -235,14 +326,15 @@ export function PortfolioProvider({ children }) {
         if (avbruten) return;
         if (snap.exists && snap.data()) {
           senastSynkad.current = JSON.stringify(packa(snap.data()));
-          const inlast = efterInlasning(normalisera(snap.data()));
-          inlast.andringslogg = stateRef.current.andringslogg || [];
+          const inlast = franPayload(snap.data());
+          basState.current = packaStatePayload(inlast);
           dispatch({ type: "SATT_STATE", state: inlast, tyst: true });
           setConn({ kl: "ok", txt: "Delad · hämtad " + nu() });
         } else {
           const start = packaStatePayload(stateRef.current);
           senastSynkad.current = JSON.stringify(start);
           await ref.set(start);
+          basState.current = start;
           setConn({ kl: "ok", txt: "Delad · databasen skapad " + nu() });
         }
       } catch {
@@ -255,24 +347,22 @@ export function PortfolioProvider({ children }) {
           (snap) => {
             if (!snap.exists || snap.metadata.hasPendingWrites) return;
             const inkommande = JSON.stringify(packa(snap.data()));
-            if (inkommande === senastSynkad.current) return;
-            senastSynkad.current = inkommande;
+            if (inkommande === senastSynkad.current || skickade.current.includes(inkommande)) return;
+            /* Står användaren i ett fält väntar vi — annars ändras det hen
+               skriver i under fingrarna. Versionen antas inte, så en autospar
+               under tiden ger konflikt och sammanslagning i stället för att
+               skriva över den andras ändring. Läses in vid focusout. */
             if (redigerarNu()) {
+              vantar.current = true;
               setConn({ kl: "ok", txt: "Ny delad ändring — läses in när du är klar" });
               return;
             }
-            // Ekonomifälten ingår inte i detta dokument — behåll det vi vet.
-            const kvSpar = stateRef.current.projekt.map((p) => [p.id, p.kontraktsvarde]);
-            const bpSpar = stateRef.current.betalplan;
-            const nyttState = efterInlasning(normalisera(JSON.parse(inkommande)));
-            nyttState.projekt = nyttState.projekt.map((p) => {
-              const träff = kvSpar.find(([id]) => id === p.id);
-              return träff ? { ...p, kontraktsvarde: träff[1] } : p;
-            });
-            nyttState.betalplan = bpSpar;
-            nyttState.andringslogg = stateRef.current.andringslogg || [];
-            dispatch({ type: "SATT_STATE", state: nyttState, tyst: true });
-            setConn({ kl: "ok", txt: "Delad · uppdaterad " + nu() });
+            const konflikter = tillampaFjarr.current(snap.data(), snap.version);
+            setConn(
+              konflikter.length
+                ? { kl: "err", txt: sammanslagningsText(konflikter) }
+                : { kl: "ok", txt: "Delad · uppdaterad " + nu() }
+            );
           },
           (err) => {
             setConn({ kl: "err", txt: `Delningen avbröts (${err.code}) — lokalt läge` });
@@ -312,9 +402,11 @@ export function PortfolioProvider({ children }) {
             const data = snap.data();
             const inkommande = JSON.stringify(data);
             if (inkommande === senastSynkadEk.current) return;
+            // Mitt i en redigering: vänta. Nästa spar ger konflikt och slås ihop.
+            if (redigerarNu()) return;
             senastSynkadEk.current = inkommande;
             ekonomiLast.current = data;
-            if (redigerarNu()) return;
+            refEk.antaVersion?.(snap.version);
             dispatch({ type: "SATT_STATE", state: tillampaEkonomi(stateRef.current, data), tyst: true });
           },
           () => {}
@@ -328,11 +420,18 @@ export function PortfolioProvider({ children }) {
           const poster = await DB.logg.las();
           if (avbruten) return;
           senastLogg.current = poster.length ? poster[0].ts : "";
+          poster.forEach((p) => kandaLogg.current.add(loggNyckel(p)));
           if (poster.length) dispatch({ type: "SATT_LOGG", poster });
         } catch {
           senastLogg.current = null; // otillgänglig — skicka inget blint
         }
-        avregistrera.push(DB.logg.lyssna((post) => dispatch({ type: "SATT_LOGG", poster: [post] })));
+        avregistrera.push(
+          DB.logg.lyssna((post) => {
+            // Känd innan den når listan — annars skickas den upp igen i mitt namn.
+            kandaLogg.current.add(loggNyckel(post));
+            dispatch({ type: "SATT_LOGG", poster: [post] });
+          })
+        );
       }
     })();
 
@@ -346,7 +445,31 @@ export function PortfolioProvider({ children }) {
         }
       });
     };
-  }, [dispatch]);
+  }, [dispatch, franPayload]);
+
+  /* En delad ändring som väntade medan användaren skrev läses in när fokus
+     lämnar fältet. Timeouten låter fokus landa i nästa fält först. */
+  useEffect(() => {
+    const vidFokusUt = () => {
+      setTimeout(async () => {
+        if (!vantar.current || redigerarNu() || !dbRef.current) return;
+        try {
+          const snap = await dbRef.current.doc(CONFIG.dbPath).get();
+          if (!vantar.current || !snap.exists || !snap.data()) return;
+          const konflikter = tillampaFjarr.current(snap.data(), undefined);
+          setConn(
+            konflikter.length
+              ? { kl: "err", txt: sammanslagningsText(konflikter) }
+              : { kl: "ok", txt: "Delad · uppdaterad " + nu() }
+          );
+        } catch {
+          /* nästa spar ger konflikt och sammanslagning ändå */
+        }
+      }, 0);
+    };
+    document.addEventListener("focusout", vidFokusUt);
+    return () => document.removeEventListener("focusout", vidFokusUt);
+  }, []);
 
   /* Skickar upp poster som tillkommit lokalt. Avsändaren utelämnas med flit —
      databasen fyller i den inloggade adressen, och reglerna tillåter ingen
@@ -356,9 +479,10 @@ export function PortfolioProvider({ children }) {
     const granse = senastLogg.current;
     if (!db?.logg || granse === null) return;
 
-    const nya = (state.andringslogg || []).filter((p) => p.ts > granse);
+    const nya = nyaLoggposter(state.andringslogg, granse, kandaLogg.current);
     if (!nya.length) return;
 
+    nya.forEach((p) => kandaLogg.current.add(loggNyckel(p)));
     senastLogg.current = nya[0].ts;
     db.logg.skriv([...nya].reverse()).catch(() => {
       setConn({ kl: "err", txt: "Loggposten sparades lokalt men inte delat" });

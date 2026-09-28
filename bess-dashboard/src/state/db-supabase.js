@@ -78,9 +78,21 @@ function dokument(nyckel) {
 
     set: (payload) => skriv(nyckel, payload),
 
+    /* Säger att klienten nu har tagit in läget i den här versionen. Anropas av
+       providern när en realtidsändring faktiskt har lästs in i vyn. */
+    antaVersion(version) {
+      if (version !== undefined && version !== null) versioner.set(nyckel, version);
+    },
+
     /* Returnerar en avregistreringsfunktion, som providern samlar och kallar
        vid nedmontering. hasPendingWrites finns inte i Postgres — den egna
-       ekot filtreras redan bort av providerns jämförelse mot senast synkade. */
+       ekot filtreras redan bort av providerns jämförelse mot senast synkade.
+
+       Versionen från realtid antas INTE automatiskt. Tidigare gjorde den det,
+       och då gick nästa skrivning igenom även när klienten aldrig tagit in den
+       andras ändring (t.ex. för att användaren stod i ett fält) — den andras
+       ändring skrevs över utan konflikt. Nu följer versionen med i snapshoten
+       och providern anropar antaVersion först när ändringen är inläst. */
     onSnapshot(vidAndring, vidFel) {
       const kanal = supabase
         .channel(`app_state:${nyckel}`)
@@ -89,9 +101,9 @@ function dokument(nyckel) {
           { event: "*", schema: "public", table: "app_state", filter: `key=eq.${nyckel}` },
           (handelse) => {
             const rad = handelse.new && Object.keys(handelse.new).length ? handelse.new : null;
-            if (rad && rad.version !== undefined) versioner.set(nyckel, rad.version);
             vidAndring({
               exists: !!rad,
+              version: rad ? rad.version : undefined,
               data: () => (rad ? rad.value : null),
               metadata: { hasPendingWrites: false },
             });
