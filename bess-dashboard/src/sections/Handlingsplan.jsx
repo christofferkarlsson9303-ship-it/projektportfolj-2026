@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Compass, Flag, Plus, Route, Target, Trophy } from "lucide-react";
 import { usePortfolj, useUi } from "../state/hooks.js";
 import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
-import { Card, Prog } from "../components/ui/Primitiver.jsx";
+import { Card, Meter, StatusBadge } from "../components/ds/index.js";
 import { DatumFalt, Falt } from "../components/ui/Falt.jsx";
 import { Slideover } from "../components/ui/Slideover.jsx";
 import { HP_STATUS } from "../data/konstanter.js";
@@ -20,7 +20,10 @@ import { idag } from "../lib/datum.js";
    platshållare, så att inget påhittat hamnar i ett riktigt projekts plan.
    Textfälten skriver vid blur (Falt), inte per tangenttryck, så att synken
    inte går igång på varje bokstav. Statusbyten går via uppdStatus och hamnar
-   i ändringsloggen; flaggmotorn larmar när en åtgärd passerat sitt datum. */
+   i ändringsloggen; flaggmotorn larmar när en åtgärd passerat sitt datum.
+
+   Huvudet är designsystemets Card med mätare; leden och åtgärdskorten har
+   samma radie, ram och skugga som Card. */
 
 const STATUSKORT = { ejpaborjad: "Ej påbörjad", pagaende: "Pågår", klar: "Klar" };
 
@@ -77,7 +80,7 @@ function Atgardskort({ a, steg, onSatt, onOppna }) {
     <article className={`hp-atgard ${a.status || "ejpaborjad"}${sen ? " sen" : ""}`}>
       <div className="hp-atgard-topp">
         <span className="hp-steg">Steg {steg}</span>
-        {sen ? <span className="hp-sen">Passerat datum</span> : null}
+        {sen ? <StatusBadge ton="bad" label="Passerat datum" /> : null}
       </div>
 
       <h3 className="hp-atgard-titel">
@@ -159,120 +162,117 @@ export function Handlingsplan() {
     <>
       <Projektvaljare />
 
-      <Card klass="hp-huvud">
-        <div className="kortrad">
-          <div style={{ minWidth: 0 }}>
-            <span className="hp-eyebrow">Vision to Action</span>
-            <h3>Handlingsplan — {namn}</h3>
-            <div className="lead" style={{ margin: "4px 0 0" }}>
-              {s.antal
-                ? `${s.klara} av ${s.antal} åtgärder klara · ${s.pagaende} pågår` +
-                  (s.forsenade ? ` · ${s.forsenade} har passerat datum` : "")
-                : "Inga åtgärder ännu — börja med målet och lägg sedan till åtgärder."}
-            </div>
-          </div>
-          <div className="kortverktyg">
+      <div className="flex flex-col gap-4 lg:gap-6">
+        <Card
+          id="hp-rubrik"
+          className="hp-huvud"
+          title={`Handlingsplan — ${namn}`}
+          subtitle={
+            "Vision to Action · " +
+            (s.antal
+              ? `${s.klara} av ${s.antal} åtgärder klara · ${s.pagaende} pågår`
+              : "Inga åtgärder ännu — börja med målet och lägg sedan till åtgärder.")
+          }
+          badge={s.forsenade ? <StatusBadge ton="bad" label={`${s.forsenade} har passerat datum`} /> : null}
+          action={
             <button type="button" className="btn mini hp-ny" onClick={nyAtgard}>
               <Plus size={15} aria-hidden="true" />
               Lägg till åtgärd
             </button>
-          </div>
-        </div>
-        {s.antal ? (
-          <div style={{ marginTop: 14 }}>
-            <Prog procent={s.proc} klart={s.proc === 100} etikett={`${s.klara} av ${s.antal} åtgärder klara`} />
-          </div>
-        ) : null}
-      </Card>
+          }
+        >
+          {s.antal ? <Meter value={s.klara} max={s.antal} label={`${s.klara} av ${s.antal} åtgärder klara`} /> : null}
+        </Card>
 
-      <div className="hp-kedja">
-        <Led
-          klass="mal"
-          ikon={Target}
-          rubrik="Mål"
-          varde={plan?.mal}
-          stor
-          platshallare={`t.ex. Färdigställa ${p.namn} i tid och enligt ABT 06`}
-          onCommit={sattPlan("mal")}
-        />
-
-        <div className="hp-pil" aria-hidden="true" />
-
-        <div className="hp-par">
+        <div className="hp-kedja">
           <Led
-            klass="drivkraft"
-            ikon={Compass}
-            rubrik="Drivkraft"
-            fraga="Varför gör vi detta?"
-            varde={plan?.drivkraft}
-            platshallare="t.ex. Säkra leverans av BESS och godkänd M6 utan vitesrisk"
-            onCommit={sattPlan("drivkraft")}
+            klass="mal"
+            ikon={Target}
+            rubrik="Mål"
+            varde={plan?.mal}
+            stor
+            platshallare={`t.ex. Färdigställa ${p.namn} i tid och enligt ABT 06`}
+            onCommit={sattPlan("mal")}
           />
-          <Led
-            klass="strategi"
-            ikon={Route}
-            rubrik="Strategi"
-            fraga="Hur når vi dit?"
-            varde={plan?.strategi}
-            platshallare="t.ex. Strikt uppföljning av ÄTA, skyddsronder och veckokoll"
-            onCommit={sattPlan("strategi")}
-          />
-        </div>
 
-        <div className="hp-pil" aria-hidden="true" />
+          <div className="hp-pil" aria-hidden="true" />
 
-        <section className="hp-atgarder" aria-labelledby="hp-atgarder-rubrik">
-          <div className="hp-led-topp">
-            <span className="hp-led-ikon" aria-hidden="true">
-              <Flag size={16} />
-            </span>
-            <h2 id="hp-atgarder-rubrik">Åtgärder</h2>
-            <span className="hp-led-fraga">
-              {s.antal ? `${s.antal} st · ${s.proc} % klart` : "Vad gör vi, med vilka resurser och när?"}
-            </span>
+          <div className="hp-par">
+            <Led
+              klass="drivkraft"
+              ikon={Compass}
+              rubrik="Drivkraft"
+              fraga="Varför gör vi detta?"
+              varde={plan?.drivkraft}
+              platshallare="t.ex. Säkra leverans av BESS och godkänd M6 utan vitesrisk"
+              onCommit={sattPlan("drivkraft")}
+            />
+            <Led
+              klass="strategi"
+              ikon={Route}
+              rubrik="Strategi"
+              fraga="Hur når vi dit?"
+              varde={plan?.strategi}
+              platshallare="t.ex. Strikt uppföljning av ÄTA, skyddsronder och veckokoll"
+              onCommit={sattPlan("strategi")}
+            />
           </div>
 
-          {atgarder.length ? (
-            <div className="hp-rutnat">
-              {atgarder.map((a, i) => (
-                <Atgardskort
-                  key={a.id}
-                  a={a}
-                  steg={i + 1}
-                  onSatt={(v) => sattStatus(a.id, v)}
-                  onOppna={() => setOppenId(a.id)}
-                />
-              ))}
-              <button type="button" className="hp-ny-kort" onClick={nyAtgard}>
-                <Plus size={18} aria-hidden="true" />
-                Lägg till åtgärd
-              </button>
-            </div>
-          ) : (
-            <div className="hp-tomt">
-              <p>
-                Bryt ned strategin i konkreta åtgärder — till exempel ”Slutföra cold commissioning”,{" "}
-                ”Skicka underrättelse om ÄTA” eller ”Genomföra skyddsrond”.
-              </p>
-              <button type="button" className="btn mini" onClick={nyAtgard}>
-                <Plus size={15} aria-hidden="true" />
-                Lägg till första åtgärden
-              </button>
-            </div>
-          )}
-        </section>
+          <div className="hp-pil" aria-hidden="true" />
 
-        <div className="hp-pil" aria-hidden="true" />
+          <section className="hp-atgarder" aria-labelledby="hp-atgarder-rubrik">
+            <div className="hp-led-topp">
+              <span className="hp-led-ikon" aria-hidden="true">
+                <Flag size={16} />
+              </span>
+              <h2 id="hp-atgarder-rubrik">Åtgärder</h2>
+              <span className="hp-led-fraga">
+                {s.antal ? `${s.antal} st · ${s.proc} % klart` : "Vad gör vi, med vilka resurser och när?"}
+              </span>
+            </div>
 
-        <Led
-          klass="resultat"
-          ikon={Trophy}
-          rubrik="Förväntat slutresultat"
-          varde={plan?.slutresultat}
-          stor
-          platshallare="t.ex. Driftsatt anläggning med 100 % godkänd slutdokumentation och noll öppna ÄTA-tvister"
-          onCommit={sattPlan("slutresultat")}
-        />
+            {atgarder.length ? (
+              <div className="hp-rutnat">
+                {atgarder.map((a, i) => (
+                  <Atgardskort
+                    key={a.id}
+                    a={a}
+                    steg={i + 1}
+                    onSatt={(v) => sattStatus(a.id, v)}
+                    onOppna={() => setOppenId(a.id)}
+                  />
+                ))}
+                <button type="button" className="hp-ny-kort" onClick={nyAtgard}>
+                  <Plus size={18} aria-hidden="true" />
+                  Lägg till åtgärd
+                </button>
+              </div>
+            ) : (
+              <div className="hp-tomt">
+                <p>
+                  Bryt ned strategin i konkreta åtgärder — till exempel ”Slutföra cold commissioning”,{" "}
+                  ”Skicka underrättelse om ÄTA” eller ”Genomföra skyddsrond”.
+                </p>
+                <button type="button" className="btn mini" onClick={nyAtgard}>
+                  <Plus size={15} aria-hidden="true" />
+                  Lägg till första åtgärden
+                </button>
+              </div>
+            )}
+          </section>
+
+          <div className="hp-pil" aria-hidden="true" />
+
+          <Led
+            klass="resultat"
+            ikon={Trophy}
+            rubrik="Förväntat slutresultat"
+            varde={plan?.slutresultat}
+            stor
+            platshallare="t.ex. Driftsatt anläggning med 100 % godkänd slutdokumentation och noll öppna ÄTA-tvister"
+            onCommit={sattPlan("slutresultat")}
+          />
+        </div>
       </div>
 
       {oppen ? (
@@ -342,7 +342,7 @@ export function Handlingsplan() {
             />
           </div>
 
-          <div className="rowbtns">
+          <div className="flex flex-wrap gap-2">
             <button type="button" className="btn sec" onClick={taBortOppen}>
               Ta bort åtgärden
             </button>
