@@ -685,11 +685,29 @@ body{background:var(--ground);font-size:14.5px;line-height:1.55}
 .topbar .navtoggle{margin-top:4px;color:#fff}
 .tophead{min-width:0;flex:1}
 .pagetitle{font-size:27px;font-weight:700;letter-spacing:-.02em;line-height:1.2;color:#fff}
-.pagelead{font-size:13.5px;color:rgba(255,255,255,.75);margin-top:5px;max-width:62ch;line-height:1.5}
+.pagelead{font-size:13.5px;color:rgba(255,255,255,.75);margin-top:5px;max-width:80ch;line-height:1.5}
 .topbar .kbd{border-radius:8px;padding:9px 16px;margin-top:3px;
   background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.3)}
 .topbar .kbd:hover{border-color:#fff;background:rgba(255,255,255,.24);color:#fff}
 main{max-width:1320px;padding:32px 38px 80px}
+/* Sidhuvudet linjerar med innehållet: samma vänsterkant som main, som är
+   centrerad med max 1320 px och 38 px luft. */
+@media(min-width:981px){
+  .topbar{padding-left:max(38px,calc((100% - 1320px) / 2 + 38px));
+    padding-right:max(38px,calc((100% - 1320px) / 2 + 38px))}
+}
+/* Primärknapp i ONE Blågrön — vit text på ONE Blå når bara 2,4:1. */
+.btn.djup{background:var(--one-djup)}
+.btn.djup:hover{background:#004e61;box-shadow:0 6px 18px rgba(0,95,118,.3)}
+/* Sidomenyn: menylistan rullar ovanför en fast fot — tona ut nederkanten så
+   det syns att listan fortsätter, och håll rullningslisten diskret. */
+.sidenav{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.22) transparent;
+  -webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 28px),transparent);
+  mask-image:linear-gradient(to bottom,#000 calc(100% - 28px),transparent);padding-bottom:22px}
+.sidenav::-webkit-scrollbar-thumb{background:rgba(255,255,255,.22)}
+/* Namnfältet i foten: den generella input-regeln längre upp gjorde det vitt. */
+.sidebar .namnfalt input{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.22);color:#fff}
+.sidebar .namnfalt input:focus{background:rgba(255,255,255,.16);border-color:#fff;outline:2px solid #fff;outline-offset:1px}
 /* section.on: se kommentaren om den borttagna vyväxlaren ovan. */
 
 @media(max-width:980px){
