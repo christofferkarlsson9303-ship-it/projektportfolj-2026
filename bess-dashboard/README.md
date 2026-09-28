@@ -1,8 +1,8 @@
 # Projektportfölj BESS
 
-React-versionen av projektportföljen för ONE Nordics batteriparker. Migreras
-sektion för sektion från `Projektportfolj_standalone_2026-09-17.html`, som
-ligger kvar orörd och fortfarande gäller för de vyer som inte flyttats än.
+React-versionen av projektportföljen för ONE Nordics batteriparker. Alla vyer
+är flyttade från `Projektportfolj_standalone_2026-09-17.html`, som ligger kvar
+orörd som referens för originalets beteende.
 
 ## Komma igång
 
@@ -78,8 +78,9 @@ ljust och mörkt läge och följer ONE Nordics profil. Avstånden följer en
 
 Översikten (`DashboardView`), Bygga batteripark, Milstolpar M1–M7, ÄTA och
 hinder, Dagbok, Ekonomi, Byggmöten, Störning, HSEQ, Risker,
-Slutdokumentation, Idag, Tidplan, Veckokoll, Tavla, Handlingsplan och Öppna
-punkter är byggda av dem. De äldre vyerna får samma statusmärke via
+Slutdokumentation, Idag, Tidplan, Veckokoll, Tavla, Handlingsplan, Öppna
+punkter, Resurser, Tidrapport, Budget och utfall och Fakturaunderlag är
+byggda av dem. De äldre vyerna får samma statusmärke via
 `Pill`, samma nyckeltalsruta via `Kpi` (→ `StatTile`), samma upplysning via
 `Note` (→ `Callout`) och samma kortform via `.card`.
 
@@ -103,6 +104,22 @@ tangentbordsfokus) visar datum, läge och ansvarig; klick öppnar
 detaljpanelen där anroparen kan lägga till redigering via `redigera`. I
 Tidplanen hämtas byggfaserna ur Bygga batteripark (start, slut och läge),
 och milstolpar och leveranser blir staplar när de har ett startdatum.
+
+### Planering och tid
+
+Resurser, Tidrapport, Budget och utfall och Fakturaunderlag räknar i
+`src/lib/planering.js` (enhetstestade i `planering.test.js`):
+
+- **Tidkostnad** = timmar × personens á-pris × tidslag (övertid 1,5 / 2 / 3).
+- **Beläggning** = planerade timmar mot kapacitet per vecka. Skalan är
+  sekventiell: ljust ONE Blå för utrymme kvar, djup Blågrön för 85–100 % och
+  rött med varningsikon över kapacitet.
+- **Arbetsbudget** i kronor räknas med snittet av á-priserna (ANTAGANDE);
+  utfallet alltid med respektive persons á-pris.
+- **Fakturaunderlag** = debiterbar tid och kostnad som inte redan ligger i ett
+  underlag, plus 10 % entreprenadarvode på kostnaderna (ABT 06 kap. 6 § 9).
+  Underlaget låser sina rader i samma steg (`SKAPA_FAKTURAUNDERLAG`) och kan
+  ångras tills det är fakturerat.
 
 ## Bygga batteripark
 

@@ -425,72 +425,7 @@ export function underlagsstampel(state) {
     : "Inget underlag registrerat — ange källa per projekt under Projektuppgifter";
 }
 
-/* ---------- Tid, resurser och budget ---------- */
-
-export const person = (state, id) => state.medarbetare.find((m) => m.id === id) || null;
-export const aktivaPersoner = (state) => state.medarbetare.filter((m) => m.aktiv !== false);
-export const aktivitet = (state, id) => state.aktiviteter.find((a) => a.id === id) || null;
-export const aktiviteterFor = (state, pid) => state.aktiviteter.filter((a) => a.projektId === pid);
-
-export const otFaktor = (v) => Number(v) || 1;
-
-export function timkostnad(state, rad) {
-  const p = person(state, rad.personId);
-  if (!p) return 0;
-  return (Number(p.timpris) || 0) * otFaktor(rad.overtid) * (Number(rad.timmar) || 0);
-}
-
-export function bemanningsrad(state, personId, projektId, vecka) {
-  return (
-    state.bemanning.find(
-      (b) => b.personId === personId && b.projektId === projektId && b.vecka === vecka
-    ) || null
-  );
-}
-
-export function planeratPerson(state, personId, vecka) {
-  return state.bemanning
-    .filter((b) => b.personId === personId && b.vecka === vecka)
-    .reduce((s, b) => s + (Number(b.timmar) || 0), 0);
-}
-
-export function planeratProjekt(state, projektId, vecka) {
-  return state.bemanning
-    .filter((b) => b.projektId === projektId && b.vecka === vecka)
-    .reduce((s, b) => s + (Number(b.timmar) || 0), 0);
-}
-
-export function belaggningsklass(proc) {
-  if (!proc) return "bl-tom";
-  if (proc > 100) return "bl-over";
-  if (proc >= 95) return "bl-full";
-  return "bl-del";
-}
-
-export const tidraderVecka = (state, personId, vstr) =>
-  state.tidrader.filter((t) => t.personId === personId && t.vecka === vstr);
-
-export function utfallAktivitet(state, aid) {
-  const timmar = state.tidrader
-    .filter((t) => t.aktivitetId === aid)
-    .reduce((s, t) => s + (Number(t.timmar) || 0), 0);
-  const kronor = state.tidrader
-    .filter((t) => t.aktivitetId === aid)
-    .reduce((s, t) => s + timkostnad(state, t), 0);
-  const kostnad = state.kostnader
-    .filter((k) => k.aktivitetId === aid)
-    .reduce((s, k) => s + (Number(k.belopp) || 0), 0);
-  return { timmar, kronor, kostnad, totalt: kronor + kostnad };
-}
-
-export const ofaktureradTid = (state, pid) =>
-  state.tidrader.filter((t) => t.projektId === pid && t.debiterbar && !t.fakturerad);
-
-export const ofakturKostnad = (state, pid) =>
-  state.kostnader.filter((k) => k.projektId === pid && k.vidarefakturera && !k.fakturerad);
-
-/** Entreprenadarvode på självkostnad, ABT 06 kap. 6 § 9. */
-export const ARVODE = 10;
+/* Tid, resurser, budget och fakturaunderlag ligger i lib/planering.js. */
 
 /* ---------- Övrigt ---------- */
 

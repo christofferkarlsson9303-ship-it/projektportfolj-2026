@@ -5,18 +5,18 @@ import { AppShell } from "./components/layout/AppShell.jsx";
 import { Felgrans } from "./components/Felgrans.jsx";
 import { Inloggning } from "./components/Inloggning.jsx";
 import { SEKTIONER } from "./sections/index.js";
-import { UnderMigrering } from "./sections/UnderMigrering.jsx";
 import { useAuth, useUi } from "./state/hooks.js";
 
 function AktivSektion() {
   const { aktivVy } = useUi();
-  const Komponent = SEKTIONER[aktivVy];
+  // Adressfältet släpper bara igenom kända vy-id; översikten är reserv.
+  const Komponent = SEKTIONER[aktivVy] || SEKTIONER.oversikt;
 
   return (
     // key gör att felgränsen nollställs när man byter vy — annars fastnar
     // hela arbetsytan i felläge efter ett fel i en enskild sektion.
     <Felgrans key={aktivVy} vy={aktivVy}>
-      {Komponent ? <Komponent /> : <UnderMigrering vy={aktivVy} />}
+      <Komponent />
     </Felgrans>
   );
 }

@@ -8,6 +8,7 @@ import { LEDTIDER, PUNKT_FOR_ID } from "../data/bessChecklistData.ts";
 import { migreraUr } from "../lib/berakningar.js";
 import { idag } from "../lib/datum.js";
 import { forslagText, kanTillampas, tillampaForslag } from "../lib/importera.js";
+import { angraFakturaunderlag, skapaFakturaunderlag } from "../lib/planering.js";
 
 /** Namnet används i ändringsloggen och sparas per webbläsare, inte i delad data. */
 export const NAMN_KEY = "batchc-portfolj-namn";
@@ -160,6 +161,8 @@ const etikettFor = (state, lista, id) => {
       return { etikett: `Slutdok: ${kort(rad.krav)}`, projektId: rad.projektId };
     case "hpAtgarder":
       return { etikett: `Handlingsplan: ${kort(rad.titel || "Namnlös åtgärd")}`, projektId: rad.projektId };
+    case "fakturor":
+      return { etikett: `Fakturaunderlag ${rad.nr}`, projektId: rad.projektId };
     default:
       return { etikett: String(id), projektId: rad.projektId || null };
   }
@@ -377,6 +380,22 @@ export function reducer(state, action) {
         ...state,
         bemanning: [...utan, { id: `b-${personId}-${projektId}-${vecka}`, personId, projektId, vecka, timmar: t }],
       };
+    }
+
+    /* Fakturaunderlag: skapas av allt ofakturerat och låser raderna i samma
+       steg, så att ingen tidrad eller kostnad hamnar i två underlag. */
+    case "SKAPA_FAKTURAUNDERLAG": {
+      const ut = skapaFakturaunderlag(state, action.pid, action.datum);
+      if (ut === state) return state;
+      const f = ut.fakturor[ut.fakturor.length - 1];
+      return loggat(ut, action.pid, `Fakturaunderlag ${f.nr} skapat (${f.summa} kr)`);
+    }
+
+    case "ANGRA_FAKTURAUNDERLAG": {
+      const f = state.fakturor.find((x) => x.id === action.id);
+      const ut = angraFakturaunderlag(state, action.id);
+      if (ut === state) return state;
+      return loggat(ut, f.projektId, `Fakturaunderlag ${f.nr} ångrat — raderna är upplåsta`);
     }
 
     /* ---------- Byggmöten ----------
