@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { usePortfolj, useUi } from "../state/hooks.js";
 import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
-import { Pill } from "../components/ui/Primitiver.jsx";
 import { Callout, Card, Meter, StatTile, StatusBadge } from "../components/ds/index.js";
 import { DatumFalt, Falt } from "../components/ui/Falt.jsx";
 import { Overlamningsindex } from "../components/ui/Overlamningsindex.jsx";
@@ -14,6 +13,7 @@ import {
   slutdokKritisktKlart,
 } from "../lib/berakningar.js";
 import { fmtProcent } from "../lib/format.js";
+import { registerStatus } from "../lib/status.js";
 
 /* Slutdokumentation — grinden mot M6 och M7.
 
@@ -97,7 +97,7 @@ function Handling({ d, last, onSatt, onOppna }) {
       <div className="slutdok-atgard">
         {last ? (
           <span className="slutdok-last">
-            <Pill status="vantar" />
+            <StatusBadge {...registerStatus("vantar")} />
             <span className="sr-only">Låst — slutbesiktningsprotokollet väntar på M6</span>
           </span>
         ) : (

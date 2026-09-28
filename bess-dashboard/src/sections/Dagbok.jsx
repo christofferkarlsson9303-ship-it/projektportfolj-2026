@@ -3,12 +3,12 @@ import { usePortfolj, useUi } from "../state/hooks.js";
 import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
 import { Tathetsvaljare } from "../components/ui/Vyvaljare.jsx";
 import { DataTable } from "../components/ui/DataTable.jsx";
-import { Pill, Tabellyta } from "../components/ui/Primitiver.jsx";
-import { Callout, Card, Overline, StatTile } from "../components/ds/index.js";
+import { Callout, Card, Overline, StatTile, StatusBadge, TableRegion } from "../components/ds/index.js";
 import { Falt, DatumFalt, Kryss } from "../components/ui/Falt.jsx";
 import { fmtSEK } from "../lib/format.js";
 import { nyDagboksrad } from "../lib/nyaPoster.js";
 import { dagbokGrupper, dagbokKomplett, projekt } from "../lib/berakningar.js";
+import { registerStatus } from "../lib/status.js";
 
 /* Dagboken på designsystemet: kort med rubrik och åtgärd, nyckeltal överst
    och blanketten som ett eget kort med statusmärke. Kraven per ÄTA står som
@@ -67,7 +67,7 @@ function Dagboksformular({ d, onStang }) {
     <Card
       id={`dagboksrad-${d.id}`}
       title={`Dagboksrad — ${d.ataRef || "utan ÄTA-nummer"}`}
-      badge={<Pill status={dagbokKomplett(d) ? "klar" : "komplettering"} />}
+      badge={<StatusBadge {...registerStatus(dagbokKomplett(d) ? "klar" : "komplettering")} />}
       action={
         <button type="button" className="btn sec mini" onClick={onStang}>
           Stäng
@@ -262,7 +262,7 @@ export function Dagbok() {
         >
           {grupper.length ? (
             <>
-              <Tabellyta etikett="Sammanställning per ÄTA">
+              <TableRegion label="Sammanställning per ÄTA">
                 <table>
                   <thead>
                     <tr>
@@ -297,23 +297,23 @@ export function Dagbok() {
                           {fmtSEK(g.kostnad)}
                         </td>
                         <td data-label="Dokumentation">
-                          <Pill status={g.komplett ? "klar" : "komplettering"} />
+                          <StatusBadge {...registerStatus(g.komplett ? "klar" : "komplettering")} />
                         </td>
                         <td data-label="Signering">
                           {g.kravSignering ? (
-                            <Pill status={g.signering ? "klar" : "oppen"} />
+                            <StatusBadge {...registerStatus(g.signering ? "klar" : "oppen")} />
                           ) : (
                             <span className="text-[12px] text-ink-faint">Inget krav</span>
                           )}
                         </td>
                         <td data-label="Fakturerad">
-                          <Pill status={g.fakturerad ? "fakturerad" : "kvar"} />
+                          <StatusBadge {...registerStatus(g.fakturerad ? "fakturerad" : "kvar")} />
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              </Tabellyta>
+              </TableRegion>
 
               <Callout>
                 <b>Att fakturera för ÄTA.</b> Kontrollera att ni fakturerat enligt vad kontraktet säger och
@@ -377,7 +377,7 @@ export function Dagbok() {
                 sortVarde: (d) => (dagbokKomplett(d) ? 1 : 0),
                 textVarde: (d) => (dagbokKomplett(d) ? "Klar" : "Komplettering"),
                 exportVarde: (d) => (dagbokKomplett(d) ? "Klar" : "Komplettering"),
-                render: (d) => <Pill status={dagbokKomplett(d) ? "klar" : "komplettering"} />,
+                render: (d) => <StatusBadge {...registerStatus(dagbokKomplett(d) ? "klar" : "komplettering")} />,
               },
             ]}
           />

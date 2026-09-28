@@ -1,9 +1,9 @@
 import { useMemo } from "react";
 import { usePortfolj } from "../../state/hooks.js";
-import { Tabellyta } from "../ui/Primitiver.jsx";
 import { FasStatus } from "./Delar.jsx";
 import { ProgressSummary } from "../ds/ProgressSummary.jsx";
 import { checklistsummering } from "../../lib/epc.js";
+import { TableRegion } from "../ds/index.js";
 
 /* Summeringen av checklistan för valt projekt: framdriften överst
    (ProgressSummary) och en rad per fas. Mätaren är andel klart av det som är aktuellt, i samma ton som
@@ -45,7 +45,7 @@ export function Summering({ pid, onVisaFas }) {
         {t.ejAktuella ? ` · ${t.ejAktuella} ej aktuella` : ""}
       </p>
 
-      <Tabellyta etikett="Status per fas">
+      <TableRegion label="Status per fas">
         <table className="epc-sumtabell">
           <thead>
             <tr>
@@ -97,7 +97,7 @@ export function Summering({ pid, onVisaFas }) {
             </tr>
           </tbody>
         </table>
-      </Tabellyta>
+      </TableRegion>
     </>
   );
 }

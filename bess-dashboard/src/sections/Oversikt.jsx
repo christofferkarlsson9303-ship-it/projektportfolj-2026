@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Pencil } from "lucide-react";
 import { usePortfolj, useUi } from "../state/hooks.js";
-import { Note } from "../components/ui/Primitiver.jsx";
 import { Hero } from "../components/oversikt/Hero.jsx";
 import { Nyckeltal } from "../components/oversikt/Nyckeltal.jsx";
 import { Leveranser, Risker, Uppmarksamhet } from "../components/oversikt/Rutor.jsx";
@@ -13,6 +12,7 @@ import { NastaUppgift } from "../components/oversikt/NastaUppgift.jsx";
 import { Projektkort, Projektredigering } from "../components/oversikt/Projekt.jsx";
 import { uppmarksamhet } from "../lib/oversikt.js";
 import { projektUnderlag } from "../lib/berakningar.js";
+import { Callout } from "../components/ds/index.js";
 
 /* Översikten (DashboardView) — läget i portföljen just nu.
 
@@ -117,7 +117,7 @@ export function DashboardView() {
         </div>
       </section>
 
-      <Note>
+      <Callout ton="info">
         <b>Underlag och antaganden.</b> Datum, UR-serier, leverantörer och kontakter för 36037/36038 kommer
         ur byggmötesprotokollen{batchC.length ? ` (senast ${batchC.join(", ")})` : ""}, senaste tidplan och
         UR-status. Göteborg Skogome och
@@ -128,7 +128,7 @@ export function DashboardView() {
         Betalplanens datum för M5 (v. 42) är satt till 2026-10-16 som <span className="ant">ANTAGANDE</span>{" "}
         för 36037/36038 — justera mot faktisk fakturaplan. Riskvärdena är min bedömning, inte hämtade ur
         underlaget.
-      </Note>
+      </Callout>
     </div>
   );
 }

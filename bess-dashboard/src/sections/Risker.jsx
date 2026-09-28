@@ -1,11 +1,10 @@
 import { useMemo, useState } from "react";
 import { usePortfolj, useUi } from "../state/hooks.js";
 import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
-import { Callout, Card, StatTile, StatusBadge } from "../components/ds/index.js";
+import { Callout, Card, RiskScore, StatTile, StatusBadge, TableRegion } from "../components/ds/index.js";
 import { PILL_TILL_TON } from "../lib/status.js";
 import { Tathetsvaljare, Vyvaljare } from "../components/ui/Vyvaljare.jsx";
 import { DataTable } from "../components/ui/DataTable.jsx";
-import { Riskvarde, Tabellyta } from "../components/ui/Primitiver.jsx";
 import { PTag } from "../components/ui/PTag.jsx";
 import { Falt, NumFalt } from "../components/ui/Falt.jsx";
 import { RISKAGARE, RISKKATEGORI, RISKSTATUS_NY } from "../data/konstanter.js";
@@ -108,7 +107,7 @@ function Riskkort({ r }) {
       }`}
     >
       <div className="flex flex-wrap items-center gap-2.5">
-        <Riskvarde varde={rv} klass={rv >= 15 ? "h" : rv >= 8 ? "m" : "l"} />
+        <RiskScore value={rv} />
         <div className="min-w-[220px] flex-1">
           <Falt
             varde={r.titel || ""}
@@ -406,7 +405,7 @@ export function Risker() {
               </button>
             }
           >
-            <Tabellyta etikett="Miniriskmetoden">
+            <TableRegion label="Miniriskmetoden">
               <table>
                 <thead>
                   <tr>
@@ -417,14 +416,14 @@ export function Risker() {
                 </thead>
                 <tbody>
                   {[
-                    ["h", "15–25", "Kritisk", "Omedelbar åtgärdsplan, eskalera till ledning"],
-                    ["m", "8–14", "Hög", "Konkret åtgärdsplan inom en vecka"],
-                    ["l", "4–7", "Medium", "Bevakas aktivt"],
-                    ["l", "1–3", "Låg", "Registreras utan aktiv åtgärd"],
-                  ].map(([kl, spann, prio, atgard]) => (
+                    [15, "15–25", "Kritisk", "Omedelbar åtgärdsplan, eskalera till ledning"],
+                    [8, "8–14", "Hög", "Konkret åtgärdsplan inom en vecka"],
+                    [4, "4–7", "Medium", "Bevakas aktivt"],
+                    [1, "1–3", "Låg", "Registreras utan aktiv åtgärd"],
+                  ].map(([fran, spann, prio, atgard]) => (
                     <tr key={spann}>
                       <td data-label="Riskvärde">
-                        <span className={`rv ${kl}`}>{spann}</span>
+                        <RiskScore value={fran} label={spann} />
                       </td>
                       <td data-label="Prioritet">{prio}</td>
                       <td data-label="Åtgärd">{atgard}</td>
@@ -432,7 +431,7 @@ export function Risker() {
                   ))}
                 </tbody>
               </table>
-            </Tabellyta>
+            </TableRegion>
           </Card>
         </div>
 
@@ -481,10 +480,7 @@ export function Risker() {
                   textVarde: (r) => String(riskvarde(r)),
                   exportVarde: (r) => riskvarde(r),
                   render: (r) => (
-                    <Riskvarde
-                      varde={riskvarde(r)}
-                      klass={riskvarde(r) >= 15 ? "h" : riskvarde(r) >= 8 ? "m" : "l"}
-                    />
+                    <RiskScore value={riskvarde(r)} />
                   ),
                 },
                 { nyckel: "titel", rubrik: "Risk" },
