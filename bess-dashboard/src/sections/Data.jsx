@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FileUp, FolderSync } from "lucide-react";
 import { usePortfolj, useUi } from "../state/hooks.js";
-import { Card, Kpi, Note } from "../components/ui/Primitiver.jsx";
+import { DataTable } from "../components/ui/DataTable.jsx";
+import { Callout, Card, DataList, Overline, StatTile, StatusBadge } from "../components/ds/index.js";
 import { CSV_TABELLER } from "../data/konstanter.js";
 import { KONFIGURERAD } from "../lib/supabase.js";
 import { exporteraJson, exporteraLista } from "../lib/export.js";
@@ -88,21 +89,26 @@ function Forslagskort({ f, projekt, onProjekt, onTillampa, onAvvisa, arbetar }) 
   const synliga = visaAlla ? rader : rader.slice(0, 6);
 
   return (
-    <article className={`importkort${f.fel ? " fel" : ""}`} aria-label={`Import av ${f.filnamn}`}>
-      <header className="importkort-topp">
-        <div style={{ minWidth: 0 }}>
-          <div className="importkort-titel">{f.titel}</div>
-          <div className="importkort-fil">{f.filnamn}</div>
+    <article
+      aria-label={`Import av ${f.filnamn}`}
+      className={`flex min-w-0 flex-col gap-3 rounded-lg border border-l-[3px] border-solid border-hairline-stark bg-surface p-4 ${
+        f.fel ? "border-l-rod" : "border-l-one-bla"
+      }`}
+    >
+      <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <div className="min-w-0">
+          <p className="m-0 font-head text-[15px] font-bold text-ink">{f.titel}</p>
+          <p className="m-0 break-all text-[12.5px] text-ink-soft">{f.filnamn}</p>
         </div>
         {!f.fel ? (
-          <div className="importkort-siffror">
+          <div className="flex flex-wrap gap-1.5">
             {f.typ === "backup" ? (
-              <span>Hela portföljen</span>
+              <StatusBadge ton="neutral" label="Hela portföljen" />
             ) : (
               <>
-                <span className="ny">{f.nya.length} nya</span>
-                <span className="upd">{f.uppdateringar.length} ändrade</span>
-                {f.oforandrade ? <span>{f.oforandrade} oförändrade</span> : null}
+                <StatusBadge ton="ok" label={`${f.nya.length} nya`} />
+                <StatusBadge ton="info" label={`${f.uppdateringar.length} ändrade`} />
+                {f.oforandrade ? <StatusBadge ton="neutral" label={`${f.oforandrade} oförändrade`} /> : null}
               </>
             )}
           </div>
@@ -110,7 +116,7 @@ function Forslagskort({ f, projekt, onProjekt, onTillampa, onAvvisa, arbetar }) 
       </header>
 
       {behoverProjekt && !f.fel ? (
-        <div className="f importkort-projekt">
+        <div className="f mb-0 max-w-[340px]">
           <label htmlFor={`imp-proj-${f.nyckel}`}>Projekt</label>
           <select id={`imp-proj-${f.nyckel}`} value={f.projektId || ""} onChange={(e) => onProjekt(e.target.value)}>
             <option value="">Välj projekt…</option>
@@ -124,59 +130,69 @@ function Forslagskort({ f, projekt, onProjekt, onTillampa, onAvvisa, arbetar }) 
       ) : null}
 
       {f.varningar.map((v) => (
-        <div key={v} className="importkort-varning">
+        <Callout key={v} ton="warn">
           {v}
-        </div>
+        </Callout>
       ))}
       {f.info.map((v) => (
-        <div key={v} className="importkort-info">
+        <p key={v} className="m-0 rounded-lg bg-sunken px-3 py-2 text-[13px] leading-snug text-ink-soft">
           {v}
-        </div>
+        </p>
       ))}
 
       {f.typ === "backup" && f.tabeller ? (
-        <table className="importkort-tabell">
-          <thead>
-            <tr>
-              <th scope="col">Tabell</th>
-              <th scope="col" className="num">
-                Nu
-              </th>
-              <th scope="col" className="num">
-                Efter
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {f.tabeller.map((t) => (
-              <tr key={t.lista}>
-                <td>{LISTNAMN[t.lista] || t.lista}</td>
-                <td className="num">{t.nu}</td>
-                <td className={`num${t.efter < t.nu ? " minskar" : ""}`}>{t.efter}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <DataTable
+          etikett={`Tabeller i ${f.filnamn}`}
+          sokbar={false}
+          getId={(t) => t.lista}
+          rader={f.tabeller}
+          kolumner={[
+            {
+              nyckel: "lista",
+              rubrik: "Tabell",
+              textVarde: (t) => LISTNAMN[t.lista] || t.lista,
+              render: (t) => LISTNAMN[t.lista] || t.lista,
+            },
+            { nyckel: "nu", rubrik: "Nu", typ: "num", bredd: 90 },
+            {
+              nyckel: "efter",
+              rubrik: "Efter",
+              typ: "num",
+              bredd: 90,
+              render: (t) =>
+                t.efter < t.nu ? (
+                  <b className="text-bad-ink">
+                    {t.efter}
+                    <span className="sr-only"> — färre än nu</span>
+                  </b>
+                ) : (
+                  t.efter
+                ),
+            },
+          ]}
+        />
       ) : null}
 
       {rader.length ? (
-        <ul className="importkort-lista">
+        <ul aria-label={`Ändringar i ${f.filnamn}`} className="m-0 list-none p-0 text-[13px]">
           {synliga.map((r) =>
             r.typ === "ny" ? (
-              <li key={"n" + r.n.id}>
-                <span className="importkort-tagg ny">Ny</span>
-                <b>{r.n.nr || r.n.titel || r.n.id}</b> {r.n.benamning || r.n.protokollFil || ""}
+              <li key={"n" + r.n.id} className="flex flex-wrap items-center gap-2 border-0 border-t border-solid border-hairline py-2 first:border-t-0">
+                <StatusBadge ton="ok" label="Ny" />
+                <b className="text-ink">{r.n.nr || r.n.titel || r.n.id}</b> {r.n.benamning || r.n.protokollFil || ""}
               </li>
             ) : (
-              <li key={"u" + r.u.id}>
-                <span className="importkort-tagg upd">Ändras</span>
-                <b>{r.u.etikett}</b>
-                <dl className="importkort-diff">
+              <li key={"u" + r.u.id} className="border-0 border-t border-solid border-hairline py-2 first:border-t-0">
+                <span className="flex flex-wrap items-center gap-2">
+                  <StatusBadge ton="info" label="Ändras" />
+                  <b className="text-ink">{r.u.etikett}</b>
+                </span>
+                <dl className="m-0 mt-1.5 grid grid-cols-[minmax(90px,max-content)_minmax(0,1fr)] gap-x-3 gap-y-1">
                   {Object.keys(r.u.efter).map((k) => (
-                    <div key={k}>
-                      <dt>{FALTNAMN[k] || k}</dt>
-                      <dd>
-                        <s>{visaVarde(r.u.fore[k])}</s> → {visaVarde(r.u.efter[k])}
+                    <div key={k} className="contents">
+                      <dt className="text-xs text-ink-soft">{FALTNAMN[k] || k}</dt>
+                      <dd className="m-0 whitespace-pre-line text-[12.5px] text-ink">
+                        <s className="text-ink-faint">{visaVarde(r.u.fore[k])}</s> → {visaVarde(r.u.efter[k])}
                       </dd>
                     </div>
                   ))}
@@ -187,12 +203,14 @@ function Forslagskort({ f, projekt, onProjekt, onTillampa, onAvvisa, arbetar }) 
         </ul>
       ) : null}
       {rader.length > 6 ? (
-        <button type="button" className="btn sec mini" onClick={() => setVisaAlla((v) => !v)}>
-          {visaAlla ? "Visa färre" : `Visa alla ${rader.length}`}
-        </button>
+        <div>
+          <button type="button" className="btn sec mini" onClick={() => setVisaAlla((v) => !v)}>
+            {visaAlla ? "Visa färre" : `Visa alla ${rader.length}`}
+          </button>
+        </div>
       ) : null}
 
-      <div className="rowbtns">
+      <div className="flex flex-wrap gap-2">
         {!f.fel ? (
           <button
             type="button"
@@ -221,46 +239,47 @@ function Protokollarkiv({ rader, projekt, status, onOppna }) {
   };
 
   return (
-    <Card klass="data-sektion">
-      <div className="kortrad">
-        <div>
-          <h3>Mötesprotokoll</h3>
-          <div className="lead" style={{ margin: "4px 0 0" }}>
-            Protokollet med högst mötesnummer är MASTER — den gällande versionen för projektet. Ett äldre
-            möte som laddas upp i efterhand arkiveras direkt.
-          </div>
-        </div>
-      </div>
-
-      {status ? <Note style={{ marginTop: 12 }}>{status}</Note> : null}
+    <Card
+      id="data-protokoll"
+      title="Mötesprotokoll"
+      subtitle="Protokollet med högst mötesnummer är MASTER — den gällande versionen för projektet. Ett äldre möte som laddas upp i efterhand arkiveras direkt."
+    >
+      {status ? <Callout ton="warn">{status}</Callout> : null}
 
       {!rader.length && !status ? (
-        <p className="lead" style={{ margin: "12px 0 0" }}>
-          Inga protokoll inlästa ännu. Släpp en PDF eller Word-fil ovan.
-        </p>
+        <p className="m-0 text-[13px] text-ink-soft">Inga protokoll inlästa ännu. Släpp en PDF eller Word-fil ovan.</p>
       ) : null}
 
       {[...grupper.entries()].map(([pid, lista]) => (
-        <section key={pid || "okopplat"} className="protokoll-grupp" aria-label={`Protokoll för ${namnFor(pid)}`}>
-          <h4>{namnFor(pid)}</h4>
-          <ul className="protokoll-lista">
-            {lista.map((r) => (
-              <li key={r.id} className={r.status}>
-                <span className={`protokoll-status ${r.status}`}>{r.status === "master" ? "MASTER" : "Arkiverad"}</span>
-                <span className="protokoll-namn">
-                  {r.moteNr ? <b>{r.moteNr} · </b> : null}
-                  {r.filnamn}
-                </span>
-                <span className="protokoll-meta">
-                  {(r.inlast || "").slice(0, 10)} · {r.kalla === "drive" ? "Google Drive" : "Manuell"}
-                  {r.storlek ? ` · ${kB(r.storlek)}` : ""}
-                </span>
-                <button type="button" className="btn sec mini" onClick={() => onOppna(r)}>
-                  Öppna
-                  <span className="sr-only"> {r.filnamn}</span>
-                </button>
-              </li>
-            ))}
+        <section key={pid || "okopplat"} aria-label={`Protokoll för ${namnFor(pid)}`} className="flex flex-col gap-2">
+          <Overline>{namnFor(pid)}</Overline>
+          <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
+            {lista.map((r) => {
+              const master = r.status === "master";
+              return (
+                <li
+                  key={r.id}
+                  data-status={r.status}
+                  className={`flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg border border-solid px-3 py-2.5 ${
+                    master ? "border-ok-ink bg-ok-bg" : "border-hairline bg-surface"
+                  }`}
+                >
+                  <StatusBadge ton={master ? "ok" : "neutral"} label={master ? "MASTER" : "Arkiverad"} />
+                  <span className={`min-w-0 flex-1 break-words text-[13.5px] ${master ? "text-ink" : "text-ink-soft"}`}>
+                    {r.moteNr ? <b>{r.moteNr} · </b> : null}
+                    {r.filnamn}
+                  </span>
+                  <span className="whitespace-nowrap text-xs text-ink-soft">
+                    {(r.inlast || "").slice(0, 10)} · {r.kalla === "drive" ? "Google Drive" : "Manuell"}
+                    {r.storlek ? ` · ${kB(r.storlek)}` : ""}
+                  </span>
+                  <button type="button" className="btn sec mini" onClick={() => onOppna(r)}>
+                    Öppna
+                    <span className="sr-only"> {r.filnamn}</span>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </section>
       ))}
@@ -400,29 +419,35 @@ export function Data() {
     if (r && !r.tyst) visaToast(r.txt, r.typ || (r.ok ? "" : "bad"));
   };
 
+  const tabeller = CSV_TABELLER.map(([k, namn]) => ({ id: k, namn, rader: (state[k] || []).length }));
+
   return (
-    <>
-      <div className="grid g4">
-        <Kpi
+    <div className="flex flex-col gap-4 lg:gap-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+        <StatTile
           label="Lagring"
-          varde={delad ? "Delad databas" : "Lokalt läge"}
+          value={delad ? "Delad databas" : "Lokalt läge"}
+          ton={delad ? "" : "warn"}
           hint={delad ? "Supabase — syns för alla inloggade" : "sparas bara i den här webbläsaren"}
-          klass={delad ? "" : "warn"}
         />
-        <Kpi label="Rader totalt" varde={totalt} hint={`${listor.length} tabeller · ca ${storlek} kB`} />
-        <Kpi label="Mötesprotokoll" varde={protokoll.length} hint={`${masters} MASTER · ${protokoll.length - masters} arkiverade`} />
-        <Kpi label="Drive-synk" varde="Planerad" hint="Make-flödet är inte aktivt ännu" klass="warn" />
+        <StatTile label="Rader totalt" value={totalt} hint={`${listor.length} tabeller · ca ${storlek} kB`} />
+        <StatTile
+          label="Mötesprotokoll"
+          value={protokoll.length}
+          hint={`${masters} MASTER · ${protokoll.length - masters} arkiverade`}
+        />
+        <StatTile label="Drive-synk" value="Planerad" ton="warn" hint="Make-flödet är inte aktivt ännu" />
       </div>
 
-      <Card klass="data-sektion">
-        <h3>Läs in filer</h3>
-        <div className="lead">
-          Släpp en eller flera filer. Varje fil visas som ett förslag — inget ändras förrän du tillämpar det, och
-          importen tar aldrig bort något.
-        </div>
-
+      <Card
+        id="data-import"
+        title="Läs in filer"
+        subtitle="Släpp en eller flera filer. Varje fil visas som ett förslag — inget ändras förrän du tillämpar det, och importen tar aldrig bort något."
+      >
         <div
-          className={`dropzon${drar ? " aktiv" : ""}`}
+          className={`flex flex-col items-center gap-2 rounded-xl border-2 border-dashed px-4 py-6 text-center text-[13px] text-ink-soft transition-colors ${
+            drar ? "border-one-bla bg-info-bg" : "border-hairline-stark bg-ground"
+          }`}
           onDragOver={(e) => {
             e.preventDefault();
             setDrar(true);
@@ -434,25 +459,29 @@ export function Data() {
             lasIn([...e.dataTransfer.files]);
           }}
         >
-          <FileUp size={26} aria-hidden="true" />
-          <div>
-            <b>Släpp filer här</b> eller{" "}
-            <button type="button" className="lanklik" onClick={() => filRef.current?.click()}>
+          <FileUp size={26} aria-hidden="true" className="text-info-ink" />
+          <p className="m-0">
+            <b className="text-ink">Släpp filer här</b> eller{" "}
+            <button
+              type="button"
+              className="cursor-pointer border-0 bg-transparent p-0 font-[inherit] text-info-ink underline"
+              onClick={() => filRef.current?.click()}
+            >
               välj från datorn
             </button>
-          </div>
-          <ul className="dropzon-typer">
+          </p>
+          <ul aria-label="Filtyper som kan läsas in" className="m-0 flex list-none flex-wrap justify-center gap-x-4 gap-y-1.5 p-0 text-xs">
             <li>
-              <b>.xlsx</b> UR-logg → ÄTA och hinder
+              <b className="font-mono text-info-ink">.xlsx</b> UR-logg → ÄTA och hinder
             </li>
             <li>
-              <b>.pdf / .docx</b> Mötesprotokoll → Byggmöten, MASTER om mötesnumret är högst
+              <b className="font-mono text-info-ink">.pdf / .docx</b> Mötesprotokoll → Byggmöten, MASTER om mötesnumret är högst
             </li>
             <li>
-              <b>.csv</b> Tabell från appens egen export → samma flik
+              <b className="font-mono text-info-ink">.csv</b> Tabell från appens egen export → samma flik
             </li>
             <li>
-              <b>.json</b> Säkerhetskopia → hela portföljen
+              <b className="font-mono text-info-ink">.json</b> Säkerhetskopia → hela portföljen
             </li>
           </ul>
           <input
@@ -470,7 +499,7 @@ export function Data() {
         </div>
 
         {forslag.length ? (
-          <div className="importlista">
+          <div className="flex flex-col gap-4">
             {forslag.map((f) => (
               <Forslagskort
                 key={f.nyckel}
@@ -488,93 +517,83 @@ export function Data() {
 
       <Protokollarkiv rader={protokoll} projekt={state.projekt} status={arkivStatus} onOppna={oppnaProtokoll} />
 
-      <div className="grid g2 data-sektion">
-        <Card>
-          <h3>Säkerhetskopia</h3>
-          <div className="lead">
-            Hela portföljen i en fil — {totalt} rader, ca {storlek} kB. Ta en kopia före större ändringar och inför
-            varje milstolpe. Filen läses tillbaka genom att släppa den i rutan ovan.
-          </div>
-          <div className="rowbtns">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
+        <Card
+          id="data-backup"
+          title="Säkerhetskopia"
+          subtitle={`Hela portföljen i en fil — ${totalt} rader, ca ${storlek} kB. Ta en kopia före större ändringar och inför varje milstolpe. Filen läses tillbaka genom att släppa den i rutan ovan.`}
+        >
+          <div>
             <button type="button" className="btn" onClick={() => spara(exporteraJson(state, hamtaNamn()))}>
               Ladda ner säkerhetskopia (JSON)
             </button>
           </div>
         </Card>
 
-        <Card>
-          <h3>Var ligger datan?</h3>
-          <ul className="datalista">
-            <li className={delad ? "ok" : ""}>
-              <b>Delad databas (Supabase)</b>
-              <span>
-                Allt sparas automatiskt ungefär en sekund efter varje ändring och syns för alla inloggade. Kontraktsvärde
-                och betalplan ligger i ett eget dokument som bara administratören kan ändra, och ändringsloggen i en egen
-                tabell som bara går att lägga till i.
-              </span>
-            </li>
-            <li>
-              <b>Protokollarkivet</b>
-              <span>Mötesprotokoll sparas som filer i ett privat arkiv, med MASTER/arkiverad per projekt.</span>
-            </li>
-            <li className="planerad">
-              <b>
-                <FolderSync size={14} aria-hidden="true" /> Google Drive via Make — planerad
-              </b>
-              <span>
-                Filer i mapparna 01. Växjö, 02. Alvesta och Möten ska läsas in automatiskt till protokollarkivet. Flödet
-                är inte aktivt ännu; tills dess läses filerna in här.
-              </span>
-            </li>
-          </ul>
+        <Card id="data-lagring" title="Var ligger datan?">
+          <DataList
+            items={[
+              {
+                label: "Delad databas",
+                value: "Supabase",
+                badge: delad ? <StatusBadge ton="ok" label="Aktiv" /> : <StatusBadge ton="warn" label="Lokalt läge" />,
+                detail:
+                  "Allt sparas automatiskt ungefär en sekund efter varje ändring och syns för alla inloggade. Kontraktsvärde och betalplan ligger i ett eget dokument som bara administratören kan ändra, och ändringsloggen i en egen tabell som bara går att lägga till i.",
+              },
+              {
+                label: "Protokollarkivet",
+                value: "Privat filarkiv",
+                detail: "Mötesprotokoll sparas som filer i ett privat arkiv, med MASTER/arkiverad per projekt.",
+              },
+              {
+                label: "Google Drive",
+                value: (
+                  <span className="inline-flex items-center gap-1.5">
+                    <FolderSync size={14} aria-hidden="true" /> Google Drive via Make — planerad
+                  </span>
+                ),
+                badge: <StatusBadge ton="warn" label="Ej aktivt" />,
+                detail:
+                  "Filer i mapparna 01. Växjö, 02. Alvesta och Möten ska läsas in automatiskt till protokollarkivet. Flödet är inte aktivt ännu; tills dess läses filerna in här.",
+              },
+            ]}
+          />
         </Card>
       </div>
 
-      <Card klass="data-sektion">
-        <h3>Tabeller</h3>
-        <div className="lead">
-          Ta ut en tabell som CSV för Excel. Redigerad fil kan läsas tillbaka ovan — raderna matchas på kolumnen id.
-        </div>
-        <div className="tscroll">
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">Tabell</th>
-                <th scope="col" className="num" style={{ width: 90 }}>
-                  Rader
-                </th>
-                <th scope="col" style={{ width: 110 }}>
-                  Export
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {CSV_TABELLER.map(([k, namn]) => {
-                const n = (state[k] || []).length;
-                return (
-                  <tr key={k}>
-                    <td data-label="Tabell">{namn}</td>
-                    <td data-label="Rader" className="num">
-                      {n}
-                    </td>
-                    <td data-label="Export">
-                      {n ? (
-                        <button type="button" className="btn sec mini" onClick={() => spara(exporteraLista(namn, state[k]))}>
-                          CSV<span className="sr-only"> för {namn}</span>
-                        </button>
-                      ) : (
-                        <span className="lead" style={{ margin: 0 }}>
-                          —
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+      <Card
+        id="data-tabeller"
+        title="Tabeller"
+        subtitle="Ta ut en tabell som CSV för Excel. Redigerad fil kan läsas tillbaka ovan — raderna matchas på kolumnen id."
+      >
+        <DataTable
+          etikett="Tabeller i portföljen"
+          sokbar={false}
+          rader={tabeller}
+          kolumner={[
+            { nyckel: "namn", rubrik: "Tabell" },
+            { nyckel: "rader", rubrik: "Rader", typ: "num", bredd: 90, summera: true },
+            {
+              nyckel: "export",
+              rubrik: "Export",
+              bredd: 110,
+              sorterbar: false,
+              render: (t) =>
+                t.rader ? (
+                  <button
+                    type="button"
+                    className="btn sec mini"
+                    onClick={() => spara(exporteraLista(t.namn, state[t.id]))}
+                  >
+                    CSV<span className="sr-only"> för {t.namn}</span>
+                  </button>
+                ) : (
+                  <span className="text-ink-faint">—</span>
+                ),
+            },
+          ]}
+        />
       </Card>
-    </>
+    </div>
   );
 }

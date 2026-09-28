@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { oppna, utanKonsolfel } from "./hjalpare.js";
 
-const KAPITEL = ".kap";
+const kapitel = (page) => page.getByRole("list", { name: "Kapitel i handboken" }).locator('[data-roll="kapitel"]');
+const rubrik = (kap) => kap.locator("button[aria-expanded]");
 
 test.beforeEach(async ({ page }) => {
   await oppna(page, "Projektledarens handbok");
@@ -10,90 +11,97 @@ test.beforeEach(async ({ page }) => {
 /* Första kapitlet som faktiskt har punkter att bocka av — referenskapitlen
    har inga, och det är avbockningen testen handlar om. */
 function medPunkter(page) {
-  return page.locator(`${KAPITEL}:has(.kapprog)`).first();
+  return page
+    .getByRole("list", { name: "Kapitel i handboken" })
+    .locator('[data-roll="kapitel"]:not([data-punkter="0"])')
+    .first();
 }
 
 test("handboken listar kapitlen", async ({ page }) => {
-  expect(await page.locator(KAPITEL).count()).toBeGreaterThan(1);
-  await expect(page.getByText("Kapitel totalt")).toBeVisible();
+  expect(await kapitel(page).count()).toBeGreaterThan(1);
+  await expect(page.getByRole("article", { name: "Kapitel totalt" })).toBeVisible();
 });
 
 test("ett kapitel fälls ut och igen", async ({ page }) => {
-  const rubrik = page.locator(".kaph").first();
+  const r = rubrik(kapitel(page).first());
 
-  await expect(rubrik).toHaveAttribute("aria-expanded", "false");
-  await rubrik.click();
-  await expect(rubrik).toHaveAttribute("aria-expanded", "true");
-  await expect(page.locator(".kapb").first()).toBeVisible();
+  await expect(r).toHaveAttribute("aria-expanded", "false");
+  await r.click();
+  await expect(r).toHaveAttribute("aria-expanded", "true");
+  const panel = page.locator(`#${await r.getAttribute("aria-controls")}`);
+  await expect(panel).toBeVisible();
 
-  await rubrik.click();
-  await expect(rubrik).toHaveAttribute("aria-expanded", "false");
+  await r.click();
+  await expect(r).toHaveAttribute("aria-expanded", "false");
+  await expect(panel).toHaveCount(0);
 });
 
 test("bara ett kapitel i taget är utfällt", async ({ page }) => {
-  await page.locator(".kaph").nth(0).click();
-  await expect(page.locator(".kapb")).toHaveCount(1);
+  const lista = page.getByRole("list", { name: "Kapitel i handboken" });
+  await rubrik(kapitel(page).nth(0)).click();
+  await expect(lista.locator('button[aria-expanded="true"]')).toHaveCount(1);
 
-  await page.locator(".kaph").nth(1).click();
-  await expect(page.locator(".kapb")).toHaveCount(1);
-  await expect(page.locator(".kaph").nth(0)).toHaveAttribute("aria-expanded", "false");
+  await rubrik(kapitel(page).nth(1)).click();
+  await expect(lista.locator('button[aria-expanded="true"]')).toHaveCount(1);
+  await expect(rubrik(kapitel(page).nth(0))).toHaveAttribute("aria-expanded", "false");
 });
 
 test("kapitlet går att fälla ut med tangentbordet", async ({ page }) => {
   // Standalone-versionen hade onclick på en div — den gick inte att nå så här.
-  const rubrik = page.locator(".kaph").first();
-  await rubrik.focus();
+  const r = rubrik(kapitel(page).first());
+  await r.focus();
   await page.keyboard.press("Enter");
-  await expect(rubrik).toHaveAttribute("aria-expanded", "true");
+  await expect(r).toHaveAttribute("aria-expanded", "true");
 });
 
-test("en avbockad punkt räknas och stryks över", async ({ page }) => {
+test("en avbockad punkt räknas och dämpas", async ({ page }) => {
   const kap = medPunkter(page);
-  const fore = await kap.locator(".kapprog small").textContent();
+  const r = rubrik(kap);
+  const fore = await r.textContent();
 
-  await kap.locator(".kaph").click();
-  const ruta = kap.locator('.chk input[type="checkbox"]').first();
+  await r.click();
+  const ruta = kap.getByRole("checkbox").first();
   await ruta.check();
 
   await expect(ruta).toBeChecked();
-  await expect(kap.locator(".chk s").first()).toBeVisible();
-  await expect(kap.locator(".kapprog small")).not.toHaveText(fore);
+  await expect(kap.locator("s").first()).toBeVisible();
+  await expect(r).not.toHaveText(fore);
 });
 
 test("avbockningen går att ångra", async ({ page }) => {
   const kap = medPunkter(page);
-  await kap.locator(".kaph").click();
+  await rubrik(kap).click();
 
-  const ruta = kap.locator('.chk input[type="checkbox"]').first();
+  const ruta = kap.getByRole("checkbox").first();
   await ruta.check();
   await expect(ruta).toBeChecked();
 
   await ruta.uncheck();
   await expect(ruta).not.toBeChecked();
-  await expect(kap.locator(".chk s")).toHaveCount(0);
+  await expect(kap.locator("s")).toHaveCount(0);
 });
 
 test("avbockningen följer projektet", async ({ page }) => {
   const kap = medPunkter(page);
-  await kap.locator(".kaph").click();
-  await kap.locator('.chk input[type="checkbox"]').first().check();
+  await rubrik(kap).click();
+  await kap.getByRole("checkbox").first().check();
 
-  const valjare = page.getByRole("combobox", { name: /projekt/i }).first();
-  const varden = await valjare.locator("option").evaluateAll((o) => o.map((x) => x.value));
-  test.skip(varden.length < 2, "bara ett projekt i portföljen");
+  const projekt = page.getByRole("group", { name: "Välj projekt" }).getByRole("button");
+  test.skip((await projekt.count()) < 2, "bara ett projekt i portföljen");
+  await projekt.nth(1).click();
+  await expect(projekt.nth(1)).toHaveAttribute("aria-pressed", "true");
 
-  await valjare.selectOption(varden[1]);
   const annat = medPunkter(page);
-  await annat.locator(".kaph").click();
-  await expect(annat.locator('.chk input[type="checkbox"]').first()).not.toBeChecked();
+  if ((await rubrik(annat).getAttribute("aria-expanded")) === "false") await rubrik(annat).click();
+  await expect(annat.getByRole("checkbox").first()).not.toBeChecked();
 });
 
 test("ett kapitel med genväg leder till rätt vy", async ({ page }) => {
-  const kapMedLank = page.locator(`${KAPITEL}:has-text("Störning")`).first();
+  const kapMedLank = kapitel(page).filter({ hasText: "Störning" }).first();
   test.skip((await kapMedLank.count()) === 0, "inget kapitel med genväg");
 
-  await kapMedLank.locator(".kaph").click();
-  const genvag = kapMedLank.locator(".kapb .btn").first();
+  await rubrik(kapMedLank).click();
+  const genvag = kapMedLank.getByRole("button", { name: /→$/ }).first();
   test.skip((await genvag.count()) === 0, "kapitlet saknar genväg");
 
   await genvag.click();
@@ -102,6 +110,6 @@ test("ett kapitel med genväg leder till rätt vy", async ({ page }) => {
 
 test("vyn renderar utan konsolfel", async ({ page }) => {
   const { fel } = await oppna(page, "Projektledarens handbok");
-  await page.locator(".kaph").first().click();
+  await rubrik(kapitel(page).first()).click();
   utanKonsolfel(fel);
 });

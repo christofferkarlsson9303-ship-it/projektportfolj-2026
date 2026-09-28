@@ -1,32 +1,46 @@
 import { expect, test } from "@playwright/test";
 import { gaTill, oppna, utanKonsolfel } from "./hjalpare.js";
 
-const PORTERADE = [
+/* Alla vyer i menyn — ingen får fortfarande vara en platshållare. */
+const VYER = [
   "Idag",
   "Översikt",
   "Bygga batteripark",
   "Tavla",
   "Tidplan",
+  "Handlingsplan",
+  "Resurser",
+  "Tidrapport",
+  "Budget och utfall",
+  "Fakturaunderlag",
   "Milstolpar M1–M7",
   "ÄTA och hinder",
   "Ekonomi",
+  "Byggmöten",
+  "Veckokoll",
   "Dagbok",
   "Störning",
+  "HSEQ / BAS-U",
   "Risker",
   "Öppna punkter",
+  "Slutdokumentation",
+  "Beställarrapport",
+  "Projektledarens handbok",
   "Kontakter",
+  "Data och backup",
 ];
 
-test("alla porterade vyer renderar utan konsolfel", async ({ page }) => {
-  // Varje vybyte på mobil kräver att menyn öppnas först — elva vyer hinner inte
+test("alla vyer renderar utan konsolfel", async ({ page }) => {
+  // Varje vybyte på mobil kräver att menyn öppnas först — 25 vyer hinner inte
   // på standardgränsen.
-  test.setTimeout(90_000);
+  test.setTimeout(180_000);
   const { fel } = await oppna(page);
 
-  for (const vy of PORTERADE) {
+  for (const vy of VYER) {
     await gaTill(page, vy);
     // Varje vy ska faktiskt måla något — inte bara byta rubrik.
     await expect(page.locator("main").getByRole("heading").first()).toBeVisible();
+    await expect(page.getByText("Den här sektionen är inte flyttad")).toHaveCount(0);
   }
 
   utanKonsolfel(fel);
