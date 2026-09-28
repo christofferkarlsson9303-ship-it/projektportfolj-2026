@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { usePortfolj, useUi } from "../state/hooks.js";
 import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
-import { Tabellyta } from "../components/ui/Primitiver.jsx";
-import { Callout, Card, CheckList, DataList, Overline, StatTile, StatusBadge } from "../components/ds/index.js";
+import { Callout, Card, CheckList, DataList, Overline, StatTile, StatusBadge, TableRegion } from "../components/ds/index.js";
 import { DatumFalt, Falt } from "../components/ui/Falt.jsx";
 import { Slideover } from "../components/ui/Slideover.jsx";
 import { Skyddsrondsprotokoll } from "../components/ui/Rondprotokoll.jsx";
@@ -157,7 +156,7 @@ function Rondpanel({ rond, projekt, onStang, onUppd, onPunkt, onAvvikelse, onNyA
 
       <div className="flex flex-col gap-2">
         <Overline>Avvikelser</Overline>
-        <Tabellyta etikett={`Avvikelser i skyddsronden ${rond.datum}`}>
+        <TableRegion label={`Avvikelser i skyddsronden ${rond.datum}`}>
           <table>
             <thead>
               <tr>
@@ -233,7 +232,7 @@ function Rondpanel({ rond, projekt, onStang, onUppd, onPunkt, onAvvikelse, onNyA
               )}
             </tbody>
           </table>
-        </Tabellyta>
+        </TableRegion>
         <div>
           <button type="button" className="btn sec" onClick={() => onNyAvvikelse(rond)}>
             + Avvikelse
@@ -394,7 +393,7 @@ export function Hseq() {
               </button>
             }
           >
-            <Tabellyta etikett="Skyddsronder">
+            <TableRegion label="Skyddsronder">
               <table>
                 <thead>
                   <tr>
@@ -446,7 +445,7 @@ export function Hseq() {
                   )}
                 </tbody>
               </table>
-            </Tabellyta>
+            </TableRegion>
           </Card>
 
           <Card
@@ -472,7 +471,7 @@ export function Hseq() {
 
             <div className="flex flex-col gap-2">
               <Overline>ID06-stickprov</Overline>
-              <Tabellyta etikett="ID06-stickprov">
+              <TableRegion label="ID06-stickprov">
                 <table>
                   <thead>
                     <tr>
@@ -516,7 +515,7 @@ export function Hseq() {
                     )}
                   </tbody>
                 </table>
-              </Tabellyta>
+              </TableRegion>
               <div>
                 <button type="button" className="btn sec" onClick={nyId06}>
                   + Logga stickprov

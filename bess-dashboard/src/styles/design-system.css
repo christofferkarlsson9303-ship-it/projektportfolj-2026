@@ -148,36 +148,6 @@ main{max-width:1240px;margin:0 auto;padding:26px 30px 64px;width:100%}
 .card .lead{font-size:12px;color:var(--ink-soft);margin-bottom:14px}
 
 
-/* ---------- Project card ---------- */
-.pcard{background:var(--surface);border-radius:var(--r);border:var(--border);border-top:4px solid var(--one-bla);padding:18px;min-width:0}
-.pcard.b{border-top-color:var(--turkos)}
-.pcard.c{border-top-color:var(--duvbla)}
-.pcard.d{border-top-color:var(--orange)}
-.pnr{font-family:var(--font-b);font-weight:700;font-size:11px;letter-spacing:.12em;color:var(--one-bla)}
-.pcard.b .pnr{color:var(--turkos)}
-.pcard.c .pnr{color:var(--duvbla)}
-.pcard.d .pnr{color:var(--orange)}
-.pcard h2{font-size:19px;margin:4px 0 2px}
-.pcard h2 a{transition:color .15s}
-.pcard h2 a:hover{color:var(--one-bla)}
-.pmeta{font-size:12px;color:var(--ink-soft)}
-.pstats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0 6px}
-.pstat{background:var(--sunken);border-radius:6px;padding:10px}
-.pstat .l{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);font-weight:600}
-.pstat .v{font-family:var(--font-h);font-size:17px;font-weight:700;color:var(--ink);margin-top:3px}
-.bar{height:8px;background:var(--hairline);border-radius:4px;overflow:hidden;margin-top:12px}
-.bar>span{display:block;height:100%;background:var(--one-bla)}
-.pcard.b .bar>span{background:var(--turkos)}
-.pcard.c .bar>span{background:var(--duvbla)}
-.pcard.d .bar>span{background:var(--orange)}
-.pctop{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.pctop select{width:auto;font-size:11px;font-weight:700;letter-spacing:.03em;padding:4px 8px;
-  border-radius:20px;background:var(--sunken);border-color:var(--hairline-stark);color:var(--ink)}
-.pnext{display:flex;align-items:center;gap:8px;font-size:12px;background:var(--sunken);
-  border-radius:6px;padding:8px 10px;margin:12px 0}
-.pnext.bess{background:var(--ok-bg);border:1px solid #bfe9de}
-.pnext-d{font-family:var(--font-h);font-weight:700;font-size:14px;color:var(--one-djup);white-space:nowrap}
-
 /* ---------- Hub: BESS-nedräkning + gantt ---------- */
 .bhero{display:flex;align-items:center;gap:18px;background:var(--one-djup);color:#fff;
   border-radius:var(--r);padding:18px 22px;margin-bottom:16px}
@@ -272,9 +242,6 @@ select:focus,input:focus,textarea:focus{outline:2px solid var(--one-bla);outline
 .rowbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 
 /* ---------- Risk matrix ---------- */
-.rv{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:24px;
-  border-radius:5px;font-weight:700;font-size:13px;color:#fff}
-.rv.l{background:var(--turkos)}.rv.m{background:var(--orange)}.rv.h{background:var(--rod)}
 
 /* ---------- Timeline ---------- */
 .tl{position:relative;background:var(--surface);border:var(--border);border-radius:var(--r);padding:18px 18px 8px;overflow-x:auto}
@@ -331,9 +298,6 @@ footer{background:var(--morkgra);color:#cfd8dc;font-size:12px;padding:16px 24px;
 .qa .ref{display:block;margin-top:6px;font-size:11px;color:var(--ink-soft);font-weight:600}
 
 /* ---------- Progress ---------- */
-.prog{height:6px;background:var(--hairline);border-radius:3px;overflow:hidden}
-.prog>span{display:block;height:100%;background:var(--one-bla)}
-.prog.done>span{background:var(--turkos)}
 
 /* ---------- Formulär ---------- */
 .f{margin-bottom:14px}
@@ -673,7 +637,7 @@ main{padding-top:30px}
 .btn{transition:transform .14s ease,box-shadow .14s ease,background .14s ease}
 .btn:not(.sec):hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,182,222,.35)}
 .btn.sec:hover{transform:translateY(-1px)}
-.pill,.tag,.rv{transition:transform .12s ease}
+.pill,.tag{transition:transform .12s ease}
 tbody tr{transition:background .12s ease}
 .fitem{transition:background .15s ease,transform .15s ease}
 .gchip{transition:transform .15s ease,box-shadow .15s ease}
@@ -1564,7 +1528,6 @@ button.ov-chip:hover{border-color:var(--one-bla);color:var(--ink)}
 .ov-risklista li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;padding:9px 0;
   border-top:1px solid var(--hairline)}
 .ov-risklista li:first-child{border-top:0;padding-top:0}
-.ov-risklista .rv{margin-top:1px}
 .ov-risklista p{margin:0 0 4px;font-size:13px;line-height:1.4;color:var(--ink)}
 
 /* Projektkort */
@@ -1615,8 +1578,6 @@ button.ov-chip:hover{border-color:var(--one-bla);color:var(--ink)}
 .projkort-nasta-t{display:inline-flex;align-items:baseline;gap:6px;flex-wrap:wrap;color:var(--ink);min-width:0}
 .projkort-nasta-t svg{align-self:center;color:var(--ok-ink)}
 .projkort-nasta-datum{color:var(--ink-soft);white-space:nowrap}
-.projkort-ekonomi .bar{margin-top:0}
-.projkort-ekonomi .bar>span{background:var(--accent)}
 .projkort-ekonomi-rad{display:flex;justify-content:space-between;gap:6px 16px;flex-wrap:wrap;margin-top:10px}
 .projkort-ekonomi-rad>div{display:flex;flex-direction:column;gap:2px;min-width:0}
 .projkort-ekonomi-rad>div:last-child{text-align:right;margin-left:auto}

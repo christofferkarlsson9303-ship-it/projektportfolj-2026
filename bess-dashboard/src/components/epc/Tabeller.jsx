@@ -1,10 +1,11 @@
 import { usePortfolj } from "../../state/hooks.js";
 import { ATT_VERIFIERA, LARDOMAR, NYCKELVARDEN } from "../../data/bessChecklistData.ts";
-import { Pill, Tabellyta } from "../ui/Primitiver.jsx";
 import { datumKort, dagarText } from "../../lib/datum.js";
 import { ledtidslage, milstolpslage } from "../../lib/epc.js";
 import { LedtidStatus } from "./Delar.jsx";
+import { registerStatus } from "../../lib/status.js";
 
+import { StatusBadge, TableRegion } from "../ds/index.js";
 /* Guidens referensdelar: betalplanen, ledtiderna mot projektets datum,
    nyckelvärdena, lärdomarna och det som källorna inte är överens om. */
 
@@ -14,7 +15,7 @@ export function Milstolpstabell({ pid }) {
   const { state } = usePortfolj();
   const rader = milstolpslage(state, pid);
   return (
-    <Tabellyta etikett="Betalmilstolpar M1–M7">
+    <TableRegion label="Betalmilstolpar M1–M7">
       <table>
         <thead>
           <tr>
@@ -39,13 +40,13 @@ export function Milstolpstabell({ pid }) {
               <td data-label="Grind">{m.grind}</td>
               <td data-label="Planerad">{m.datum || "—"}</td>
               <td data-label="Status">
-                <Pill status={MS_PILL[m.status]} />
+                <StatusBadge {...registerStatus(MS_PILL[m.status])} />
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-    </Tabellyta>
+    </TableRegion>
   );
 }
 
@@ -55,7 +56,7 @@ export function Ledtidstabell({ pid, onMarkera }) {
   const { state } = usePortfolj();
   const rader = ledtidslage(state, pid);
   return (
-    <Tabellyta etikett="Ledtider för projektet">
+    <TableRegion label="Ledtider för projektet">
       <table>
         <thead>
           <tr>
@@ -119,7 +120,7 @@ export function Ledtidstabell({ pid, onMarkera }) {
           ))}
         </tbody>
       </table>
-    </Tabellyta>
+    </TableRegion>
   );
 }
 

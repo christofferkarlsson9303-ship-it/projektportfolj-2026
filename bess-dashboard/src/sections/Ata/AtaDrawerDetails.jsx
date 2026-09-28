@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { AtaPrisgodkannande, AtaUnderlag, AtaUnderrattelse } from "../../components/ui/AtaDokument.jsx";
-import { Note, Pill, SelStatus } from "../../components/ui/Primitiver.jsx";
-import { DatumFalt, Falt, Kryss, NumFalt } from "../../components/ui/Falt.jsx";
+import { DatumFalt, Falt, Kryss, NumFalt, SelStatus } from "../../components/ui/Falt.jsx";
 import { ATA_KLASS, ATA_STATUS, ORSAKER, PRISGRUND } from "../../data/konstanter.js";
 import { prisGrind, underrattelseLage } from "../../lib/berakningar.js";
 import { idag } from "../../lib/datum.js";
 import { nyDagboksrad } from "../../lib/nyaPoster.js";
 import { hamtaNamn } from "../../state/portfolj-reducer.js";
 import { flagga } from "./flode.js";
+import { registerStatus } from "../../lib/status.js";
 
+import { Callout, StatusBadge } from "../../components/ds/index.js";
 /* Ärendepanelen — glider in från höger och låter tavlan ligga kvar bakom.
 
    Medvetet INTE en modal: ingen mörk overlay och ingen fokusfälla, för hela
@@ -180,7 +181,7 @@ export function AtaDrawerDetails({ u, onStang }) {
                 <span className="sr-only">{f.txt}</span>
               </span>
             ) : null}
-            <Pill status={u.status} />
+            <StatusBadge {...registerStatus(u.status)} />
             <span className={`klasstag k-${u.klass || "oklar"}`}>{klassNamn(u.klass)}</span>
           </div>
           {/* Panelen behöver en egen rubrik — ett landmärke utan rubrik är
@@ -331,14 +332,14 @@ export function AtaDrawerDetails({ u, onStang }) {
           Arbetet är påbörjat på plats
         </Kryss>
 
-        <Note>
+        <Callout ton="info" className="mt-4">
           <b>Dagboksunderlag.</b>{" "}
           {dagbok.length
             ? `${dagbok.length} dagboksrad${dagbok.length > 1 ? "er" : ""} är kopplade till ${u.nr}.`
             : `Ingen dagboksrad är kopplad till ${u.nr} ännu. Utan dagbok blir ÄTA:t svårt att driva.`}{" "}
           Dagboken ska per ÄTA innehålla startdatum, omfattning, väder och temperatur, kostnad samt
           förväntad och faktisk tidsåtgång.
-        </Note>
+        </Callout>
 
         <div className="rowbtns">
           <button type="button" className="btn sec" onClick={nyDagboksradForArende}>

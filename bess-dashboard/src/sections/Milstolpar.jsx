@@ -1,11 +1,11 @@
 import { usePortfolj, useUi } from "../state/hooks.js";
 import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
-import { Pill, SelStatus } from "../components/ui/Primitiver.jsx";
-import { DatumFalt } from "../components/ui/Falt.jsx";
+import { DatumFalt, SelStatus } from "../components/ui/Falt.jsx";
 import { Callout, Card, CheckList, Meter, Overline, StatGroup, StatusBadge } from "../components/ds/index.js";
 import { MILSTOLPE_MODELL } from "../data/konstanter.js";
 import { fmtSEK } from "../lib/format.js";
 import { betalRad, ekonomi, mUnderlagKlart, mstatusRad, nastaMilstolpe, projekt } from "../lib/berakningar.js";
+import { registerStatus } from "../lib/status.js";
 
 /* Betalningsmilstolparna M1–M7 på designsystemet: ett översiktskort med
    fakturerat, nästa lyft och kvar, och en ruta per milstolpe i ordning.
@@ -93,7 +93,7 @@ function Milstolpe({ m, state, pid, kv, ar, dispatch }) {
             <span className="text-xs tabular-nums text-ink-soft">{belopp !== null ? fmtSEK(belopp) : "belopp saknas"}</span>
           </span>
           {ar ? <StatusBadge ton="info" label="Nästa lyft" /> : null}
-          <Pill status={b ? b.status : "kvar"} />
+          <StatusBadge {...registerStatus(b ? b.status : "kvar")} />
         </>
       }
     >

@@ -1,8 +1,8 @@
 # Projektportfölj BESS
 
 React-versionen av projektportföljen för ONE Nordics batteriparker. Alla vyer
-är flyttade från `Projektportfolj_standalone_2026-09-17.html`, som ligger kvar
-orörd som referens för originalets beteende.
+är flyttade från originalfilen, som är arkiverad i
+[`arkiv/`](arkiv/README.md) som referens för originalets beteende.
 
 ## Komma igång
 
@@ -75,14 +75,13 @@ ljust och mörkt läge och följer ONE Nordics profil. Avstånden följer en
 | `Meter` | Mätare för andel av en helhet, i samma ton som Gantt-schemat. |
 | `Overline` | Liten versal rubrik för ett avsnitt inuti ett kort. |
 | `CheckList` | Avbockningslista för underlag, ronder och kontrollpunkter. |
+| `TableRegion` | Rullbar, namngiven yta för en egen tabell (DataTable har sin egen). |
+| `RiskScore` | Riskvärde som märke — nivån (låg, medel, hög) står i text, inte bara i färgen. |
 
-Översikten (`DashboardView`), Bygga batteripark, Milstolpar M1–M7, ÄTA och
-hinder, Dagbok, Ekonomi, Byggmöten, Störning, HSEQ, Risker,
-Slutdokumentation, Idag, Tidplan, Veckokoll, Tavla, Handlingsplan, Öppna
-punkter, Resurser, Tidrapport, Budget och utfall och Fakturaunderlag är
-byggda av dem. De äldre vyerna får samma statusmärke via
-`Pill`, samma nyckeltalsruta via `Kpi` (→ `StatTile`), samma upplysning via
-`Note` (→ `Callout`) och samma kortform via `.card`.
+Alla vyer är byggda av dem. Formulärkontrollerna (`Falt`, `NumFalt`,
+`DatumFalt`, `Kryss`, `SelStatus`, `TaBortKnapp`) ligger i
+`src/components/ui/Falt.jsx`. Status ur registrens egna listor (`fakturerad`,
+`oppen`, `godkand` …) visas med `<StatusBadge {...registerStatus(status)} />`.
 
 ### Gantt-schemat
 

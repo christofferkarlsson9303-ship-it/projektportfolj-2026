@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { PTag } from "../ui/PTag.jsx";
-import { Riskvarde } from "../ui/Primitiver.jsx";
 import { PILL } from "../../data/konstanter.js";
 import { VYMETA } from "../../data/vyer.js";
 import { kortDatum } from "../../lib/datum.js";
@@ -29,11 +28,11 @@ import {
   bessNedrakning,
   oppnaRisker,
   projekt,
-  riskKlass,
   riskMatrisFarg,
   riskvarde,
 } from "../../lib/berakningar.js";
 import { Lank, Ruta } from "./Ruta.jsx";
+import { RiskScore } from "../ds/index.js";
 
 const kortNamn = (p) => p.nr || p.ort || p.namn;
 const datumText = (iso) => {
@@ -269,7 +268,7 @@ export function Risker({ i }) {
         <ol className="ov-risklista">
           {topp.map((r) => (
             <li key={r.id}>
-              <Riskvarde varde={riskvarde(r)} klass={riskKlass(riskvarde(r))} />
+              <RiskScore value={riskvarde(r)} />
               <div className="min-w-0">
                 <p>{r.titel}</p>
                 <PTag pid={r.projektId} />

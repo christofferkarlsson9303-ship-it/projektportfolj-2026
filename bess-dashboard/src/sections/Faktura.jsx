@@ -2,12 +2,12 @@ import { useMemo } from "react";
 import { usePortfolj, useUi } from "../state/hooks.js";
 import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
 import { DataTable } from "../components/ui/DataTable.jsx";
-import { SelStatus } from "../components/ui/Primitiver.jsx";
 import { Callout, Card, DataList, StatTile, StatusBadge } from "../components/ds/index.js";
 import { KOSTNADSTYP } from "../data/konstanter.js";
 import { fmtSEK } from "../lib/format.js";
 import { projekt } from "../lib/berakningar.js";
 import { ARVODE_PROCENT, FAKTURASTATUS, aktivitet, ofakturerat, person, timkostnad } from "../lib/planering.js";
+import { SelStatus } from "../components/ui/Falt.jsx";
 
 /* Fakturaunderlag på designsystemet: debiterbar tid och kostnad som ännu
    inte lagts i ett underlag, och de underlag som skapats. Löpande räkning —
