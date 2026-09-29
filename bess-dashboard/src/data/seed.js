@@ -157,6 +157,8 @@ export const SEED = {
        {id, projektId, punkt, typ: "notering" | "avvikelse" | "lardom",
         text, gorSa, paverkan: 1–3, kostnad, datum, av} */
   epcFaser: [],
+  // Sparad baslinje per projekt för tidplanen: {id, projektId, sparad, av, fardigstallande, faser: [{nr, start, slut}]}
+  epcBaslinje: [],
   epcLedtider: [],
   epcPunkter: [],
   epcKommentarer: [],
