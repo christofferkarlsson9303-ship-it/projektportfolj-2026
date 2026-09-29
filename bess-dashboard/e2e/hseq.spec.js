@@ -118,3 +118,48 @@ test("vyn renderar utan konsolfel", async ({ page }) => {
   await page.getByRole("button", { name: "+ Ny skyddsrond" }).click();
   utanKonsolfel(fel);
 });
+
+/* ---------- APD-plan och arbetsplatstavla (G5) ---------- */
+
+const apd = (page) => page.getByRole("region", { name: "APD-plan och arbetsplatstavla", exact: true });
+
+test("APD-planen bockas i panelen och räknas i kortet", async ({ page }) => {
+  await expect(apd(page)).toContainText("Ej godkänd av beställaren");
+  await expect(apd(page)).toContainText("0/27");
+
+  await apd(page).getByRole("button", { name: "Öppna APD-checklistan" }).click();
+  const panel = page.getByRole("region", { name: "APD-plan — kontrollpunkter" });
+  await expect(panel.getByRole("checkbox")).toHaveCount(27);
+  await panel.getByRole("list", { name: "Generellt och flöde" }).getByRole("checkbox").first().check();
+  await expect(apd(page)).toContainText("1/27");
+});
+
+test("tavlan bockas, och punkterna i Växjö är klara via den passerade grinden G5", async ({ page }) => {
+  const tavla = apd(page).getByRole("list", { name: "Arbetsplatstavlan" });
+  await expect(tavla.getByRole("checkbox")).toHaveCount(8);
+  for (const box of await tavla.getByRole("checkbox").all()) await box.check();
+  await expect(tavla).not.toContainText("Saknas");
+  await expect(tavla).toContainText("Uppsatt");
+
+  // Växjö har passerat G5, så 5.19 och 5.20 är klara utan egen bock — ingen knapp att trycka på.
+  const koppling = apd(page).getByRole("list", { name: "Kopplade punkter i EPC-checklistan" });
+  await expect(koppling.getByRole("listitem")).toHaveCount(2);
+  await expect(koppling.getByRole("listitem").first()).toContainText("Klar via G5");
+  await expect(koppling.getByRole("button", { name: "Markera klar" })).toHaveCount(0);
+  // Att ett anslag blir inaktuellt av en nyare rond, AMP eller APD-revision testas i lib/apd.test.js.
+});
+
+test("beställarens godkännande sparas och länken leder till punkten i checklistan", async ({ page }) => {
+  const datum = apd(page).getByLabel("Datum för beställarens godkännande");
+  await datum.fill("2026-02-10");
+  await datum.blur();
+  await expect(apd(page)).toContainText("Godkänd 2026-02-10");
+
+  await apd(page).getByRole("button", { name: "5.19" }).click();
+  await expect(page.locator('[id="kp-5.19"]')).toBeVisible();
+  await expect(page.locator('[id="kp-5.19"]')).toContainText("APD-plan i HSEQ");
+
+  // Och tillbaka: punktens länk öppnar HSEQ med APD-kortet.
+  await page.locator('[id="kp-5.19"]').getByRole("button", { name: /^APD-plan i HSEQ/ }).click();
+  await expect(apd(page)).toBeInViewport();
+});

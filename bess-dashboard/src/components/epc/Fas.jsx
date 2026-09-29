@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Check, ChevronDown, Lightbulb, MessageSquare, RotateCcw } from "lucide-react";
-import { usePortfolj } from "../../state/hooks.js";
+import { usePortfolj, useUi } from "../../state/hooks.js";
 import { MILSTOLPAR } from "../../data/bessChecklistData.ts";
+import { PUNKT_UNDERLAG } from "../../data/punktUnderlag.js";
 import { DatumFalt, Falt } from "../ui/Falt.jsx";
 import { datumKort, idag } from "../../lib/datum.js";
 import { fasRad, mallDatum, planAnkare } from "../../lib/epc.js";
@@ -25,8 +26,10 @@ const GRIND_KALLA = {
 
 function Punktrad({ punkt, ctx }) {
   const { dispatch } = usePortfolj();
+  const { oppnaPost } = useUi();
   const [oppen, setOppen] = useState(false);
   const { pid, pl, antal, tidigare, grindkod } = ctx;
+  const underlag = PUNKT_UNDERLAG[punkt.id];
   const lage = pl.get(punkt.id);
   const hp = punkt.badges.includes("HP");
   const viaGrind = lage.kalla === "grind";
@@ -65,6 +68,12 @@ function Punktrad({ punkt, ctx }) {
         </span>
       </div>
       <div className="epc-radatgard">
+        {underlag ? (
+          <button type="button" className="epc-textknapp" onClick={() => oppnaPost(underlag.vy, underlag.id)}>
+            {underlag.text}
+            <span className="sr-only">: underlag för {nr}</span>
+          </button>
+        ) : null}
         {nTidigare ? (
           <button type="button" className="epc-erfchip" onClick={() => setOppen(true)} title="Andra projekt har avvikelser eller lärdomar på den här punkten">
             <Lightbulb size={13} aria-hidden="true" />

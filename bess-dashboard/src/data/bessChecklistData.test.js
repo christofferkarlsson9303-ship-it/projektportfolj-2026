@@ -12,13 +12,13 @@ import {
   SUMMERING,
 } from "./bessChecklistData.ts";
 
-/* Checklistan är ett kontrollerat dokument (v1.1, 2026-09-26). Antalen står
+/* Checklistan är ett kontrollerat dokument (v1.2, 2026-09-29). Antalen står
    på försättsbladet — ändras de här ska det vara för att checklistan fått en
    ny version, inte för att en punkt råkat försvinna. */
 
 describe("checklistans omfattning", () => {
-  it("har 16 faser, 286 kontrollpunkter, 47 hållpunkter, 7 milstolpar och 12 motsägelser", () => {
-    expect(SUMMERING).toEqual({ faser: 16, punkter: 286, hallpunkter: 47, milstolpar: 7, motsagelser: 12 });
+  it("har 16 faser, 288 kontrollpunkter, 48 hållpunkter, 7 milstolpar och 12 motsägelser", () => {
+    expect(SUMMERING).toEqual({ faser: 16, punkter: 288, hallpunkter: 48, milstolpar: 7, motsagelser: 12 });
     expect(ATT_VERIFIERA).toHaveLength(12);
   });
 
@@ -61,7 +61,7 @@ describe("checklistans omfattning", () => {
 
   it("fördelar hållpunkterna som checklistan", () => {
     const perFas = FASER.map((f) => f.sektioner.flatMap((s) => s.punkter).filter((p) => p.badges.includes("HP")).length);
-    expect(perFas).toEqual([0, 1, 2, 1, 1, 2, 4, 8, 3, 2, 5, 5, 4, 8, 1, 0]);
+    expect(perFas).toEqual([0, 1, 2, 1, 1, 3, 4, 8, 3, 2, 5, 5, 4, 8, 1, 0]);
   });
 });
 

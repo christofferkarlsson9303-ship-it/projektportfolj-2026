@@ -178,6 +178,9 @@ export const SEED = {
   byggmoten: [],
   /* HSEQ / BAS-U */
   hseqRonder: [], hseqIncidenter: [], hseqAmp: [], hseqId06: [],
+  /* APD-plan och arbetsplatstavla — en rad per projekt, sås i efterInlasning.
+     Vad planen och tavlan ska innehålla står i data/apd.js. */
+  hseqApd: [],
   /* Slutdokumentation — grind för M6/M7 */
   slutdok: [],
   /* Handlingsplan per projekt: mål → drivkraft/strategi → åtgärder → slutresultat.

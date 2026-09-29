@@ -13,6 +13,11 @@
    "Från källgenomgången" (fas 1: "Kontraktsgranskning efter signering"),
    och sist i löpande ÄTA-disciplin. Punkterna från 1.0 är oförändrade.
 
+   Version 1.2 (2026-09-29) lägger till punkter ur docs/projektmetod.md,
+   sist i respektive fas under "Från projektmetoden". Fas 5: 5.19 APD-plan
+   godkänd (hållpunkt) och 5.20 arbetsplatstavlan — underlaget bakom dem
+   ligger i data/apd.js och bockas i HSEQ-vyn.
+
    Id:n ("7.3", "lop.4") står i länkar (#kp-7.3) och i ledtidernas
    punkthänvisning — de får aldrig numreras om. Ny punkt i en fas läggs sist
    i fasen med nästa lediga nummer. Läget sparas per fas och ledtid, inte per
@@ -112,7 +117,7 @@ export interface Lardom {
 }
 
 /** Checklistans version — står i kapitlets rubrik. */
-export const VERSION = { nr: "1.1", datum: "2026-09-26" } as const;
+export const VERSION = { nr: "1.2", datum: "2026-09-29" } as const;
 
 /* ---------- Markeringar ---------- */
 
@@ -410,6 +415,13 @@ export const FASER: Fas[] = [
           { id: "5.16", text: "Beställarens Code of Conduct, alkohol- och drogpolicy kommunicerade till alla UE", badges: ["K"], ansvar: "PL", nar: "Byggstart" },
           { id: "5.17", text: "Kompetensregister med utgångsdatum: ESA (3 år), HLR (2 år), heta arbeten, förarbevis, OEM-utbildning", badges: ["L"], ansvar: "BAS-U", nar: "Byggstart" },
           { id: "5.18", text: "Formella, skriftliga utseenden av BAS-P och BAS-U med avgränsning", badges: ["K"], ansvar: "PL", nar: "Före start" },
+        ],
+      },
+      {
+        namn: "Från projektmetoden",
+        punkter: [
+          { id: "5.19", text: "APD-plan (ca 1:400) upprättad och godkänd av beställaren innan etablering — underlag i HSEQ", badges: ["HP"], ansvar: "PL / platschef", nar: "Före etablering" },
+          { id: "5.20", text: "Arbetsplatstavlan komplett: förhandsanmälan, AMP, ordningsregler, riskanalys, nödinstruktion, APD-plan, skyddsrondsprotokoll, räddningsplan", badges: ["K"], ansvar: "BAS-U", nar: "Etablering" },
         ],
       },
     ],

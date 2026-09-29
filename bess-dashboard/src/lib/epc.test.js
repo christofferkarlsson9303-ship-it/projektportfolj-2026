@@ -212,9 +212,9 @@ describe("lagesbild", () => {
     expect(l.nastaGrind.fas.grind.kod).toBe("G10");
     expect(l.nastaBetalning).toMatchObject({ kod: "M5", status: "pagaende" });
     expect(l.grindarPasserade).toBe(10);
-    expect(l.hp).toBe(47);
-    // Hållpunkterna i fas 0–9: 0+1+2+1+1+2+4+8+3+2.
-    expect(l.hpKlara).toBe(24);
+    expect(l.hp).toBe(48);
+    // Hållpunkterna i fas 0–9: 0+1+2+1+1+3+4+8+3+2.
+    expect(l.hpKlara).toBe(25);
     expect(l.dagarTillSlutbesiktning).toBe(67);
   });
 
@@ -257,11 +257,11 @@ describe("punktlage", () => {
 });
 
 describe("checklistsummering", () => {
-  it("summerar klara, kvar, hållpunkter och grindar över alla 286 punkter", () => {
+  it("summerar klara, kvar, hållpunkter och grindar över alla 288 punkter", () => {
     const { totalt, faser, lopande } = checklistsummering(seed(), "36037", NU);
-    // Fas 0–9 är passerade: 22+21+17+20+15+18+13+16+9+13 punkter.
-    expect(totalt).toMatchObject({ punkter: 286, klara: 164, ejAktuella: 0, kvar: 122, hp: 47, hpKlara: 24, grindar: 10 });
-    expect(totalt.andel).toBe(57);
+    // Fas 0–9 är passerade: 22+21+17+20+15+20+13+16+9+13 punkter.
+    expect(totalt).toMatchObject({ punkter: 288, klara: 166, ejAktuella: 0, kvar: 122, hp: 48, hpKlara: 25, grindar: 10 });
+    expect(totalt.andel).toBe(58);
     expect(faser[10]).toMatchObject({ punkter: 15, klara: 0, kvar: 15, hp: 5, hpKvar: 5 });
     expect(lopande).toMatchObject({ punkter: 24, klara: 0 });
   });
@@ -272,7 +272,7 @@ describe("checklistsummering", () => {
     s = punkt(s, "36037", "10.3", "ejaktuell");
     const { totalt, faser } = checklistsummering(s, "36037", NU);
     expect(faser[10]).toMatchObject({ klara: 2, ejAktuella: 1, kvar: 12 });
-    expect(totalt.andel).toBe(Math.round((166 / 285) * 100));
+    expect(totalt.andel).toBe(Math.round((168 / 287) * 100));
   });
 });
 
