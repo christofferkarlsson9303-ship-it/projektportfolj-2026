@@ -4,10 +4,9 @@ import { Callout, Card, CheckList, Meter, Overline, StatusBadge } from "../ds/in
 import { DatumFalt, Falt } from "../ui/Falt.jsx";
 import { Slideover } from "../ui/Slideover.jsx";
 import { Markeringar } from "../epc/Delar.jsx";
+import { EpcKopplingar } from "../epc/Kopplingar.jsx";
 import { APD_EPC, APD_OMRADEN } from "../../data/apd.js";
-import { PUNKT_FOR_ID } from "../../data/bessChecklistData.ts";
 import { apdLage, nastaRevision } from "../../lib/apd.js";
-import { punktlage } from "../../lib/epc.js";
 import { idag } from "../../lib/datum.js";
 
 /* APD-plan och arbetsplatstavla — HSEQ-vyns kort för etableringen (G5).
@@ -23,9 +22,6 @@ import { idag } from "../../lib/datum.js";
 
 const TAVLA_TON = { uppsatt: "ok", inaktuell: "warn", saknas: "neutral" };
 const TAVLA_TEXT = { uppsatt: "Uppsatt", inaktuell: "Byt ut", saknas: "Saknas" };
-
-const EPC_TEXT = { klar: "Klar", ejaktuell: "Ej aktuell", oppen: "Öppen" };
-const EPC_TON = { klar: "ok", ejaktuell: "neutral", oppen: "warn" };
 
 const medMarkering = (p) => (
   <>
@@ -55,40 +51,13 @@ function ApdPanel({ lage, onStang, onPunkt }) {
   );
 }
 
-/** Status för en EPC-punkt och knappen som bockar den när underlaget är klart. */
-function EpcKoppling({ punktId, text, redo, pl, onKlar, onVisa }) {
-  const lage = pl.get(punktId);
-  const st = lage?.status || "oppen";
-  // En passerad grind gör fasens punkter klara — säg det, så att ingen letar efter en bock.
-  const text2 = st === "klar" && lage.kalla === "grind" ? `Klar via G${PUNKT_FOR_ID.get(punktId).fas}` : EPC_TEXT[st];
-  return (
-    <li className="flex flex-wrap items-center justify-between gap-2 border-0 border-t border-solid border-hairline py-2 first:border-t-0">
-      <span className="text-[13px] text-ink">
-        <button type="button" className="lankknapp" onClick={() => onVisa(punktId)}>
-          {punktId}
-        </button>{" "}
-        {text}
-      </span>
-      <span className="flex items-center gap-2">
-        <StatusBadge ton={EPC_TON[st]} label={text2} />
-        {st === "oppen" && redo ? (
-          <button type="button" className="btn mini" onClick={() => onKlar(punktId)}>
-            Markera klar
-          </button>
-        ) : null}
-      </span>
-    </li>
-  );
-}
-
 export function ApdKort({ projekt }) {
-  const { state, uppd, dispatch } = usePortfolj();
-  const { visaToast, oppnaPost } = useUi();
+  const { state, uppd } = usePortfolj();
+  const { visaToast } = useUi();
   const [oppen, setOppen] = useState(false);
   const pid = projekt.id;
   const lage = apdLage(state, pid);
   const rad = lage.rad;
-  const pl = punktlage(state, pid);
 
   // Raden sås i efterInlasning; utan den finns inget att skriva i.
   const harRad = (state.hseqApd || []).some((r) => r.id === rad.id);
@@ -110,8 +79,6 @@ export function ApdKort({ projekt }) {
     visaToast(`APD-planen är nu ${rev} — skicka den till beställaren för godkännande`);
   };
 
-  const epcKlar = (punktId) => dispatch({ type: "EPC_PUNKT", pid, punkt: punktId, status: "klar" });
-  const visaEpc = (punktId) => oppnaPost("epc", `kp-${punktId}`);
 
   const badge = lage.godkand ? (
     <StatusBadge ton="ok" label={`Godkänd ${rad.godkandDatum}`} />
@@ -217,27 +184,13 @@ export function ApdKort({ projekt }) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-1">
-        <Overline>I Bygga batteripark</Overline>
-        <ul className="m-0 list-none p-0" aria-label="Kopplade punkter i EPC-checklistan">
-          <EpcKoppling
-            punktId={APD_EPC.plan}
-            text="APD-plan godkänd av beställaren"
-            redo={lage.planRedo}
-            pl={pl}
-            onKlar={epcKlar}
-            onVisa={visaEpc}
-          />
-          <EpcKoppling
-            punktId={APD_EPC.tavla}
-            text="Arbetsplatstavlan komplett"
-            redo={lage.tavlaRedo}
-            pl={pl}
-            onKlar={epcKlar}
-            onVisa={visaEpc}
-          />
-        </ul>
-      </div>
+      <EpcKopplingar
+        pid={pid}
+        rader={[
+          { punktId: APD_EPC.plan, text: "APD-plan godkänd av beställaren", redo: lage.planRedo },
+          { punktId: APD_EPC.tavla, text: "Arbetsplatstavlan komplett", redo: lage.tavlaRedo },
+        ]}
+      />
 
       {oppen ? <ApdPanel lage={lage} onStang={() => setOppen(false)} onPunkt={bockaPunkt} /> : null}
     </Card>

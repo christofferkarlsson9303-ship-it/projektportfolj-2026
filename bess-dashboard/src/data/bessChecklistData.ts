@@ -18,6 +18,10 @@
    godkänd (hållpunkt) och 5.20 arbetsplatstavlan — underlaget bakom dem
    ligger i data/apd.js och bockas i HSEQ-vyn.
 
+   Version 1.3 (2026-09-29): fas 1 får 1.22 projektdirektivet signerat och
+   1.23 uppstartsavstämningen godkänd, båda hållpunkter — underlaget ligger i
+   data/projektstart.js och fylls i vyn Projektstart.
+
    Id:n ("7.3", "lop.4") står i länkar (#kp-7.3) och i ledtidernas
    punkthänvisning — de får aldrig numreras om. Ny punkt i en fas läggs sist
    i fasen med nästa lediga nummer. Läget sparas per fas och ledtid, inte per
@@ -117,7 +121,7 @@ export interface Lardom {
 }
 
 /** Checklistans version — står i kapitlets rubrik. */
-export const VERSION = { nr: "1.2", datum: "2026-09-29" } as const;
+export const VERSION = { nr: "1.3", datum: "2026-09-29" } as const;
 
 /* ---------- Markeringar ---------- */
 
@@ -241,6 +245,13 @@ export const FASER: Fas[] = [
           { id: "1.19", text: "Ingen publicering/referens av projektet utan beställarens skriftliga OK (vite 5 %)", badges: ["K"], ansvar: "PL", nar: "Hela projektet" },
           { id: "1.20", text: "Volymrabatt: huvudavtal löpande vs UE-avtal mot sista lyft – planera kassaflödet", badges: ["L"], ansvar: "PL / ekonomi", nar: "Uppstart" },
           { id: "1.21", text: "UE bär obegränsat ONE Nordics viten vid UE-försening – kontrollera att det står i UE-avtalet", badges: ["K"], ansvar: "PL", nar: "Före UE-avtal" },
+        ],
+      },
+      {
+        namn: "Från projektmetoden",
+        punkter: [
+          { id: "1.22", text: "Projektdirektiv komplett med prioriterad projekttriangel och signerat av intern beställare och PL — underlag i Projektstart", badges: ["HP"], ansvar: "PL / intern beställare", nar: "Före startmöte" },
+          { id: "1.23", text: "Uppstartsavstämning PL ↔ intern beställare hållen och klartecken givet innan teamet kallas till startmöte", badges: ["HP"], ansvar: "PL / intern beställare", nar: "Före startmöte" },
         ],
       },
     ],

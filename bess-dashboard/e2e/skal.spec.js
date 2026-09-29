@@ -6,6 +6,7 @@ const VYER = [
   "Idag",
   "Översikt",
   "Bygga batteripark",
+  "Projektstart",
   "Tavla",
   "Tidplan",
   "Handlingsplan",

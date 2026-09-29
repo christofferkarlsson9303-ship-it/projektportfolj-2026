@@ -181,6 +181,9 @@ export const SEED = {
   /* APD-plan och arbetsplatstavla — en rad per projekt, sås i efterInlasning.
      Vad planen och tavlan ska innehålla står i data/apd.js. */
   hseqApd: [],
+  /* Projektdirektiv och uppstartsavstämning — en rad per projekt, sås i
+     efterInlasning. Vad de ska innehålla står i data/projektstart.js. */
+  projektstart: [],
   /* Slutdokumentation — grind för M6/M7 */
   slutdok: [],
   /* Handlingsplan per projekt: mål → drivkraft/strategi → åtgärder → slutresultat.

@@ -827,7 +827,9 @@ Verktyget: `projektportfolj-2026/bess-dashboard` (React/Vite, Supabase, data i `
 
 ### 11.2 Innehåll i metoden som saknas eller kan stärkas i verktyget (förslag – verifiera mot koden)
 1. **APD-plan och arbetsplatstavla** (5.3.1–5.3.2) som egen checklista i `hseq` eller under G5.
+   ✅ Byggd: kort i HSEQ, `data/apd.js`, `lib/apd.js`, EPC 5.19 [HP] och 5.20 [K] (checklista v1.2).
 2. **Uppstartsavstämning** (6.3) och **projektdirektiv** (6.1) som formulär med signatur – grind mot G1.
+   ✅ Byggd: vyn Projektstart, `data/projektstart.js`, `lib/projektstart.js`, EPC 1.22 [HP] och 1.23 [HP] (checklista v1.3).
 3. **Godkänd lösning** (6.8) som hållpunkt före inköp – grind mot G4.
 4. **Interface-lista** (6.7) med ägare och veckostatus.
 5. **Intressentanalys och kommunikationsplan** (6.6).

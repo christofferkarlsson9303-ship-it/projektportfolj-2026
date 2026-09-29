@@ -26,6 +26,14 @@ const INSKJUTNA = [
     ],
   ],
   [
+    "epc",
+    [
+      "projektstart",
+      "Projektstart",
+      "Projektdirektiv och uppstartsavstämning — signerade innan teamet kallas till startmöte (grind G1).",
+    ],
+  ],
+  [
     "tidplan",
     [
       "handlingsplan",
@@ -40,6 +48,8 @@ const IKONER_TILLAGDA = {
   idag: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 2v4M16 2v4"/><path d="M8.5 14.5l2.5 2.5 4.5-5"/>',
   // Anslagstavla med lista: checklistan.
   epc: '<rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 2.5h6v3H9z"/><path d="M8.5 11l1.5 1.5 2.5-2.5M14 11.5h2M8.5 16.5l1.5 1.5 2.5-2.5M14 17h2"/>',
+  // Dokument med signaturlinje: direktivet som signeras.
+  projektstart: '<path d="M6 2h8l4 4v16H6z"/><path d="M14 2v4h4"/><path d="M9 11h6M9 14h4"/><path d="M8.5 18.5c1-1 1.5.5 2.5-.5s1.5.5 2.5 0 1.5-.5 2-.5"/>',
   // Måltavla: mål → åtgärder.
   handlingsplan: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>',
 };

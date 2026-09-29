@@ -27,11 +27,13 @@ import { Resurser } from "./Resurser.jsx";
 import { Tidrapport } from "./Tidrapport.jsx";
 import { Budget } from "./Budget.jsx";
 import { Faktura } from "./Faktura.jsx";
+import { Projektstart } from "./Projektstart.jsx";
 
 export const SEKTIONER = {
   idag: Idag,
   oversikt: DashboardView,
   epc: EpcChecklista,
+  projektstart: Projektstart,
   tavla: Tavla,
   tidplan: Tidplan,
   resurser: Resurser,
