@@ -23,6 +23,8 @@ const STATE = "portfolj/state";
 const EKONOMI = "portfolj/ekonomi";
 
 let api = null;
+// "dokument" = portföljen som en rad i app_state, "rader" = rad per post i poster.
+let lage = "dokument";
 let root = null;
 const toaster = [];
 
@@ -64,20 +66,27 @@ async function montera() {
       )
     );
   });
-  await vantaTills(() => falsk.appState.has(STATE) && falsk.appState.has(EKONOMI) && api.conn.txt.startsWith("Delad"));
+  const lagrad = () => (lage === "rader" ? falsk.poster.size > 0 : falsk.appState.has(STATE));
+  await vantaTills(() => lagrad() && falsk.appState.has(EKONOMI) && api.conn.txt.startsWith("Delad"));
 }
 
 /** B ändrar ett fält på en rad i portföljdokumentet. */
 function bAndrar(lista, id, falt, varde) {
+  if (lage === "rader") {
+    falsk.annanPost(lista, id, { [falt]: varde });
+    return;
+  }
   const v = structuredClone(falsk.appState.get(STATE).value);
   v[lista].find((r) => r.id === id)[falt] = varde;
   falsk.annanSkriver(STATE, v);
 }
 
-const iDb = (lista, id) => falsk.appState.get(STATE).value[lista].find((r) => r.id === id);
+const iDb = (lista, id) =>
+  lage === "rader" ? falsk.post(lista, id)?.data : falsk.appState.get(STATE).value[lista].find((r) => r.id === id);
 const iVyn = (lista, id) => api.state[lista].find((r) => r.id === id);
 
 beforeEach(() => {
+  lage = "dokument";
   falsk.nollstall();
   localStorage.clear();
   toaster.length = 0;
@@ -91,7 +100,12 @@ afterEach(async () => {
   api = null;
 });
 
-describe("samtidig redigering", () => {
+describe.each(["dokument", "rader"])("samtidig redigering (%s)", (vald) => {
+  beforeEach(() => {
+    lage = vald;
+    falsk.nollstall({ poster: vald === "rader" });
+  });
+
   it("B:s ändring skrivs inte över när A skriver i ett fält samtidigt", async () => {
     await montera();
     document.getElementById("falt").focus();
@@ -103,7 +117,10 @@ describe("samtidig redigering", () => {
 
     await vantaTills(() => iDb("risker", "r1").atgard === "A:s åtgärd");
     expect(iDb("risker", "r2").atgard).toBe("B:s åtgärd");
-    expect(iVyn("risker", "r2").atgard).toBe("B:s åtgärd");
+
+    // Vyn tar in B:s ändring senast när A lämnar fältet.
+    await act(async () => document.getElementById("falt").blur());
+    await vantaTills(() => iVyn("risker", "r2").atgard === "B:s åtgärd");
     expect(iVyn("risker", "r1").atgard).toBe("A:s åtgärd");
   });
 
@@ -196,5 +213,37 @@ describe("ekonomin", () => {
 
     expect(api.ekonomiFel).toMatch(/administratören/);
     expect(api.state.projekt.find((p) => p.id === "36037").kontraktsvarde).toBe(fore);
+  });
+});
+
+describe("rad per post (poster-tabellen)", () => {
+  beforeEach(() => {
+    lage = "rader";
+    falsk.nollstall({ poster: true });
+  });
+
+  it("en tom tabell fylls med portföljen, en rad per post", async () => {
+    await montera();
+    expect(falsk.post("risker", "r1")).toMatchObject({ lista: "risker", version: 1 });
+    expect(falsk.post("projekt", "36037").data.kontraktsvarde).toBeUndefined();
+    expect(falsk.appState.has(STATE)).toBe(false);
+  });
+
+  it("olika poster ändrade samtidigt: ingen konflikt, ingen omsparning", async () => {
+    await montera();
+    const r2fore = falsk.post("risker", "r2").version;
+    await act(async () => api.uppd("risker", "r1", "atgard", "A:s åtgärd"));
+    falsk.annanPost("risker", "r2", { atgard: "B:s åtgärd" });
+
+    await vantaTills(() => iDb("risker", "r1").atgard === "A:s åtgärd" && iVyn("risker", "r2").atgard === "B:s åtgärd");
+    expect(falsk.post("risker", "r2").version).toBe(r2fore + 1); // bara B:s skrivning
+    expect(toaster).toEqual([]);
+  });
+
+  it("en borttagen post tas bort mjukt och finns i historiken", async () => {
+    await montera();
+    await act(async () => api.taBort("risker", "r2"));
+    await vantaTills(() => falsk.post("risker", "r2").borttagen === true);
+    expect(falsk.historik.filter((h) => h.id === "r2").map((h) => h.operation)).toEqual(["skapad", "borttagen"]);
   });
 });

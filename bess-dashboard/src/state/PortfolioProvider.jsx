@@ -520,6 +520,9 @@ export function PortfolioProvider({ children }) {
       laggTill: (lista, rad) => dispatch({ type: "LAGG_TILL", lista, rad }),
       taBort: (lista, id) => dispatch({ type: "TA_BORT", lista, id }),
       sattLista: (lista, rader) => dispatch({ type: "SATT_LISTA", lista, rader }),
+      /** Versioner av en post, nyast först — null när historik inte finns
+       *  (lokalt läge eller portföljen i app_state). */
+      historik: async (lista, id) => (dbRef.current?.historik ? dbRef.current.historik(lista, id) : null),
     }),
     [state, dispatch, conn, ekonomiFel, visaToast]
   );

@@ -3,12 +3,8 @@
    Varje "dokument" är en rad i app_state med nyckeln som primärnyckel. */
 
 import { supabase } from "../lib/supabase.js";
-
-function fel(kod, meddelande) {
-  const e = new Error(meddelande);
-  e.code = kod;
-  return e;
-}
+import { fel } from "./db-fel.js";
+import { harPosterTabell, radDokument } from "./db-poster.js";
 
 /* Senast lästa version per nyckel. Driver den optimistiska låsningen: vi skriver
    bara om raden ser ut som när vi läste den. */
@@ -173,8 +169,49 @@ const logg = {
   },
 };
 
+/* Portföljdokumentet: rad per post i tabellen poster när den finns, annars
+   som förut en JSON-rad i app_state. Valet görs vid första läsningen —
+   providern läser alltid innan den skriver eller lyssnar. */
+const PORTFOLJ = "portfolj/state";
+
+function portfoljDokument() {
+  let vald = null;
+  let rader = null;
+  const valj = async () => {
+    if (vald) return vald;
+    if (await harPosterTabell(supabase)) {
+      rader = radDokument(supabase);
+      vald = rader;
+    } else vald = dokument(PORTFOLJ);
+    return vald;
+  };
+  const kraver = () => {
+    if (!vald) throw fel("ej_last", "portföljen måste läsas innan den skrivs eller avlyssnas");
+    return vald;
+  };
+  return {
+    get: async () => (await valj()).get(),
+    set: async (payload) => (await valj()).set(payload),
+    antaVersion: (v) => kraver().antaVersion(v),
+    onSnapshot: (vidAndring, vidFel) => kraver().onSnapshot(vidAndring, vidFel),
+    /** Versionshistorik för en post, eller null när den inte finns (app_state-läget). */
+    historik: async (lista, id) => {
+      await valj();
+      return rader ? rader.historik(lista, id) : null;
+    },
+    get radlage() {
+      return vald === null ? null : vald === rader;
+    },
+  };
+}
+
 /** DB-handtaget, eller null när Supabase inte är konfigurerat. */
 export function skapaDb() {
   if (!supabase) return null;
-  return { doc: dokument, logg };
+  const portfolj = portfoljDokument();
+  return {
+    doc: (nyckel) => (nyckel === PORTFOLJ ? portfolj : dokument(nyckel)),
+    historik: (lista, id) => portfolj.historik(lista, id),
+    logg,
+  };
 }

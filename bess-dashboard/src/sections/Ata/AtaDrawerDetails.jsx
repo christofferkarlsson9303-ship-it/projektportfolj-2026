@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Posthistorik } from "../../components/ui/Posthistorik.jsx";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { AtaPrisgodkannande, AtaUnderlag, AtaUnderrattelse } from "../../components/ui/AtaDokument.jsx";
 import { DatumFalt, Falt, Kryss, NumFalt, SelStatus } from "../../components/ui/Falt.jsx";
@@ -376,6 +377,8 @@ export function AtaDrawerDetails({ u, onStang }) {
             Underlag (PDF)
           </button>
         </div>
+
+        <Posthistorik lista="ur" id={u.id} />
       </div>
     </aside>
   );

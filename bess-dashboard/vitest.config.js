@@ -9,7 +9,7 @@ export default defineConfig({
   test: {
     // Playwright äger e2e/, Vitest äger src/. Utan detta försöker Vitest
     // köra e2e-specarna och havererar på @playwright/test.
-    include: ["src/**/*.test.js"],
+    include: ["src/**/*.test.js", "supabase/**/*.test.js"],
     environment: "node",
   },
 });

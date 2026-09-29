@@ -31,12 +31,25 @@ adressen måste finnas i tabellen `allowed_users`. Se `.env.example`.
 
 ### Datamodellen
 
-Hela portföljen ligger som två JSONB-rader i `app_state`:
-
-| Nyckel | Innehåll | Vem får skriva |
+| Var | Innehåll | Vem får skriva |
 | --- | --- | --- |
-| `portfolj/state` | allt utom kontraktsvärde och betalplan | alla på listan |
-| `portfolj/ekonomi` | kontraktsvärde och betalplan | bara `role = 'admin'` |
+| `poster` | en rad per post (lista, id → data), version per rad | alla på listan; ingen hård borttagning |
+| `poster_historik` | varje version av varje post, med vem och när | ingen — fylls av en trigger |
+| `app_state` `portfolj/ekonomi` | kontraktsvärde och betalplan | bara `role = 'admin'` |
+| `app_state` `portfolj/state` | hela portföljen som ett dokument — reserv och äldre läge | alla på listan |
+| `andringslogg` | ändringsloggen, append-only | alla på listan, i eget namn |
+
+Appen använder `poster` när tabellen finns och faller annars tillbaka på
+`portfolj/state` (`src/state/db-poster.js`, valet görs vid första läsningen).
+Mot providern ser båda ut som samma dokument; skillnaden är att radläget bara
+skriver de poster som ändrats, med versionskontroll per post. Två personer som
+ändrar olika poster krockar därför aldrig.
+
+**Driftsättning av radläget:** merga och driftsätt klienten först (den kör
+vidare mot `app_state` så länge tabellen saknas), kör sedan migreringen
+`20260929190000_poster_rad_per_post.sql` — den för över portföljdokumentet
+till rader — och ladda om öppna flikar. En gammal flik som står öppen efter
+migreringen skriver fortfarande till `app_state`.
 
 Behörigheten ligger i RLS, inte i klienten — `is_allowed()` och `is_admin()`
 slår mot `allowed_users` via e-posten i JWT:n. Publishable-nyckeln är publik

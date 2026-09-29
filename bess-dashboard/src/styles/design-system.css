@@ -1207,6 +1207,16 @@ tr.lastrad:hover{opacity:.8}
 .atadrawer-kropp,.slideover-kropp{padding:14px 16px 28px;overflow-y:auto;flex:1;display:flex;
   flex-direction:column;gap:14px}
 .atadrawer-kropp .atagrindar{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+/* Versionshistorik per post (tabellen poster_historik). */
+.posthistorik{border-top:1px solid var(--hairline);padding-top:10px;font-size:13px}
+.posthistorik summary{cursor:pointer;font-weight:700;color:var(--ink)}
+.posthistorik-info{margin:8px 0 0;color:var(--ink-soft)}
+.posthistorik-lista{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.posthistorik-rubrik{color:var(--ink-soft)}
+.posthistorik-rubrik b{color:var(--ink)}
+.posthistorik-version{margin-left:6px;font-size:11.5px;color:var(--ink-faint)}
+.posthistorik-lista ul{margin:3px 0 0;padding-left:18px;color:var(--ink)}
+.posthistorik-lista s{color:var(--ink-faint)}
 
 /* Rubriken ser ut som text tills man klickar eller tabbar dit. */
 .atainline-rubrik{background:none;border:0;padding:2px 4px;margin-left:-4px;text-align:left;

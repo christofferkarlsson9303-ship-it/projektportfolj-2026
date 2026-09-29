@@ -17,6 +17,17 @@ async function visaTabell(page) {
 
 /* ---------- Tavlan ---------- */
 
+test("ärendepanelen har en historiksektion som säger när historik saknas", async ({ page }) => {
+  const kort = page.locator(".atakort").first();
+  test.skip((await kort.count()) === 0, "inga poster i grunddatan");
+  await kort.getByRole("button").first().click();
+
+  const panel = page.getByRole("region", { name: ARENDE });
+  await panel.getByText("Historik", { exact: true }).click();
+  // E2E kör i lokalt läge: historik per post finns bara i delat läge.
+  await expect(panel.getByText(/Historik per post finns i delat läge/)).toBeVisible();
+});
+
 test("tavlan visar ÄTA-flödets fem steg", async ({ page }) => {
   const tavla = page.getByRole("list", { name: "ÄTA-flödet" });
   await expect(tavla).toBeVisible();
