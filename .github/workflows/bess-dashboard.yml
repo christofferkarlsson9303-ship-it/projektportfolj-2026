@@ -1,0 +1,68 @@
+name: bess-dashboard
+
+# Kör lint, typkontroll, enhetstester, bygge och e2e på varje PR och push till
+# main. Utan det här skyddar testsviten bara den som minns att köra den.
+
+on:
+  pull_request:
+    paths:
+      - "bess-dashboard/**"
+      - ".github/workflows/bess-dashboard.yml"
+  push:
+    branches: [main]
+    paths:
+      - "bess-dashboard/**"
+      - ".github/workflows/bess-dashboard.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: bess-dashboard
+
+jobs:
+  kontroll:
+    name: Lint, typer, enhetstester, bygge
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: bess-dashboard/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  e2e:
+    name: E2E (desktop + mobil)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: bess-dashboard/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      # Utan Supabase-variabler kör appen i lokalt läge, vilket e2e förutsätter.
+      - run: npm run e2e
+        env:
+          CI: "true"
+      - name: Spara rapport och spår vid fel
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-rapport
+          path: |
+            bess-dashboard/playwright-report/
+            bess-dashboard/e2e/.resultat/
+          retention-days: 7

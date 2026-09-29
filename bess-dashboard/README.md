@@ -62,6 +62,13 @@ personer som ändrar olika saker får båda behålla sina ändringar. Har båda
 `src/state/PortfolioProvider.test.js` provar detta med två användare mot en
 falsk Supabase i minnet (`src/test/falskSupabase.js`).
 
+### Schemat
+
+Hela databasschemat ligger i `supabase/migrations/` — tabeller, RLS-regler,
+`is_allowed()` / `is_admin()`, versionsräknaren och ändringsloggen. Filerna
+före 2026-09-24 är exporterade ur projektets migreringshistorik i efterhand;
+nya ändringar görs som nya filer här och körs med `supabase db push`.
+
 ### Innan delat läge fungerar
 
 Lägg till appens adress under *Authentication → URL Configuration* i Supabase,
