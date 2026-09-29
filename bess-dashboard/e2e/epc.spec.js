@@ -20,24 +20,24 @@ async function oppnaFas(page, nr) {
 const status = (page) => page.getByRole("region", { name: /^Status — / });
 const erfarenhetslista = (page) => page.getByRole("region", { name: "Erfarenhetsåterföring — topp 10" });
 
-test("guiden har 16 faser, de löpande punkterna och alla 286 kontrollpunkter att bocka av", async ({ page }) => {
+test("guiden har 16 faser, de löpande punkterna och alla 288 kontrollpunkter att bocka av", async ({ page }) => {
   await expect(page.locator("details.epc-fas")).toHaveCount(17);
-  await expect(page.locator(".epc-rad")).toHaveCount(286);
-  await expect(page.locator(".epc-rad.hp")).toHaveCount(47);
-  await expect(page.locator(".epc-rad input[type=checkbox]")).toHaveCount(286);
+  await expect(page.locator(".epc-rad")).toHaveCount(288);
+  await expect(page.locator(".epc-rad.hp")).toHaveCount(48);
+  await expect(page.locator(".epc-rad input[type=checkbox]")).toHaveCount(288);
   // Checklistan skapar inga ärenden.
   await expect(page.getByRole("button", { name: /Skapa UR\/ÄTA/ })).toHaveCount(0);
 });
 
 test("summeringen visar exakt status per fas och följer avbockningen", async ({ page }) => {
-  // Fas 0–9 är passerade i Växjö: 164 punkter klara via grindarna.
-  await expect(status(page)).toContainText("164/286");
+  // Fas 0–9 är passerade i Växjö: 166 punkter klara via grindarna.
+  await expect(status(page)).toContainText("166/288");
   await expect(status(page).getByRole("row", { name: /^10 · Stationshus/ })).toContainText("0/15");
 
   await oppnaFas(page, 10);
   await rad(page, "10.7").getByRole("checkbox").check();
   await expect(status(page).getByRole("row", { name: /^10 · Stationshus/ })).toContainText("1/15");
-  await expect(status(page)).toContainText("165/286");
+  await expect(status(page)).toContainText("167/288");
   await expect(rad(page, "10.7")).toContainText(/Klar \d{4}-\d{2}-\d{2}/);
 
   // Ej aktuell räknas bort ur det som återstår.
@@ -92,7 +92,7 @@ test("lägesbilden har en rad per projekt och visar läget för valt projekt", a
   await expect(projektrad(page, /^Göteborg/)).toContainText("Datum saknas");
   const framdrift = status(page).getByRole("list", { name: "Framdrift i checklistan" });
   await expect(framdrift).toContainText(/Grindar passerade\s*\d+\/16/);
-  await expect(framdrift).toContainText(/Hållpunkter klara\s*\d+\/47/);
+  await expect(framdrift).toContainText(/Hållpunkter klara\s*\d+\/48/);
   // Läget nu för valt projekt står i tre kort.
   for (const namn of ["Pågår nu", "Näst på tur", "Ledtider att starta"])
     await expect(page.getByRole("region", { name: namn })).toBeVisible();
@@ -106,8 +106,8 @@ test("ett annat projekt väljs i lägesbilden och guiden följer med", async ({ 
   await expect(page.locator('aside[aria-label="Fas 0 i 36038 Alvesta"]')).toBeAttached();
 });
 
-test("version 1.1: källgenomgången, nyckelvärdena och de tolv motsägelserna finns med", async ({ page }) => {
-  await expect(page.getByRole("region", { name: "Så byggs en batteripark" })).toContainText("Version 1.1");
+test("version 1.2: källgenomgången, nyckelvärdena och de tolv motsägelserna finns med", async ({ page }) => {
+  await expect(page.getByRole("region", { name: "Så byggs en batteripark" })).toContainText("Version 1.2");
   await page.getByRole("searchbox", { name: "Sök i guiden" }).fill("3,21 V");
   await expect(page.locator(".epc-rad")).toHaveCount(1);
   await expect(rad(page, "15.17")).toBeVisible();
@@ -116,9 +116,9 @@ test("version 1.1: källgenomgången, nyckelvärdena och de tolv motsägelserna 
   await expect(page.locator(".epc-verifiera dt")).toHaveCount(12);
 });
 
-test("filtret Hållpunkter visar bara de 47 hållpunkterna", async ({ page }) => {
+test("filtret Hållpunkter visar bara de 48 hållpunkterna", async ({ page }) => {
   await page.getByRole("group", { name: "Visa markering" }).getByRole("button", { name: "Hållpunkter" }).click();
-  await expect(page.locator(".epc-rad")).toHaveCount(47);
+  await expect(page.locator(".epc-rad")).toHaveCount(48);
   await expect(page.locator(".epc-rad:not(.hp)")).toHaveCount(0);
 });
 

@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePortfolj, useUi } from "../state/hooks.js";
 import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
 import { Callout, Card, CheckList, DataList, Overline, StatTile, StatusBadge, TableRegion } from "../components/ds/index.js";
 import { DatumFalt, Falt } from "../components/ui/Falt.jsx";
 import { Slideover } from "../components/ui/Slideover.jsx";
 import { Skyddsrondsprotokoll } from "../components/ui/Rondprotokoll.jsx";
+import { ApdKort } from "../components/hseq/Apd.jsx";
 import { AVVIKELSENIVA, HSEQ_VITE, INCIDENTTYP, RONDPUNKTER } from "../data/konstanter.js";
 import {
   ampAktuell,
@@ -32,7 +33,10 @@ import { hamtaNamn } from "../state/portfolj-reducer.js";
 
    Ronden öppnas i en slide-over så att listan över ronder ligger kvar.
    Allt står på designsystemet: grindarna som StatTile, ronder, AMP/ID06 och
-   incidenter som kort, rondens checklista som CheckList. */
+   incidenter som kort, rondens checklista som CheckList.
+
+   APD-planen och arbetsplatstavlan (etablering, G5) är ett eget kort i
+   components/hseq/Apd.jsx med datan i data/apd.js. */
 
 const nyttId = (prefix) => prefix + Date.now();
 
@@ -256,10 +260,19 @@ export function Hseq() {
   /* Översiktens snabbåtgärd skapar ronden och pekar ut den här. Justering
      under render, som i ÄTA och Dagbok, så att panelen är öppen direkt. */
   const [sedd, setSedd] = useState(null);
+  const [apdMal, setApdMal] = useState(null);
   if (postFokus?.vy === "hseq" && postFokus.tid !== sedd) {
     setSedd(postFokus.tid);
-    setOppenRond(postFokus.id);
+    // "hseq-apd" pekar ut APD-kortet (från EPC-punkt 5.19/5.20), allt annat är en rond.
+    if (postFokus.id === "hseq-apd") setApdMal(postFokus.tid);
+    else setOppenRond(postFokus.id);
   }
+
+  useEffect(() => {
+    if (!apdMal) return undefined;
+    const t = setTimeout(() => document.getElementById("hseq-apd")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+    return () => clearTimeout(t);
+  }, [apdMal]);
 
   const p = state.projekt.find((x) => x.id === pid);
   if (!p) return null;
@@ -524,6 +537,8 @@ export function Hseq() {
             </div>
           </Card>
         </div>
+
+        <ApdKort projekt={p} />
 
         <Card
           id="hseq-incidenter"

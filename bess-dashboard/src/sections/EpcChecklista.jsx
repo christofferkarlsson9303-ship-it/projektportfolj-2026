@@ -255,7 +255,7 @@ export function EpcChecklista() {
             lead="Totalentreprenad enligt ABT 06 / ABT-U 07 — från anbud och nätanslutning via mark, leverans och idrifttagning till slutbesiktning och garantitid. Byggd på erfarenheterna från Batch C, leverantörsmanualer och kontraktsunderlag."
           >
             <p className="m-0 text-xs font-semibold text-ink-faint">
-              Version {VERSION.nr} · {VERSION.datum} — samtliga källor i åtta NotebookLM-böcker genomgångna
+              Version {VERSION.nr} · {VERSION.datum} — samtliga källor i åtta NotebookLM-böcker genomgångna, kompletterad med projektmetoden
             </p>
           </SectionHeading>
           <ul aria-label="Guiden i siffror" className="m-0 grid list-none grid-cols-2 gap-4 p-0 sm:grid-cols-4">

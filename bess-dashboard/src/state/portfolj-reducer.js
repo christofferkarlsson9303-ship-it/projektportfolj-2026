@@ -6,6 +6,7 @@ import { SEED } from "../data/seed.js";
 import { KANDA_MAPPAR, PILL, SLUTDOK_MALL } from "../data/konstanter.js";
 import { LEDTIDER, PUNKT_FOR_ID } from "../data/bessChecklistData.ts";
 import { migreraUr } from "../lib/berakningar.js";
+import { nyApdRad } from "../lib/apd.js";
 import { idag } from "../lib/datum.js";
 import { forslagText, kanTillampas, tillampaForslag } from "../lib/importera.js";
 import { angraFakturaunderlag, skapaFakturaunderlag } from "../lib/planering.js";
@@ -73,7 +74,19 @@ export function efterInlasning(state) {
     projekt,
     slutdok: medSlutdokrader(state, projekt),
     handlingsplaner: medHandlingsplaner(state, projekt),
+    hseqApd: medApdRader(state, projekt),
   };
+}
+
+/* APD-planen och arbetsplatstavlan har en rad per projekt, sådd här av
+   samma skäl som handlingsplanen: vyn ska inte skapa data bara för att någon
+   öppnar den. Id:t härleds ur projekt-id, så sådden är idempotent och
+   användarens bockar bevaras. */
+function medApdRader(state, projekt) {
+  const fanns = Array.isArray(state.hseqApd) ? state.hseqApd : [];
+  const har = new Set(fanns.map((r) => r.projektId));
+  const nya = projekt.filter((p) => !har.has(p.id)).map((p) => nyApdRad(p.id));
+  return nya.length ? [...fanns, ...nya] : fanns;
 }
 
 /* Varje projekt har exakt ett planhuvud (mål, drivkraft, strategi,
