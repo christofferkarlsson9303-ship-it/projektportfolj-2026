@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { ChevronRight, CircleCheck } from "lucide-react";
 import { usePortfolj, useUi } from "../state/hooks.js";
 import { PTag } from "../components/ui/PTag.jsx";
 import { Callout, Card, StatusBadge } from "../components/ds/index.js";
@@ -14,9 +15,11 @@ import { AGENDATYPER, arbetslage, dagsetikett } from "../lib/agenda.js";
 
    Varje rad går direkt till rätt post, inte bara till rätt flik.
 
-   Vyn står på designsystemet: sammanfattningen är en mörk ruta i ONE Blå
+   Vyn står på designsystemet: sammanfattningen är en mörk ruta i ONE Blågrön
    (läget bärs av ett statusmärke, inte av en röd eller orange yta), varje
-   grupp är ett Card med antal som märke och en smal kant i gruppens ton. */
+   grupp är ett Card med antal till höger och en smal kant i gruppens ton.
+   Tomma grupper visas inte som egna kort — frister och förfallet slås ihop
+   till en rad när båda är tomma, så att det som finns hamnar högt upp. */
 
 const HORISONTER = [
   ["14", "14 dagar"],
@@ -28,47 +31,77 @@ const HORISONTER = [
 /* ---------- Byggstenar ---------- */
 
 const GRUPPTON = {
-  larm: { kant: "border-l-[3px] border-l-rod", marke: "bad" },
-  varning: { kant: "border-l-[3px] border-l-orange", marke: "warn" },
-  neutral: { kant: "", marke: "neutral" },
+  larm: { kant: "border-l-[3px] border-l-rod", antal: "bg-bad-bg text-bad-ink" },
+  varning: { kant: "border-l-[3px] border-l-orange", antal: "bg-warn-bg text-warn-ink" },
+  neutral: { kant: "", antal: "bg-sunken text-ink-soft" },
 };
 
-function Grupp({ id, rubrik, antal, ton = "neutral", children, tom }) {
+/** Antal i gruppens huvud — bara siffran, i gruppens ton. */
+function Antal({ n, klass }) {
+  return (
+    <span
+      className={`inline-flex min-w-[26px] items-center justify-center rounded-full px-2 py-0.5 text-[12px] font-bold tabular-nums ${klass}`}
+    >
+      {n}
+      <span className="sr-only"> poster</span>
+    </span>
+  );
+}
+
+function Grupp({ id, rubrik, antal, ton = "neutral", action, children, tom }) {
   const t = GRUPPTON[antal ? ton : "neutral"];
   return (
     <Card
       id={id}
       title={rubrik}
       className={t.kant}
-      badge={antal ? <StatusBadge ton={t.marke} label={antal} /> : null}
+      badge={antal ? <Antal n={antal} klass={t.antal} /> : null}
+      action={action}
     >
       {antal ? children : <p className="m-0 text-[13px] text-ink-soft">{tom}</p>}
     </Card>
   );
 }
 
-/** En rad i arbetslistan. Hela raden är klickbar och leder till posten. */
-function Arbetsrad({ vansterKolumn, titel, undertext, pid, markering, onOppna, oppnaText }) {
+/** En rad i arbetslistan. Hela raden är en knapp som leder till posten —
+ *  ingen separat "Öppna"-knapp per rad. Namnet börjar med "Öppna" för
+ *  skärmläsare, pilen till höger visar det för seende. */
+function Arbetsrad({ vansterKolumn, titel, undertext, pid, markering, onOppna }) {
   return (
-    <li className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-0 border-t border-solid border-hairline py-2.5 first:border-t-0 first:pt-0 last:pb-0">
-      <span
-        className={`w-[74px] shrink-0 text-[12.5px] font-bold tabular-nums ${
-          markering === "larm" ? "text-bad-ink" : markering === "varning" ? "text-warn-ink" : "text-ink-soft"
-        }`}
+    <li className="border-0 border-t border-solid border-hairline first:border-t-0">
+      <button
+        type="button"
+        onClick={onOppna}
+        className="group -mx-2 flex w-[calc(100%+16px)] cursor-pointer items-center gap-x-3 rounded-lg border-0 bg-transparent px-2 py-2.5 text-left font-body text-ink transition-colors hover:bg-sunken"
       >
-        {vansterKolumn}
-      </span>
+        <span className="sr-only">Öppna: </span>
+        <span
+          className={`w-[64px] shrink-0 text-right text-[12.5px] tabular-nums ${
+            markering === "larm"
+              ? "font-bold text-bad-ink"
+              : markering === "varning"
+                ? "font-bold text-warn-ink"
+                : "font-semibold text-ink-soft"
+          }`}
+        >
+          {vansterKolumn}
+        </span>
 
-      <span className="min-w-[200px] flex-1">
-        <span className="block text-[13.5px] font-semibold leading-snug text-ink">{titel}</span>
-        {undertext ? <span className="mt-0.5 block text-[12px] text-ink-soft">{undertext}</span> : null}
-      </span>
+        <span className="min-w-0 flex-1 pl-2">
+          <span data-titel className="block text-[13.5px] font-semibold leading-snug text-ink">
+            {titel}
+          </span>
+          {undertext ? <span className="mt-0.5 block text-[12px] text-ink-soft">{undertext}</span> : null}
+        </span>
 
-      {pid ? <PTag pid={pid} /> : null}
+        {pid ? <PTag pid={pid} /> : null}
 
-      <button type="button" className="btn sec mini" onClick={onOppna}>
-        Öppna
-        <span className="sr-only">: {oppnaText || titel}</span>
+        <ChevronRight
+          size={16}
+          strokeWidth={2}
+          aria-hidden="true"
+          className="shrink-0 text-ink-faint transition-colors group-hover:text-one-djup"
+        />
       </button>
     </li>
   );
@@ -107,9 +140,6 @@ export function Idag() {
       markering={r.d < 0 ? "larm" : r.d <= 3 ? "varning" : ""}
       titel={
         <>
-          <span aria-hidden="true" className="mr-1.5 text-one-bla">
-            {(AGENDATYPER[r.typ] || {}).ikon || "•"}
-          </span>
           {r.titel}
           {r.extra === "avvikelse" ? <StatusBadge status="forsenad" label="Avvikelse" className="ml-2" /> : null}
         </>
@@ -117,7 +147,6 @@ export function Idag() {
       undertext={`${r.typ} · ${r.datum}`}
       pid={r.pid}
       onOppna={() => oppnaAgenda(r)}
-      oppnaText={`${r.typ} ${r.titel}`}
     />
   );
 
@@ -127,13 +156,13 @@ export function Idag() {
   const lage =
     l.forfallnaFrister.length || l.forfallet.length
       ? "larm"
-      : l.frister.length || l.idag.length
+      : l.frister.length || l.idag.length || l.utanDatum.length
         ? "varning"
         : "lugn";
 
   const LAGE = {
     larm: { ton: "bad", text: "Frist eller datum passerat" },
-    varning: { ton: "warn", text: "Frister löper" },
+    varning: { ton: "warn", text: "Bevaka" },
     lugn: { ton: "ok", text: "Lugnt läge" },
   };
 
@@ -159,40 +188,12 @@ export function Idag() {
                 ? `${l.frister.length} frist${l.frister.length > 1 ? "er" : ""} löper just nu.`
                 : l.forfallet.length
                   ? `${l.forfallet.length} post${l.forfallet.length > 1 ? "er" : ""} har passerat sitt datum.`
-                  : "Inga frister löper. Nedan ligger det närmaste i tiden."}
+                  : l.utanDatum.length
+                    ? `${l.utanDatum.length} post${l.utanDatum.length > 1 ? "er" : ""} saknar händelsedatum — fyll i det först.`
+                    : "Inga frister löper. Nedan ligger det närmaste i tiden."}
           </div>
         </div>
-
-        <div className="ml-auto">
-          <Vyvaljare etikett="Horisont" varde={horisont} onValj={setHorisont} alternativ={HORISONTER} />
-        </div>
       </section>
-
-      {/* ---------- Frister ---------- */}
-      <Grupp
-        id="idag-frister"
-        rubrik="Frister som löper"
-        antal={l.frister.length}
-        ton={l.forfallnaFrister.length ? "larm" : "varning"}
-        tom="Alla ÄTA och hinder med händelsedatum är underrättade, alla incidenter rapporterade."
-      >
-        <Lista>
-          {l.frister.map((f) => (
-            <Arbetsrad
-              key={f.id}
-              vansterKolumn={
-                f.timmar === null ? "—" : f.niva === "forfallen" ? `${Math.floor(f.timmar / 24)} d sen` : `${Math.max(0, 24 - f.timmar)} h`
-              }
-              markering={f.niva === "forfallen" ? "larm" : "varning"}
-              titel={f.titel}
-              undertext={`${f.typ} · ${f.text}`}
-              pid={f.pid}
-              onOppna={() => oppnaFrist(f)}
-              oppnaText={f.titel}
-            />
-          ))}
-        </Lista>
-      </Grupp>
 
       {l.utanDatum.length ? (
         <Callout ton="bad">
@@ -203,23 +204,60 @@ export function Idag() {
           {l.utanDatum.slice(0, 5).map((u) => u.nr).join(", ")}
           {l.utanDatum.length > 5 ? " m.fl." : ""}
           <div className="mt-2">
-            <button type="button" className="btn mini" onClick={() => visa("ata")}>
+            <button type="button" className="btn djup mini" onClick={() => visa("ata")}>
               Öppna ÄTA och hinder
             </button>
           </div>
         </Callout>
       ) : null}
 
-      {/* ---------- Förfallet ---------- */}
-      <Grupp
-        id="idag-forfallet"
-        rubrik="Har passerat sitt datum"
-        antal={l.forfallet.length}
-        ton="larm"
-        tom="Inget har passerat sitt datum."
-      >
-        <Lista>{l.forfallet.map(agendaRad)}</Lista>
-      </Grupp>
+      {/* ---------- Frister och förfallet ----------
+          Tomma grupper får inget eget kort. Är båda tomma blir de en rad. */}
+      {l.frister.length ? (
+        <Grupp
+          id="idag-frister"
+          rubrik="Frister som löper"
+          antal={l.frister.length}
+          ton={l.forfallnaFrister.length ? "larm" : "varning"}
+        >
+          <Lista>
+            {l.frister.map((f) => (
+              <Arbetsrad
+                key={f.id}
+                vansterKolumn={
+                  f.timmar === null ? "—" : f.niva === "forfallen" ? `${Math.floor(f.timmar / 24)} d sen` : `${Math.max(0, 24 - f.timmar)} h`
+                }
+                markering={f.niva === "forfallen" ? "larm" : "varning"}
+                titel={f.titel}
+                undertext={`${f.typ} · ${f.text}`}
+                pid={f.pid}
+                onOppna={() => oppnaFrist(f)}
+              />
+            ))}
+          </Lista>
+        </Grupp>
+      ) : null}
+
+      {l.forfallet.length ? (
+        <Grupp id="idag-forfallet" rubrik="Har passerat sitt datum" antal={l.forfallet.length} ton="larm">
+          <Lista>{l.forfallet.map(agendaRad)}</Lista>
+        </Grupp>
+      ) : null}
+
+      {!l.frister.length && !l.forfallet.length ? (
+        <section
+          aria-label="Frister och förfallet"
+          className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-solid border-hairline bg-surface px-4 py-3 text-[13.5px] text-ink md:px-6"
+        >
+          <CircleCheck size={17} strokeWidth={2.2} aria-hidden="true" className="shrink-0 text-ok-ink" />
+          <span className="font-semibold">Inga frister löper</span>
+          <span aria-hidden="true" className="text-ink-faint">·</span>
+          <span className="font-semibold">Inget har passerat sitt datum</span>
+          <span className="basis-full pl-[29px] text-[12.5px] text-ink-soft md:basis-auto md:pl-0 md:ml-auto">
+            ÄTA och hinder underrättade, incidenter rapporterade
+          </span>
+        </section>
+      ) : null}
 
       {/* ---------- Idag och denna vecka ---------- */}
       <Grupp
@@ -240,6 +278,7 @@ export function Idag() {
         id="idag-kommande"
         rubrik={`Längre fram — inom ${horisont} dagar`}
         antal={l.kommande.length}
+        action={<Vyvaljare etikett="Horisont" varde={horisont} onValj={setHorisont} alternativ={HORISONTER} />}
         tom={`Inget mer med datum inom ${horisont} dagar.`}
       >
         <Lista>{l.kommande.map(agendaRad)}</Lista>

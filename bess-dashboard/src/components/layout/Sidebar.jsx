@@ -66,7 +66,7 @@ export function Sidebar() {
         <div className="sidebar-top">
           <div>
             <img className="mark-img" src={logotyp} alt="ONE Nordic" />
-            <div className="dom">onenordic.se</div>
+            <div className="dom">one-nordic.se</div>
           </div>
         </div>
 

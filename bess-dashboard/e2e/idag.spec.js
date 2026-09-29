@@ -10,13 +10,16 @@ test("Idag är startvy", async ({ page }) => {
 test("sammanfattningen räknar det som kräver åtgärd", async ({ page }) => {
   await oppna(page);
 
-  // Siffran ska stämma med antalet rader i de brådskande grupperna.
+  // Frister och förfallet visas som egna grupper när de har poster, annars
+  // som en gemensam rad. Någon av formerna ska alltid finnas.
   const frister = page.getByRole("region", { name: "Frister som löper" });
   const forfallet = page.getByRole("region", { name: "Har passerat sitt datum" });
+  const tomrad = page.getByRole("region", { name: "Frister och förfallet" });
   const veckan = page.getByRole("region", { name: "Idag och inom sju dagar" });
 
-  await expect(frister).toBeVisible();
-  await expect(forfallet).toBeVisible();
+  const grupper = (await frister.count()) + (await forfallet.count());
+  if (grupper) await expect(tomrad).toHaveCount(0);
+  else await expect(tomrad).toBeVisible();
   await expect(veckan).toBeVisible();
 });
 
@@ -41,7 +44,7 @@ test("en frist leder direkt till rätt ÄTA-ärende", async ({ page }) => {
   const rader = frister.getByRole("listitem");
   test.skip((await rader.count()) === 0, "inga löpande frister i grunddatan");
 
-  const titel = (await rader.first().locator("span").nth(1).textContent()).trim();
+  const titel = (await rader.first().locator("[data-titel]").textContent()).trim();
   const nr = titel.split(" ")[0];
 
   await rader.first().getByRole("button", { name: /^Öppna/ }).click();
