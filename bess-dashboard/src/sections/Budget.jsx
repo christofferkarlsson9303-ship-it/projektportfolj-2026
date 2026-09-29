@@ -7,6 +7,7 @@ import { DatumFalt, Falt, NumFalt, TaBortKnapp } from "../components/ui/Falt.jsx
 import { KOSTNADSTYP } from "../data/konstanter.js";
 import { fmtSEK } from "../lib/format.js";
 import { projekt } from "../lib/berakningar.js";
+import { kvarAktivitet } from "../lib/prognos.js";
 import {
   aktivitetAnvands,
   budgetAktivitet,
@@ -45,7 +46,8 @@ export function Budget() {
   const rader = lage.aktiviteter.map((a) => {
     const b = budgetAktivitet(state, a);
     const u = utfallAktivitet(state, a.id);
-    return { ...a, b, u, kvar: b.kr - u.kr };
+    const pk = kvarAktivitet(a, b.kr, u.kr);
+    return { ...a, b, u, kvar: b.kr - u.kr, prognosKvarKr: pk.kr, prognosKalla: pk.kalla, slut: u.kr + pk.kr };
   });
 
   const taBortAktivitet = async (a) => {
@@ -238,6 +240,46 @@ export function Budget() {
                     <span className="text-xs font-normal text-ink-soft">
                       {a.b.kr ? `${procent(a.u.kr, a.b.kr)} % förbrukat` : "budget ej satt"}
                     </span>
+                  </span>
+                ),
+              },
+              {
+                nyckel: "prognosKvar",
+                rubrik: "Prognos kvar",
+                bredd: 150,
+                typ: "sek",
+                summera: true,
+                sortVarde: (a) => a.prognosKvarKr,
+                exportVarde: (a) => Math.round(a.prognosKvarKr),
+                render: (a) => (
+                  <span className="flex flex-col items-end gap-0.5">
+                    <NumFalt
+                      varde={a.prognosKvar ?? ""}
+                      etikett={`Din bedömning av kvarvarande kostnad för ${a.namn}`}
+                      placeholder={String(Math.round(Math.max(0, a.kvar)))}
+                      onCommit={(v) => uppd("aktiviteter", a.id, "prognosKvar", v === "" || v === null ? null : v)}
+                      className="max-w-[110px] text-right"
+                    />
+                    <span className="text-xs text-ink-soft">{a.prognosKalla === "bedomning" ? "din bedömning" : "budget − utfall"}</span>
+                  </span>
+                ),
+              },
+              {
+                nyckel: "slut",
+                rubrik: "Prognos slut",
+                bredd: 140,
+                typ: "sek",
+                summera: true,
+                sortVarde: (a) => a.slut,
+                exportVarde: (a) => Math.round(a.slut),
+                render: (a) => (
+                  <span className="flex flex-col items-end">
+                    <b className={a.b.kr && a.slut > a.b.kr ? "text-bad-ink" : "text-ink"}>{fmtSEK(Math.round(a.slut))}</b>
+                    {a.b.kr && a.slut !== a.b.kr ? (
+                      <span className="text-xs font-normal text-ink-soft">
+                        {a.slut > a.b.kr ? "över" : "under"} budget {fmtSEK(Math.abs(Math.round(a.slut - a.b.kr)))}
+                      </span>
+                    ) : null}
                   </span>
                 ),
               },

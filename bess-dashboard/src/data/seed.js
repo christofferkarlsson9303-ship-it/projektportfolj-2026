@@ -228,6 +228,8 @@ export const SEED = {
 
   /* Kostnader mot aktivitet: {id,projektId,aktivitetId,datum,typ,benamning,belopp,debiterbar,fakturerad} */
   kostnader: [],
+  // Sparade veckoprognoser (ekonomi): {id, projektId, vecka, intakt, slutkostnad, tb, utfall, fakturerat}
+  prognoser: [],
 
   /* Fakturaunderlag: {id,projektId,nr,period,skapad,status,summa,rader:[…]} */
   fakturor: [],
