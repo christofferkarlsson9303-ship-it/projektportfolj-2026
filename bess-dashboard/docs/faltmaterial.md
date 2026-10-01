@@ -68,3 +68,18 @@ fältmaterial, datatabeller, ÄTA, tidplan och tidslinje verifierar ändringen.
 I miljöer med förinstallerad Chromium kan
 `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/sökväg/till/chromium` användas.
 PDF/utskrift granskas även visuellt för sidbrytningar, huvud och skrivfält.
+
+## Lagplan för sex montörer (revision 2026-10-01.2)
+
+Standardvalet är nu Lagplan – 6 montörer / totalentreprenad, med 41 punkter:
+- Arbetsledaren före start: 8 punkter, ansvar och gränsdragning, kompetens, avspärrning, lyftplan och startbesked.
+- Lag A (två namn): 9 punkter, fundament, oljegrop, lyft, placering, förankring och överlämning.
+- Lag B (två namn): 9 punkter, säker arbetsmetod, DC-säkringar före DC-anslutning, kabeldragning, förband, moment, märkning, tätning och överlämning.
+- Lag C (två namn): 8 punkter, jordning, höjdarbete, åskskydd, antenn, fiber/styrning, stängsel och överlämning.
+- Arbetsledaren vid avslut: 7 punkter, AC/MV/hjälpkraft, brandlarm/nödstopp, dokumentation, avvikelser, tillstånd och OEM-överlämning.
+
+Fyll i två namn per lag. Snabbvalet Endast Lag A/B/C väljer lagets eget moment; Arbetsledarens lista väljer start och avslut. Hela lagplanen väljer samtliga fem moment. Arbetsordning och förutsättningar följer med även vid lagurval. Välj dokumenttyp Arbetslista för avprickning eller Fältpaket för arbetslista och blank egenkontroll. Namnen sparas per projekt i samma lokala inställningar som övriga fältval.
+
+Gamla sparade momentval utan mallpaket migreras till full lagplan. De tidigare 49 tekniska kontrollpunkterna finns kvar under Tekniska egenkontroller – 4 moment. Öppning från markerade projektuppgifter behåller arbetslistan med just dessa uppgifter.
+
+Källa är den uppladdade projektledarsammanställningen Inklistrad text.txt och lagindelningen i uppdraget. Ingen primär OEM-manual eller signerad kontraktsgränsdragning har tillhandahållits. Därför anges lyftdon, 0,25 %, 50 mm, två kablar/400 A och ±20 % som uppgifter att bekräfta för aktuell modell. Medicinska intyg, CATL-utbildning och PPE väljs efter aktuellt arbete, platskrav och riskbedömning. Listorna är dokumentunderlag; STOPP är en instruktion för manuell frisläppning, ingen digital låsning eller automatisk kontrollstatus.

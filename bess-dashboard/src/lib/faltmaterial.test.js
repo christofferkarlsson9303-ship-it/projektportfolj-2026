@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { FALTMALLAR } from "../data/faltmaterial.js";
+import { LAGMALLAR } from "../data/lagplan.js";
 import { PUNKT_FOR_ID } from "../data/bessChecklistData.ts";
 import { arbetsrader, byggFaltmaterial } from "./faltmaterial.js";
 import { tolkaCelltal } from "./cellvarde.js";
@@ -58,5 +59,28 @@ describe("Kalkylblad och svensk talinmatning", () => {
     expect(blad.getCell("A2").value).toBe("=unsafe"); expect(blad.getCell("B2").value).toBe(1250.5);
     expect(blad.getCell("B4").value).toEqual({ formula: "SUBTOTAL(109,B2:B3)", result: 1000.5 });
     expect(blad.views[0].ySplit).toBe(1);
+  });
+});
+
+
+describe("Sekventiell lagplan", () => {
+  it("täcker tre lag och arbetsledning med stabila, unika kontroll-ID", () => {
+    const points = LAGMALLAR.flatMap((m) => m.punkter);
+    expect(points).toHaveLength(41);
+    expect(new Set(points.map((p) => p.id)).size).toBe(41);
+    expect(LAGMALLAR.filter((m) => m.lag).map((m) => m.lag)).toEqual(["A", "B", "C"]);
+    for (const m of LAGMALLAR) expect(m.flode).toBeTruthy();
+    expect(points.find((p) => p.id === "B.02").instruktion).toContain("innan DC-kablar");
+    expect(points.findIndex((p) => p.id === "B.02")).toBeLessThan(points.findIndex((p) => p.id === "B.04"));
+  });
+  it("lagurval tar med båda namn, beroenden och källvillkor utan statusändring", () => {
+    const d = byggFaltmaterial({ projekt: { id: "p1" }, mallpaket: "lagplan", mallIds: ["lag-b"], metadata: { lagmedlemmar: { B1: "Dan", B2: "Adam" } } });
+    expect(d.moment).toHaveLength(1); expect(d.antal).toBe(9);
+    expect(d.komplett).toBe(false); expect(d.momentTotal).toBe(5);
+    expect(d.moment[0].utforare).toBe("Dan + Adam");
+    expect(d.moment[0].flode).toContain("A.09");
+    expect(d.moment[0].punkter.find((p) => p.id === "B.03").verifiering).toContain("400 A");
+    expect(d.inledning).toContain("rätt kompetens");
+    expect(d.moment[0].punkter.every((p) => !p.status)).toBe(true);
   });
 });

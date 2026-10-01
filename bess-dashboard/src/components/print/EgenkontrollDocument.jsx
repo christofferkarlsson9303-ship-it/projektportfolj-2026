@@ -9,8 +9,9 @@ export function EgenkontrollDocument({ dokument: d }) {
         <section className="field-moment" key={m.id}>
           <DocumentHeader dokument={d} titel="Egenkontroll – BESS" />
           <h2>Moment {m.nr}: {m.titel}</h2>
-          <p className="field-source">{d.kalla} {d.komplett ? "Alla fyra moment valda." : "Delurval av moment – ingen komplett idrifttagningschecklista."}</p>
-          <p>{FALT_FORUTSATTNING}</p>
+          {m.flode ? <p className="field-source"><b>Arbetsordning:</b> {m.flode}</p> : null}
+          <p className="field-source">{d.kalla} {d.komplett ? "Hela valda mallpaketet." : "Delurval – kontrollera överlämningar och återstående arbete."}</p>
+          <p>{d.inledning || FALT_FORUTSATTNING}</p>
           <p><b>Utrustning:</b> {m.utrustning} · <b>Utförare:</b> {m.utforare || "________________"}</p>
           <p><b>Manual/provplan och revision:</b> {m.referens || "EJ ANGIVEN – verifieras före utförande"}</p>
           {m.punkter.map((p) => (

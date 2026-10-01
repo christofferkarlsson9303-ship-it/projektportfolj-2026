@@ -1,4 +1,5 @@
 import { FALTMALLAR, FALTMALL_REVISION, KALLSTATUS } from "../data/faltmaterial.js";
+import { LAGMALLAR, LAGPLAN_INLEDNING } from "../data/lagplan.js";
 import { idag } from "./datum.js";
 
 export function arbetsrader(state, pid, { utforare = "", fran = "", till = "", ids } = {}) {
@@ -15,24 +16,26 @@ export function arbetsrader(state, pid, { utforare = "", fran = "", till = "", i
 }
 
 /** Fryst dokumentmodell: inget här ändrar projektets eller EPC:s status. */
-export function byggFaltmaterial({ projekt, mallIds, referenser = {}, ansvar = {}, metadata = {}, uppgifter = [] }) {
+export function byggFaltmaterial({ projekt, mallIds, referenser = {}, ansvar = {}, metadata = {}, uppgifter = [], mallpaket = "teknisk" }) {
   const idSet = new Set(mallIds);
-  const moment = FALTMALLAR.filter((m) => idSet.has(m.id)).map((m) => ({
+  const mallar = mallpaket === "lagplan" ? LAGMALLAR : FALTMALLAR;
+  const moment = mallar.filter((m) => idSet.has(m.id)).map((m) => ({
     ...m,
     referens: (referenser[m.id] || "").trim(),
-    utforare: (ansvar[m.id] || metadata.utforare || "").trim(),
+    utforare: (ansvar[m.id] || (m.lag ? [metadata.lagmedlemmar?.[`${m.lag}1`], metadata.lagmedlemmar?.[`${m.lag}2`]].filter(Boolean).join(" + ") : "") || metadata.utforare || "").trim(),
     punkter: m.punkter.map((p) => ({ ...p, epc: [...p.epc] })),
   }));
   return {
     projekt: { id: projekt.id, nr: projekt.nr, namn: projekt.namn, bestallare: projekt.bestallare },
-    revision: FALTMALL_REVISION, kalla: KALLSTATUS,
+    revision: mallpaket === "lagplan" ? "2026-10-01.2" : FALTMALL_REVISION, kalla: KALLSTATUS,
+    mallpaket, momentTotal: mallar.length, inledning: mallpaket === "lagplan" ? LAGPLAN_INLEDNING : "",
     datum: metadata.datum || idag(), skapadAv: metadata.skapadAv || "",
     dokumentNr: metadata.dokumentNr || `EK-${projekt.nr || projekt.id}-${metadata.datum || idag()}`,
     enhet: metadata.enhet || "", utforare: metadata.utforare || "", ritning: metadata.ritning || "",
     fran: metadata.fran || "", till: metadata.till || "",
     moment, uppgifter: uppgifter.map((p) => ({ ...p })),
     antal: moment.reduce((s, m) => s + m.punkter.length, 0),
-    komplett: moment.length === FALTMALLAR.length,
+    komplett: moment.length === mallar.length,
   };
 }
 

@@ -8,6 +8,7 @@ test("fältmaterial: samtliga moment, PDF och tomma utskriftsfält", async ({ pa
   await page.getByRole("button", { name: "Fältmaterial", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: /Fältmaterial/ });
   await expect(dialog).toBeVisible();
+  await dialog.getByRole("combobox", { name: "Mallpaket", exact: true }).selectOption("teknisk");
   await expect(dialog.getByRole("status")).toContainText("49 kontrollpunkter");
   await dialog.getByLabel("Montör / entreprenör").fill("Dan Strandell");
   await dialog.getByLabel("Enhet / serienummer").fill("CATL-01 / SN-001");
@@ -41,6 +42,7 @@ test("delurval, projektbyte, sparat urval och tangentbord", async ({ page }) => 
   await page.getByRole("combobox", { name: "Sök och hoppa" }).fill("Skapa fältmaterial");
   await page.keyboard.press("Enter");
   const dialog = page.getByRole("dialog", { name: /Fältmaterial/ });
+  await dialog.getByRole("combobox", { name: "Mallpaket", exact: true }).selectOption("teknisk");
   await dialog.getByRole("button", { name: "Rensa moment" }).click();
   await expect(dialog.getByRole("button", { name: "Ladda ned PDF" })).toBeDisabled();
   await dialog.getByRole("checkbox", { name: /^Moment 4:/ }).check();
@@ -51,6 +53,7 @@ test("delurval, projektbyte, sparat urval och tangentbord", async ({ page }) => 
   await expect(dialog.getByRole("checkbox", { name: /^Moment 1:/ })).not.toBeChecked();
   await dialog.getByRole("combobox", { name: "Projekt", exact: true }).selectOption("36038");
   await expect(dialog).toHaveAccessibleName(/Alvesta/);
+  await dialog.getByRole("combobox", { name: "Mallpaket", exact: true }).selectOption("teknisk");
   await expect(dialog.getByRole("status")).toContainText("49 kontrollpunkter");
 });
 
@@ -97,6 +100,7 @@ test("mörkt UI ger fortfarande vitt utskriftsmaterial och komplett fältpaket",
   await page.getByRole("button", { name: "Fältmaterial", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: /Fältmaterial/ });
   await dialog.getByRole("combobox", { name: "Dokumenttyp", exact: true }).selectOption("paket");
+  await dialog.getByRole("combobox", { name: "Mallpaket", exact: true }).selectOption("teknisk");
   await dialog.getByRole("button", { name: "Rensa moment" }).click();
   await dialog.getByRole("checkbox", { name: /^Moment 1:/ }).check();
   await page.screenshot({ path: testInfo.outputPath("panel-dark.png") });
