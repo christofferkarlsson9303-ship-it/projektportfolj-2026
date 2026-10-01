@@ -43,6 +43,8 @@ function somPost(rad, lista, typ, titel) {
     typ,
     ansvarig: rad.ansvarig || "",
     leverantor: rad.leverantor || "",
+    beroende: rad.beroende || "",
+    anteckning: rad.anteckning || "",
     kalla: { lista, id: rad.id },
   };
 }
@@ -135,6 +137,10 @@ function Redigering({ post, rad }) {
             onCommit={(v) => uppd(k.lista, k.id, "ansvarig", v)}
           />
         </div>
+      </div>
+      <div className="frow c2">
+        <div className="f mb-0"><label htmlFor={`${idBas}-beroende`}>Beroenden / föregående moment</label><Falt id={`${idBas}-beroende`} varde={kalla.beroende || ""} etikett={`Beroenden för ${post.titel}`} onCommit={(v) => uppd(k.lista, k.id, "beroende", v)} /></div>
+        <div className="f mb-0"><label htmlFor={`${idBas}-anteckning`}>Anteckning</label><Falt id={`${idBas}-anteckning`} varde={kalla.anteckning || ""} etikett={`Anteckning för ${post.titel}`} onCommit={(v) => uppd(k.lista, k.id, "anteckning", v)} /></div>
       </div>
       <p className="m-0 text-xs text-ink-soft">
         Med ett startdatum ritas posten som en stapel från start till {k.lista === "leveranser" ? "leverans" : "datum"}.

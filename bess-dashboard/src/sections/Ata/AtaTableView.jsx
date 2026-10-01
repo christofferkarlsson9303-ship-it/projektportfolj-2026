@@ -1,3 +1,4 @@
+import { usePortfolj } from "../../state/hooks.js";
 import { DataTable } from "../../components/ui/DataTable.jsx";
 import { ATA_KLASS } from "../../data/konstanter.js";
 import { prisGrind, underrattelseLage } from "../../lib/berakningar.js";
@@ -17,6 +18,7 @@ const klassNamn = (v) => {
 };
 
 export function AtaTableView({ rader, tomText, vald, onOppna, verktyg }) {
+  const { uppd } = usePortfolj();
   return (
     <DataTable
       etikett="UR- och ÄTA-register"
@@ -42,7 +44,7 @@ export function AtaTableView({ rader, tomText, vald, onOppna, verktyg }) {
             </button>
           ),
         },
-        { nyckel: "benamning", rubrik: "Benämning" },
+        { nyckel: "benamning", rubrik: "Benämning", onCommit: (r, v) => uppd("ur", r.id, "benamning", v) },
         {
           nyckel: "klass",
           rubrik: "Klass",
@@ -59,7 +61,7 @@ export function AtaTableView({ rader, tomText, vald, onOppna, verktyg }) {
           filter: true,
           render: (u) => <StatusBadge {...registerStatus(u.status)} />,
         },
-        { nyckel: "belopp", rubrik: "Belopp", bredd: 130, typ: "sek", summera: true },
+        { nyckel: "belopp", rubrik: "Belopp", bredd: 130, typ: "sek", summera: true, onCommit: (r, v) => uppd("ur", r.id, "belopp", v) },
         {
           nyckel: "grindar",
           rubrik: "Grindar",

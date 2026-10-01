@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePortfolj, useUi } from "../state/hooks.js";
 import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
 import { Callout, Card, RiskScore, StatTile, StatusBadge, TableRegion } from "../components/ds/index.js";
@@ -101,7 +101,7 @@ function Riskkort({ r }) {
     falt === "status" ? uppdStatus("risker", r.id, falt, varde) : uppd("risker", r.id, falt, varde);
 
   return (
-    <li
+    <li id={`risk-${r.id}`} tabIndex={-1}
       className={`flex flex-col gap-3 rounded-lg border border-l-[3px] border-solid border-hairline bg-sunken p-3 md:p-4 ${
         NIVA_KANT[niva] || ""
       }`}
@@ -298,9 +298,20 @@ function RiskTillArende({ r }) {
 /* ---------- Sektionen ---------- */
 
 export function Risker() {
-  const { state, laggTill } = usePortfolj();
-  const { valtProjekt: pid, fraga } = useUi();
+  const { state, laggTill, uppd } = usePortfolj();
+  const { valtProjekt: pid, fraga, postFokus } = useUi();
   const [vy, setVy] = useState("kort");
+
+  const [sedd, setSedd] = useState(null);
+  if (postFokus?.vy === "risker" && postFokus.tid !== sedd) { setSedd(postFokus.tid); setVy("kort"); }
+  useEffect(() => {
+    if (postFokus?.vy !== "risker") return undefined;
+    const timer = setTimeout(() => {
+      const el = document.getElementById(`risk-${postFokus.id}`);
+      el?.scrollIntoView({ block: "center" }); el?.focus({ preventScroll: true });
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [postFokus]);
 
   const p = projekt(state, pid);
 
@@ -483,7 +494,7 @@ export function Risker() {
                     <RiskScore value={riskvarde(r)} />
                   ),
                 },
-                { nyckel: "titel", rubrik: "Risk" },
+                { nyckel: "titel", rubrik: "Risk", onCommit: (r, v) => uppd("risker", r.id, "titel", v) },
                 {
                   nyckel: "niva",
                   rubrik: "Nivå",
@@ -516,6 +527,7 @@ export function Risker() {
                 },
                 {
                   nyckel: "estimeradKostnadSEK",
+                  min: 0, onCommit: (r, v) => uppd("risker", r.id, "estimeradKostnadSEK", v),
                   rubrik: "Est. påverkan",
                   bredd: 130,
                   typ: "sek",
@@ -540,7 +552,7 @@ export function Risker() {
                   textVarde: (r) => etikettAv(RISKSTATUS_NY, r.status),
                   render: (r) => etikettAv(RISKSTATUS_NY, r.status),
                 },
-                { nyckel: "agare", rubrik: "Ansvarig", bredd: 150, filter: true },
+                { nyckel: "agare", rubrik: "Ansvarig", bredd: 150, filter: true, onCommit: (r, v) => uppd("risker", r.id, "agare", v) },
               ]}
             />
           ) : n.risker.length ? (

@@ -18,7 +18,15 @@ export function Utskriftsyta({ innehall, onKlar }) {
     document.body.dataset.utskrift = "1";
 
     // Vänta en målning så att portalen hunnit committas innan dialogen öppnas.
-    const timer = setTimeout(() => window.print(), 50);
+    let avbruten = false;
+    const timer = setTimeout(async () => {
+      const bilder = [...document.querySelectorAll("#utskrift img")];
+      await Promise.allSettled([
+        document.fonts?.ready,
+        ...bilder.map((img) => img.decode?.()),
+      ]);
+      if (!avbruten) window.print();
+    }, 0);
 
     const efter = () => {
       document.body.removeAttribute("data-utskrift");
@@ -27,6 +35,7 @@ export function Utskriftsyta({ innehall, onKlar }) {
     window.addEventListener("afterprint", efter);
 
     return () => {
+      avbruten = true;
       clearTimeout(timer);
       window.removeEventListener("afterprint", efter);
       document.body.removeAttribute("data-utskrift");

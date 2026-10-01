@@ -11,7 +11,7 @@ import { ALLA_PUNKTER } from "../../data/bessChecklistData.ts";
    aria-activedescendant, så det aktiva alternativet läses upp vid piltangenter. */
 export function Kommandopalett() {
   const { state } = usePortfolj();
-  const { visa, setValtProjekt, oppnaPost } = useUi();
+  const { visa, setValtProjekt, oppnaPost, oppnaFaltmaterial } = useUi();
   const [oppen, setOppen] = useState(false);
   const [q, setQ] = useState("");
   const [vald, setVald] = useState(0);
@@ -20,7 +20,7 @@ export function Kommandopalett() {
   const forraFokus = useRef(null);
 
   const index = useMemo(() => {
-    const ut = [];
+    const ut = [{ t: "Vy", label: "Skapa fältmaterial", sub: "Arbetslista / egenkontroll / PDF", kor: () => oppnaFaltmaterial() }];
     VYER.filter((v) => v[0] !== "_sek").forEach(([id, namn]) =>
       ut.push({ t: "Vy", label: namn, sub: "", kor: () => visa(id) })
     );
@@ -42,7 +42,7 @@ export function Kommandopalett() {
         sub: (PILL[u.status] || [undefined, u.status])[1],
         kor: () => {
           setValtProjekt(u.projektId);
-          visa("ata");
+          oppnaPost("ata", u.id);
         },
       })
     );
@@ -61,7 +61,7 @@ export function Kommandopalett() {
       })
     );
     (state.risker || []).forEach((r) =>
-      ut.push({ t: "Risk", label: r.titel, sub: "RV " + riskvarde(r), kor: () => visa("risker") })
+      ut.push({ t: "Risk", label: r.titel, sub: "RV " + riskvarde(r), kor: () => { setValtProjekt(r.projektId); oppnaPost("risker", r.id); } })
     );
     (state.punkter || []).forEach((p) =>
       ut.push({ t: "Punkt", label: p.titel, sub: p.agare || "", kor: () => visa("punkter") })
@@ -79,7 +79,7 @@ export function Kommandopalett() {
       ut.push({ t: "Kontakt", label: k.namn, sub: `${k.roll} · ${k.org}`, kor: () => visa("kontakter") })
     );
     return ut;
-  }, [state, visa, setValtProjekt, oppnaPost]);
+  }, [state, visa, setValtProjekt, oppnaPost, oppnaFaltmaterial]);
 
   const traffar = useMemo(() => {
     const s = q.toLowerCase().trim();

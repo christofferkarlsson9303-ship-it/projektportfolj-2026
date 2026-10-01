@@ -2,7 +2,7 @@ import { VYMETA as META } from "../../data/vyer.js";
 import { useUi } from "../../state/hooks.js";
 
 export function Topbar() {
-  const { aktivVy, navOppen, setNavOppen, tema, vaxlaTema } = useUi();
+  const { aktivVy, navOppen, setNavOppen, tema, vaxlaTema, oppnaFaltmaterial } = useUi();
   const m = META[aktivVy] || { namn: "", lead: "" };
 
   const temaEtikett =
@@ -26,6 +26,8 @@ export function Topbar() {
         <h1 className="pagetitle">{m.namn}</h1>
         {m.lead ? <p className="pagelead">{m.lead}</p> : null}
       </div>
+
+      <button type="button" className="kbd !text-xs" onClick={() => oppnaFaltmaterial()} aria-haspopup="dialog">Fältmaterial</button>
 
       <button type="button" className="kbd" onClick={vaxlaTema} aria-label={temaEtikett} title={temaEtikett}>
         <span aria-hidden="true">{tema === "dark" ? "☀" : "☾"}</span>
