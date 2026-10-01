@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { FALTMALLAR, KALLSTATUS } from "../../data/faltmaterial.js";
+import { LAGMALLAR, LAGPLAN_INLEDNING } from "../../data/lagplan.js";
 import { arbetsrader, byggFaltmaterial } from "../../lib/faltmaterial.js";
 import { idag, lokaltDatum } from "../../lib/datum.js";
 import { hamtaNamn } from "../../state/portfolj-reducer.js";
@@ -8,7 +9,7 @@ import { EgenkontrollDocument } from "../print/EgenkontrollDocument.jsx";
 import { PrintableTodoList } from "../print/PrintableTodoList.jsx";
 import { PdfExporter } from "../print/PdfExporter.jsx";
 
-const ALLA = FALTMALLAR.map((m) => m.id);
+
 function lasVal(pid) {
   try { return JSON.parse(localStorage.getItem(`bess-faltmaterial-v1-${pid}`) || "{}"); }
   catch { return {}; }
@@ -23,12 +24,15 @@ export function FaltmaterialPanel({ projekt, urval, onValjProjekt, onStang }) {
   const { state } = usePortfolj();
   const { skrivUt, oppnaPost } = useUi();
   const [sparat] = useState(() => lasVal(projekt.id));
-  const [mallIds, setMallIds] = useState(() => urval?.ids ? [] : Array.isArray(sparat.mallIds) ? sparat.mallIds.filter((id) => ALLA.includes(id)) : ALLA);
+  const [mallpaket, setMallpaket] = useState(() => urval?.ids ? "teknisk" : sparat.mallpaket || "lagplan");
+  const mallar = mallpaket === "lagplan" ? LAGMALLAR : FALTMALLAR;
+  const alla = mallar.map((m) => m.id);
+  const [mallIds, setMallIds] = useState(() => urval?.ids ? [] : sparat.mallpaket && Array.isArray(sparat.mallIds) ? sparat.mallIds.filter((id) => alla.includes(id)) : alla);
   const [typ, setTyp] = useState(() => urval?.ids ? "arbetslista" : ["egenkontroll", "arbetslista", "paket"].includes(sparat.typ) ? sparat.typ : "egenkontroll");
   const [utforare, setUtforare] = useState(() => urval?.ids ? "" : sparat.utforare || "");
   const [referenser, setReferenser] = useState(sparat.referenser || {});
   const [ansvar, setAnsvar] = useState(sparat.ansvar || {});
-  const [metadata, setMetadata] = useState(() => ({ datum: idag(), skapadAv: hamtaNamn() || "Christoffer Karlsson", enhet: "", ritning: "", dokumentNr: "", fran: urval?.ids ? "" : idag(), till: urval?.ids ? "" : veckaSlut() }));
+  const [metadata, setMetadata] = useState(() => ({ datum: idag(), skapadAv: hamtaNamn() || "Christoffer Karlsson", enhet: "", ritning: "", dokumentNr: "", lagmedlemmar: sparat.lagmedlemmar || {}, fran: urval?.ids ? "" : idag(), till: urval?.ids ? "" : veckaSlut() }));
   const [uppgiftIds, setUppgiftIds] = useState(() => new Set(urval?.ids || (state.punkter || []).map((p) => p.id)));
   const dialog = useRef(null);
   const forraFokus = useRef(null);
@@ -38,12 +42,12 @@ export function FaltmaterialPanel({ projekt, urval, onValjProjekt, onStang }) {
     return () => { el.close(); forraFokus.current?.focus?.({ preventScroll: true }); };
   }, []);
   useEffect(() => {
-    try { localStorage.setItem(`bess-faltmaterial-v1-${projekt.id}`, JSON.stringify({ mallIds, typ, utforare, referenser, ansvar })); }
+    try { localStorage.setItem(`bess-faltmaterial-v1-${projekt.id}`, JSON.stringify({ mallpaket, mallIds, typ, utforare, referenser, ansvar, lagmedlemmar: metadata.lagmedlemmar })); }
     catch { /* Valen gäller fortfarande denna session. */ }
-  }, [projekt.id, mallIds, typ, utforare, referenser, ansvar]);
+  }, [projekt.id, mallpaket, mallIds, typ, utforare, referenser, ansvar, metadata.lagmedlemmar]);
 
   const uppgifter = useMemo(() => arbetsrader(state, projekt.id, { utforare, fran: metadata.fran, till: metadata.till, ids: urval?.ids }), [state, projekt.id, utforare, metadata.fran, metadata.till, urval?.ids]);
-  const dokument = useMemo(() => byggFaltmaterial({ projekt, mallIds, referenser, ansvar, metadata: { ...metadata, utforare }, uppgifter: uppgifter.filter((p) => uppgiftIds.has(p.id)) }), [projekt, mallIds, referenser, ansvar, metadata, utforare, uppgifter, uppgiftIds]);
+  const dokument = useMemo(() => byggFaltmaterial({ projekt, mallpaket, mallIds, referenser, ansvar, metadata: { ...metadata, utforare }, uppgifter: uppgifter.filter((p) => uppgiftIds.has(p.id)) }), [projekt, mallpaket, mallIds, referenser, ansvar, metadata, utforare, uppgifter, uppgiftIds]);
   const namn = [...new Set([
     ...(state.kontakter || []).flatMap((k) => [k.namn, k.org]),
     ...(state.punkter || []).map((p) => p.utforare || p.agare),
@@ -60,11 +64,13 @@ export function FaltmaterialPanel({ projekt, urval, onValjProjekt, onStang }) {
 
   return <dialog ref={dialog} className="field-material-dialog m-0 fixed left-1/2 top-1/2 max-h-[92dvh] w-[min(900px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-card border border-solid border-hairline bg-surface p-0 text-ink shadow-lift" aria-label={`Fältmaterial – ${projekt.namn}`} onCancel={(e) => { e.preventDefault(); onStang(); }}>
     <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-0 border-b border-solid border-hairline bg-surface p-4">
-      <div><h2 id="falt-titel" className="m-0 font-head text-xl">Fältmaterial – {projekt.namn}</h2><p className="m-0 mt-1 text-sm text-ink-soft">Välj moment och utförare. Projektuppgifterna är förifyllda.</p></div>
+      <div><h2 id="falt-titel" className="m-0 font-head text-xl">Fältmaterial – {projekt.namn}</h2><p className="m-0 mt-1 text-sm text-ink-soft">Välj lag, skriv två namn och skriv ut. STOPP betyder att arbetsledaren måste ge klartecken.</p></div>
       <button type="button" className="btn sec mini" onClick={onStang}>Stäng</button>
     </header>
     <div className="flex flex-col gap-5 p-4 sm:p-6">
       <label className="flex flex-col gap-1 text-sm font-semibold">Projekt<select value={projekt.id} onChange={(e) => onValjProjekt(e.target.value)}>{state.projekt.map((p) => <option value={p.id} key={p.id}>{p.nr || p.id} · {p.namn}</option>)}</select></label>
+      <label className="flex flex-col gap-1 text-sm font-semibold">Mallpaket<select value={mallpaket} onChange={(e) => { const v = e.target.value; setMallpaket(v); setMallIds((v === "lagplan" ? LAGMALLAR : FALTMALLAR).map((m) => m.id)); }}><option value="lagplan">Lagplan – 6 montörer / totalentreprenad</option><option value="teknisk">Tekniska egenkontroller – 4 moment</option></select></label>
+      {mallpaket === "lagplan" ? <section className="rounded-sm border border-solid border-hairline bg-sunken p-3"><h3 className="m-0">Vem arbetar i vilket lag?</h3><p className="text-sm">{LAGPLAN_INLEDNING}</p><div className="grid grid-cols-1 gap-3 sm:grid-cols-3">{["A", "B", "C"].map((lag) => <fieldset key={lag} className="min-w-0 border-0 p-0"><legend className="font-bold">Lag {lag}</legend>{[1, 2].map((nr) => <label key={nr} className="mt-2 flex flex-col text-sm">Montör {nr} – Lag {lag}<input type="text" maxLength={80} list="falt-utforare" value={metadata.lagmedlemmar[`${lag}${nr}`] || ""} onChange={(e) => setMetadata((m) => ({ ...m, lagmedlemmar: { ...m.lagmedlemmar, [`${lag}${nr}`]: e.target.value } }))} /></label>)}</fieldset>)}</div></section> : null}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label className="flex flex-col gap-1 text-sm font-semibold">Dokumenttyp<select value={typ} onChange={(e) => setTyp(e.target.value)}><option value="egenkontroll">Egenkontroller</option><option value="arbetslista">Arbetslista</option><option value="paket">Fältpaket: arbetslista + egenkontroller</option></select></label>
         <label className="flex flex-col gap-1 text-sm font-semibold">Montör / entreprenör<input type="text" list="falt-utforare" maxLength={80} placeholder="Alla / fyll i namn" value={utforare} onChange={(e) => setUtforare(e.target.value)} /></label>
@@ -77,9 +83,11 @@ export function FaltmaterialPanel({ projekt, urval, onValjProjekt, onStang }) {
       <p className="m-0 rounded-sm border border-solid border-hairline bg-sunken p-3 text-sm leading-relaxed">{KALLSTATUS} Källskillnader visas i respektive kontrollpunkt och följer med utskriften.</p>
       <fieldset className="m-0 min-w-0 border-0 p-0">
         <legend className="mb-2 font-head text-lg font-bold">Kontrollmoment</legend>
-        <div className="mb-3 flex gap-2"><button type="button" className="btn sec mini" onClick={() => setMallIds(ALLA)}>Välj alla fyra</button><button type="button" className="btn sec mini" onClick={() => setMallIds([])}>Rensa moment</button></div>
-        <div className="flex flex-col gap-3">{FALTMALLAR.map((m) => <section key={m.id} className="rounded-sm border border-solid border-hairline p-3">
+        {mallpaket === "lagplan" ? <div className="mb-3 flex flex-wrap gap-2" aria-label="Snabbval per lag">{["A", "B", "C"].map((lag) => <button type="button" className="btn sec mini" key={lag} onClick={() => setMallIds([`lag-${lag.toLowerCase()}`])}>Endast Lag {lag}</button>)}<button type="button" className="btn sec mini" onClick={() => setMallIds(["lag-start", "lag-slut"])}>Arbetsledarens lista</button></div> : null}
+        <div className="mb-3 flex flex-wrap gap-2"><button type="button" className="btn sec mini" onClick={() => setMallIds(alla)}>{mallpaket === "lagplan" ? "Välj hela lagplanen" : "Välj alla fyra"}</button><button type="button" className="btn sec mini" onClick={() => setMallIds([])}>Rensa moment</button></div>
+        <div className="flex flex-col gap-3">{mallar.map((m) => <section key={m.id} className="rounded-sm border border-solid border-hairline p-3">
           <label className="flex items-center gap-3 font-bold"><input type="checkbox" checked={mallIds.includes(m.id)} onChange={() => vaxlaMall(m.id)} />Moment {m.nr}: {m.titel}<span className="ml-auto whitespace-nowrap text-sm text-ink-soft">{m.punkter.length} punkter</span></label>
+          {m.flode ? <p className="text-sm font-semibold text-one-bla">{m.flode}</p> : null}
           {mallIds.includes(m.id) ? <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="flex flex-col gap-1 text-xs font-semibold">Manual / provplan och revision – moment {m.nr}<input type="text" maxLength={140} value={referenser[m.id] || ""} placeholder="Dokumentnamn, revision och sida" onChange={(e) => setReferenser((r) => ({ ...r, [m.id]: e.target.value }))} /></label>
             <label className="flex flex-col gap-1 text-xs font-semibold">Utförare – moment {m.nr}<input type="text" list="falt-utforare" maxLength={80} value={ansvar[m.id] || ""} placeholder={utforare || "Namn / organisation"} onChange={(e) => setAnsvar((r) => ({ ...r, [m.id]: e.target.value }))} /></label>
@@ -98,7 +106,7 @@ export function FaltmaterialPanel({ projekt, urval, onValjProjekt, onStang }) {
         {felPeriod ? <p role="alert" className="text-bad-ink">Till-datum måste vara samma dag som eller efter från-datum.</p> : null}
         {uppgifter.length ? uppgifter.map((p) => <label className="flex items-start gap-2 border-0 border-b border-solid border-hairline py-2 text-sm" key={p.id}><input type="checkbox" checked={uppgiftIds.has(p.id)} onChange={() => setUppgiftIds((v) => { const n = new Set(v); if (n.has(p.id)) n.delete(p.id); else n.add(p.id); return n; })} /><span>{p.titel}<small className="block text-ink-soft">{p.utforare || "Ej tilldelad"} · {p.datum || "Datum saknas"}</small></span></label>) : <p className="text-sm text-ink-soft">Inga öppna uppgifter matchar utförare och period. Valda kontrollmoment finns fortfarande med.</p>}
       </fieldset> : null}
-      <p role="status" className="m-0 text-sm font-semibold">{mallIds.length} av 4 moment · {dokument.antal} kontrollpunkter{typ !== "egenkontroll" ? ` · ${dokument.uppgifter.length} projektuppgifter` : ""}. Resultat, datum, notering och signatur lämnas tomma.</p>
+      <p role="status" className="m-0 text-sm font-semibold">{mallIds.length} av {mallar.length} moment · {dokument.antal} kontrollpunkter{typ !== "egenkontroll" ? ` · ${dokument.uppgifter.length} projektuppgifter` : ""}. Resultat, datum, notering och signatur lämnas tomma.</p>
     </div>
     <footer className="sticky bottom-0 flex flex-wrap justify-end gap-3 border-0 border-t border-solid border-hairline bg-surface p-4">
       <button type="button" className="btn sec" disabled={!kanExportera} onClick={print}>Skriv ut</button>

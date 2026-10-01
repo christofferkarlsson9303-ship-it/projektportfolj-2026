@@ -7,8 +7,8 @@ export function PrintableTodoList({ dokument: d }) {
     <article className="field-document field-todo" aria-label="Arbetslista för fältet">
       <DocumentHeader dokument={d} titel="Arbetslista – BESS" />
       <p>{d.fran || "Alla datum"} – {d.till || "Alla datum"} · Utförare: {d.utforare || "________________"}</p>
-      <p className="field-source">{d.kalla} {d.komplett ? "Alla fyra moment valda." : "Delurval av moment."}</p>
-      <p>{FALT_FORUTSATTNING}</p>
+      <p className="field-source">{d.kalla} {d.komplett ? "Hela valda mallpaketet." : "Delurval av moment."}</p>
+      <p>{d.inledning || FALT_FORUTSATTNING}</p>
       {d.uppgifter.length ? <section>
         <h2>Projektets öppna arbetsuppgifter</h2>
         {d.uppgifter.map((p) => <div className="field-check" key={p.id}>
@@ -20,6 +20,7 @@ export function PrintableTodoList({ dokument: d }) {
       </section> : null}
       {d.moment.map((m) => <section key={m.id}>
         <h2>Moment {m.nr}: {m.titel}</h2>
+          {m.flode ? <p className="field-source"><b>Arbetsordning:</b> {m.flode}</p> : null}
         <p>Utförare: {m.utforare || "________________"} · Manual/revision: {m.referens || "EJ ANGIVEN – verifieras före utförande"}</p>
         {m.punkter.map((p) => <div className="field-check" key={p.id}>
           <h3>□ {p.id} · {p.titel}</h3><p>{p.instruktion}</p>
