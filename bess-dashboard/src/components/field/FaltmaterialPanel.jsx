@@ -42,9 +42,10 @@ export function FaltmaterialPanel({ projekt, urval, onValjProjekt, onStang }) {
     return () => { el.close(); forraFokus.current?.focus?.({ preventScroll: true }); };
   }, []);
   useEffect(() => {
+    if (urval?.ids) return; // En engångslista får inte skriva över projektets lagval.
     try { localStorage.setItem(`bess-faltmaterial-v1-${projekt.id}`, JSON.stringify({ mallpaket, mallIds, typ, utforare, referenser, ansvar, lagmedlemmar: metadata.lagmedlemmar })); }
     catch { /* Valen gäller fortfarande denna session. */ }
-  }, [projekt.id, mallpaket, mallIds, typ, utforare, referenser, ansvar, metadata.lagmedlemmar]);
+  }, [projekt.id, mallpaket, mallIds, typ, utforare, referenser, ansvar, metadata.lagmedlemmar, urval?.ids]);
 
   const uppgifter = useMemo(() => arbetsrader(state, projekt.id, { utforare, fran: metadata.fran, till: metadata.till, ids: urval?.ids }), [state, projekt.id, utforare, metadata.fran, metadata.till, urval?.ids]);
   const dokument = useMemo(() => byggFaltmaterial({ projekt, mallpaket, mallIds, referenser, ansvar, metadata: { ...metadata, utforare }, uppgifter: uppgifter.filter((p) => uppgiftIds.has(p.id)) }), [projekt, mallpaket, mallIds, referenser, ansvar, metadata, utforare, uppgifter, uppgiftIds]);

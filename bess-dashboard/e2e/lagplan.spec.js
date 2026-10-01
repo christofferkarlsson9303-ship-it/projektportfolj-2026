@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
-import { oppna, utanKonsolfel } from "./hjalpare.js";
+import { oppna, gaTill, utanKonsolfel } from "./hjalpare.js";
 
 test("lagplan: två namn per lag, DC-stoppunkt, PDF och rent lagurval", async ({ page }, info) => {
   test.setTimeout(90_000);
@@ -46,4 +46,23 @@ test("äldre fältval migreras till full lagplan och tekniska mallar finns kvar"
   await expect(d.getByRole("status")).toContainText("15 kontrollpunkter");
   await d.getByRole("combobox", { name: "Mallpaket", exact: true }).selectOption("teknisk");
   await expect(d.getByRole("status")).toContainText("49 kontrollpunkter");
+});
+
+
+test("engångslista av markerade uppgifter bevarar projektets lagval", async ({ page }) => {
+  await oppna(page);
+  await page.getByRole("button", { name: "Fältmaterial", exact: true }).click();
+  const d = page.getByRole("dialog", { name: /Fältmaterial/ });
+  await d.getByLabel("Montör 1 – Lag A", { exact: true }).fill("Dan");
+  await d.getByRole("button", { name: "Endast Lag A", exact: true }).click();
+  await d.getByRole("button", { name: "Stäng", exact: true }).click();
+  await gaTill(page, "Öppna punkter");
+  await page.getByRole("region", { name: "Öppna punkter", exact: true }).locator("tbody tr").first().getByRole("checkbox", { name: /^Markera/ }).check();
+  await page.getByRole("button", { name: "Fältmaterial av markerade (1)" }).click();
+  await expect(d.getByRole("status")).toContainText("1 projektuppgifter");
+  await d.getByRole("button", { name: "Stäng", exact: true }).click();
+  await page.getByRole("button", { name: "Fältmaterial", exact: true }).click();
+  await expect(d.getByRole("combobox", { name: "Mallpaket", exact: true })).toHaveValue("lagplan");
+  await expect(d.getByLabel("Montör 1 – Lag A", { exact: true })).toHaveValue("Dan");
+  await expect(d.getByRole("status")).toContainText("9 kontrollpunkter");
 });
