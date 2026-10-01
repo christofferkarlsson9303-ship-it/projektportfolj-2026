@@ -235,7 +235,12 @@ export function reducer(state, action) {
     case "UPPDATERA": {
       const { lista, id, falt, varde } = action;
       if (!state[lista]) return state;
-      return { ...state, [lista]: byt(state[lista], id, (r) => ({ ...r, [falt]: varde })) };
+      const rad = state[lista].find((r) => r.id === id);
+      if (!rad || Object.is(rad[falt], varde)) return state;
+      const nytt = { ...state, [lista]: byt(state[lista], id, (r) => ({ ...r, [falt]: varde })) };
+      const info = etikettFor(state, lista, id);
+      const kort = (v) => String(v ?? "—").slice(0, 100);
+      return loggat(nytt, info?.projektId, `${info?.etikett || id}: ${falt} ändrad ${kort(rad[falt])} → ${kort(varde)}`);
     }
 
     /* Statusändring loggas — det är den som revisionsspåret bygger på. */

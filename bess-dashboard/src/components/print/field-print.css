@@ -1,0 +1,31 @@
+.field-document { background: #fff; color: #172d38; font: 12px/1.45 Arial, sans-serif; }
+.field-document-head { display: flex; gap: 14px; align-items: flex-start; border-bottom: 2px solid #005f76; padding-bottom: 10px; margin-bottom: 12px; }
+.field-document-head img { width: 110px; height: auto; }
+.field-document-head p { margin: 3px 0; font-size: 10px; }
+.field-source,.field-verification { background: #f3f5f6; border-left: 3px solid #005f76; padding: 6px 8px; }
+.field-check { border: 1px solid #85959d; padding: 9px; margin: 8px 0; break-inside: avoid; }
+.field-check h3 { font: bold 12px/1.4 Arial, sans-serif; margin: 0 0 5px; color: #005f76; }
+.field-check p { margin: 5px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.field-reference,.field-foot { font-size: 10px; }
+.field-result { display: flex; justify-content: space-between; margin-top: 9px; font-weight: bold; }
+.field-writing { min-height: 22px; margin-top: 5px; }
+.field-moment + .field-moment { break-before: page; }
+@media print {
+  .field-material-dialog { display: none !important; }
+  #utskrift .field-document { color: #172d38 !important; background: #fff !important; font-size: 9pt; }
+  #utskrift .field-document * { box-shadow: none; }
+  #utskrift .field-document h2 { break-after: avoid; }
+  #utskrift .field-document-head { break-inside: avoid; }
+  #utskrift .field-check { break-inside: avoid; }
+  #utskrift .field-document-head p { font-size: 8pt; }
+}
+
+.field-material-dialog::backdrop { background: rgb(0 20 35 / 45%); }
+.field-packet-break { break-before: page; }
+@media print {
+  #utskrift .field-document { page: field; }
+  @page field {
+    size: A4; margin: 16mm 15mm 20mm;
+    @bottom-right { content: "Sida " counter(page) " av " counter(pages); font: 8pt Arial, sans-serif; color: #435b67; }
+  }
+}

@@ -53,6 +53,10 @@ export function UiProvider({ children }) {
   const [postFokus, setPostFokus] = useState(null);
   /* Dokument som ska skrivas ut. */
   const [utskrift, setUtskrift] = useState(null);
+  const [faltmaterial, setFaltmaterial] = useState(null);
+  const oppnaFaltmaterial = useCallback((urval = {}) => setFaltmaterial(urval), []);
+  const stangFaltmaterial = useCallback(() => setFaltmaterial(null), []);
+  const rensaUtskrift = useCallback(() => setUtskrift(null), []);
 
   const toastTimer = useRef(null);
   const modalSvara = useRef(null);
@@ -201,12 +205,13 @@ export function UiProvider({ children }) {
       oppnaPost,
       utskrift,
       skrivUt,
-      rensaUtskrift: () => setUtskrift(null),
+      rensaUtskrift,
+      faltmaterial, oppnaFaltmaterial, stangFaltmaterial,
     }),
     [
       aktivVy, visa, valtProjekt, tema, vaxlaTema, tathet, setTathet, toast, visaToast,
       modal, fraga, bekrafta, stangModal, navOppen, fokus, oppnaFlagga,
-      postFokus, oppnaPost, utskrift, skrivUt,
+      postFokus, oppnaPost, utskrift, skrivUt, rensaUtskrift, faltmaterial, oppnaFaltmaterial, stangFaltmaterial,
     ]
   );
 

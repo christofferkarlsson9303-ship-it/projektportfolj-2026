@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { FaltmaterialPanel } from "../field/FaltmaterialPanel.jsx";
 import { Sidebar } from "./Sidebar.jsx";
 import { Topbar } from "./Topbar.jsx";
 import { Dialog } from "../ui/Dialog.jsx";
@@ -10,7 +11,7 @@ import { underlagsstampel } from "../../lib/berakningar.js";
 
 export function AppShell({ children }) {
   const { state } = usePortfolj();
-  const { aktivVy, fokus, utskrift, rensaUtskrift } = useUi();
+  const { aktivVy, fokus, utskrift, rensaUtskrift, valtProjekt, setValtProjekt, faltmaterial, stangFaltmaterial } = useUi();
   const mainRef = useRef(null);
 
   /* Rulla till toppen vid vybyte — annars landar man mitt i den nya vyn.
@@ -61,6 +62,13 @@ export function AppShell({ children }) {
       <Toast />
       <Dialog />
       <Kommandopalett />
+      {faltmaterial && state.projekt.length ? <FaltmaterialPanel
+        key={valtProjekt}
+        projekt={state.projekt.find((p) => p.id === valtProjekt) || state.projekt[0]}
+        urval={faltmaterial}
+        onValjProjekt={setValtProjekt}
+        onStang={stangFaltmaterial}
+      /> : null}
       <Utskriftsyta innehall={utskrift} onKlar={rensaUtskrift} />
     </div>
   );
