@@ -20,7 +20,7 @@ export function Kommandopalett() {
   const forraFokus = useRef(null);
 
   const index = useMemo(() => {
-    const ut = [{ t: "Vy", label: "Skapa fältmaterial", sub: "Arbetslista / egenkontroll / PDF", kor: () => oppnaFaltmaterial() }];
+    const ut = [{ t: "Vy", label: "Projektets egenkontrollrapport", sub: "Beställare / slutdokumentation / hela projektet", kor: () => oppnaFaltmaterial({ mallpaket: "projekt" }) }, { t: "Vy", label: "Skapa fältmaterial", sub: "Arbetslista / egenkontroll / PDF", kor: () => oppnaFaltmaterial() }];
     VYER.filter((v) => v[0] !== "_sek").forEach(([id, namn]) =>
       ut.push({ t: "Vy", label: namn, sub: "", kor: () => visa(id) })
     );

@@ -7,6 +7,7 @@ test("lagplan: två namn per lag, DC-stoppunkt, PDF och rent lagurval", async ({
   const { fel } = await oppna(page);
   await page.getByRole("button", { name: "Fältmaterial", exact: true }).click();
   const d = page.getByRole("dialog", { name: /Fältmaterial/ });
+  await d.getByRole("combobox", { name: "Mallpaket", exact: true }).selectOption("lagplan");
   await expect(d.getByRole("combobox", { name: "Mallpaket", exact: true })).toHaveValue("lagplan");
   await expect(d.getByRole("status")).toContainText("41 kontrollpunkter");
   await d.getByLabel("Montör 1 – Lag B", { exact: true }).fill("Dan");
@@ -36,11 +37,12 @@ test("lagplan: två namn per lag, DC-stoppunkt, PDF och rent lagurval", async ({
   utanKonsolfel(fel);
 });
 
-test("äldre fältval migreras till full lagplan och tekniska mallar finns kvar", async ({ page }) => {
+test("äldre fältval tillåter val av lagplan och tekniska mallar", async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem("bess-faltmaterial-v1-36037", JSON.stringify({ mallIds: ["precheck"] })));
   await oppna(page);
   await page.getByRole("button", { name: "Fältmaterial", exact: true }).click();
   const d = page.getByRole("dialog", { name: /Fältmaterial/ });
+  await d.getByRole("combobox", { name: "Mallpaket", exact: true }).selectOption("lagplan");
   await expect(d.getByRole("status")).toContainText("41 kontrollpunkter");
   await d.getByRole("button", { name: "Arbetsledarens lista", exact: true }).click();
   await expect(d.getByRole("status")).toContainText("15 kontrollpunkter");
@@ -53,6 +55,7 @@ test("engångslista av markerade uppgifter bevarar projektets lagval", async ({ 
   await oppna(page);
   await page.getByRole("button", { name: "Fältmaterial", exact: true }).click();
   const d = page.getByRole("dialog", { name: /Fältmaterial/ });
+  await d.getByRole("combobox", { name: "Mallpaket", exact: true }).selectOption("lagplan");
   await d.getByLabel("Montör 1 – Lag A", { exact: true }).fill("Dan");
   await d.getByRole("button", { name: "Endast Lag A", exact: true }).click();
   await d.getByRole("button", { name: "Stäng", exact: true }).click();

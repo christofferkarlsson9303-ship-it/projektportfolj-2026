@@ -44,9 +44,9 @@ tappas bort. Kontrollmoment följer momenturvalet även om projektuppgifterna
 filtreras på utförare; kompetensroll anges alltid vid varje kontrollpunkt.
 
 Val av moment, dokumenttyp, utförare och referenser koms ihåg per projekt i
-webbläsaren. Enhet och datum anges för varje nytt dokument. Arbetsuppgifternas
+webbläsaren. Enhet/kontrollomfattning sparas per projekt; kontrollera den inför varje nytt dokument. Datum anges för dokumentet. Arbetsuppgifternas
 nya fält sparas via befintlig portföljlagring. Inga nya Supabase-tabeller eller
-behörighetsändringar krävs. Fältmaterialpanelen lagrar inte utförda provresultat.
+behörighetsändringar krävs. Projektchecklistans resultat sparas i portföljens `faltkontroller` (se nedan).
 
 ## Tabeller och export
 
@@ -71,7 +71,7 @@ PDF/utskrift granskas även visuellt för sidbrytningar, huvud och skrivfält.
 
 ## Lagplan för sex montörer (revision 2026-10-01.2)
 
-Standardvalet är nu Lagplan – 6 montörer / totalentreprenad, med 41 punkter:
+Lagplan kan väljas som alternativ – 6 montörer / totalentreprenad, med 41 punkter:
 - Arbetsledaren före start: 8 punkter, ansvar och gränsdragning, kompetens, avspärrning, lyftplan och startbesked.
 - Lag A (två namn): 9 punkter, fundament, oljegrop, lyft, placering, förankring och överlämning.
 - Lag B (två namn): 9 punkter, säker arbetsmetod, DC-säkringar före DC-anslutning, kabeldragning, förband, moment, märkning, tätning och överlämning.
@@ -80,6 +80,52 @@ Standardvalet är nu Lagplan – 6 montörer / totalentreprenad, med 41 punkter:
 
 Fyll i två namn per lag. Snabbvalet Endast Lag A/B/C väljer lagets eget moment; Arbetsledarens lista väljer start och avslut. Hela lagplanen väljer samtliga fem moment. Arbetsordning och förutsättningar följer med även vid lagurval. Välj dokumenttyp Arbetslista för avprickning eller Fältpaket för arbetslista och blank egenkontroll. Namnen sparas per projekt i samma lokala inställningar som övriga fältval.
 
-Gamla sparade momentval utan mallpaket migreras till full lagplan. De tidigare 49 tekniska kontrollpunkterna finns kvar under Tekniska egenkontroller – 4 moment. Öppning från markerade projektuppgifter behåller arbetslistan med just dessa uppgifter.
+Äldre sparade fältval migreras nu till den kompletta projektchecklistan. De tidigare 49 tekniska kontrollpunkterna finns kvar under Tekniska egenkontroller – 4 moment. Öppning från markerade projektuppgifter behåller arbetslistan med just dessa uppgifter.
 
 Källa är den uppladdade projektledarsammanställningen Inklistrad text.txt och lagindelningen i uppdraget. Ingen primär OEM-manual eller signerad kontraktsgränsdragning har tillhandahållits. Därför anges lyftdon, 0,25 %, 50 mm, två kablar/400 A och ±20 % som uppgifter att bekräfta för aktuell modell. Medicinska intyg, CATL-utbildning och PPE väljs efter aktuellt arbete, platskrav och riskbedömning. Listorna är dokumentunderlag; STOPP är en instruktion för manuell frisläppning, ingen digital låsning eller automatisk kontrollstatus.
+
+## Projektchecklista och egenkontrollrapport (revision 2026-10-01.3)
+
+Standardvalet är **Projektchecklista – hela projektet**: 115 punkter i 16 faser,
+från förstudie, avtal, tillstånd och projektering via mark, montage och
+idrifttagning till besiktning, slutdokumentation och garantiuppföljning.
+Alla tidigare 49 tekniska kontrollpunkter ingår med oförändrade punkt-ID:n.
+Lagplanen och de fyra tekniska mallarna finns kvar som separata val.
+
+Öppna en punkt och registrera resultat, faktiskt kontrolldatum, kontrollant,
+bevis/protokoll med revision samt mätvärde, avvikelse eller åtgärd.
+**Ej OK** ska ha avvikelse/åtgärd. **Ej tillämplig** ska ha motivering och
+referens. Ett namn är inte en elektronisk underskrift. Datum får inte ligga
+framåt i tiden. Ändrad mallrevision kräver en uttrycklig ny kontrollbekräftelse.
+
+Resultat sparas per projekt, kontrollomfattning och stabilt punkt-ID i den
+befintliga portföljlagringen, med ändringslogg och samma lokal-/molnsynk som
+övriga projektdata. Inga nya Supabase-tabeller eller behörigheter införs.
+Ändringar i modalen skyddas av befintlig mekanism som skjuter upp inkommande
+realtidsdata medan användaren redigerar.
+
+Välj dokumentnummer/rapportrevision och godkänd kontrollplan/revision.
+**Ta med registrerade resultat** ger en rapport med fasindex, faktisk status,
+resultat och referenser samt separata signatur- och mottagningsfält.
+Avmarkera för en blank papperschecklista. Rapportstatus är:
+- Blank projektchecklista om registrerade resultat inte tas med.
+- Delurval – arbetsunderlag om bara några faser valts.
+- Öppna kontroller/avvikelser om underlag eller resultat saknas.
+- Redo för granskning när hela urvalet har kompletta godkända eller motiverade
+  ej tillämpliga resultat och kontrollplan angivits.
+
+Rapporten avser bara den angivna kontrollomfattningen. Flera containrar eller
+provomfattningar behöver egna dokumenterade kontroller; en sammanställning
+med rubriken Hela anläggningen bevisar inte automatiskt att alla enheter provats.
+Bilägg refererade protokoll, ritningar, avvikelsestängning och dokumentindex.
+Granskning, underskrift och beställarens mottagande sker separat. Rapporten
+ändrar inte EPC-grindar eller slutdokumentationens godkännanden automatiskt.
+
+I **Slutdokumentation → Projektets egenkontrollrapport** öppnas huvudmallen
+direkt. Samma genväg finns i Ctrl/Cmd+K. Tidigare mallval och lagens namn
+behålls för vanligt fältarbete. Engångslistor från markerade arbetsuppgifter
+skriver inte över projektets sparade mallval.
+
+De nya livscykelpunkterna är ett projektunderlag, inte en verifiering av
+kontrakt eller OEM-krav. Ange projektets godkända kontrollplan och handlingar.
+STOPP kräver dokumenterad manuell frisläppning av behörig ansvarig.

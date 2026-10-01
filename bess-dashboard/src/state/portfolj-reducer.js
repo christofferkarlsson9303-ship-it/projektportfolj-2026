@@ -232,6 +232,15 @@ export function reducer(state, action) {
       return { ...state, andringslogg: alla };
     }
 
+    case "FALT_KONTROLL": {
+      const { rad } = action;
+      if (!rad?.id || !state.projekt.some((p) => p.id === rad.projektId)) return state;
+      const gamla = state.faltkontroller || [];
+      const finns = gamla.some((p) => p.id === rad.id);
+      const nytt = { ...state, faltkontroller: finns ? byt(gamla, rad.id, () => ({ ...rad })) : [...gamla, { ...rad }] };
+      return loggat(nytt, rad.projektId, `Egenkontroll ${rad.punktId} (${rad.omfattning}): ${rad.resultat || "ej kontrollerad"}, ${rad.kontrollant || "namn saknas"}`);
+    }
+
     case "UPPDATERA": {
       const { lista, id, falt, varde } = action;
       if (!state[lista]) return state;

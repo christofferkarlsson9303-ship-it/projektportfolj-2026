@@ -29,3 +29,8 @@
     @bottom-right { content: "Sida " counter(page) " av " counter(pages); font: 8pt Arial, sans-serif; color: #435b67; }
   }
 }
+
+.field-index { width: 100%; border-collapse: collapse; margin: 12px 0; }
+.field-index th,.field-index td { border: 1px solid #85959d; padding: 5px; text-align: left; }
+.field-index th { background: #f3f5f6; }
+.field-recorded { border-top: 1px solid #85959d; margin-top: 8px; }
