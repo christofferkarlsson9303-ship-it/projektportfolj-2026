@@ -225,12 +225,12 @@ export function kritiskLinje(state, pid, nu = idag()) {
 export function drivtext(f, faser) {
   const d = f.drivs;
   if (!d) return "";
-  if (d.typ === "klar") return "Grinden passerad";
-  if (d.typ === "sen") return "Drar över — prognosen kan inte ligga före i dag";
+  if (d.typ === "klar") return "Klar";
+  if (d.typ === "sen") return "Försenad – blir inte klar före i dag";
   if (d.typ === "leverans") return d.text;
   if (d.typ === "fas") {
     const fore = faser.find((x) => x.nr === d.nr);
-    return `Styrs av fas ${d.nr} ${fore?.kort || ""} (${d.beroende.typ === "SS" ? "start" : "slut"})`.trim();
+    return `Fas ${d.nr} ${fore?.kort || ""} (${d.beroende.typ === "SS" ? "att den startar" : "att den blir klar"})`.trim();
   }
   return f.egenPlan ? "Egna datum" : "Enligt plan";
 }

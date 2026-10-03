@@ -228,7 +228,7 @@ export function Gantt({ i }) {
                       aria-label={`Fas ${f.fas.nr} ${f.fas.titel}: ${statusText}, ${
                         harDatum ? `${f.start} till ${f.slut}` : "ej planerad"
                       }, ${f.klara} av ${f.punkter} punkter klara, ${grindText}${
-                        kritiska.has(f.fas.nr) ? ", på kritiska linjen" : ""
+                        kritiska.has(f.fas.nr) ? ", styr slutdatumet" : ""
                       }. Öppna i guiden.`}
                     >
                       <span className="ov-gantt-etikett">
@@ -260,7 +260,7 @@ export function Gantt({ i }) {
                               {datumKort(f.start)} – {datumKort(f.slut)} {f.egenPlan ? "· egna datum" : "· standardplan"}
                               <br />
                               {statusText} · {f.klara} av {f.punkter} klara
-                              {kritiska.has(f.fas.nr) ? " · kritisk linje" : ""}
+                              {kritiska.has(f.fas.nr) ? " · styr slutdatumet" : ""}
                               {f.hp ? ` · HP ${f.hpKlara}/${f.hp}` : ""}
                               <br />
                               {grindText}
@@ -297,7 +297,7 @@ export function Gantt({ i }) {
               {kritiska.size ? (
                 <li>
                   <i className="kritisk" aria-hidden="true" />
-                  Kritisk linje
+                  Styr slutdatumet
                 </li>
               ) : null}
               <li>

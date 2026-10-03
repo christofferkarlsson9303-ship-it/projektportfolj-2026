@@ -59,7 +59,7 @@ describe("kritiskLinje — förseningar förs vidare", () => {
     expect(fas(k, 11).drivs).toMatchObject({ typ: "fas", nr: 7 });
     expect(k.forsening).toBeGreaterThan(0);
     expect(k.milstolpar.find((m) => m.kod === "M6").forskjutning).toBe(k.forsening);
-    expect(drivtext(fas(k, 11), k.faser)).toMatch(/Styrs av fas 7/);
+    expect(drivtext(fas(k, 11), k.faser)).toMatch(/^Fas 7 /);
   });
 
   it("en liten försening äts av bufferten och flyttar inte slutet", () => {
