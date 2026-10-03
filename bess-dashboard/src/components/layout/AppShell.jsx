@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { FaltmaterialPanel } from "../field/FaltmaterialPanel.jsx";
 import { Sidebar } from "./Sidebar.jsx";
 import { Topbar } from "./Topbar.jsx";
 import { Dialog } from "../ui/Dialog.jsx";
@@ -7,10 +8,11 @@ import { Kommandopalett } from "../ui/Kommandopalett.jsx";
 import { Utskriftsyta } from "../ui/Utskrift.jsx";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { underlagsstampel } from "../../lib/berakningar.js";
+import { Sidhjalp } from "../ui/Sidhjalp.jsx";
 
 export function AppShell({ children }) {
   const { state } = usePortfolj();
-  const { aktivVy, fokus, utskrift, rensaUtskrift } = useUi();
+  const { aktivVy, fokus, utskrift, rensaUtskrift, valtProjekt, setValtProjekt, faltmaterial, stangFaltmaterial } = useUi();
   const mainRef = useRef(null);
 
   /* Rulla till toppen vid vybyte — annars landar man mitt i den nya vyn.
@@ -47,6 +49,7 @@ export function AppShell({ children }) {
         <Topbar />
         {/* tabIndex=-1 gör att hopplänken kan flytta fokus hit. */}
         <main id="innehall" ref={mainRef} tabIndex={-1}>
+          <Sidhjalp />
           {children}
         </main>
 
@@ -61,6 +64,13 @@ export function AppShell({ children }) {
       <Toast />
       <Dialog />
       <Kommandopalett />
+      {faltmaterial && state.projekt.length ? <FaltmaterialPanel
+        key={valtProjekt}
+        projekt={state.projekt.find((p) => p.id === valtProjekt) || state.projekt[0]}
+        urval={faltmaterial}
+        onValjProjekt={setValtProjekt}
+        onStang={stangFaltmaterial}
+      /> : null}
       <Utskriftsyta innehall={utskrift} onKlar={rensaUtskrift} />
     </div>
   );

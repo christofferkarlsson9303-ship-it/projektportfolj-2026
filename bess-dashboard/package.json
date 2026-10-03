@@ -17,7 +17,9 @@
     "e2e:rapport": "playwright show-report"
   },
   "dependencies": {
+    "@react-pdf/renderer": "4.9.0",
     "@supabase/supabase-js": "^2.116.0",
+    "exceljs": "4.4.0",
     "lucide-react": "^1.47.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

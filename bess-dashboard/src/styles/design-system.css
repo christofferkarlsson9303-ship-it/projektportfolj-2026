@@ -716,6 +716,10 @@ main{max-width:1320px;padding:32px 38px 80px}
   .pagetitle{font-size:22px}
   .pagelead{display:none}
 }
+@media(max-width:640px){
+  .topbar{flex-wrap:wrap;gap:10px}
+  .tophead{flex-basis:calc(100% - 40px)}
+}
 
 /* ---------- Kort ----------
    De äldre vyernas .card har samma ram, radie, skugga och luft som

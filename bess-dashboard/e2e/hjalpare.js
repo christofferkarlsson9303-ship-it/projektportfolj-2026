@@ -34,6 +34,7 @@ export async function gaTill(page, namn) {
 
   const meny = page.getByRole("navigation", { name: "Huvudmeny" });
   const knapp = meny.getByRole("button", { name: namn, exact: true });
+  if (!(await knapp.count())) await meny.getByRole("button", { name: "Visa alla funktioner", exact: true }).click();
   await knapp.click();
 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(namn);

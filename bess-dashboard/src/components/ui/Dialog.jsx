@@ -9,6 +9,7 @@ export function Dialog() {
   const boxRef = useRef(null);
   const forraFokus = useRef(null);
   const [varden, setVarden] = useState({});
+  const [fel, setFel] = useState("");
 
   const falt = modal?.falt || [];
 
@@ -16,6 +17,7 @@ export function Dialog() {
     if (!modal) return undefined;
     forraFokus.current = document.activeElement;
     setVarden(Object.fromEntries(falt.map((f) => [f.namn, f.varde || ""])));
+    setFel("");
 
     // Flytta fokus till första fältet, annars till dialogen.
     const t = setTimeout(() => {
@@ -61,6 +63,8 @@ export function Dialog() {
 
   const skicka = (e) => {
     e.preventDefault();
+    const problem = !bekrafta && modal.validera?.(varden);
+    if (problem) { setFel(problem); return; }
     stangModal(bekrafta ? true : varden);
   };
 
@@ -102,6 +106,8 @@ export function Dialog() {
                   <input
                     id={`mdl-${f.namn}`}
                     type={f.typ || "text"}
+                    required={f.obligatoriskt}
+                    maxLength={f.maxLength}
                     value={varden[f.namn] ?? ""}
                     placeholder={f.placeholder}
                     onChange={(e) => setVarden((v) => ({ ...v, [f.namn]: e.target.value }))}
@@ -112,6 +118,7 @@ export function Dialog() {
           </div>
         ) : null}
 
+        {fel ? <p className="mx-5 text-sm text-bad-ink" role="alert">{fel}</p> : null}
         <div className="mfot">
           <button type="button" className="btn sec" onClick={() => stangModal(bekrafta ? false : null)}>
             Avbryt

@@ -47,7 +47,7 @@ export function Andringslogg({ kompakt = false, antal = 25, rubrik = "Senaste h�
         <div style={{ minWidth: 0 }}>
           <h3>{rubrik}</h3>
           <div className="lead" style={{ marginBottom: 0 }}>
-            Statusändringar loggas automatiskt med tidpunkt och vem som gjorde dem.
+            Status- och fältändringar loggas automatiskt med tidpunkt och vem som gjorde dem.
           </div>
         </div>
 

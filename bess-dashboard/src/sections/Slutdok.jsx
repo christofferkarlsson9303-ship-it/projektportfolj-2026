@@ -118,7 +118,7 @@ function Handling({ d, last, onSatt, onOppna }) {
 
 export function Slutdok() {
   const { state, uppd, uppdStatus } = usePortfolj();
-  const { valtProjekt: pid, skrivUt } = useUi();
+  const { valtProjekt: pid, skrivUt, oppnaFaltmaterial } = useUi();
   const [filter, setFilter] = useState("alla");
   const [oppenId, setOppenId] = useState(null);
 
@@ -147,6 +147,7 @@ export function Slutdok() {
   return (
     <>
       <Projektvaljare />
+      <div className="mb-4"><button type="button" className="btn" onClick={() => oppnaFaltmaterial({ mallpaket: "projekt" })}>Projektets egenkontrollrapport</button><p className="mt-2 text-sm text-ink-soft">Sammanställ registrerade kontroller och bevis till beställarens slutdokumentation. Godkännande i dokumentindexet registreras separat.</p></div>
 
       <div className="flex flex-col gap-4 lg:gap-6">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">

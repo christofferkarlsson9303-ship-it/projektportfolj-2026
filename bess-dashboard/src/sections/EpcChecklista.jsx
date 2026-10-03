@@ -252,10 +252,10 @@ export function EpcChecklista() {
             id="epc-rubrik"
             className="min-w-0 max-w-2xl flex-1"
             title="Så byggs en batteripark"
-            lead="Totalentreprenad enligt ABT 06 / ABT-U 07 — från anbud och nätanslutning via mark, leverans och idrifttagning till slutbesiktning och garantitid. Byggd på erfarenheterna från Batch C, leverantörsmanualer och kontraktsunderlag."
+            lead="Välj projekt. Öppna rätt fas och följ upp arbetet. Spara verkliga provresultat i fasens egenkontroller. En grind är ett dokumenterat klartecken att gå vidare."
           >
             <p className="m-0 text-xs font-semibold text-ink-faint">
-              Version {VERSION.nr} · {VERSION.datum} — samtliga källor i åtta NotebookLM-böcker genomgångna, kompletterad med projektmetoden
+              Mallversion {VERSION.nr} · {VERSION.datum}. Bygger på Batch C-underlag. Kontrollera mot ditt projekts kontrakt och tillverkarmanualer.
             </p>
           </SectionHeading>
           <ul aria-label="Guiden i siffror" className="m-0 grid list-none grid-cols-2 gap-4 p-0 sm:grid-cols-4">
@@ -308,7 +308,7 @@ export function EpcChecklista() {
       <Card
         id="epc-erfarenheter"
         title="Erfarenhetsåterföring — topp 10"
-        subtitle="Byggs automatiskt av avvikelser och lärdomar som kommenterats på punkterna, vassast först: påverkan, om samma punkt gett problem i flera projekt, och kostnad. Samma erfarenheter visas på punkten i nästa projekt."
+        subtitle="Lär av tidigare fel. Kommentarer på kontrollpunkter samlas här och visas också i nästa projekt."
       >
         <Erfarenhetslista pid={pid} onVisaPunkt={(id) => setMal({ id: `kp-${id}`, tid: Date.now() })} />
       </Card>
@@ -344,7 +344,7 @@ export function EpcChecklista() {
       <Card
         id="epc-verifiera"
         title="Att verifiera — källorna säger olika"
-        subtitle={`${SUMMERING.motsagelser} motsägelser i källorna. Dimensionera för det strängaste värdet och få skriftligt besked innan det byggs på.`}
+        subtitle={`${SUMMERING.motsagelser} frågor där underlagen skiljer sig. Låt ansvarig projektör eller tillverkare reda ut kravet skriftligt före berört arbete.`}
       >
         <AttVerifiera />
       </Card>

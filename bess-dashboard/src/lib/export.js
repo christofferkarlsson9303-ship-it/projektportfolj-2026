@@ -13,7 +13,8 @@ function csvVarde(v) {
 }
 
 function citera(v) {
-  const s = csvVarde(v);
+  const text = csvVarde(v);
+  const s = typeof v === "string" && /^[\s]*[=+@-]/.test(text) ? "'" + text : text;
   return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 }
 
@@ -59,7 +60,7 @@ async function hamtaDownloads() {
  *  annars en vanlig Blob-nedladdning — standalone-versionen saknade det
  *  senare och kunde därför inte exportera alls utanför claude.ai. */
 export async function laddaNer(filnamn, innehall, mimetyp = "text/csv;charset=utf-8") {
-  const dl = await hamtaDownloads();
+  const dl = typeof innehall === "string" ? await hamtaDownloads() : null;
 
   if (dl) {
     try {
