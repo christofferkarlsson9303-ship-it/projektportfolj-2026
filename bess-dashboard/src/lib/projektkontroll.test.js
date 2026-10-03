@@ -39,6 +39,9 @@ describe("Projektets egenkontroll", () => {
     state = reducer(state, { type: "FALT_KONTROLL", rad: row("P0.01") });
     state = reducer(state, { type: "FALT_KONTROLL", rad: row("P0.01", { notering: "Mätning utförd" }) });
     expect(state.faltkontroller).toHaveLength(1); expect(state.andringslogg[0].text).toContain("Egenkontroll");
+    expect(state.andringslogg[0].text).toContain("notering: tomt → Mätning utförd");
+    const changed = reducer(state, { type: "FALT_KONTROLL", rad: row("P0.01", { notering: "Mätning utförd", referens: "KP-02 rev C" }) });
+    expect(changed.andringslogg[0].text).toContain("protokollreferens: KP-01 rev B / provprotokoll → KP-02 rev C");
     const saved = normalisera(JSON.parse(JSON.stringify(state)));
     expect(saved.faltkontroller[0].notering).toBe("Mätning utförd");
     const mina = structuredClone(saved), deras = structuredClone(saved);

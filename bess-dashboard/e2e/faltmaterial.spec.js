@@ -106,7 +106,8 @@ test("mörkt UI ger fortfarande vitt utskriftsmaterial och komplett fältpaket",
   await page.screenshot({ path: testInfo.outputPath("panel-dark.png") });
   await page.evaluate(() => { window.print = () => {}; });
   await dialog.getByRole("button", { name: "Skriv ut", exact: true }).click();
-  await expect(page.locator("#utskrift .field-check")).toHaveCount(14);
+  // Öppna arbetsuppgifter i den datumstyrda perioden räknas separat.
+  await expect(page.locator("#utskrift .field-check:has(.field-reference)")).toHaveCount(14);
   expect(await page.locator("#utskrift .field-document").first().evaluate((e) => getComputedStyle(e).backgroundColor)).toBe("rgb(255, 255, 255)");
   await expect(page.locator("#utskrift")).toContainText("Delurval");
 });

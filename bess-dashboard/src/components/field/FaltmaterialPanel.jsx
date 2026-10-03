@@ -30,12 +30,12 @@ export function FaltmaterialPanel({ projekt, urval, onValjProjekt, onStang }) {
   const [mallpaket, setMallpaket] = useState(() => urval?.ids ? "teknisk" : urval?.mallpaket || (sparat.version === 3 ? sparat.mallpaket : "projekt"));
   const mallar = mallpaket === "projekt" ? PROJEKTMALLAR : mallpaket === "lagplan" ? LAGMALLAR : FALTMALLAR;
   const alla = mallar.map((m) => m.id);
-  const [mallIds, setMallIds] = useState(() => urval?.ids ? [] : sparat.version === 3 && (!urval?.mallpaket || urval.mallpaket === sparat.mallpaket) && Array.isArray(sparat.mallIds) ? sparat.mallIds.filter((id) => alla.includes(id)) : alla);
+  const [mallIds, setMallIds] = useState(() => urval?.ids ? [] : urval?.mallIds ? urval.mallIds.filter((id) => alla.includes(id)) : sparat.version === 3 && (!urval?.mallpaket || urval.mallpaket === sparat.mallpaket) && Array.isArray(sparat.mallIds) ? sparat.mallIds.filter((id) => alla.includes(id)) : alla);
   const [typ, setTyp] = useState(() => urval?.ids ? "arbetslista" : ["egenkontroll", "arbetslista", "paket"].includes(sparat.typ) ? sparat.typ : "egenkontroll");
   const [utforare, setUtforare] = useState(() => urval?.ids ? "" : sparat.utforare || "");
   const [referenser, setReferenser] = useState(sparat.referenser || {});
   const [ansvar, setAnsvar] = useState(sparat.ansvar || {});
-  const [metadata, setMetadata] = useState(() => ({ datum: idag(), skapadAv: hamtaNamn() || "Christoffer Karlsson", enhet: sparat.enhet || "", ritning: "", visaResultat: true, kontrollplan: sparat.kontrollplan || "", dokumentNr: "", lagmedlemmar: sparat.lagmedlemmar || {}, fran: urval?.ids ? "" : idag(), till: urval?.ids ? "" : veckaSlut() }));
+  const [metadata, setMetadata] = useState(() => ({ datum: idag(), skapadAv: hamtaNamn(), enhet: urval?.enhet ?? sparat.enhet ?? "", ritning: "", visaResultat: true, kontrollplan: sparat.kontrollplan || "", dokumentNr: "", lagmedlemmar: sparat.lagmedlemmar || {}, fran: urval?.ids ? "" : idag(), till: urval?.ids ? "" : veckaSlut() }));
   const [uppgiftIds, setUppgiftIds] = useState(() => new Set(urval?.ids || (state.punkter || []).map((p) => p.id)));
   const dialog = useRef(null);
   const forraFokus = useRef(null);
@@ -45,10 +45,10 @@ export function FaltmaterialPanel({ projekt, urval, onValjProjekt, onStang }) {
     return () => { el.close(); forraFokus.current?.focus?.({ preventScroll: true }); };
   }, []);
   useEffect(() => {
-    if (urval?.ids) return; // En engångslista får inte skriva över projektets lagval.
+    if (urval?.ids || urval?.mallIds) return; // En engångslista eller fasgenväg får inte skriva över projektets mallval.
     try { localStorage.setItem(`bess-faltmaterial-v1-${projekt.id}`, JSON.stringify({ version: 3, enhet: metadata.enhet, kontrollplan: metadata.kontrollplan, mallpaket, mallIds, typ, utforare, referenser, ansvar, lagmedlemmar: metadata.lagmedlemmar })); }
     catch { /* Valen gäller fortfarande denna session. */ }
-  }, [projekt.id, mallpaket, mallIds, typ, utforare, referenser, ansvar, metadata.lagmedlemmar, metadata.enhet, metadata.kontrollplan, urval?.ids]);
+  }, [projekt.id, mallpaket, mallIds, typ, utforare, referenser, ansvar, metadata.lagmedlemmar, metadata.enhet, metadata.kontrollplan, urval?.ids, urval?.mallIds]);
 
   const uppgifter = useMemo(() => arbetsrader(state, projekt.id, { utforare, fran: metadata.fran, till: metadata.till, ids: urval?.ids }), [state, projekt.id, utforare, metadata.fran, metadata.till, urval?.ids]);
   const dokument = useMemo(() => byggFaltmaterial({ projekt, mallpaket, mallIds, kontroller: state.faltkontroller, referenser, ansvar, metadata: { ...metadata, utforare }, uppgifter: uppgifter.filter((p) => uppgiftIds.has(p.id)) }), [state.faltkontroller, projekt, mallpaket, mallIds, referenser, ansvar, metadata, utforare, uppgifter, uppgiftIds]);
@@ -74,11 +74,12 @@ export function FaltmaterialPanel({ projekt, urval, onValjProjekt, onStang }) {
     {typ === "paket" ? <div className="field-packet-break" /> : null}
     {typ !== "arbetslista" ? <EgenkontrollDocument dokument={dokument} /> : null}
   </>);
+  const stang = () => { dialog.current?.querySelector(":focus")?.blur(); onStang(); };
 
-  return <dialog ref={dialog} className="field-material-dialog m-0 fixed left-1/2 top-1/2 max-h-[92dvh] w-[min(900px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-card border border-solid border-hairline bg-surface p-0 text-ink shadow-lift" aria-label={`Fältmaterial – ${projekt.namn}`} onCancel={(e) => { e.preventDefault(); onStang(); }}>
+  return <dialog ref={dialog} className="field-material-dialog m-0 fixed left-1/2 top-1/2 max-h-[92dvh] w-[min(900px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto scroll-pt-40 scroll-pb-28 rounded-card border border-solid border-hairline bg-surface p-0 text-ink shadow-lift" aria-label={`Fältmaterial – ${projekt.namn}`} onCancel={(e) => { e.preventDefault(); stang(); }}>
     <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-0 border-b border-solid border-hairline bg-surface p-4">
       <div><h2 id="falt-titel" className="m-0 font-head text-xl">Fältmaterial – {projekt.namn}</h2><p className="m-0 mt-1 text-sm text-ink-soft">Följ projektets kontroller. Registrera resultat och bevis eller skriv ut en blank checklista.</p></div>
-      <button type="button" className="btn sec mini" onClick={onStang}>Stäng</button>
+      <button type="button" className="btn sec mini" onClick={stang}>Stäng</button>
     </header>
     <div className="flex flex-col gap-5 p-4 sm:p-6">
       <label className="flex flex-col gap-1 text-sm font-semibold">Projekt<select value={projekt.id} onChange={(e) => onValjProjekt(e.target.value)}>{state.projekt.map((p) => <option value={p.id} key={p.id}>{p.nr || p.id} · {p.namn}</option>)}</select></label>

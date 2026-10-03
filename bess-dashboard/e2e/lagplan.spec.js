@@ -22,7 +22,7 @@ test("lagplan: två namn per lag, DC-stoppunkt, PDF och rent lagurval", async ({
   await page.evaluate(() => { window.print = () => {}; });
   await d.getByRole("button", { name: "Skriv ut", exact: true }).click();
   const print = page.locator("#utskrift");
-  await expect(print.locator(".field-check")).toHaveCount(18);
+  await expect(print.locator(".field-check:has(.field-reference)")).toHaveCount(18);
   await expect(print).toContainText("Dan + Adam");
   await expect(print).toContainText("DC-säkringar före DC-anslutning");
   await expect(print).toContainText("A.09");

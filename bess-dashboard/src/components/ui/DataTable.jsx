@@ -273,7 +273,7 @@ export function DataTable({
 
       {/* ---------- Tabellen ---------- */}
       <div
-        className="tscroll rounded-sm border border-hairline"
+        className="tscroll relative rounded-sm border border-hairline"
         tabIndex={0}
         role="region"
         aria-label={etikett}

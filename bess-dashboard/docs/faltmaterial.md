@@ -1,6 +1,9 @@
 # Fältmaterial för BESS
 
 Öppna **Fältmaterial** i sidhuvudet eller via **Ctrl/Cmd+K → Skapa fältmaterial**.
+I **Bygga batteripark** visar varje fas samma sparade egenkontrollresultat
+per kontrollomfattning. Välj **Registrera egenkontroller – fas N** för att
+öppna just den fasen. Fasgenvägen ändrar inte projektets vanliga mallurval.
 Projektet är förvalt. Välj moment, fyll i enhet/serienummer och utförare och välj
 **Skriv ut** eller **Ladda ned PDF**. Dokumenttypen kan vara egenkontroller,
 arbetslista eller fältpaket med båda. PDF har återkommande projekthuvud och
@@ -97,6 +100,9 @@ bevis/protokoll med revision samt mätvärde, avvikelse eller åtgärd.
 **Ej OK** ska ha avvikelse/åtgärd. **Ej tillämplig** ska ha motivering och
 referens. Ett namn är inte en elektronisk underskrift. Datum får inte ligga
 framåt i tiden. Ändrad mallrevision kräver en uttrycklig ny kontrollbekräftelse.
+
+Textfält sparas när du lämnar fältet, även när Escape stänger panelen.
+Ändringsloggen visar vilket fält som ändrats och dess tidigare/nya värde.
 
 Resultat sparas per projekt, kontrollomfattning och stabilt punkt-ID i den
 befintliga portföljlagringen, med ändringslogg och samma lokal-/molnsynk som

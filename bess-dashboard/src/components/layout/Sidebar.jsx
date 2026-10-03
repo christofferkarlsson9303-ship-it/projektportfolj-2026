@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import logotyp from "../../assets/one-nordic-logo.png";
-import { NAVIKONER, VYER } from "../../data/vyer.js";
+import { ENKEL_MENY, NAVIKONER, VYER } from "../../data/vyer.js";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { hamtaNamn, sparaNamn } from "../../state/portfolj-reducer.js";
 import { useMedia } from "../../lib/useMedia.js";
@@ -28,6 +28,8 @@ export function Sidebar() {
   const { conn } = usePortfolj();
   const { aktivVy, visa, navOppen, setNavOppen } = useUi();
   const [namn, setNamn] = useState(hamtaNamn);
+  const [hela, setHela] = useState(() => { try { return localStorage.getItem("bess-meny-v1") === "alla"; } catch { return false; } });
+  const vaxlaMeny = () => setHela((v) => { try { localStorage.setItem("bess-meny-v1", v ? "enkel" : "alla"); } catch { /* sessionens val gäller */ } return !v; });
   const sidebarRef = useRef(null);
   const namnId = useId();
 
@@ -68,6 +70,7 @@ export function Sidebar() {
             <img className="mark-img" src={logotyp} alt="ONE Nordic" />
             <div className="dom">one-nordic.se</div>
           </div>
+          {arMobil ? <button type="button" className="rounded-sm border border-solid border-white/30 bg-transparent p-2 text-xs text-white" onClick={() => setNavOppen(false)}>Stäng sidomenyn</button> : null}
         </div>
 
         {/* Applikationsnamnet är varumärkesinformation, inte sidans rubrik.
@@ -75,11 +78,11 @@ export function Sidebar() {
             aktiva vyns titel i topbaren. */}
         <div className="sidebar-title">
           <p className="sidebar-namn">Projektportfölj</p>
-          <div className="sub">BESS — batteriparker i drift och under uppförande</div>
+          <div className="sub">Planera, genomför och lämna över dina projekt</div>
         </div>
 
         <nav className="sidenav" id="nav" aria-label="Huvudmeny">
-          {GRUPPER.map((g, gi) => (
+          {GRUPPER.map((g) => ({ ...g, poster: g.poster.filter((v) => hela || ENKEL_MENY.has(v.id) || v.id === aktivVy) })).filter((g) => g.poster.length).map((g, gi) => (
             <div key={g.rubrik || `grupp-${gi}`} role="group" aria-label={g.rubrik || "Portfölj"}>
               {g.rubrik ? <div className="navsek">{g.rubrik}</div> : null}
               {g.poster.map((v) => {
@@ -90,6 +93,7 @@ export function Sidebar() {
                     type="button"
                     className={aktiv ? "on" : ""}
                     onClick={() => visa(v.id)}
+                    title={v.lead}
                     // aria-current ersätter den rent visuella .on-klassen
                     aria-current={aktiv ? "page" : undefined}
                   >
@@ -100,6 +104,7 @@ export function Sidebar() {
               })}
             </div>
           ))}
+          <button type="button" onClick={vaxlaMeny} aria-expanded={hela}>{hela ? "Visa enkel meny" : "Visa alla funktioner"}</button>
         </nav>
 
         <div className="sidebar-foot">
