@@ -50,9 +50,9 @@ CSV/Excel i återanvändbara tabeller, samt loggning och befintlig lagringssynk.
 
 1. **Min projektmetod** binder ihop funktionerna: daglig rutin, veckorutin,
    sex huvudsteg, val av rätt verktyg och en sökbar ordlista.
-2. **Enkel meny** visar nio vanliga sidor. Visa alla funktioner öppnar hela
+2. **Enkel meny** visar tio vanliga sidor. Visa alla funktioner öppnar hela
    menyn. Valet sparas i webbläsaren. En sida som öppnas via sökning visas
-   även om den inte hör till de nio grundvalen.
+   även om den inte hör till de tio grundvalen.
 3. **Vanliga ord** i sidornas ingress. Alla sidor har kort hjälp:
    Gör så här, följt av tre konkreta steg. Tekniska acceptanskrav och
    kontraktstexter har inte förenklats genom att viktiga villkor tas bort.
@@ -73,7 +73,14 @@ CSV/Excel i återanvändbara tabeller, samt loggning och befintlig lagringssynk.
    Milstolpar och Ekonomi att M1–M7 är en standardmall och inte projektets
    betalplan. ÄTA och hinder visar att 24-timmarsfristen och prisgodkännandet
    kommer från Batch C. HSEQ anger inte Batch C:s vitesbelopp som projektets
-   kontraktsvillkor. Batch C-projekten (36037, 36038) visas som tidigare.
+   kontraktsvillkor. När en kontraktsprofil är inläst visar sidorna i stället
+   kontraktets villkor (se punkt 9).
+9. **Kontraktet** är en egen sida per projekt: frister som staplar i samma
+   skala (kortast först, med följden om fristen missas), betalplan med belopp,
+   viten i kronor, säkerheter, garanti och ÄTA-priser. Varje villkor har
+   paragrafhänvisning. Profilen läses in som fil och granskas innan den sparas
+   i den delade lagringen bakom inloggning. Avtalsvärden ligger aldrig i
+   källkoden. Utan profil visar sidan Standardmall.
 
 ## Så använder du sidan som metod
 
@@ -122,8 +129,8 @@ alltid välja ett värde enbart för att det verkar strängare.
 
 ## Verifiering
 
-Lint, typkontroll och produktionsbygge godkända. 299 enhetstester och
-344 webbläsartester godkända; 10 villkorade webbläsartester hoppades över.
+Lint, typkontroll och produktionsbygge godkända. 306 enhetstester och
+346 webbläsartester godkända; 10 villkorade webbläsartester hoppades över.
 Webbläsartester täcker
 nya projekt, återladdning, enkel/hel meny, sökning, ordlista, samtliga sidors
 hjälp, gemensamma kontrollresultat, mallmärkning i nya projekt och Escape. Befintliga arbetsflöden

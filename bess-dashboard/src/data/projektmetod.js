@@ -1,6 +1,7 @@
 /* Vägledning, inte kontraktskrav. Varje sida beskriver en konkret arbetsuppgift. */
 export const SIDHJALP = {
   metod: ["Använd samma arbetssätt i varje projekt", "Välj projekt och kontrollera grunduppgifterna.", "Följ stegen nedan och öppna verktyget du behöver.", "Anpassa mallar och krav mot projektets egna handlingar."],
+  kontrakt: ["Ha kontraktets villkor framför dig", "Välj projekt och kontrollera att profilen är inläst och granskad.", "Läs fristerna först: de styr vad du måste göra och när.", "Slå upp paragrafen i originalavtalet när något är oklart. Originalet gäller."],
   idag: ["Börja arbetsdagen här", "Ta de röda datumen och svar som snart måste lämnas först.", "Klicka på en rad för att öppna rätt ärende.", "Sätt ansvarig och nästa datum så att frågan går att följa upp."],
   oversikt: ["Se hur projekten mår", "Se vilket projekt som behöver hjälp.", "Öppna nästa uppgift eller en varning.", "Ändra grunduppgifter med Redigera projektuppgifter."],
   epc: ["Följ projektet steg för steg", "Välj projekt och öppna den fas du arbetar med.", "Kontrollera uppgifter och spara provresultat via fasens egenkontroller.", "Grind betyder ett dokumenterat klartecken för nästa steg. En bock är inte ett provprotokoll."],
@@ -29,7 +30,7 @@ export const SIDHJALP = {
 };
 
 export const METODSTEG = [
-  { namn: "1. Starta och förstå uppdraget", faser: [0, 1, 2], text: "Bestäm vad vi ska leverera, vem som ansvarar och vilka beslut som behövs.", bevis: "Kontrakt, ansvarsfördelning och tillstånd", vyer: ["handlingsplan", "kontakter", "rutiner"] },
+  { namn: "1. Starta och förstå uppdraget", faser: [0, 1, 2], text: "Bestäm vad vi ska leverera, vem som ansvarar och vilka beslut som behövs.", bevis: "Kontrakt, ansvarsfördelning och tillstånd", vyer: ["kontrakt", "handlingsplan", "kontakter"] },
   { namn: "2. Planera och beställ", faser: [3, 4], text: "Granska ritningar. Boka människor, material och leveranser i rätt ordning.", bevis: "Godkända ritningar, tidplan och beställningar", vyer: ["tidplan", "resurser", "budget"] },
   { namn: "3. Förbered arbetsplatsen", faser: [5, 6, 7], text: "Säkra området. Kontrollera mark och fundament innan nästa arbete döljer dem.", bevis: "Arbetsberedningar, foton och mätprotokoll", vyer: ["hseq", "risker", "dagbok"] },
   { namn: "4. Bygg och kontrollera", faser: [8, 9, 10, 11, 12], text: "Ge lagen tydliga uppgifter. Kontrollera montage, kablar och säkerhetssystem.", bevis: "Egenkontroller, kabelprov och momentprotokoll", vyer: ["punkter", "moten", "ata"] },
