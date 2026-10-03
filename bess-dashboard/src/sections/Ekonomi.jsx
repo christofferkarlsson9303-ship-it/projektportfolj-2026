@@ -359,7 +359,7 @@ export function Ekonomi() {
         <Card
           id="ek-betalplan"
           title={`Betalplan — ${projektNamn}`}
-          subtitle={kontraktsText(valtProjekt, "Lyften i kontraktets betalningsplan. Status ändras här eller under Milstolpar M1–M7.", "Lyften enligt standardmallen M1–M7 från Batch C. Kontrollera mot projektets egen betalplan. Status ändras här eller under Milstolpar M1–M7.")}
+          subtitle={kontraktsText(state, valtProjekt, "Lyften i kontraktets betalningsplan enligt kontraktsprofilen. Status ändras här eller under Milstolpar M1–M7.", "Lyften enligt standardmallen M1–M7 från Batch C. Kontrollera mot projektets egen betalplan. Status ändras här eller under Milstolpar M1–M7.")}
           badge={adminMarke}
         >
           <BetalplanDiagram rader={e.rader} kv={e.kv} />

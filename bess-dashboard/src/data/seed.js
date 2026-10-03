@@ -2,6 +2,9 @@
    Rör inte logiken: detta är ren data. */
 
 export const SEED = {
+  /* Kontraktsprofil per projekt. Läses in som fil på sidan Kontraktet —
+     avtalsvärden ligger aldrig i källkoden. */
+  kontrakt: [],
   faltkontroller: [], // Egenkontroll per projekt, kontrollomfattning och punkt-ID.
   projekt: [
     { id:"36037", nr:"36037", namn:"Växjö Batteripark", ort:"Växjö", mw:16, mwh:36,

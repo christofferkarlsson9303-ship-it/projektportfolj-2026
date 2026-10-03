@@ -60,7 +60,7 @@ export function Projektmetod() {
     <Card id="metod-anpassa" title="Kontrollera detta i varje nytt projekt">
       <ul className="m-0 space-y-2 pl-5 text-sm"><li>Vad ingår i kontraktet, och vem ansvarar för varje del?</li><li>Stämmer tidplan, betalningssteg, priser, frister och dokumentkrav?</li><li>Vilka tillverkare och modeller används? Vilka manualrevisioner gäller?</li><li>Vilka kontroller behöver varje enhet? Vilka prov ska beställaren bevittna?</li><li>Var lagras originalhandlingar, foton och protokoll? Kontrollera synkstatus och ta backup.</li></ul>
       <p className="m-0 text-sm text-ink-soft">BESS- och kontraktsmallarna bygger delvis på Batch C. De är en utgångspunkt. Namn som SharePoint, IFS och ENIA i instruktionerna betyder inte att sidan automatiskt skriver till dessa system.</p>
-      {knapp("data")}
+      <div className="flex flex-wrap gap-2">{knapp("kontrakt")}{knapp("data")}</div>
     </Card>
     <Card id="metod-ord" title="Ordlista – svåra ord på vanlig svenska">
       <label className="flex flex-col gap-1 text-sm">Sök i ordlistan<input type="search" value={ord} onChange={(e) => setOrd(e.target.value)} placeholder="Till exempel ÄTA, grind eller PCS" /></label>

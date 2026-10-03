@@ -1,15 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { harBatchCKontrakt, kontraktsText } from "./kontraktsgrund.js";
+import { avvikandeAndelar, harKontrakt, kontraktsText } from "./kontraktsgrund.js";
+
+const state = { kontrakt: [{ projektId: "p1", milstolpar: [{ kod: "M1", andel: 10 }, { kod: "M2", andel: 90 }] }] };
 
 describe("kontraktsgrund", () => {
-  it("känner igen Batch C-projekten", () => {
-    expect(harBatchCKontrakt("36037")).toBe(true);
-    expect(harBatchCKontrakt("36038")).toBe(true);
+  it("påstår kontraktsvillkor bara när en profil är inläst", () => {
+    expect(harKontrakt(state, "p1")).toBe(true);
+    expect(harKontrakt(state, "p2")).toBe(false);
+    expect(harKontrakt({}, "p1")).toBe(false);
+    expect(kontraktsText(state, "p1", "Kontraktets plan", "Standardmall")).toBe("Kontraktets plan");
+    expect(kontraktsText(state, "p2", "Kontraktets plan", "Standardmall")).toBe("Standardmall");
   });
 
-  it("påstår inte att mallvillkor gäller ett nytt projekts kontrakt", () => {
-    expect(harBatchCKontrakt("projekt-abc")).toBe(false);
-    expect(kontraktsText("projekt-abc", "Kontraktets plan", "Standardmall")).toBe("Standardmall");
-    expect(kontraktsText("36037", "Kontraktets plan", "Standardmall")).toBe("Kontraktets plan");
+  it("hittar betalsteg där kontraktet avviker från modellen", () => {
+    const modell = [{ kod: "M1", andel: 10 }, { kod: "M2", andel: 25 }, { kod: "M3", andel: 65 }];
+    expect(avvikandeAndelar(state.kontrakt[0], modell)).toEqual([
+      { kod: "M2", modell: 25, kontrakt: 90 },
+      { kod: "M3", modell: 65, kontrakt: null },
+    ]);
+    expect(avvikandeAndelar(null, modell)).toEqual([]);
   });
 });

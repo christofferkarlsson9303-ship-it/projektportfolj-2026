@@ -1,16 +1,24 @@
-/* Vilka kontraktsvillkor i mallarna som är kontrollerade för ett projekt.
+/* Vilka kontraktsvillkor sidan får påstå för ett projekt.
 
-   Betalningsmodellen M1–M7, vitesbelopp och vissa frister kommer ur Batch C
-   (36037 Växjö, 36038 Alvesta). Ett nytt projekt får samma mallar som
-   utgångspunkt, men sidan får inte påstå att villkoren gäller dess kontrakt
-   förrän någon har kontrollerat dem. */
+   Betalningsmodellen M1–M7, vitesbelopp och vissa frister i mallarna kommer
+   ur Batch C. Sidan påstår att de gäller ett projekts kontrakt först när en
+   kontraktsprofil är inläst och granskad (sidan Kontraktet). Annars visas de
+   som standardmall. */
 
-export const BATCH_C = new Set(["36037", "36038"]);
+import { kontraktsprofil } from "./kontraktsprofil.js";
 
-/** Sant när projektets kontraktsvillkor är de som mallarna bygger på. */
-export const harBatchCKontrakt = (pid) => BATCH_C.has(pid);
+/** Sant när projektet har en inläst kontraktsprofil. */
+export const harKontrakt = (state, pid) => !!kontraktsprofil(state, pid);
 
-/** Text för ett villkor: kontraktets lydelse för Batch C, annars en tydlig mallmarkering. */
-export function kontraktsText(pid, iKontraktet, iMallen) {
-  return harBatchCKontrakt(pid) ? iKontraktet : iMallen;
+/** Text för ett villkor: kontraktets lydelse när profil finns, annars mallmarkering. */
+export function kontraktsText(state, pid, iKontraktet, iMallen) {
+  return harKontrakt(state, pid) ? iKontraktet : iMallen;
+}
+
+/** Betalsteg där profilens andel skiljer sig från sidans M1–M7-modell. */
+export function avvikandeAndelar(profil, modell) {
+  if (!profil?.milstolpar?.length) return [];
+  return modell
+    .map((m) => ({ kod: m.kod, modell: m.andel, kontrakt: profil.milstolpar.find((k) => k.kod === m.kod)?.andel ?? null }))
+    .filter((r) => r.kontrakt !== r.modell);
 }
