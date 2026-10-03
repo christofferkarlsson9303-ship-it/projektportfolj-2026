@@ -3,6 +3,7 @@
    data/vyer.js. */
 
 import { Idag } from "./Idag.jsx";
+import { Projektmetod } from "./Projektmetod.jsx";
 import { DashboardView } from "./Oversikt.jsx";
 import { EpcChecklista } from "./EpcChecklista.jsx";
 import { Ekonomi } from "./Ekonomi.jsx";
@@ -27,8 +28,11 @@ import { Resurser } from "./Resurser.jsx";
 import { Tidrapport } from "./Tidrapport.jsx";
 import { Budget } from "./Budget.jsx";
 import { Faktura } from "./Faktura.jsx";
+import { Kontrakt } from "./Kontrakt.jsx";
 
 export const SEKTIONER = {
+  metod: Projektmetod,
+  kontrakt: Kontrakt,
   idag: Idag,
   oversikt: DashboardView,
   epc: EpcChecklista,

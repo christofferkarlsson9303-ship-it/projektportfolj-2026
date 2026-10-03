@@ -65,7 +65,7 @@ function tillampaEkonomi(state, ek) {
  *  delade ändringar upp, annars skrivs det användaren just skriver över. */
 function redigerarNu() {
   const ae = document.activeElement;
-  return !!(ae && ae.closest && ae.closest("main") && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName));
+  return !!(ae && ae.closest && (ae.closest("main") || ae.closest(".field-material-dialog")) && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName));
 }
 
 export function PortfolioProvider({ children }) {

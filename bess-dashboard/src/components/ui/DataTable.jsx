@@ -1,6 +1,7 @@
 import { useDeferredValue, useId, useMemo, useState } from "react";
 import { useUi } from "../../state/hooks.js";
 import { exporteraTabell } from "../../lib/export.js";
+import { EditableCell } from "./EditableCell.jsx";
 import { fmtSEK, fmtTal } from "../../lib/format.js";
 
 /* Excel-liknande tabell: sortering, snabbsökning, kolumnfilter, summeringsrad
@@ -61,10 +62,13 @@ export function DataTable({
   radKlass,
   maxHojd,
   fotnot,
+  onUrval,
 }) {
   const { tathet, visaToast } = useUi();
   const bas = useId();
 
+  const [valdaIds, setValdaIds] = useState(() => new Set());
+  const [exporterar, setExporterar] = useState(false);
   const [sok, setSok] = useState("");
   const [filter, setFilter] = useState({});
   const [sortering, setSortering] = useState({ nyckel: null, riktning: "asc" });
@@ -103,7 +107,10 @@ export function DataTable({
       const kol = kolumner.find((k) => k.nyckel === sortering.nyckel);
       if (kol) {
         ut = [...ut].sort((a, b) => {
-          const r = jamfor(sortAv(kol, a), sortAv(kol, b));
+          const av = sortAv(kol, a), bv = sortAv(kol, b);
+          if (av === "" || av === null || av === undefined) return bv === "" || bv === null || bv === undefined ? 0 : 1;
+          if (bv === "" || bv === null || bv === undefined) return -1;
+          const r = jamfor(av, bv);
           return sortering.riktning === "asc" ? r : -r;
         });
       }
@@ -123,6 +130,19 @@ export function DataTable({
   const harSummering = kolumner.some((k) => k.summera);
   const filtrerat = synliga.length !== rader.length;
   const kompakt = tathet === "kompakt";
+
+  const valda = synliga.filter((r) => valdaIds.has(getId(r)));
+  const valjRad = (id) => setValdaIds((v) => { const n = new Set(v); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const valjAlla = () => setValdaIds((v) => { const n = new Set(v); for (const r of synliga) { if (valda.length === synliga.length) n.delete(getId(r)); else n.add(getId(r)); } return n; });
+  const excel = async () => {
+    setExporterar(true);
+    try {
+      const { exporteraExcel } = await import("../../lib/export-xlsx.js");
+      const r = await exporteraExcel(exportNamn || etikett || "tabell", kolumner, synliga);
+      if (!r.tyst) visaToast(r.txt, r.typ);
+    } catch { visaToast("Excel-exporten misslyckades. Försök igen eller använd CSV.", "bad"); }
+    finally { setExporterar(false); }
+  };
 
   const sortera = (nyckel) => {
     setSortering((s) =>
@@ -189,10 +209,12 @@ export function DataTable({
 
           <div className="ml-auto flex flex-wrap items-center gap-2">
             {verktyg}
+            {onUrval ? <button type="button" className="btn sec mini" disabled={!valda.length} onClick={() => onUrval(valda)}>Fältmaterial av markerade ({valda.length})</button> : null}
             {exportNamn && (
-              <button type="button" className="btn sec mini" onClick={exportera}>
-                Exportera CSV
-              </button>
+              <>
+                <button type="button" className="btn sec mini" onClick={exportera}>Exportera CSV</button>
+                <button type="button" className="btn sec mini" disabled={exporterar || !synliga.length} aria-busy={exporterar} onClick={excel}>{exporterar ? "Skapar Excel…" : "Exportera Excel"}</button>
+              </>
             )}
           </div>
         </div>
@@ -251,7 +273,7 @@ export function DataTable({
 
       {/* ---------- Tabellen ---------- */}
       <div
-        className="tscroll rounded-sm border border-hairline"
+        className="tscroll relative rounded-sm border border-hairline"
         tabIndex={0}
         role="region"
         aria-label={etikett}
@@ -304,6 +326,7 @@ export function DataTable({
                   </th>
                 );
               })}
+              {onUrval ? <th scope="col"><input type="checkbox" aria-label="Markera alla synliga rader" checked={synliga.length > 0 && valda.length === synliga.length} disabled={!synliga.length} onChange={valjAlla} /></th> : null}
             </tr>
           </thead>
 
@@ -319,14 +342,19 @@ export function DataTable({
                         k.cellKlass ? k.cellKlass(rad) : ""
                       }`}
                     >
-                      {formatera(k, rad)}
+                      {k.onCommit ? <EditableCell
+                        varde={rad[k.nyckel]} visat={formatera(k, rad)} typ={k.typ} min={k.min}
+                        etikett={`${k.rubrik} för ${rad.titel || rad.benamning || rad.nr || getId(rad)}`}
+                        onCommit={(v) => k.onCommit(rad, v)}
+                      /> : formatera(k, rad)}
                     </td>
                   ))}
+                  {onUrval ? <td data-label="Markera"><input type="checkbox" aria-label={`Markera ${rad.titel || getId(rad)}`} checked={valdaIds.has(getId(rad))} onChange={() => valjRad(getId(rad))} /></td> : null}
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={kolumner.length} className="lead">
+                <td colSpan={kolumner.length + (onUrval ? 1 : 0)} className="lead">
                   {rader.length ? "Inga rader matchar filtret." : tomText}
                 </td>
               </tr>
@@ -351,6 +379,7 @@ export function DataTable({
                         : ""}
                   </td>
                 ))}
+                {onUrval ? <td /> : null}
               </tr>
             </tfoot>
           ) : null}

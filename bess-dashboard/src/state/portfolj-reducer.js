@@ -10,6 +10,8 @@ import { nyApdRad } from "../lib/apd.js";
 import { idag } from "../lib/datum.js";
 import { forslagText, kanTillampas, tillampaForslag } from "../lib/importera.js";
 import { angraFakturaunderlag, skapaFakturaunderlag } from "../lib/planering.js";
+import { projektstartFel } from "../lib/projektstart.js";
+import { granskaProfil, rensaProfil } from "../lib/kontraktsprofil.js";
 
 /** Namnet används i ändringsloggen och sparas per webbläsare, inte i delad data. */
 export const NAMN_KEY = "batchc-portfolj-namn";
@@ -43,6 +45,7 @@ export function efterInlasning(state) {
   const projekt = state.projekt.map((p) => {
     const k = KANDA_MAPPAR[p.id];
     const nytt = { ...p };
+    if (nytt.kontraktsvarde === undefined) nytt.kontraktsvarde = null;
     if (k) {
       if (nytt.mapp === undefined || nytt.mapp === "") nytt.mapp = k.mapp;
       if (nytt.bestallare === undefined || nytt.bestallare === "") nytt.bestallare = k.bestallare;
@@ -232,10 +235,53 @@ export function reducer(state, action) {
       return { ...state, andringslogg: alla };
     }
 
+    case "FALT_KONTROLL": {
+      const { rad } = action;
+      if (!rad?.id || !state.projekt.some((p) => p.id === rad.projektId)) return state;
+      const gamla = state.faltkontroller || [];
+      const fore = gamla.find((p) => p.id === rad.id);
+      const finns = !!fore;
+      const nytt = { ...state, faltkontroller: finns ? byt(gamla, rad.id, () => ({ ...rad })) : [...gamla, { ...rad }] };
+      const etiketter = { resultat: "resultat", datum: "kontrolldatum", kontrollant: "kontrollant", referens: "protokollreferens", notering: "notering", mallrevision: "mallrevision" };
+      const andringar = Object.entries(etiketter).filter(([k]) => (fore?.[k] || "") !== (rad[k] || "")).map(([k, namn]) => `${namn}: ${fore?.[k] || "tomt"} → ${rad[k] || "tomt"}`);
+      return andringar.length ? loggat(nytt, rad.projektId, `Egenkontroll ${rad.punktId} (${rad.omfattning}): ${andringar.join("; ")}`) : nytt;
+    }
+
+    /* Kontraktsprofil: ersätter projektets tidigare profil. Granskas igen här
+       så att en felaktig fil aldrig sparas, oavsett varifrån den kommer. */
+    case "SPARA_KONTRAKT": {
+      const { profil, av = "", datum = "" } = action;
+      if (granskaProfil(profil, state.projekt).fel.length) return state;
+      const rad = rensaProfil(profil, { av, datum });
+      const ovriga = (state.kontrakt || []).filter((k) => k.projektId !== rad.projektId);
+      const fanns = ovriga.length !== (state.kontrakt || []).length;
+      return loggat({ ...state, kontrakt: [...ovriga, rad] }, rad.projektId, `Kontraktsprofil ${fanns ? "uppdaterad" : "inläst"}: ${rad.kalla.dokument}${rad.kalla.datum ? ` (${rad.kalla.datum})` : ""}`);
+    }
+
+    case "TA_BORT_KONTRAKT": {
+      const fore = state.kontrakt || [];
+      if (!fore.some((k) => k.projektId === action.projektId)) return state;
+      return loggat({ ...state, kontrakt: fore.filter((k) => k.projektId !== action.projektId) }, action.projektId, "Kontraktsprofil borttagen — standardmallen gäller igen");
+    }
+
+    case "SKAPA_PROJEKT": {
+      const { rad } = action;
+      if (!rad?.id || state.projekt.some((p) => p.id === rad.id) || projektstartFel(state, rad)) return state;
+      // Ekonomivärden ändras fortsatt via administratörens vanliga flöde.
+      const projekt = { ...rad, kontraktsvarde: null };
+      const nytt = efterInlasning({ ...state, projekt: [...state.projekt, projekt] });
+      return loggat(nytt, projekt.id, `Projekt skapat: ${projekt.nr || "nummer saknas"} ${projekt.namn}. Tomma mallar, inga tidigare resultat kopierade.`);
+    }
+
     case "UPPDATERA": {
       const { lista, id, falt, varde } = action;
       if (!state[lista]) return state;
-      return { ...state, [lista]: byt(state[lista], id, (r) => ({ ...r, [falt]: varde })) };
+      const rad = state[lista].find((r) => r.id === id);
+      if (!rad || Object.is(rad[falt], varde)) return state;
+      const nytt = { ...state, [lista]: byt(state[lista], id, (r) => ({ ...r, [falt]: varde })) };
+      const info = etikettFor(state, lista, id);
+      const kort = (v) => String(v ?? "—").slice(0, 100);
+      return loggat(nytt, info?.projektId, `${info?.etikett || id}: ${falt} ändrad ${kort(rad[falt])} → ${kort(varde)}`);
     }
 
     /* Statusändring loggas — det är den som revisionsspåret bygger på. */

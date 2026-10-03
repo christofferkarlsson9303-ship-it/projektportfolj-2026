@@ -15,7 +15,7 @@ import { hamtaNamn } from "../state/portfolj-reducer.js";
 
 export function Punkter() {
   const { state, uppd, uppdStatus, laggTill } = usePortfolj();
-  const { valtProjekt: pid, fraga } = useUi();
+  const { valtProjekt: pid, fraga, oppnaFaltmaterial } = useUi();
 
   const proj = projekt(state, pid);
 
@@ -94,6 +94,7 @@ export function Punkter() {
             etikett="Öppna punkter"
             exportNamn="Oppna_punkter"
             rader={rader}
+            onUrval={(rader) => oppnaFaltmaterial({ ids: rader.map((r) => r.id) })}
             tomText="Inga öppna punkter."
             radKlass={(pt) => (arSen(pt) ? "rad-sen" : "")}
             verktyg={
@@ -118,8 +119,11 @@ export function Punkter() {
                 },
                 render: (pt) => <PTag pid={pt.projektId} />,
               },
-              { nyckel: "titel", rubrik: "Punkt" },
+              { nyckel: "titel", rubrik: "Punkt", onCommit: (r, v) => uppd("punkter", r.id, "titel", v) },
               { nyckel: "agare", rubrik: "Ägare", bredd: 150, filter: true },
+              { nyckel: "utforare", rubrik: "Utförare", filter: true, onCommit: (r, v) => uppd("punkter", r.id, "utforare", v) },
+              { nyckel: "instruktion", rubrik: "Instruktion", onCommit: (r, v) => uppd("punkter", r.id, "instruktion", v) },
+              { nyckel: "ritningsreferens", rubrik: "Ritning/revision", onCommit: (r, v) => uppd("punkter", r.id, "ritningsreferens", v) },
               {
                 nyckel: "forfaller",
                 rubrik: "Förfaller",

@@ -125,6 +125,7 @@ export function Projektkort({ p }) {
 /* ---------- Projektuppgifter (redigerbar tabell) ---------- */
 
 const KOLUMNER = [
+  ["bestallare", "Beställare", 140],
   ["nr", "AO-nr", 90],
   ["namn", "Namn", 170],
   ["ort", "Ort", 120],
@@ -176,6 +177,7 @@ export function Projektredigering() {
           <tbody>
             {state.projekt.map((p) => (
               <tr key={p.id}>
+                <td data-label="Beställare"><Falt varde={p.bestallare || ""} etikett={`Beställare för ${p.namn}`} onCommit={(v) => uppd("projekt", p.id, "bestallare", v)} /></td>
                 <td data-label="AO-nr">
                   <Falt varde={p.nr || ""} etikett={`AO-nr för ${p.namn}`} onCommit={(v) => uppd("projekt", p.id, "nr", v)} />
                 </td>
