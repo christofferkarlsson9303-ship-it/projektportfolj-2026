@@ -5,6 +5,7 @@ import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
 import { Tathetsvaljare, Vyvaljare } from "../components/ui/Vyvaljare.jsx";
 import { DataTable } from "../components/ui/DataTable.jsx";
 import { Tidslinje } from "../components/ui/Tidslinje.jsx";
+import { KritiskLinje } from "../components/tidplan/KritiskLinje.jsx";
 import { Callout, Card, CheckList, Meter, Overline, StatusBadge } from "../components/ds/index.js";
 import { DatumFalt, Falt, SelStatus } from "../components/ui/Falt.jsx";
 import { BATTERIPARK_MILSTOLPAR } from "../data/batteripark-milstolpar.js";
@@ -356,6 +357,8 @@ export function Tidplan() {
       <Projektvaljare />
 
       <div className="flex flex-col gap-4 lg:gap-6">
+        <KritiskLinje pid={pid} projektNamn={projektNamn} />
+
         <Card
           id="tp-milstolpar"
           title={`${projektNamn} — milstolpar`}

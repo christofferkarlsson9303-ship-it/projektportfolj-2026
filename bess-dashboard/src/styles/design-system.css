@@ -1959,6 +1959,9 @@ button.ov-gantt-rad:focus-visible{outline:3px solid var(--one-bla);outline-offse
 .ov-gantt-fas.klar .ov-gantt-nr{background:var(--viz-klar);color:var(--surface)}
 .ov-gantt-fas.pagar .ov-gantt-nr{background:var(--info-bg);color:var(--info-ink);box-shadow:inset 0 0 0 1.5px var(--one-bla)}
 .ov-gantt-fas.sen .ov-gantt-nr{background:var(--bad-bg);color:var(--bad-ink)}
+/* Kritisk linje: fasen styr slutbesiktningen. Mörk ram runt stapeln — inte
+   rött, som redan betyder försenad, och inte färg på ytan, där statusen syns. */
+
 .ov-gantt-msrad .ov-gantt-nr{background:var(--warn-bg);color:var(--warn-ink)}
 .ov-gantt-namn{flex:1;min-width:0;font-size:12.5px;line-height:1.2;color:var(--ink);white-space:nowrap}
 .ov-gantt-msrad .ov-gantt-namn{color:var(--ink-soft)}
@@ -1979,6 +1982,9 @@ button.ov-gantt-rad:focus-visible{outline:3px solid var(--one-bla);outline-offse
 .ov-gantt-fas.pagar .ov-gantt-stapel{
   background:color-mix(in srgb,var(--viz-pagar) 30%,var(--surface));box-shadow:inset 0 0 0 1.5px var(--viz-pagar)}
 .ov-gantt-fas.sen .ov-gantt-stapel{background:var(--bad-bg);box-shadow:inset 0 0 0 1.5px var(--rod)}
+/* (efter statusreglerna så att ramen vinner; innanför stapeln eftersom
+   avslöjandeanimationen klipper allt utanför) */
+.ov-gantt-fas.kritisk .ov-gantt-stapel{box-shadow:inset 0 0 0 2.5px var(--ink)}
 .ov-gantt-grind{position:absolute;top:50%;z-index:1;width:10px;height:10px;margin:-5px 0 0 -5px;transform:rotate(45deg);
   border-radius:2px;background:var(--surface);border:2px solid var(--ink-faint)}
 .ov-gantt-grind.passerad{background:var(--viz-klar);border-color:var(--viz-klar)}
@@ -2001,6 +2007,7 @@ button.ov-gantt-rad:focus-visible{outline:3px solid var(--one-bla);outline-offse
 button.ov-gantt-rad:hover .ov-gantt-tips,button.ov-gantt-rad:focus-visible .ov-gantt-tips,.ov-gantt-ms:hover .ov-gantt-tips{display:block}
 .ov-gantt-fot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 20px}
 .ov-legend i.sen{background:var(--bad-bg);box-shadow:inset 0 0 0 1.5px var(--rod)}
+.ov-legend i.kritisk{background:var(--surface);box-shadow:inset 0 0 0 2.5px var(--ink)}
 .ov-legend i.grind{border-radius:2px;transform:rotate(45deg) scale(.8);background:var(--surface);box-shadow:inset 0 0 0 2px var(--orange)}
 .ov-gantt-mslista{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--ink-soft)}
 .ov-gantt-mslista b{color:var(--ink)}
@@ -2051,3 +2058,19 @@ button.ov-gantt-rad:hover>:first-child,button.ov-gantt-rad:focus-visible>:first-
   .ov-gantt-namn{white-space:normal;font-size:11.5px;line-height:1.15}
   .ov-gantt-etikett{gap:6px;padding-right:8px}
 }
+
+/* Kritisk linje och prognos (Tidplan). */
+.kl-tabell{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.kl-tabell th,.kl-tabell td{padding:7px 10px;border-top:1px solid var(--hairline);text-align:left;white-space:nowrap}
+.kl-tabell thead th{border-top:0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft)}
+.kl-tabell tbody th{font-weight:600;color:var(--ink)}
+.kl-tabell .num{text-align:right}
+.kl-tabell .sen{color:var(--bad-ink);font-weight:700}
+.kl-tabell tr.klar{color:var(--ink-faint)}
+.kl-tabell tr.klar th{color:var(--ink-soft);font-weight:500}
+.kl-tabell tr.kritisk th{box-shadow:inset 3px 0 0 var(--bad-ink)}
+.kl-tabell .kl-driv{white-space:normal;min-width:220px;color:var(--ink-soft)}
+.kl-fas{background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left}
+.kl-fas:hover{text-decoration:underline}
+.kl-fas:focus-visible{outline:2px solid var(--one-bla);outline-offset:2px;border-radius:3px}
+.kl-nr{display:inline-flex;width:20px;justify-content:center;font-weight:700;color:var(--ink-soft)}

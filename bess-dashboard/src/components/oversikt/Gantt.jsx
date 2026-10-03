@@ -5,6 +5,7 @@ import { DatumFalt } from "../ui/Falt.jsx";
 import { FasStatus } from "../epc/Delar.jsx";
 import { dagarTill, datumKort, idag, MANADER } from "../../lib/datum.js";
 import { FAS_STATUS, dagarMellan, faslage, milstolpslage, planAnkare } from "../../lib/epc.js";
+import { kritiskLinje } from "../../lib/kritiskLinje.js";
 import { Lank, Ruta } from "./Ruta.jsx";
 
 /* Fasplanen som Gantt-schema: batteriparkens 16 faser med grindarna G0–G15
@@ -92,6 +93,7 @@ export function Gantt({ i }) {
 
   const faser = useMemo(() => faslage(state, pid, nu), [state, pid, nu]);
   const ms = useMemo(() => milstolpslage(state, pid, faser), [state, pid, faser]);
+  const kritiska = useMemo(() => new Set(kritiskLinje(state, pid, nu)?.kritiska || []), [state, pid, nu]);
   const a = planAnkare(state, pid);
 
   const daterade = faser.filter((f) => f.start && f.slut);
@@ -221,11 +223,13 @@ export function Gantt({ i }) {
                     <button
                       key={f.fas.nr}
                       type="button"
-                      className={`ov-gantt-rad ov-gantt-fas ${f.status}`}
+                      className={`ov-gantt-rad ov-gantt-fas ${f.status}${kritiska.has(f.fas.nr) ? " kritisk" : ""}`}
                       onClick={() => oppnaPost("epc", `fas-${f.fas.nr}`)}
                       aria-label={`Fas ${f.fas.nr} ${f.fas.titel}: ${statusText}, ${
                         harDatum ? `${f.start} till ${f.slut}` : "ej planerad"
-                      }, ${f.klara} av ${f.punkter} punkter klara, ${grindText}. Öppna i guiden.`}
+                      }, ${f.klara} av ${f.punkter} punkter klara, ${grindText}${
+                        kritiska.has(f.fas.nr) ? ", styr slutdatumet" : ""
+                      }. Öppna i guiden.`}
                     >
                       <span className="ov-gantt-etikett">
                         <span className="ov-gantt-nr">{f.fas.nr}</span>
@@ -256,6 +260,7 @@ export function Gantt({ i }) {
                               {datumKort(f.start)} – {datumKort(f.slut)} {f.egenPlan ? "· egna datum" : "· standardplan"}
                               <br />
                               {statusText} · {f.klara} av {f.punkter} klara
+                              {kritiska.has(f.fas.nr) ? " · styr slutdatumet" : ""}
                               {f.hp ? ` · HP ${f.hpKlara}/${f.hp}` : ""}
                               <br />
                               {grindText}
@@ -289,6 +294,12 @@ export function Gantt({ i }) {
                 <i className="sen" aria-hidden="true" />
                 Försenad
               </li>
+              {kritiska.size ? (
+                <li>
+                  <i className="kritisk" aria-hidden="true" />
+                  Styr slutdatumet
+                </li>
+              ) : null}
               <li>
                 <i className="grind" aria-hidden="true" />
                 Grind · orange = låser betalning

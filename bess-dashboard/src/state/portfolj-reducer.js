@@ -597,6 +597,13 @@ export function reducer(state, action) {
       return loggat(nytt, pid, varde ? `G${fas} passerad ${varde}` : `G${fas} återöppnad`);
     }
 
+    /* Tidplanens baslinje: en per projekt, skrivs över vid ny sparning. */
+    case "SPARA_BASLINJE": {
+      const { rad } = action;
+      const lista = (state.epcBaslinje || []).filter((r) => r.projektId !== rad.projektId);
+      return loggat({ ...state, epcBaslinje: [...lista, rad] }, rad.projektId, `Baslinje för tidplanen sparad ${rad.sparad}`);
+    }
+
     /* Veckans prognos: en rad per projekt och vecka, skrivs över om den sparas igen. */
     case "SPARA_PROGNOS": {
       const { rad } = action;

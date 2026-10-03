@@ -69,6 +69,16 @@ Hela databasschemat ligger i `supabase/migrations/` — tabeller, RLS-regler,
 före 2026-09-24 är exporterade ur projektets migreringshistorik i efterhand;
 nya ändringar görs som nya filer här och körs med `supabase db push`.
 
+### Tidplan med beroenden (Blir vi klara i tid)
+
+`src/lib/kritiskLinje.js` räknar prognos per fas och kritisk linje över de
+16 byggfaserna, med standardnätet i `src/data/fasberoenden.js`. Passerade
+grindar ligger fast, faser som dragit över räknas klara tidigast i dag, egna
+datum och bekräftad BESS-leverans förs vidare. Avstånden tas ur baslinjen
+(`epcBaslinje`, sparas i Tidplan) eller standardplanen; ett glapp i ett
+finish–start-beroende är buffert, inte krav. Visas i Tidplan och som ram
+runt kritiska faser i översiktens Gantt-schema.
+
 ### Påminnelser om frister
 
 Edge Function `supabase/functions/frist-paminnelser` körs var 15:e minut och
