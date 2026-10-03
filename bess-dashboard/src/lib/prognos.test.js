@@ -77,7 +77,7 @@ describe("prognos", () => {
     s.kostnader.push({ id: "k2", projektId: "p1", aktivitetId: "", typ: "ovrigt", belopp: 10_000 });
     const pr = prognos(s, "p1");
     expect(pr.slutkostnad).toBe(510_000);
-    expect(pr.brister.join()).toMatch(/inte är knutet/);
+    expect(pr.brister.join()).toMatch(/inte är kopplade/);
   });
 
   it("brister i underlaget sägs rakt ut", () => {
@@ -88,10 +88,10 @@ describe("prognos", () => {
     expect(pr.intakt).toBeNull();
     expect(pr.tb).toBeNull();
     expect(pr.brister).toEqual([
-      "Kontraktsvärde saknas — intäkt och TB kan inte räknas.",
-      "Ingen budget per aktivitet — slutkostnad, TB och upparbetat kan inte räknas.",
+      "Kontraktssumma saknas. Intäkt och vinst kan inte räknas.",
+      "Budget per aktivitet saknas. Total kostnad, vinst och utfört arbete kan inte räknas.",
       "1 öppna ÄTA saknar belopp och ingår inte i intäkten.",
-      "Det finns utfall som inte är knutet till någon aktivitet.",
+      "Det finns kostnader som inte är kopplade till någon aktivitet.",
     ]);
   });
   it("utan budget redovisas varken TB eller över-/underfakturering", () => {
@@ -102,7 +102,7 @@ describe("prognos", () => {
     const pr = prognos(s, "p1");
     expect(pr.intakt).toBe(1_100_000);
     expect([pr.tb, pr.tg, pr.upparbetat, pr.overUnder]).toEqual([null, null, null, null]);
-    expect(prognosLage(pr)).toEqual({ ton: "neutral", text: "Underlag saknas" });
+    expect(prognosLage(pr)).toEqual({ ton: "neutral", text: "Uppgifter saknas" });
   });
 });
 
@@ -113,11 +113,11 @@ describe("prognosLage", () => {
     expect(prognosLage(prognos(s, "p1")).ton).toBe("bad");
     const s2 = grund();
     s2.aktiviteter[0].prognosKvar = 130_000; // +30 000 = 6 % över
-    expect(prognosLage(prognos(s2, "p1"))).toEqual({ ton: "bad", text: "Slutkostnad över budget" });
+    expect(prognosLage(prognos(s2, "p1"))).toEqual({ ton: "bad", text: "Kostar mer än budget" });
   });
 
   it("gult vid underfakturering, grönt när allt stämmer", () => {
-    expect(prognosLage(prognos(grund(), "p1"))).toEqual({ ton: "warn", text: "Underfakturerat" });
+    expect(prognosLage(prognos(grund(), "p1"))).toEqual({ ton: "warn", text: "Fakturera mer" });
     const s = grund();
     s.betalplan[0].andel = 60;
     expect(prognosLage(prognos(s, "p1"))).toEqual({ ton: "ok", text: "Enligt plan" });

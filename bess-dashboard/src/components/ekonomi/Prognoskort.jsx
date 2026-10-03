@@ -5,8 +5,9 @@ import { fmtSEK } from "../../lib/format.js";
 import { veckaEtikett, veckaNu } from "../../lib/datum.js";
 import { prognos, prognosLage, prognosrad, prognostrend } from "../../lib/prognos.js";
 
-/* Ekonomiprognosen för valt projekt: intäkt, slutkostnad, TB och om
-   faktureringen ligger före eller efter det som är upparbetat. Veckans
+/* Hur projektet går ekonomiskt: vad ni får betalt, vad allt beräknas kosta,
+   vinsten och om faktureringen ligger efter utfört arbete. Vanliga ord i
+   gränssnittet; uträkningen finns bakom "Så räknas det". Veckans
    prognos kan sparas så att trenden syns vecka för vecka ("Prognos varje
    vecka", projektmetoden § 13). */
 
@@ -25,22 +26,22 @@ export function Prognoskort({ pid }) {
 
   const sparaVecka = () => {
     dispatch({ type: "SPARA_PROGNOS", rad: prognosrad(state, pid, vecka) });
-    visaToast(`Prognosen för ${veckaEtikett(vecka)} är sparad`);
+    visaToast(`Läget för ${veckaEtikett(vecka)} är sparat`);
   };
 
   return (
     <Card
       id="ek-prognos"
-      title="Prognos"
-      subtitle="Slutkostnad = utfall + kvar per aktivitet. Intäkt = kontrakt + godkända ÄTA. Räknas ur Budget, Tidrapport, ÄTA och betalplanen."
+      title="Hur projektet går ekonomiskt"
+      subtitle="Beräknat ur budget, rapporterad tid och kostnad, ÄTA och betalplanen. Spara en gång i veckan så syns utvecklingen."
       badge={<StatusBadge ton={lage.ton} label={lage.text} />}
       action={
         <div className="flex flex-wrap gap-2">
           <button type="button" className="btn sec mini" onClick={() => visa("budget")}>
-            Justera kvar per aktivitet
+            Ändra kostnad kvar
           </button>
           <button type="button" className="btn mini" onClick={sparaVecka}>
-            {sparadDennaVecka ? "Uppdatera veckans prognos" : "Spara veckans prognos"}
+            {sparadDennaVecka ? "Uppdatera veckans läge" : "Spara veckans läge"}
           </button>
         </div>
       }
@@ -48,18 +49,18 @@ export function Prognoskort({ pid }) {
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatTile
-            label="Intäkt"
+            label="Ni får betalt"
             value={kr(pr.intakt)}
-            hint={pr.ataVantande ? `${kr(pr.intaktMedVantande)} med väntande ÄTA` : "kontrakt + godkända ÄTA"}
+            hint={pr.ataVantande ? `kontrakt + godkända ÄTA. ${kr(pr.intaktMedVantande)} om väntande ÄTA godkänns` : "kontrakt + godkända ÄTA"}
           />
           <StatTile
-            label="Prognos slutkostnad"
+            label="Beräknad kostnad totalt"
             value={pr.budget ? kr(pr.slutkostnad) : "—"}
             ton={pr.kostnadsavvikelse !== null && pr.kostnadsavvikelse < 0 ? "bad" : ""}
             hint={
               pr.kostnadsavvikelse === null
                 ? pr.utfall
-                  ? `budget saknas · utfall hittills ${kr(pr.utfall)}`
+                  ? `budget saknas. Kostnad hittills ${kr(pr.utfall)}`
                   : "budget saknas"
                 : pr.kostnadsavvikelse < 0
                   ? `${kr(-pr.kostnadsavvikelse)} över budget`
@@ -67,34 +68,34 @@ export function Prognoskort({ pid }) {
             }
           />
           <StatTile
-            label="Prognos TB"
+            label="Beräknad vinst"
             value={kr(pr.tb)}
             ton={pr.tb !== null && pr.tb < 0 ? "bad" : pr.tg !== null && pr.tg < 5 ? "warn" : ""}
             hint={
               pr.tg === null
                 ? pr.kontrakt === null
-                  ? "kräver kontraktsvärde"
+                  ? "kräver kontraktssumma"
                   : "kräver budget per aktivitet"
-                : `TG ${pct(pr.tg)}${pr.kalkylTb !== null ? ` · kalkyl ${kr(pr.kalkylTb)}` : ""}`
+                : `marginal ${pct(pr.tg)}${pr.kalkylTb !== null ? `. Kalkylerat ${kr(pr.kalkylTb)}` : ""}`
             }
           />
           <StatTile
-            label={pr.overUnder === null ? "Fakturering mot upparbetat" : pr.overUnder < 0 ? "Underfakturerat" : "Överfakturerat"}
+            label={pr.overUnder === null ? "Fakturerat mot utfört" : pr.overUnder < 0 ? "Utfört, inte fakturerat" : "Fakturerat i förväg"}
             value={kr(pr.overUnder === null ? null : Math.abs(pr.overUnder))}
             ton={pr.overUnder !== null && pr.overUnder < 0 && pr.intakt && -pr.overUnder > 0.02 * pr.intakt ? "warn" : ""}
             hint={
               pr.overUnder === null
-                ? "kräver budget och kontraktsvärde"
+                ? "kräver budget och kontraktssumma"
                 : pr.overUnder < 0
-                  ? "utfört men inte fakturerat"
-                  : "fakturerat före upparbetat"
+                  ? "arbete ni kan fakturera"
+                  : "fakturerat mer än utfört arbete"
             }
           />
         </div>
 
         {pr.brister.length ? (
           <Callout ton="warn">
-            <b>Prognosen är ofullständig.</b>
+            <b>Beräkningen saknar uppgifter.</b>
             <ul className="m-0 mt-1 pl-5">
               {pr.brister.map((b) => (
                 <li key={b}>{b}</li>
@@ -103,18 +104,21 @@ export function Prognoskort({ pid }) {
           </Callout>
         ) : null}
 
+        <details className="text-sm">
+          <summary className="cursor-pointer font-semibold text-ink">Så räknas det</summary>
+          <div className="mt-3">
         <DataList
           items={[
-            { label: "Kontrakt", value: kr(pr.kontrakt) },
+            { label: "Kontraktssumma", value: kr(pr.kontrakt) },
             { label: "Godkända ÄTA", value: kr(pr.ataGodkant) },
             { label: "Väntande ÄTA", value: kr(pr.ataVantande), detail: "ingår inte i intäkten förrän de är godkända" },
             { label: "Budget", value: kr(pr.budget || null) },
             {
-              label: "Utfall",
+              label: "Kostnad hittills",
               value: kr(pr.utfall),
               detail: pr.ovrigtUtfall ? `varav ${kr(pr.ovrigtUtfall)} utan aktivitet` : null,
             },
-            { label: "Kvar", value: kr(pr.kvar), detail: "din bedömning där den är satt, annars budget minus utfall" },
+            { label: "Kostnad kvar", value: kr(pr.kvar), detail: "din bedömning där den är satt, annars budget minus kostnad hittills" },
             {
               label: "Färdigställt",
               value: (
@@ -123,24 +127,26 @@ export function Prognoskort({ pid }) {
                   <span className="tabular-nums">{pct(pr.grad)}</span>
                 </span>
               ),
-              detail: "kostnadsbaserat: utfall / prognos slutkostnad",
+              detail: "kostnad hittills delat med beräknad kostnad totalt",
             },
-            { label: "Upparbetad intäkt", value: kr(pr.upparbetat) },
-            { label: "Fakturerat", value: kr(pr.fakturerat), detail: "betalplanens fakturerade lyft + fakturerade ÄTA" },
+            { label: "Intäkt för utfört arbete", value: kr(pr.upparbetat) },
+            { label: "Fakturerat", value: kr(pr.fakturerat), detail: "fakturerade betalningar + fakturerade ÄTA" },
           ]}
         />
+          </div>
+        </details>
 
         <div>
-          <h4 className="m-0 mb-2 text-[13px] font-bold text-ink">Veckoprognoser</h4>
+          <h4 className="m-0 mb-2 text-[13px] font-bold text-ink">Vecka för vecka</h4>
           {trend.length ? (
-            <table className="w-full text-[13px] tabular-nums" aria-label="Sparade veckoprognoser">
+            <table className="w-full text-[13px] tabular-nums" aria-label="Sparat läge vecka för vecka">
               <thead>
                 <tr className="text-left text-ink-soft">
                   <th scope="col">Vecka</th>
-                  <th scope="col" className="text-right">Intäkt</th>
-                  <th scope="col" className="text-right">Slutkostnad</th>
-                  <th scope="col" className="text-right">TB</th>
-                  <th scope="col" className="text-right">Ändring TB</th>
+                  <th scope="col" className="text-right">Får betalt</th>
+                  <th scope="col" className="text-right">Kostnad totalt</th>
+                  <th scope="col" className="text-right">Vinst</th>
+                  <th scope="col" className="text-right">Ändring</th>
                 </tr>
               </thead>
               <tbody>
@@ -157,7 +163,7 @@ export function Prognoskort({ pid }) {
             </table>
           ) : (
             <p className="m-0 text-[13px] text-ink-soft">
-              Ingen prognos sparad än. Spara en varje vecka så syns trenden här.
+              Inget sparat än. Klicka på Spara veckans läge en gång i veckan så syns utvecklingen här.
             </p>
           )}
         </div>

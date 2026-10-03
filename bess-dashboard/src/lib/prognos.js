@@ -103,11 +103,11 @@ export function prognos(state, pid) {
   const overUnder = upparbetat === null ? null : fakturerat - upparbetat;
 
   const brister = [];
-  if (kontrakt === null) brister.push("Kontraktsvärde saknas — intäkt och TB kan inte räknas.");
-  if (!budget) brister.push("Ingen budget per aktivitet — slutkostnad, TB och upparbetat kan inte räknas.");
+  if (kontrakt === null) brister.push("Kontraktssumma saknas. Intäkt och vinst kan inte räknas.");
+  if (!budget) brister.push("Budget per aktivitet saknas. Total kostnad, vinst och utfört arbete kan inte räknas.");
   if (ataUtanBelopp)
     brister.push(`${ataUtanBelopp} öppna ÄTA saknar belopp och ingår inte i intäkten.`);
-  if (ovrigtUtfall) brister.push("Det finns utfall som inte är knutet till någon aktivitet.");
+  if (ovrigtUtfall) brister.push("Det finns kostnader som inte är kopplade till någon aktivitet.");
 
   return {
     pid,
@@ -138,13 +138,13 @@ export function prognos(state, pid) {
 /** Trafikljus för prognosen: rött vid negativt TB eller slutkostnad över budget
  *  med mer än 5 %, gult vid TG under 5 % eller underfakturering, annars grönt. */
 export function prognosLage(pr) {
-  if (pr.tb !== null && pr.tb < 0) return { ton: "bad", text: "Förlust i prognos" };
+  if (pr.tb !== null && pr.tb < 0) return { ton: "bad", text: "Beräknad förlust" };
   if (pr.kostnadsavvikelse !== null && pr.budget && pr.kostnadsavvikelse < -0.05 * pr.budget)
-    return { ton: "bad", text: "Slutkostnad över budget" };
-  if (pr.tg !== null && pr.tg < 5) return { ton: "warn", text: "Lågt täckningsbidrag" };
+    return { ton: "bad", text: "Kostar mer än budget" };
+  if (pr.tg !== null && pr.tg < 5) return { ton: "warn", text: "Låg vinst" };
   if (pr.overUnder !== null && pr.overUnder < 0 && pr.intakt && -pr.overUnder > 0.02 * pr.intakt)
-    return { ton: "warn", text: "Underfakturerat" };
-  if (pr.kontrakt === null || !pr.budget) return { ton: "neutral", text: "Underlag saknas" };
+    return { ton: "warn", text: "Fakturera mer" };
+  if (pr.kontrakt === null || !pr.budget) return { ton: "neutral", text: "Uppgifter saknas" };
   return { ton: "ok", text: "Enligt plan" };
 }
 

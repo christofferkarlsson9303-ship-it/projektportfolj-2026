@@ -245,7 +245,7 @@ export function Budget() {
               },
               {
                 nyckel: "prognosKvar",
-                rubrik: "Prognos kvar",
+                rubrik: "Kostnad kvar",
                 bredd: 150,
                 typ: "sek",
                 summera: true,
@@ -260,13 +260,13 @@ export function Budget() {
                       onCommit={(v) => uppd("aktiviteter", a.id, "prognosKvar", v === "" || v === null ? null : v)}
                       className="max-w-[110px] text-right"
                     />
-                    <span className="text-xs text-ink-soft">{a.prognosKalla === "bedomning" ? "din bedömning" : "budget − utfall"}</span>
+                    <span className="text-xs text-ink-soft">{a.prognosKalla === "bedomning" ? "din bedömning" : "budget minus kostnad hittills"}</span>
                   </span>
                 ),
               },
               {
                 nyckel: "slut",
-                rubrik: "Prognos slut",
+                rubrik: "Kostnad totalt",
                 bredd: 140,
                 typ: "sek",
                 summera: true,
