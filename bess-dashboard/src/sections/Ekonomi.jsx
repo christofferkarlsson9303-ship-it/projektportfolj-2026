@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Prognoskort } from "../components/ekonomi/Prognoskort.jsx";
 import {
   Bar as RBar,
   BarChart,
@@ -355,6 +356,8 @@ export function Ekonomi() {
             hint={e.kvarSEK !== null ? fmtSEK(e.kvarSEK) : "belopp kräver kontraktsvärde"}
           />
         </div>
+
+        <Prognoskort pid={valtProjekt} />
 
         <Card
           id="ek-betalplan"

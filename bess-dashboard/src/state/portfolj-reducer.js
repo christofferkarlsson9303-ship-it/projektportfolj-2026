@@ -604,6 +604,14 @@ export function reducer(state, action) {
       return loggat({ ...state, epcBaslinje: [...lista, rad] }, rad.projektId, `Baslinje för tidplanen sparad ${rad.sparad}`);
     }
 
+    /* Veckans prognos: en rad per projekt och vecka, skrivs över om den sparas igen. */
+    case "SPARA_PROGNOS": {
+      const { rad } = action;
+      const lista = state.prognoser || [];
+      const finns = lista.some((r) => r.id === rad.id);
+      return { ...state, prognoser: finns ? lista.map((r) => (r.id === rad.id ? rad : r)) : [...lista, rad] };
+    }
+
     /* Fritextpost i ändringsloggen — för händelser utan statusövergång. */
     case "LOGGA":
       return loggat(state, action.projektId, action.text);
