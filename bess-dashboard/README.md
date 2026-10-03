@@ -69,6 +69,24 @@ Hela databasschemat ligger i `supabase/migrations/` — tabeller, RLS-regler,
 före 2026-09-24 är exporterade ur projektets migreringshistorik i efterhand;
 nya ändringar görs som nya filer här och körs med `supabase db push`.
 
+### Påminnelser om frister
+
+Edge Function `supabase/functions/frist-paminnelser` körs var 15:e minut och
+skickar en påminnelse när en frist blir akut (≤ 12 h kvar av 24) och när den
+passerat — underrättelse om ÄTA/hinder och incidentrapport. 24 timmar är er
+egen rutin. När projektet har en kontraktsprofil skrivs kontraktets gräns med
+i påminnelsen (Batch C: 10 bankdagar för hinder, §18.2). Varje frist påminns en gång per nivå (`frist_paminnelser`).
+Fristlogiken ligger i `supabase/functions/_shared/frister.js` och testas mot
+appens `fristrader` så att de inte glider isär.
+
+Driftsättning:
+1. Kör migreringen `20260929200000_frist_paminnelser.sql`.
+2. `supabase functions deploy frist-paminnelser` och sätt hemligheterna:
+   `PAMINNELSE_NYCKEL` (valfri lång sträng) samt `TEAMS_WEBHOOK_URL` och/eller
+   `RESEND_API_KEY` + `PAMINNELSE_TILL` (+ `PAMINNELSE_FRAN`, `APP_URL`).
+3. Prova: `curl -H "x-paminnelse-nyckel: …" "<projekt>/functions/v1/frist-paminnelser?torr=1"`.
+4. Kör `supabase/manuellt/frist_paminnelser_schema.sql` för schemaläggningen.
+
 ### Innan delat läge fungerar
 
 Lägg till appens adress under *Authentication → URL Configuration* i Supabase,
