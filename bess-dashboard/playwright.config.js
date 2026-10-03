@@ -30,6 +30,11 @@ export default defineConfig({
     trace: "retain-on-failure",
     locale: "sv-SE",
     timezoneId: "Europe/Stockholm",
+    // För miljöer med förinstallerad Chromium där Playwrights CDN inte är åtkomlig.
+    launchOptions: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ? {
+      executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
+      args: ["--no-sandbox", "--disable-dev-shm-usage"],
+    } : {},
   },
 
   projects: [

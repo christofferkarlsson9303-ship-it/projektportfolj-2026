@@ -153,3 +153,9 @@ main tbody tr.rad-sen:hover {
   background: var(--bad-bg);
 }
 
+
+/* Utskriftsportalen ligger utanför #root. Dölj hela skalet så att dess
+   min-höjd och toast inte skapar en tom första sida. */
+@media print {
+  body[data-utskrift] #root { display: none !important; }
+}

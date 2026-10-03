@@ -6,6 +6,8 @@ import { MILSTOLPE_MODELL } from "../data/konstanter.js";
 import { fmtSEK } from "../lib/format.js";
 import { betalRad, ekonomi, mUnderlagKlart, mstatusRad, nastaMilstolpe, projekt } from "../lib/berakningar.js";
 import { registerStatus } from "../lib/status.js";
+import { avvikandeAndelar, kontraktsText } from "../lib/kontraktsgrund.js";
+import { kontraktsprofil } from "../lib/kontraktsprofil.js";
 
 /* Betalningsmilstolparna M1–M7 på designsystemet: ett översiktskort med
    fakturerat, nästa lyft och kvar, och en ruta per milstolpe i ordning.
@@ -65,7 +67,7 @@ function Oversikt({ state, pid, p, nastaKod }) {
     <Card
       id="ms-rubrik"
       title={`Betalningsmilstolpar M1–M7 — ${(p.nr ? p.nr + " " : "") + p.namn}`}
-      subtitle="Kontraktets betalningsplan. Utlösande krav och andelar kommer ur projektmodellen; underlagen bockas av här och styr när lyftet kan aviseras."
+      subtitle={kontraktsText(state, pid, "Kontraktets betalningsplan enligt kontraktsprofilen. Utlösande krav och andelar kommer ur projektmodellen; underlagen bockas av här och styr när lyftet kan aviseras.", "Standardmall från Batch C, inte ditt kontrakts betalplan. Kontrollera andelar, utlösande krav och underlag mot projektets avtal innan du aviserar ett lyft.")}
     >
       <StatGroup items={tal} />
       <Meter value={e.faktProc} label={`Fakturerat av kontraktet för ${p.namn}`} />
@@ -177,6 +179,15 @@ export function Milstolpar() {
       <Projektvaljare />
       <div className="flex flex-col gap-4 lg:gap-6">
         <Oversikt state={state} pid={pid} p={p} nastaKod={nastaKod} />
+        {avvikandeAndelar(kontraktsprofil(state, pid), MILSTOLPE_MODELL).length ? (
+          <Callout ton="warn">
+            <b>Kontraktets andelar skiljer sig från sidans modell:</b>{" "}
+            {avvikandeAndelar(kontraktsprofil(state, pid), MILSTOLPE_MODELL)
+              .map((r) => `${r.kod} ${r.kontrakt ?? "saknas"} % i kontraktet, ${r.modell} % här`)
+              .join("; ")}
+            . Kontraktet gäller. Be administratören rätta betalplanen.
+          </Callout>
+        ) : null}
         {MILSTOLPE_MODELL.map((m) => (
           <Milstolpe key={m.kod} m={m} state={state} pid={pid} kv={kv} ar={m.kod === nastaKod} dispatch={dispatch} />
         ))}

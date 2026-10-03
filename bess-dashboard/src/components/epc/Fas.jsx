@@ -8,6 +8,7 @@ import { datumKort, idag } from "../../lib/datum.js";
 import { fasRad, mallDatum, planAnkare } from "../../lib/epc.js";
 import { FasStatus, Markeringar } from "./Delar.jsx";
 import { Kommentarer } from "./Punkt.jsx";
+import { EgenkontrollLage } from "./EgenkontrollLage.jsx";
 
 /* Ett steg i guiden: vad fasen går ut på, vilken grind som avslutar den och
    vilka kontroll- och hållpunkter som hör till. Varje punkt bockas av för
@@ -158,6 +159,8 @@ function IProjektet({ lage, pid, projektnamn }) {
       {!lage.grind.passerad && !lage.kvar ? (
         <p className="epc-grindforslag">Alla punkter är klara — {f.grind.kod} kan passeras.</p>
       ) : null}
+
+      <EgenkontrollLage key={`${pid}-${f.nr}`} pid={pid} fas={f.nr} />
 
       <div className="epc-grind">
         {lage.grind.passerad ? (

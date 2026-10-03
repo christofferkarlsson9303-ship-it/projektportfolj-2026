@@ -7,6 +7,7 @@ import { fmtSEK } from "../../lib/format.js";
 import { nyAtaPost } from "../../lib/nyaPoster.js";
 import { ataSummering, prisGrind, projekt, underrattelseLage } from "../../lib/berakningar.js";
 import { hamtaNamn } from "../../state/portfolj-reducer.js";
+import { FRIST, frist, fristText, kontraktsprofil } from "../../lib/kontraktsprofil.js";
 import { ViewSwitcher } from "./ViewSwitcher.jsx";
 import { useAtaVy } from "./vyval.js";
 import { AtaKanbanView } from "./AtaKanbanView.jsx";
@@ -51,6 +52,7 @@ export function Ata() {
   }
 
   const p = projekt(state, pid);
+  const hinder = frist(kontraktsprofil(state, pid), FRIST.hinder);
 
   const n = useMemo(() => {
     const rader = state.ur.filter((u) => u.projektId === pid);
@@ -111,6 +113,19 @@ export function Ata() {
             ton={larm ? "bad" : ""}
           />
         </div>
+
+        {hinder ? (
+          <Callout>
+            <b>Kontraktet: {hinder.rubrik.toLowerCase()} inom {fristText(hinder)}</b>
+            {hinder.ref ? ` (${hinder.ref})` : ""}. {hinder.foljd ? `Annars: ${hinder.foljd}` : ""} Larmet efter 24 timmar
+            är er egen rutin och kommer före kontraktets gräns. ÄTA kräver skriftlig beställning innan arbetet utförs.
+          </Callout>
+        ) : pid ? (
+          <Callout>
+            <b>Fristerna är en mall.</b> 24-timmarsfristen och prisgodkännandet kommer från Batch C. Läs in
+            projektets kontraktsprofil under Kontraktet för att se vad som gäller.
+          </Callout>
+        ) : null}
 
         {n.utan24.length ? (
           <Callout ton="bad">

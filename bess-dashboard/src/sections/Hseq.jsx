@@ -18,6 +18,7 @@ import { fmtSEK } from "../lib/format.js";
 import { idag } from "../lib/datum.js";
 import { nySkyddsrond } from "../lib/nyaPoster.js";
 import { hamtaNamn } from "../state/portfolj-reducer.js";
+import { kontraktsprofil, vite as kontraktsvite, viteTak } from "../lib/kontraktsprofil.js";
 
 /* HSEQ / BAS-U.
 
@@ -275,6 +276,7 @@ export function Hseq() {
   }, [apdMal]);
 
   const p = state.projekt.find((x) => x.id === pid);
+  const hseVite = kontraktsvite(kontraktsprofil(state, pid), "hse");
   if (!p) return null;
 
   const dagar = dagarSedanRond(state, pid);
@@ -383,8 +385,10 @@ export function Hseq() {
         {dagar !== null && dagar >= 14 ? (
           <Callout ton="bad">
             <b>Skyddsronden är försenad — {dagar} dagar sedan senaste.</b> Kravet är minst varannan vecka
-            och ronden ska dokumenteras i ENIA. Brott mot arbetsmiljöplanen är vitesgrundande (
-            {fmtSEK(HSEQ_VITE)} per tillfälle enligt kontraktet).
+            och ronden ska dokumenteras i ENIA.{" "}
+            {hseVite
+              ? `Vite enligt kontraktet${hseVite.ref ? ` (${hseVite.ref})` : ""}: ${fmtSEK(hseVite.beloppPerTillfalle)} per tillfälle${viteTak(hseVite, null) !== null ? `, högst ${fmtSEK(viteTak(hseVite, null))}` : ""}.${hseVite.nar ? ` ${hseVite.nar}` : ""}`
+              : `Standardmallen från Batch C anger ${fmtSEK(HSEQ_VITE)} per tillfälle. Läs in kontraktsprofilen för att se vad som gäller i ditt kontrakt.`}
           </Callout>
         ) : null}
 

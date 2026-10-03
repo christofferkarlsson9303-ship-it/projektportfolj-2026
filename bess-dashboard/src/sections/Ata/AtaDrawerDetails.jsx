@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { PdfExporter } from "../../components/print/PdfExporter.jsx";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { AtaPrisgodkannande, AtaUnderlag, AtaUnderrattelse } from "../../components/ui/AtaDokument.jsx";
 import { DatumFalt, Falt, Kryss, NumFalt, SelStatus } from "../../components/ui/Falt.jsx";
@@ -93,6 +94,7 @@ export function AtaDrawerDetails({ u, onStang }) {
   const { state, uppd, uppdStatus, uppdBool, taBort, laggTill } = usePortfolj();
   const { bekrafta, visaToast, oppnaPost, skrivUt } = useUi();
   const panelRef = useRef(null);
+  const [pdfTyp, setPdfTyp] = useState("underrattelse");
 
   const und = underrattelseLage(u);
   const pris = prisGrind(u);
@@ -354,6 +356,8 @@ export function AtaDrawerDetails({ u, onStang }) {
         </div>
 
         <div className="rowbtns">
+          <label className="text-sm">PDF-dokument<select value={pdfTyp} onChange={(e) => setPdfTyp(e.target.value)}><option value="underrattelse">Underrättelse</option><option value="pris">Prisgodkännande</option><option value="underlag">ÄTA-underlag</option></select></label>
+          <PdfExporter dokument={{ ata: u, projekt: projektet || { id: u.projektId, namn: "" }, dagbok, datum: idag(), skapadAv: hamtaNamn() }} typ={pdfTyp} label="Ladda ned ÄTA-PDF" />
           <button
             type="button"
             className="btn sec"

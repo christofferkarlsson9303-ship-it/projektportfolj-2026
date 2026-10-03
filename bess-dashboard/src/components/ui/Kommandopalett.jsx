@@ -11,8 +11,7 @@ import { ALLA_PUNKTER } from "../../data/bessChecklistData.ts";
    aria-activedescendant, så det aktiva alternativet läses upp vid piltangenter. */
 export function Kommandopalett() {
   const { state } = usePortfolj();
-  const { visa, setValtProjekt, oppnaPost } = useUi();
-  const [oppen, setOppen] = useState(false);
+  const { visa, setValtProjekt, oppnaPost, oppnaFaltmaterial, sokOppen: oppen, setSokOppen: setOppen } = useUi();
   const [q, setQ] = useState("");
   const [vald, setVald] = useState(0);
   const inputRef = useRef(null);
@@ -20,13 +19,13 @@ export function Kommandopalett() {
   const forraFokus = useRef(null);
 
   const index = useMemo(() => {
-    const ut = [];
-    VYER.filter((v) => v[0] !== "_sek").forEach(([id, namn]) =>
-      ut.push({ t: "Vy", label: namn, sub: "", kor: () => visa(id) })
+    const ut = [{ t: "Vy", label: "Projektets egenkontrollrapport", sub: "Beställare / slutdokumentation / hela projektet", kor: () => oppnaFaltmaterial({ mallpaket: "projekt" }) }, { t: "Vy", label: "Skapa fältmaterial", sub: "Arbetslista / egenkontroll / PDF", kor: () => oppnaFaltmaterial() }];
+    VYER.filter((v) => v[0] !== "_sek").forEach(([id, namn, lead]) =>
+      ut.push({ t: "Vy", label: namn, sub: lead, kor: () => visa(id) })
     );
     state.projekt.forEach((p) =>
       ut.push({
-        t: "Site",
+        t: "Projekt",
         label: (p.nr ? p.nr + " " : "") + p.namn,
         sub: p.ort || "",
         kor: () => {
@@ -42,7 +41,7 @@ export function Kommandopalett() {
         sub: (PILL[u.status] || [undefined, u.status])[1],
         kor: () => {
           setValtProjekt(u.projektId);
-          visa("ata");
+          oppnaPost("ata", u.id);
         },
       })
     );
@@ -61,7 +60,7 @@ export function Kommandopalett() {
       })
     );
     (state.risker || []).forEach((r) =>
-      ut.push({ t: "Risk", label: r.titel, sub: "RV " + riskvarde(r), kor: () => visa("risker") })
+      ut.push({ t: "Risk", label: r.titel, sub: "RV " + riskvarde(r), kor: () => { setValtProjekt(r.projektId); oppnaPost("risker", r.id); } })
     );
     (state.punkter || []).forEach((p) =>
       ut.push({ t: "Punkt", label: p.titel, sub: p.agare || "", kor: () => visa("punkter") })
@@ -79,11 +78,11 @@ export function Kommandopalett() {
       ut.push({ t: "Kontakt", label: k.namn, sub: `${k.roll} · ${k.org}`, kor: () => visa("kontakter") })
     );
     return ut;
-  }, [state, visa, setValtProjekt, oppnaPost]);
+  }, [state, visa, setValtProjekt, oppnaPost, oppnaFaltmaterial]);
 
   const traffar = useMemo(() => {
     const s = q.toLowerCase().trim();
-    if (!s) return index.filter((c) => c.t === "Vy" || c.t === "Site").slice(0, 14);
+    if (!s) return index.filter((c) => c.t === "Vy" || c.t === "Projekt").slice(0, 14);
     return index.filter((c) => `${c.label} ${c.t} ${c.sub}`.toLowerCase().includes(s)).slice(0, 40);
   }, [q, index]);
 
@@ -100,10 +99,10 @@ export function Kommandopalett() {
     };
     window.addEventListener("keydown", ned);
     return () => window.removeEventListener("keydown", ned);
-  }, []);
+  }, [setOppen]);
 
   useEffect(() => {
-    if (oppen) inputRef.current?.focus();
+    if (oppen) { forraFokus.current = document.activeElement; inputRef.current?.focus(); }
     // Utan preventScroll avbryter fokusåterställningen en rullning som målvyn
     // just startat — t.ex. checklistan som rullar fram en utpekad punkt.
     else if (forraFokus.current instanceof HTMLElement) forraFokus.current.focus({ preventScroll: true });
@@ -153,7 +152,7 @@ export function Kommandopalett() {
             setVald(0);
           }}
           onKeyDown={onKeyDown}
-          placeholder="Sök vy, site, ÄTA, risk, punkt eller kontakt…"
+          placeholder="Sök sida, projekt, ÄTA, risk, uppgift eller kontakt…"
           role="combobox"
           aria-expanded="true"
           aria-controls="cmdlist"
