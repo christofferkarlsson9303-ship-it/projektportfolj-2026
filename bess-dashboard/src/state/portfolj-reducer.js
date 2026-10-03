@@ -10,6 +10,7 @@ import { nyApdRad } from "../lib/apd.js";
 import { idag } from "../lib/datum.js";
 import { forslagText, kanTillampas, tillampaForslag } from "../lib/importera.js";
 import { angraFakturaunderlag, skapaFakturaunderlag } from "../lib/planering.js";
+import { projektstartFel } from "../lib/projektstart.js";
 
 /** Namnet används i ändringsloggen och sparas per webbläsare, inte i delad data. */
 export const NAMN_KEY = "batchc-portfolj-namn";
@@ -43,6 +44,7 @@ export function efterInlasning(state) {
   const projekt = state.projekt.map((p) => {
     const k = KANDA_MAPPAR[p.id];
     const nytt = { ...p };
+    if (nytt.kontraktsvarde === undefined) nytt.kontraktsvarde = null;
     if (k) {
       if (nytt.mapp === undefined || nytt.mapp === "") nytt.mapp = k.mapp;
       if (nytt.bestallare === undefined || nytt.bestallare === "") nytt.bestallare = k.bestallare;
@@ -230,6 +232,27 @@ export function reducer(state, action) {
       for (const p of state.andringslogg || []) if (!sedda.has(nyckel(p))) sedda.set(nyckel(p), p);
       const alla = [...sedda.values()].sort((a, b) => (a.ts < b.ts ? 1 : -1)).slice(0, 150);
       return { ...state, andringslogg: alla };
+    }
+
+    case "FALT_KONTROLL": {
+      const { rad } = action;
+      if (!rad?.id || !state.projekt.some((p) => p.id === rad.projektId)) return state;
+      const gamla = state.faltkontroller || [];
+      const fore = gamla.find((p) => p.id === rad.id);
+      const finns = !!fore;
+      const nytt = { ...state, faltkontroller: finns ? byt(gamla, rad.id, () => ({ ...rad })) : [...gamla, { ...rad }] };
+      const etiketter = { resultat: "resultat", datum: "kontrolldatum", kontrollant: "kontrollant", referens: "protokollreferens", notering: "notering", mallrevision: "mallrevision" };
+      const andringar = Object.entries(etiketter).filter(([k]) => (fore?.[k] || "") !== (rad[k] || "")).map(([k, namn]) => `${namn}: ${fore?.[k] || "tomt"} → ${rad[k] || "tomt"}`);
+      return andringar.length ? loggat(nytt, rad.projektId, `Egenkontroll ${rad.punktId} (${rad.omfattning}): ${andringar.join("; ")}`) : nytt;
+    }
+
+    case "SKAPA_PROJEKT": {
+      const { rad } = action;
+      if (!rad?.id || state.projekt.some((p) => p.id === rad.id) || projektstartFel(state, rad)) return state;
+      // Ekonomivärden ändras fortsatt via administratörens vanliga flöde.
+      const projekt = { ...rad, kontraktsvarde: null };
+      const nytt = efterInlasning({ ...state, projekt: [...state.projekt, projekt] });
+      return loggat(nytt, projekt.id, `Projekt skapat: ${projekt.nr || "nummer saknas"} ${projekt.namn}. Tomma mallar, inga tidigare resultat kopierade.`);
     }
 
     case "UPPDATERA": {

@@ -107,7 +107,7 @@ test("ett annat projekt väljs i lägesbilden och guiden följer med", async ({ 
 });
 
 test("version 1.2: källgenomgången, nyckelvärdena och de tolv motsägelserna finns med", async ({ page }) => {
-  await expect(page.getByRole("region", { name: "Så byggs en batteripark" })).toContainText("Version 1.2");
+  await expect(page.getByRole("region", { name: "Så byggs en batteripark" })).toContainText("Mallversion 1.2");
   await page.getByRole("searchbox", { name: "Sök i guiden" }).fill("3,21 V");
   await expect(page.locator(".epc-rad")).toHaveCount(1);
   await expect(rad(page, "15.17")).toBeVisible();

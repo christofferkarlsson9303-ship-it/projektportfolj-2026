@@ -2,6 +2,7 @@ import { Document, Font, Image, Page, StyleSheet, Text, View } from "@react-pdf/
 import logotyp from "../../assets/one-nordic-logo.png";
 import regular from "../../assets/fonts/DejaVuSans.ttf?inline";
 import bold from "../../assets/fonts/DejaVuSans-Bold.ttf?inline";
+import { kontrollNamn, kontrollBrister, kontrollSummering, rapportStatus } from "../../lib/projektkontroll.js";
 import { FALT_FORUTSATTNING } from "../../data/faltmaterial.js";
 
 // Lokala typsnitt: svenska tecken, Ω, pilar och tomma rutor även utan nät.
@@ -18,6 +19,7 @@ const s = StyleSheet.create({
   intro: { fontSize: 8, marginBottom: 8, lineHeight: 1.4 },
   source: { fontSize: 8, padding: 7, backgroundColor: "#f3f5f6", borderLeft: "2pt solid #005f76", marginBottom: 8, lineHeight: 1.4 },
   check: { border: "0.6pt solid #85959d", padding: 8, marginBottom: 8 },
+  indexRow: { border: "0.6pt solid #85959d", padding: 5, marginBottom: 4 },
   checkTitle: { fontWeight: 700, fontSize: 9, color: "#005f76", marginBottom: 4 },
   instruction: { fontSize: 8, lineHeight: 1.4, marginBottom: 5 },
   verification: { fontSize: 7.5, lineHeight: 1.4, padding: 5, backgroundColor: "#f3f5f6", marginBottom: 5 },
@@ -28,30 +30,37 @@ const s = StyleSheet.create({
 });
 
 function Header({ d, titel, moment }) {
-  return <View fixed style={s.head}>
+  return <View fixed wrap={false} style={s.head}>
     <View style={s.top}><Image src={logotyp} style={s.logo} /><Text style={s.title}>{titel}</Text></View>
     <Text style={s.meta}>{d.projekt.nr || d.projekt.id} · {d.projekt.namn} · {d.dokumentNr}</Text>
     <Text style={s.meta}>Datum: {d.datum} · Skapad av: {d.skapadAv || "________________"} · Mallrevision: {d.revision}</Text>
-    <Text style={s.meta}>Enhet/serienummer: {d.enhet || "________________"} · Utförare: {moment?.utforare || d.utforare || "________________"}</Text>
+    <Text style={s.meta}>Enhet/serienummer: {d.mallpaket === "projekt" ? d.omfattning : d.enhet || "________________"} · Utförare: {moment?.utforare || d.utforare || "________________"}</Text>
     <Text style={s.meta}>Ritning/revision: {d.ritning || "________________"}</Text>
     {moment ? <Text style={s.moment}>Moment {moment.nr}: {moment.titel}</Text> : null}
   </View>;
 }
 
-function Footer({ d }) {
-  return <View fixed style={s.foot}>
-    <Text>{d.dokumentNr} · Blank kontroll – återrapporteras separat</Text>
+function Footer({ d, arbetslista = false }) {
+  return <View fixed wrap={false} style={s.foot}>
+    <Text>{d.dokumentNr} · {arbetslista ? "Arbetslista – avprickning" : d.visaResultat ? "Registrerade resultat – separat underskrift" : "Blank checklista"}</Text>
     <Text render={({ pageNumber, totalPages }) => `Sida ${pageNumber} av ${totalPages}`} />
   </View>;
 }
 
-function Check({ p, arbetslista = false }) {
+function Check({ p, d, arbetslista = false }) {
   return <View style={s.check} wrap={false}>
     <Text style={s.checkTitle}>{arbetslista ? "□ " : ""}{p.id} · {p.titel}</Text>
     <Text style={s.instruction}>{p.instruktion}</Text>
     {p.verifiering ? <Text style={s.verification}>Verifiering: {p.verifiering}</Text> : null}
     <Text style={s.reference}>Kompetens: {p.roll} · EPC: {p.epc.join(", ") || "Ny detaljpunkt i momentmallen"}</Text>
-    {arbetslista ? <Text style={s.writing}>Datum / signatur / notering:</Text> : <>
+    {arbetslista ? <Text style={s.writing}>Datum / signatur / notering:</Text> : d.visaResultat ? <>
+      <Text style={s.instruction}>Resultat: {kontrollNamn(p.kontroll?.resultat)} · Datum: {p.kontroll?.datum || "Ej angivet"}</Text>
+      <Text style={s.instruction}>Kontrollant: {p.kontroll?.kontrollant || "Ej angiven"} · Kontrollerad mallrevision: {p.kontroll?.mallrevision || "Ej angiven"}</Text>
+      <Text style={s.instruction}>Bevis/protokoll: {p.kontroll?.referens || "Ej angivet"}</Text>
+      <Text style={s.instruction}>Mätvärde / avvikelse / åtgärd / motivering: {p.kontroll?.notering || "—"}</Text>
+      {kontrollBrister(p.kontroll, d.revision).length ? <Text style={s.verification}>Öppet: {kontrollBrister(p.kontroll, d.revision).join(" · ")}</Text> : null}
+      <Text style={s.writing}>Signatur: __________________ (namnet ovan är inte en underskrift)</Text>
+    </> : <>
       <View style={s.result}><Text>Resultat: □ OK    □ Ej OK    □ Ej tillämplig*</Text><Text>Datum: ______________</Text></View>
       <Text style={s.writing}>Mätvärde / Avvikelse / Notering:</Text>
       <View style={s.writing} />
@@ -71,9 +80,21 @@ export function EgenkontrollPdf({ dokument: d, typ = "egenkontroll" }) {
         <Text style={s.intro}>{d.inledning || FALT_FORUTSATTNING}</Text>
         {m.flode ? <Text style={s.source}>{m.flode}</Text> : null}
         <Text style={s.intro}>Utrustning: {m.utrustning}. Manual/provplan och revision: {m.referens || "EJ ANGIVEN – verifieras före utförande"}</Text>
-        {m.punkter.map((p) => <Check key={p.id} p={p} arbetslista={arbetslista} />)}
+        {m.punkter.map((p) => <Check key={p.id} p={p} d={d} arbetslista={arbetslista} />)}
         {!arbetslista ? <Text style={s.intro}>* Ej tillämplig motiveras i notering. En blankett per enhet/provomfattning.</Text> : null}
-        <Footer d={d} />
+        <Footer d={d} arbetslista={arbetslista} />
+      </Page>);
+      if (!arbetslista && d.mallpaket === "projekt") sidor.unshift(<Page key="projekt-summary" size="A4" style={s.page} wrap>
+        <Header d={d} titel="Projektets egenkontroll" />
+        <Text style={s.checkTitle}>{rapportStatus(d)}</Text>
+        <Text style={s.intro}>Beställare: {d.projekt.bestallare || "________________"}. Kontrollomfattning: {d.omfattning}. Kontrollplan/revision: {d.kontrollplan || "Ej angiven"}.</Text>
+        <Text style={s.source}>{d.visaResultat ? `${d.sammanstallning.klara} kompletta av ${d.antal} kontroller. ${d.sammanstallning.oppna} öppna, varav ${d.sammanstallning.avvikelser} Ej OK.` : "Blank checklista – resultat fylls i vid verklig kontroll."} {d.komplett ? "Hela projektmallen är vald." : "Delurval av projektet."}</Text>
+        <Text style={s.intro}>Kontrollera att alla berörda enheter/delområden ingår. Ej tillämplig ska motiveras. Protokoll/foton ska följa med eller finnas i slutdokumentationens index. Rapporten innebär ingen automatisk slutacceptans.</Text>
+        {d.moment.map((m) => { const sum = kontrollSummering([m], d.revision); return <View key={m.id} style={s.indexRow} wrap={false}><Text>{m.nr}. {m.titel} · {sum.totalt} punkter{d.visaResultat ? ` · ${sum.klara} kompletta · ${sum.oppna} öppna` : ""}</Text></View>; })}
+        <Text style={s.intro}>Bevis, mätvärden och öppna frågor redovisas per punkt. Sammanställd av: {d.skapadAv || "________________"} · {d.datum}.</Text>
+        <Text style={s.writing}>Granskad av: __________________ · Datum: __________ · Signatur: __________</Text>
+        <Text style={s.writing}>Beställarens mottagande / referens: __________________________________</Text>
+        <Footer d={d} arbetslista={arbetslista} />
       </Page>);
       if (arbetslista && d.uppgifter.length) sidor.unshift(<Page key="uppgifter" size="A4" style={s.page} wrap>
         <Header d={d} titel="Arbetslista – projektuppgifter" />
@@ -84,7 +105,7 @@ export function EgenkontrollPdf({ dokument: d, typ = "egenkontroll" }) {
           <Text style={s.reference}>Ritning/referens: {p.referens || d.ritning || "________________"}</Text>
           <Text style={s.writing}>Notering / Signatur:</Text>
         </View>)}
-        <Footer d={d} />
+        <Footer d={d} arbetslista={arbetslista} />
       </Page>);
       return sidor;
     })}

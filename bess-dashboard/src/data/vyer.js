@@ -7,6 +7,7 @@
 import { NAVIKON, VYER as VYER_ORIGINAL } from "./konstanter.js";
 
 const TILLAGDA = [
+  ["metod", "Min projektmetod", "Så leder du projektet: vad du gör varje dag, varje vecka och inför nästa steg."],
   [
     "idag",
     "Idag",
@@ -54,9 +55,45 @@ function medInskjutna(lista) {
 }
 
 /** Hela vylistan, med de tillagda vyerna först och de inskjutna på sin plats. */
-export const VYER = medInskjutna([...TILLAGDA, ...VYER_ORIGINAL]);
+const URSPRUNG = Object.fromEntries(medInskjutna([...TILLAGDA, ...VYER_ORIGINAL]).filter(([id]) => id !== "_sek").map((v) => [v[0], v]));
+const GRUPPER = [
+  ["Börja här", ["metod", "idag", "oversikt"]],
+  ["Planera jobbet", ["epc", "tidplan", "handlingsplan", "resurser", "kontakter"]],
+  ["Gör och följ upp", ["punkter", "tavla", "moten", "vecka", "dagbok", "hseq", "risker", "storning"]],
+  ["Följ pengarna", ["ata", "budget", "tid", "ekonomi", "milstolpar", "faktura"]],
+  ["Lämna över och spara", ["slutdok", "rapport", "rutiner", "data"]],
+];
+const ENKLA_LEADS = {
+  idag: "Vad behöver du ta hand om först? Öppna en rad för att komma till rätt ärende.",
+  oversikt: "Se läget i dina projekt, nästa arbete och frågor som behöver hjälp.",
+  epc: "Följ batteriparken genom 16 faser. En grind är ett klartecken för nästa steg.",
+  tavla: "Se uppgifter och ärenden som kort. Flytta dem när arbetsläget ändras.",
+  tidplan: "Se när arbeten och leveranser ska ske. Öppna en rad för detaljer.",
+  handlingsplan: "Skriv målet och vad som behöver göras, av vem och när.",
+  resurser: "Boka rätt personer och se om någon har för mycket arbete.",
+  tid: "Spara vem som arbetat, med vad och hur många timmar.",
+  budget: "Jämför vad arbetet får kosta med vad ni har använt hittills.",
+  faktura: "Samla tid och kostnader till ett granskat fakturaunderlag.",
+  milstolpar: "Kontrollera underlag och status för projektets betalningar.",
+  ata: "Följ ändrat arbete och hinder från upptäckt till beslut och faktura.",
+  ekonomi: "Se kontraktssumma, betalningsläge och ekonomi för ändrat arbete.",
+  moten: "Spara mötets beslut, ansvariga och datum i ett protokoll.",
+  vecka: "Gå igenom projektet varje vecka och ta hand om det som avviker.",
+  dagbok: "Spara vad som hände, vad ni gjorde och vilket underlag som finns.",
+  storning: "Beskriv vad som hindrade arbetet och hur det påverkar tid och kostnad.",
+  hseq: "Arbetsmiljö och säkerhet: arbetsplatsplan, skyddsronder, tillbud och uppföljning.",
+  risker: "Skriv vad som kan gå fel och vem som ska förebygga det.",
+  punkter: "En uppgift, en ansvarig och ett datum. Skapa arbetslistor till fältet.",
+  slutdok: "Samla, granska och lämna ritningar, provresultat och manualer till beställaren.",
+  rapport: "Granska och skriv ut projektets läge till beställaren.",
+  rutiner: "Slå upp rätt arbetssätt när du behöver hjälp med en projektsituation.",
+  kontakter: "Hitta ansvariga, leverantörer och rätt kontaktuppgifter.",
+  data: "Kontrollera lagringen, granska importer och ta en säkerhetskopia.",
+};
+export const VYER = GRUPPER.flatMap(([namn, ids]) => [["_sek", namn], ...ids.map((id) => [id, URSPRUNG[id][1], ENKLA_LEADS[id] || URSPRUNG[id][2]])]);
+export const ENKEL_MENY = new Set(["metod", "idag", "oversikt", "epc", "tidplan", "punkter", "ata", "hseq", "slutdok"]);
 
-export const NAVIKONER = { ...NAVIKON, ...IKONER_TILLAGDA };
+export const NAVIKONER = { ...NAVIKON, ...IKONER_TILLAGDA, metod: '<path d="M4 5h16v14H4zM8 9h8M8 13h8M8 17h4"/>' };
 
 /** Uppslagstabell id → {namn, lead}. */
 export const VYMETA = Object.fromEntries(
