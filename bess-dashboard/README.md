@@ -69,12 +69,13 @@ Hela databasschemat ligger i `supabase/migrations/` — tabeller, RLS-regler,
 före 2026-09-24 är exporterade ur projektets migreringshistorik i efterhand;
 nya ändringar görs som nya filer här och körs med `supabase db push`.
 
-### Påminnelser om ABT 06-frister
+### Påminnelser om frister
 
 Edge Function `supabase/functions/frist-paminnelser` körs var 15:e minut och
 skickar en påminnelse när en frist blir akut (≤ 12 h kvar av 24) och när den
-passerat — underrättelse om ÄTA/hinder (ABT 06 kap. 2 § 7, kap. 5 § 4) och
-incidentrapport. Varje frist påminns en gång per nivå (`frist_paminnelser`).
+passerat — underrättelse om ÄTA/hinder och incidentrapport. 24 timmar är er
+egen rutin. När projektet har en kontraktsprofil skrivs kontraktets gräns med
+i påminnelsen (Batch C: 10 bankdagar för hinder, §18.2). Varje frist påminns en gång per nivå (`frist_paminnelser`).
 Fristlogiken ligger i `supabase/functions/_shared/frister.js` och testas mot
 appens `fristrader` så att de inte glider isär.
 

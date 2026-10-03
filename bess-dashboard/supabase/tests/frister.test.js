@@ -93,7 +93,9 @@ describe("påminnelser och meddelande", () => {
 
   it("meddelandet har förfallet först och projektnamn", () => {
     const m = meddelande(paminnelser(poster(nu), nu), [{ id: "36037", namn: "Växjö Batteripark" }], "https://app");
-    expect(m.amne).toMatch(/^ABT 06: \d+ frister passerade$/);
+    expect(m.amne).toMatch(/^Frister: \d+ passerade enligt er 24-timmarsrutin$/);
+    expect(m.text).toContain("Se sidan Kontraktet");
+    expect(m.text).not.toContain("ABT 06");
     const rader = m.text.split("\n").filter((r) => /^(PASSERAD|AKUT)/.test(r));
     const forstaAkut = rader.findIndex((r) => r.startsWith("AKUT"));
     expect(rader.slice(forstaAkut).every((r) => r.startsWith("AKUT"))).toBe(true);
@@ -103,6 +105,13 @@ describe("påminnelser och meddelande", () => {
 
   it("bara akuta: ämnet säger inom 12 h", () => {
     const akut = paminnelser(poster(nu), nu).filter((f) => f.niva === "akut").slice(0, 1);
-    expect(meddelande(akut).amne).toBe("ABT 06: 1 frist går ut inom 12 h");
+    expect(meddelande(akut).amne).toBe("Frister: 1 går ut inom 12 h enligt er 24-timmarsrutin");
+  });
+
+  it("skriver kontraktets gräns för hinder när projektet har en kontraktsprofil", () => {
+    const s = { ...poster(nu), kontrakt: [{ projektId: "36037", frister: [{ id: "hinder", varde: 10, enhet: "bankdagar", ref: "§18.2" }] }] };
+    const rad = fristlage(s, nu).find((f) => f.id === "u25");
+    expect(rad.text).toContain("Kontraktets gräns: 10 bankdagar (§18.2)");
+    expect(fristlage(poster(nu), nu).find((f) => f.id === "u25").text).not.toContain("Kontraktets");
   });
 });

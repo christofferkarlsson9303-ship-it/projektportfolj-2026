@@ -1,4 +1,4 @@
-/* Påminnelser om ABT 06-frister — själva körningen, utan Deno och Supabase.
+/* Påminnelser om frister — själva körningen, utan Deno och Supabase.
    index.ts kopplar in lagret (databasen) och kanalerna (mejl, Teams); här
    ligger logiken så att den går att testa i Vitest.
 
@@ -130,9 +130,7 @@ export function kanalerFranMiljo(env, hamta = fetch) {
   return ut;
 }
 
-/** Portföljens frist-relevanta listor ur rader i poster eller dokumentet i app_state. */
-export function portfoljUrRader(rader) {
-  const ut = { ur: [], hseqIncidenter: [], projekt: [] };
-  for (const r of rader) if (ut[r.lista]) ut[r.lista].push(r.data);
-  return ut;
+/** Portföljens frist-relevanta listor ur dokumentet i app_state. */
+export function portfoljUrDokument(v = {}) {
+  return { ur: v.ur ?? [], hseqIncidenter: v.hseqIncidenter ?? [], projekt: v.projekt ?? [], kontrakt: v.kontrakt ?? [] };
 }

@@ -1,4 +1,4 @@
-// Edge Function: påminnelser om ABT 06-frister.
+// Edge Function: påminnelser om frister (er 24-timmarsrutin, med kontraktets gräns i texten).
 //
 // Anropas av pg_cron var 15:e minut (se supabase/manuellt/frist_paminnelser_schema.sql).
 // Kräver headern x-paminnelse-nyckel = PAMINNELSE_NYCKEL.
@@ -14,9 +14,7 @@
 // SUPABASE_URL och SUPABASE_SERVICE_ROLE_KEY sätts av plattformen.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { kanalerFranMiljo, korPaminnelser, portfoljUrRader } from "./hanterare.js";
-
-const LISTOR = ["ur", "hseqIncidenter", "projekt"];
+import { kanalerFranMiljo, korPaminnelser, portfoljUrDokument } from "./hanterare.js";
 
 Deno.serve(async (req) => {
   const env = Deno.env.toObject();
@@ -30,21 +28,14 @@ Deno.serve(async (req) => {
 
   const lager = {
     async lasPortfolj() {
-      const { data, error } = await db
-        .from("poster")
-        .select("lista, data")
-        .in("lista", LISTOR)
-        .eq("borttagen", false);
-      if (!error) return portfoljUrRader(data ?? []);
-      // Tabellen poster finns inte än: portföljen ligger som dokument i app_state.
-      const { data: dok, error: fel2 } = await db
+      // Portföljen ligger som ett dokument i app_state.
+      const { data: dok, error } = await db
         .from("app_state")
         .select("value")
         .eq("key", "portfolj/state")
         .maybeSingle();
-      if (fel2) throw new Error(fel2.message);
-      const v = dok?.value ?? {};
-      return { ur: v.ur ?? [], hseqIncidenter: v.hseqIncidenter ?? [], projekt: v.projekt ?? [] };
+      if (error) throw new Error(error.message);
+      return portfoljUrDokument(dok?.value ?? {});
     },
     async reservera(rader) {
       const { data, error } = await db

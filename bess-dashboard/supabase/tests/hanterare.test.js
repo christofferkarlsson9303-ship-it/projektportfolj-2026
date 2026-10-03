@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { kanalerFranMiljo, korPaminnelser, portfoljUrRader } from "../functions/frist-paminnelser/hanterare.js";
+import { kanalerFranMiljo, korPaminnelser, portfoljUrDokument } from "../functions/frist-paminnelser/hanterare.js";
 
 const NU = new Date("2026-09-29T20:00:00+02:00").getTime();
 const iso = (h) => new Date(NU - h * 3600000).toISOString();
@@ -137,14 +137,14 @@ describe("kanaler", () => {
   });
 });
 
-describe("portfoljUrRader", () => {
-  it("delar upp raderna per lista och ignorerar övriga", () => {
-    expect(
-      portfoljUrRader([
-        { lista: "ur", data: { id: 1 } },
-        { lista: "risker", data: { id: 2 } },
-        { lista: "projekt", data: { id: 3 } },
-      ])
-    ).toEqual({ ur: [{ id: 1 }], hseqIncidenter: [], projekt: [{ id: 3 }] });
+describe("portfoljUrDokument", () => {
+  it("plockar fristlistorna och kontraktsprofilerna ur dokumentet", () => {
+    expect(portfoljUrDokument({ ur: [{ id: 1 }], risker: [{ id: 2 }], projekt: [{ id: 3 }], kontrakt: [{ projektId: "3" }] })).toEqual({
+      ur: [{ id: 1 }],
+      hseqIncidenter: [],
+      projekt: [{ id: 3 }],
+      kontrakt: [{ projektId: "3" }],
+    });
+    expect(portfoljUrDokument()).toEqual({ ur: [], hseqIncidenter: [], projekt: [], kontrakt: [] });
   });
 });

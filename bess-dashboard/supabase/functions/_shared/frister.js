@@ -1,4 +1,4 @@
-/* ABT 06-frister för påminnelser — samma regler som Idag-vyn
+/* Frister för påminnelser — samma regler som Idag-vyn
    (src/lib/agenda.js: fristrader), men utan beroenden så att modulen går att
    köra i en Edge Function (Deno, UTC) lika väl som i appen.
 
@@ -50,6 +50,12 @@ export function timmarSedan(varde, nuMs, zon = TIDSZON) {
   return t === null ? null : Math.round((nuMs - t) / 3600000);
 }
 
+/** Kontraktets frist för hinder som tillägg till texten, eller tomt. */
+function kontraktsgrans(state, pid) {
+  const f = (state.kontrakt || []).find((k) => k.projektId === pid)?.frister?.find((x) => x.id === "hinder");
+  return f ? `. Kontraktets gräns: ${f.varde} ${f.enhet}${f.ref ? ` (${f.ref})` : ""}` : "";
+}
+
 const STANGD = new Set(["stangd", "utgar"]);
 const INCIDENTNAMN = { tillbud: "Tillbud", olycka: "Olycka", miljo: "Miljöincident" };
 
@@ -60,9 +66,10 @@ function niva(h) {
 }
 
 /**
- * Löpande frister: ÄTA-underrättelse inom 24 h (ABT 06 kap. 2 § 7, kap. 5 § 4)
- * och incidentrapport inom 24 h.
- * @param {{ur?: object[], hseqIncidenter?: object[]}} state
+ * Löpande frister: ÄTA-underrättelse och incidentrapport inom 24 h. 24 timmar
+ * är er egen rutin. Kontraktets gräns (kontraktsprofilen) skrivs med i texten
+ * när den finns — för Batch C är den 10 bankdagar för hinder (§18.2).
+ * @param {{ur?: object[], hseqIncidenter?: object[], kontrakt?: object[]}} state
  * @returns {{nyckel:string, id:string, typ:string, niva:string, pid:string|null,
  *            titel:string, timmar:number|null, kvar:number|null, text:string}[]}
  */
@@ -74,10 +81,11 @@ export function fristlage(state, nuMs = Date.now(), zon = TIDSZON) {
     if (u.underrattelseDatum) continue;
     const h = u.handelseDatum ? timmarSedan(u.handelseDatum, nuMs, zon) : null;
     const n = niva(h);
+    const grans = kontraktsgrans(state, u.projektId);
     ut.push({
       nyckel: `ur:${u.id}`,
       id: u.id,
-      typ: "ÄTA-underrättelse",
+      typ: "ÄTA-underrättelse (egen rutin 24 h)",
       niva: n,
       pid: u.projektId ?? null,
       titel: `${u.nr || ""} ${u.benamning || ""}`.trim(),
@@ -85,10 +93,10 @@ export function fristlage(state, nuMs = Date.now(), zon = TIDSZON) {
       kvar: h === null ? null : 24 - h,
       text:
         n === "oklar"
-          ? "Händelsedatum saknas — fristen kan inte räknas"
+          ? `Händelsedatum saknas — fristen kan inte räknas${grans}`
           : n === "forfallen"
-            ? `Underrättelse saknas — ${Math.floor(h / 24)} dygn sedan händelsen`
-            : `Underrättelse ska skickas inom ${24 - h} h`,
+            ? `Underrättelse saknas — ${Math.floor(h / 24)} dygn sedan händelsen${grans}`
+            : `Underrättelse ska skickas inom ${24 - h} h${grans}`,
     });
   }
 
@@ -134,8 +142,8 @@ export function meddelande(lista, projekt = [], appUrl = "") {
   );
   const forfallna = sorterad.filter((f) => f.niva === "forfallen").length;
   const amne = forfallna
-    ? `ABT 06: ${forfallna} frist${forfallna > 1 ? "er" : ""} passerad${forfallna > 1 ? "e" : ""}`
-    : `ABT 06: ${sorterad.length} frist${sorterad.length > 1 ? "er" : ""} går ut inom 12 h`;
+    ? `Frister: ${forfallna} passerad${forfallna > 1 ? "e" : ""} enligt er 24-timmarsrutin`
+    : `Frister: ${sorterad.length} går ut inom 12 h enligt er 24-timmarsrutin`;
   const rader = sorterad.map(
     (f) =>
       `${f.niva === "forfallen" ? "PASSERAD" : "AKUT"} · ${f.typ} · ${namn.get(f.pid) || f.pid || "—"} · ${f.titel}\n  ${f.text}`
@@ -145,7 +153,7 @@ export function meddelande(lista, projekt = [], appUrl = "") {
     "",
     ...rader,
     "",
-    "Missad underrättelse kan kosta rätten till ersättning (ABT 06 kap. 2 § 7).",
+    "24 timmar är er egen rutin och kommer före kontraktets grans. Missar ni kontraktets grans kan rätten till ersättning och tidsförlängning gå förlorad. Se sidan Kontraktet.",
     appUrl ? `Öppna Idag: ${appUrl}` : "",
   ]
     .filter((r, i, a) => r !== "" || a[i - 1] !== "")
