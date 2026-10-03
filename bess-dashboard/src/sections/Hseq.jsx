@@ -18,6 +18,7 @@ import { fmtSEK } from "../lib/format.js";
 import { idag } from "../lib/datum.js";
 import { nySkyddsrond } from "../lib/nyaPoster.js";
 import { hamtaNamn } from "../state/portfolj-reducer.js";
+import { harBatchCKontrakt } from "../lib/kontraktsgrund.js";
 
 /* HSEQ / BAS-U.
 
@@ -383,8 +384,10 @@ export function Hseq() {
         {dagar !== null && dagar >= 14 ? (
           <Callout ton="bad">
             <b>Skyddsronden är försenad — {dagar} dagar sedan senaste.</b> Kravet är minst varannan vecka
-            och ronden ska dokumenteras i ENIA. Brott mot arbetsmiljöplanen är vitesgrundande (
-            {fmtSEK(HSEQ_VITE)} per tillfälle enligt kontraktet).
+            och ronden ska dokumenteras i ENIA.{" "}
+            {harBatchCKontrakt(pid)
+              ? `Brott mot arbetsmiljöplanen är vitesgrundande (${fmtSEK(HSEQ_VITE)} per tillfälle enligt kontraktet).`
+              : "Kontrollera i projektets kontrakt om brott mot arbetsmiljöplanen ger vite och hur stort."}
           </Callout>
         ) : null}
 

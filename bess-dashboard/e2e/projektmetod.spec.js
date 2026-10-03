@@ -44,6 +44,10 @@ test("nytt projekt har tomma mallar och finns kvar efter omladdning", async ({ p
   await page.reload();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Min projektmetod");
   await expect(page.getByRole("region", { name: "En arbetsmetod för varje projekt", exact: true })).toContainText("Kalmar nytt testprojekt");
+  await gaTill(page, "Milstolpar M1–M7");
+  await expect(page.locator("main")).toContainText("Standardmall från Batch C, inte ditt kontrakts betalplan");
+  await gaTill(page, "ÄTA och hinder");
+  await expect(page.locator("main")).toContainText("Fristerna är en mall.");
   await gaTill(page, "Slutdokumentation");
   await expect(page.locator(".slutdok-rad").first()).toContainText("Ej påbörjad");
   await page.getByRole("button", { name: "Projektets egenkontrollrapport", exact: true }).click();

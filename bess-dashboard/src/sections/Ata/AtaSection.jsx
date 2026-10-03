@@ -7,6 +7,7 @@ import { fmtSEK } from "../../lib/format.js";
 import { nyAtaPost } from "../../lib/nyaPoster.js";
 import { ataSummering, prisGrind, projekt, underrattelseLage } from "../../lib/berakningar.js";
 import { hamtaNamn } from "../../state/portfolj-reducer.js";
+import { harBatchCKontrakt } from "../../lib/kontraktsgrund.js";
 import { ViewSwitcher } from "./ViewSwitcher.jsx";
 import { useAtaVy } from "./vyval.js";
 import { AtaKanbanView } from "./AtaKanbanView.jsx";
@@ -111,6 +112,13 @@ export function Ata() {
             ton={larm ? "bad" : ""}
           />
         </div>
+
+        {pid && !harBatchCKontrakt(pid) ? (
+          <Callout>
+            <b>Fristerna är en mall.</b> 24-timmarsfristen och prisgodkännandet kommer från Batch C. Kontrollera
+            underrättelsefrist, prisregler och ersättning i projektets eget kontrakt.
+          </Callout>
+        ) : null}
 
         {n.utan24.length ? (
           <Callout ton="bad">

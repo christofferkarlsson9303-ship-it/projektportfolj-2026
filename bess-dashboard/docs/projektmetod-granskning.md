@@ -69,6 +69,11 @@ CSV/Excel i återanvändbara tabeller, samt loggning och befintlig lagringssynk.
    Escape. Ändringsloggen visar vilket kontrollfält som ändrats och
    gammalt/nytt värde. Lokala loggvisningen behåller de senaste 150 posterna;
    befintlig molnlogg använder separat append-only-lagring.
+8. **Mallvillkor märks som mallar.** För projekt utanför Batch C visar
+   Milstolpar och Ekonomi att M1–M7 är en standardmall och inte projektets
+   betalplan. ÄTA och hinder visar att 24-timmarsfristen och prisgodkännandet
+   kommer från Batch C. HSEQ anger inte Batch C:s vitesbelopp som projektets
+   kontraktsvillkor. Batch C-projekten (36037, 36038) visas som tidigare.
 
 ## Så använder du sidan som metod
 
@@ -117,10 +122,10 @@ alltid välja ett värde enbart för att det verkar strängare.
 
 ## Verifiering
 
-Lint, typkontroll och produktionsbygge godkända. 297 enhetstester och
+Lint, typkontroll och produktionsbygge godkända. 299 enhetstester och
 344 webbläsartester godkända; 10 villkorade webbläsartester hoppades över.
 Webbläsartester täcker
 nya projekt, återladdning, enkel/hel meny, sökning, ordlista, samtliga sidors
-hjälp, gemensamma kontrollresultat och Escape. Befintliga arbetsflöden
+hjälp, gemensamma kontrollresultat, mallmärkning i nya projekt och Escape. Befintliga arbetsflöden
 regressionstestas på dator och mobil. Bilder granskas för överflödande
 innehåll, textstorlek och mörkt läge.
