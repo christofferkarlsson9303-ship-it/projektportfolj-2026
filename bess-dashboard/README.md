@@ -1,5 +1,7 @@
 # Projektportfölj BESS
 
+Claude och andra agenter: läs [`CLAUDE.md`](CLAUDE.md) och [`docs/prototyp-36037.md`](docs/prototyp-36037.md) innan ni ändrar Idag, tidplan, ÄTA eller utskrift. PR 28 är snabbutskrift. Grok-prototypen ska inte mergas som en andra app.
+
 React-versionen av projektportföljen för ONE Nordics batteriparker. Alla vyer
 är flyttade från originalfilen, som är arkiverad i
 [`arkiv/`](arkiv/README.md) som referens för originalets beteende.
