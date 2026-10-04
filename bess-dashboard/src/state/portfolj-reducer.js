@@ -12,6 +12,7 @@ import { forslagText, kanTillampas, tillampaForslag } from "../lib/importera.js"
 import { angraFakturaunderlag, skapaFakturaunderlag } from "../lib/planering.js";
 import { kalkylRader, kalkylSummor } from "../lib/atakalkyl.js";
 import { fmtSEK } from "../lib/format.js";
+import { MALLAR, arNal, objektFel, punkterForSite } from "../lib/site.js";
 import { projektstartFel } from "../lib/projektstart.js";
 import { granskaProfil, rensaProfil } from "../lib/kontraktsprofil.js";
 
@@ -223,6 +224,14 @@ function medKalkylrader(state, id, andra) {
     ...state,
     ur: byt(state.ur, id, (r) => ({ ...r, kalkyl: { ...(r.kalkyl || {}), rader, uppdaterad: idag() } })),
   };
+}
+
+/** "Skid 3" för en volym, "Nål på p2 Vågkvitto …" för en nål. */
+function siteEtikett(state, o) {
+  if (!arNal(o)) return o.namn || MALLAR[o.typ]?.namn || "Objekt";
+  const p = (state.punkter || []).find((x) => x.id === o.punktId);
+  const titel = p ? String(p.titel) : o.punktId;
+  return `Nål på ${titel.length > 50 ? titel.slice(0, 47) + "…" : titel}`;
 }
 
 function loggat(state, projektId, text) {
@@ -508,6 +517,41 @@ export function reducer(state, action) {
       };
       const fore = u.belopp === null || u.belopp === undefined || u.belopp === "" ? "utan belopp" : fmtSEK(u.belopp);
       return loggat(ut, u.projektId, `${u.nr}: belopp ur kalkylen ${fore} → ${fmtSEK(netto)} (exkl. moms)`);
+    }
+
+    /* ---------- Siten ----------
+       Volymer och nålar per projekt. En rad som inte går att spara (en nål
+       utan punkt, en volym utan mått) avvisas — state lämnas orört. Flytt och
+       måttändringar loggas inte, det skulle fylla loggen när någon drar. */
+    case "SITE_LAGG_TILL": {
+      const { rad } = action;
+      if (objektFel(rad, punkterForSite(state, rad?.projektId)) !== null) return state;
+      const ut = { ...state, siteObjekt: [...(state.siteObjekt || []), rad] };
+      return loggat(ut, rad.projektId, `Site: ${siteEtikett(state, rad)} placerad`);
+    }
+
+    case "SITE_ANDRA": {
+      const { id, andring } = action;
+      const o = (state.siteObjekt || []).find((r) => r.id === id);
+      if (!o) return state;
+      const nytt = { ...o, ...andring, id: o.id, projektId: o.projektId, typ: o.typ };
+      if (objektFel(nytt, punkterForSite(state, o.projektId)) !== null) return state;
+      return { ...state, siteObjekt: byt(state.siteObjekt, id, () => nytt) };
+    }
+
+    case "SITE_TA_BORT": {
+      const o = (state.siteObjekt || []).find((r) => r.id === action.id);
+      if (!o) return state;
+      const ut = { ...state, siteObjekt: state.siteObjekt.filter((r) => r.id !== o.id) };
+      return loggat(ut, o.projektId, `Site: ${siteEtikett(state, o)} borttagen`);
+    }
+
+    /* Återställ = tomt läge för projektet. Andra projekts objekt lämnas. */
+    case "SITE_ATERSTALL": {
+      const { projektId } = action;
+      const kvar = (state.siteObjekt || []).filter((r) => r.projektId !== projektId);
+      if (kvar.length === (state.siteObjekt || []).length) return state;
+      return loggat({ ...state, siteObjekt: kvar }, projektId, "Site: återställd till tom tomt");
     }
 
     /* ---------- Byggmöten ----------

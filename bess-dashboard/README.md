@@ -188,6 +188,32 @@ befintligt ärende (`src/lib/atakalkyl.js`, `src/sections/Ata/AtaKalkyl.jsx`):
 - **Avi** skrivs ut via `#utskrift` (`AtaAvi.jsx`) eller som PDF (`AtaPdf`,
   typ `avi`), med två signaturrutor. **CSV** har semikolon och BOM.
 
+### Siten i 3D
+
+Vyn *Siten i 3D* (vy-id `site`) visar valt projekts tomt, 80 × 52 m, med
+`three` (`src/sections/Site/`, logiken i `src/lib/site.js`):
+
+- **Objekt**: skid och container 6,1 × 2,5 × 2,9 m, E-House 12 × 3,2 × 3,4 m,
+  trafo 3,2 × 2,6 × 2,6 m, låda och nål. Välj en mall och klicka på marken —
+  i 3D-vyn eller i planvyn. Ett markerat objekt kan dras, döpas om och få
+  bredd, djup, höjd och rotation. En nål pekar alltid på en punkt i `punkter`
+  (id); en nål utan punkt går inte att spara.
+- **Data**: listan `siteObjekt` i `portfolj/state`, en rad per objekt med
+  `projektId`. Slås ihop rad för rad i `sammanfoga.js`. *Återställ* tömmer bara
+  valt projekt. Flytt och mått loggas inte; placering och borttagning gör det.
+- **Gå in**: three, högerhänt, +Y upp, yaw 0 tittar mot −Z. W/S fram och bak,
+  A/D strafe åt vänster och höger (pilarna gör samma), Shift springer, Q/E upp
+  och ner, musen tittar med pekarlås. Kollision mot volymens låda i lokal
+  rotation med 0,45 m marginal — ett blockerat steg stannar. På pekskärm finns
+  en joystick nere till vänster.
+- **Situationsplan**: en bild som marktextur, med bredd i meter och norr i
+  grader. Den ligger bara i `sessionStorage` (`batchc-situationsplan:<projekt>`)
+  — aldrig i `portfolj/state`, aldrig i synken.
+- **Idag** visar en toppvy ritad ur samma objekt under bandet, bara när
+  projektet har volymer. Klick öppnar siten.
+- Scenen ritas bara när något ändrats och när den syns. Utan grafikkort
+  (SwiftShader) stängs skuggor och autorotation av; utan WebGL visas planvyn.
+
 ## Bygga batteripark
 
 Kapitlet *Bygga batteripark* (vy-id `epc`) bygger på "Bygga batteripark som

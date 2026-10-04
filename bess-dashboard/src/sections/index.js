@@ -29,6 +29,7 @@ import { Tidrapport } from "./Tidrapport.jsx";
 import { Budget } from "./Budget.jsx";
 import { Faktura } from "./Faktura.jsx";
 import { Kontrakt } from "./Kontrakt.jsx";
+import { Site } from "./Site/Site.jsx";
 
 export const SEKTIONER = {
   metod: Projektmetod,
@@ -36,6 +37,7 @@ export const SEKTIONER = {
   idag: Idag,
   oversikt: DashboardView,
   epc: EpcChecklista,
+  site: Site,
   tavla: Tavla,
   tidplan: Tidplan,
   resurser: Resurser,

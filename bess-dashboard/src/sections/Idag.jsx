@@ -2,12 +2,14 @@ import { useMemo, useState } from "react";
 import { ChevronRight, CircleCheck } from "lucide-react";
 import { usePortfolj, useUi } from "../state/hooks.js";
 import { PTag } from "../components/ui/PTag.jsx";
-import { Callout, Card, StatusBadge } from "../components/ds/index.js";
+import { Callout, Card, Overline, StatusBadge } from "../components/ds/index.js";
 import { Vyvaljare } from "../components/ui/Vyvaljare.jsx";
 import { AGENDATYPER, arbetslage, dagsetikett } from "../lib/agenda.js";
 import { kritiskLinje } from "../lib/kritiskLinje.js";
 import { datumKort, idag } from "../lib/datum.js";
 import { useSnabbUtskrift } from "../components/field/SnabbUtskrift.jsx";
+import { SiteToppvy } from "../components/site/SiteToppvy.jsx";
+import { arNal, arOppenPunkt, siteObjekt } from "../lib/site.js";
 
 /* Idag — projektledarens arbetslista.
 
@@ -172,6 +174,12 @@ export function Idag() {
         .filter(Boolean))].sort((a, b) => a.localeCompare(b, "sv")).slice(0, 4)
     : [];
 
+  /* Siten för valt projekt — toppvyn visas bara när det finns volymer. */
+  const site = p ? siteObjekt(state, p.id) : [];
+  const siteVolymer = site.filter((o) => !arNal(o)).length;
+  const siteNalar = site.filter(arNal).map((o) => ({ o, punkt: (state.punkter || []).find((x) => x.id === o.punktId) }));
+  const oppnaNalar = siteNalar.filter((n) => arOppenPunkt(n.punkt)).length;
+
   /* Hoppa till en agendapost: byt projekt och gå till den vy som äger typen. */
   const oppnaAgenda = (rad) => {
     if (rad.pid && rad.pid !== "bada") setValtProjekt(rad.pid);
@@ -304,6 +312,46 @@ export function Idag() {
           )}
         </div>
       </section>
+
+      {/* ---------- Siten ovanifrån ----------
+          Ritad ur samma volymer som 3D-vyn. Ingen ruta utan volymer. */}
+      {siteVolymer ? (
+        <Card
+          id="idag-site"
+          title="Siten"
+          subtitle={`${siteVolymer} ${siteVolymer === 1 ? "volym" : "volymer"}${oppnaNalar ? `, ${oppnaNalar} ${oppnaNalar === 1 ? "nål" : "nålar"} på öppna punkter` : ""}. Klicka på bilden för att gå in.`}
+        >
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,520px)_minmax(0,1fr)] md:items-start">
+            <button
+              type="button"
+              onClick={() => visa("site")}
+              aria-label={`Öppna siten för ${p.nr ? `${p.nr} ` : ""}${p.namn}`}
+              className="block w-full cursor-pointer rounded-lg border border-solid border-hairline bg-transparent p-0 transition-colors hover:border-one-bla focus-visible:outline focus-visible:outline-2 focus-visible:outline-one-bla"
+            >
+              <SiteToppvy objekt={site} etikett="Toppvy över siten" className="rounded-lg" />
+            </button>
+            <div className="flex min-w-0 flex-col gap-2">
+              <Overline>Nålar på siten</Overline>
+              {siteNalar.length ? (
+                <ul className="m-0 list-none p-0 text-[13px]">
+                  {siteNalar.map(({ o, punkt }) => (
+                    <li key={o.id} className="flex items-baseline gap-2 border-0 border-t border-solid border-hairline py-1.5 first:border-t-0">
+                      <span aria-hidden="true" className="h-2 w-2 shrink-0 translate-y-[-1px] rounded-full bg-orange" />
+                      <span className="min-w-0 flex-1 text-ink">
+                        {punkt ? punkt.titel : "Punkten finns inte längre"}
+                        {punkt && !arOppenPunkt(punkt) ? <span className="text-ink-soft"> (klar)</span> : null}
+                      </span>
+                      {punkt?.forfaller ? <span className="shrink-0 tabular-nums text-ink-soft">{datumKort(punkt.forfaller)}</span> : null}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="m-0 text-[13px] text-ink-soft">Inga nålar. En nål på siten pekar på en öppen punkt.</p>
+              )}
+            </div>
+          </div>
+        </Card>
+      ) : null}
 
       {!k && p ? (
         <Callout ton="info">
