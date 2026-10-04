@@ -170,6 +170,24 @@ Resurser, Tidrapport, Budget och utfall och Fakturaunderlag räknar i
   Underlaget låser sina rader i samma steg (`SKAPA_FAKTURAUNDERLAG`) och kan
   ångras tills det är fakturerat.
 
+### ÄTA-kalkylen
+
+"Öppna i kalkyl" i ÄTA-registret eller ärendepanelen räknar rader på ett
+befintligt ärende (`src/lib/atakalkyl.js`, `src/sections/Ata/AtaKalkyl.jsx`):
+
+- **Per rad** = antal × á-pris × (1 + övertid % / 100) × (1 + påslag % / 100).
+  Arbete och maskin: övertid 0/50/100 %. Fordon per km utan tillägg. Material
+  och UE: faktisk kostnad, á-pris 1, påslag 10 % (ABT 06 kap. 6 § 9). Tid ur
+  tidrapporten behåller sitt tidslag (faktor 1–3).
+- **Priser** slås upp i `kalkylResurser()` i `planering.js`: Bilaga 06.1,
+  medarbetarnas á-priser, `KM_PRIS` och `KOSTNADSTYP` först.
+  `KALKYL_STARTPRISER` fyller bara luckorna.
+- **Data**: raderna ligger på posten i `kalkyl.rader` — samma `kalkyl`-objekt
+  som originalverktyget hade; en gammal kalkyl läses om till rader. *Spara*
+  skriver nettot (exkl. moms) på ärendets belopp och loggar ändringen.
+- **Avi** skrivs ut via `#utskrift` (`AtaAvi.jsx`) eller som PDF (`AtaPdf`,
+  typ `avi`), med två signaturrutor. **CSV** har semikolon och BOM.
+
 ## Bygga batteripark
 
 Kapitlet *Bygga batteripark* (vy-id `epc`) bygger på "Bygga batteripark som

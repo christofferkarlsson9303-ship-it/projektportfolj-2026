@@ -218,6 +218,18 @@ export const ERSATTNINGSFORM = [["lopande","Löpande räkning (självkostnad)"],
 
 export const KM_PRIS = 16;   // servicebil/personbil, inget påslag
 
+/* Startvärden för ÄTA-kalkylens resurser som appen inte redan har ett pris
+   för (docs/prototyp-36037.md). Roller i PRISLISTA_061, medarbetarnas egna
+   á-priser, KOSTNADSTYP och KM_PRIS gäller först — den här listan fyller
+   bara luckorna. [namn, kategori, enhet, á-pris] */
+export const KALKYL_STARTPRISER = [
+  ["Anläggningsarbetare", "arbete", "tim", 627],
+  ["Betongarbetare", "arbete", "tim", 690],
+  ["Arbets-/projektledare (Bygg)", "arbete", "tim", 780],
+  ["Grävmaskin 15–18 ton", "maskin", "tim", 1320],
+  ["Lastbil, 4 axlar", "maskin", "tim", 1125],
+];
+
 /* ---------- Byggmöten ---------- */
 
 export const PARAGRAFER = [

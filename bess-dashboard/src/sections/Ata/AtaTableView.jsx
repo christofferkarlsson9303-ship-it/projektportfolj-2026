@@ -17,7 +17,7 @@ const klassNamn = (v) => {
   return rad ? rad[1].split(" —")[0] : "Ej klassificerad";
 };
 
-export function AtaTableView({ rader, tomText, vald, onOppna, verktyg }) {
+export function AtaTableView({ rader, tomText, vald, onOppna, onKalkyl, verktyg }) {
   const { uppd } = usePortfolj();
   return (
     <DataTable
@@ -62,6 +62,19 @@ export function AtaTableView({ rader, tomText, vald, onOppna, verktyg }) {
           render: (u) => <StatusBadge {...registerStatus(u.status)} />,
         },
         { nyckel: "belopp", rubrik: "Belopp", bredd: 130, typ: "sek", summera: true, onCommit: (r, v) => uppd("ur", r.id, "belopp", v) },
+        {
+          nyckel: "kalkyl",
+          rubrik: "Kalkyl",
+          bredd: 140,
+          sorterbar: false,
+          textVarde: (u) => (u.kalkyl?.rader?.length ? `${u.kalkyl.rader.length} rader` : ""),
+          exportVarde: (u) => u.kalkyl?.rader?.length || "",
+          render: (u) => (
+            <button type="button" className="btn sec mini whitespace-nowrap" onClick={() => onKalkyl?.(u.id)}>
+              Öppna i kalkyl<span className="sr-only"> {u.nr}</span>
+            </button>
+          ),
+        },
         {
           nyckel: "grindar",
           rubrik: "Grindar",

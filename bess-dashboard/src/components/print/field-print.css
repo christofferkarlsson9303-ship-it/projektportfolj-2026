@@ -34,3 +34,9 @@
 .field-index th,.field-index td { border: 1px solid #85959d; padding: 5px; text-align: left; }
 .field-index th { background: #f3f5f6; }
 .field-recorded { border-top: 1px solid #85959d; margin-top: 8px; }
+
+/* ÄTA-avi: tal högerställda, två signaturrutor bredvid varandra. */
+.field-index .num, #utskrift .field-index .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.field-kalkyl tfoot th, #utskrift .field-kalkyl tfoot th { text-align: right; }
+.field-signaturer { display: flex; gap: 12px; margin-top: 14px; break-inside: avoid; }
+.field-signaturer > .field-check { flex: 1; margin: 0; }

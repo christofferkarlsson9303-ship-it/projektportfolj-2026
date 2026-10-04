@@ -90,7 +90,7 @@ function Sparindikator() {
   return null;
 }
 
-export function AtaDrawerDetails({ u, onStang }) {
+export function AtaDrawerDetails({ u, onStang, onKalkyl }) {
   const { state, uppd, uppdStatus, uppdBool, taBort, laggTill } = usePortfolj();
   const { bekrafta, visaToast, oppnaPost, skrivUt } = useUi();
   const panelRef = useRef(null);
@@ -344,6 +344,11 @@ export function AtaDrawerDetails({ u, onStang }) {
         </Callout>
 
         <div className="rowbtns">
+          {onKalkyl ? (
+            <button type="button" className="btn" onClick={onKalkyl}>
+              Öppna i kalkyl
+            </button>
+          ) : null}
           <button type="button" className="btn sec" onClick={nyDagboksradForArende}>
             + Dagboksrad
           </button>

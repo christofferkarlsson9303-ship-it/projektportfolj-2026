@@ -7,6 +7,7 @@
    räknas om till kronor med snittet av á-priserna. */
 
 import { idag, veckansDagar } from "./datum.js";
+import { KALKYL_STARTPRISER, KM_PRIS, KOSTNADSTYP, PRISLISTA_061 } from "../data/konstanter.js";
 
 /** Entreprenadarvode på självkostnad, ABT 06 kap. 6 § 9. */
 export const ARVODE_PROCENT = 10;
@@ -260,4 +261,48 @@ export function angraFakturaunderlag(state, id) {
     tidrader: state.tidrader.map((t) => (tidIds.has(t.id) ? { ...t, fakturerad: false } : t)),
     kostnader: state.kostnader.map((k) => (kostIds.has(k.id) ? { ...k, fakturerad: false } : k)),
   };
+}
+
+/* ---------- Resurser till ÄTA-kalkylen ---------- */
+
+/** Kategorierna i ÄTA-kalkylen, i den ordning de visas. */
+export const KALKYL_KATEGORIER = [
+  ["arbete", "Arbete"],
+  ["maskin", "Maskin"],
+  ["fordon", "Fordon"],
+  ["material", "Material och UE"],
+];
+
+const normNamn = (s) => String(s).toLocaleLowerCase("sv").replace(/\s+/g, "");
+
+/**
+ * Resurser med á-pris för ÄTA-kalkylen. Befintliga priser först:
+ * rollerna i Bilaga 06.1 (PRISLISTA_061, samma som Resurser använder),
+ * medarbetarnas egna á-priser, KM_PRIS för servicebil och KOSTNADSTYP för
+ * faktiska kostnader. KALKYL_STARTPRISER fyller bara luckorna och döper
+ * inte om något som redan finns.
+ * @returns {{id:string, namn:string, kategori:string, enhet:string, apris:number, paslag:number, kalla:string}[]}
+ */
+export function kalkylResurser(state) {
+  const ut = [];
+  const sett = new Set();
+  const lagg = (namn, kategori, enhet, apris, paslag, kalla) => {
+    const nyckel = `${kategori}|${normNamn(namn)}`;
+    if (sett.has(nyckel)) return;
+    sett.add(nyckel);
+    ut.push({ id: nyckel, namn, kategori, enhet, apris, paslag, kalla });
+  };
+  PRISLISTA_061.forEach(([namn, apris]) => lagg(namn, "arbete", "tim", apris, 0, "Bilaga 06.1"));
+  aktivaPersoner(state).forEach((m) =>
+    lagg(m.namn, "arbete", "tim", tal(m.apris), 0, m.roll ? `Resurser · ${m.roll}` : "Resurser")
+  );
+  KALKYL_STARTPRISER.filter(([, k]) => k === "arbete").forEach(([namn, k, enhet, apris]) =>
+    lagg(namn, k, enhet, apris, 0, "Startvärde")
+  );
+  KALKYL_STARTPRISER.filter(([, k]) => k === "maskin").forEach(([namn, k, enhet, apris]) =>
+    lagg(namn, k, enhet, apris, 0, "Startvärde")
+  );
+  lagg("Servicebil / Personbil", "fordon", "km", KM_PRIS, 0, "Bilaga 06.1");
+  KOSTNADSTYP.forEach(([, namn]) => lagg(namn, "material", "kr", 1, ARVODE_PROCENT, "Faktisk kostnad"));
+  return ut;
 }
