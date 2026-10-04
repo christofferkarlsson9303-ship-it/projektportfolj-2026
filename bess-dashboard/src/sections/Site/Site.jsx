@@ -112,6 +112,11 @@ export function Site() {
   const [planPid, setPlanPid] = useState(pid);
   const [omritning, setOmritning] = useState(0);
   const filRef = useRef(null);
+  // Projektet just nu, för en bild som läses klart efter ett projektbyte.
+  const aktuelltPid = useRef(pid);
+  useEffect(() => {
+    aktuelltPid.current = pid;
+  });
 
   // Byt plan när projektet byts — justering under render, inte i en effekt.
   if (planPid !== pid) {
@@ -190,19 +195,24 @@ export function Site() {
     setValtId(null);
   };
 
+  /* Bilden hör till projektet där den valdes. Byter användaren projekt
+     medan den läses sparas den ändå där, men visas inte i det nya. */
   const valjBild = async (fil) => {
     if (!fil) return;
+    const forPid = pid;
+    const fore = plan;
     try {
       const { bild, proportion } = await lasBild(fil);
-      const ny = { bild, proportion, namn: fil.name, bredd: plan?.bredd || TOMT.bredd, norr: plan?.norr || 0 };
-      const fel = sparaPlan(pid, ny);
+      const ny = { bild, proportion, namn: fil.name, bredd: fore?.bredd || TOMT.bredd, norr: fore?.norr || 0 };
+      const fel = sparaPlan(forPid, ny);
+      if (aktuelltPid.current !== forPid) return;
       if (fel) {
         visaToast(fel, "warn");
         return;
       }
-      setPlan(lasPlan(pid));
+      setPlan(lasPlan(forPid));
     } catch (e) {
-      visaToast(e.message, "warn");
+      if (aktuelltPid.current === forPid) visaToast(e.message, "warn");
     }
   };
 

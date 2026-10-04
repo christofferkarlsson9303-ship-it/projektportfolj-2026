@@ -227,10 +227,15 @@ export function punkterForSite(state, projektId) {
 
 export const PLAN_NYCKEL = (projektId) => `batchc-situationsplan:${projektId}`;
 
+/* Själva uppslaget av sessionStorage kan kasta (SecurityError i en sandlådad
+   iframe eller med blockerad lagring), så det görs inne i try — aldrig som
+   standardvärde på en parameter, där det skulle kasta före try. */
+const sessionen = (lagring) => lagring ?? globalThis.sessionStorage;
+
 /** Läser planen för projektet, eller null. */
-export function lasPlan(projektId, lagring = globalThis.sessionStorage) {
+export function lasPlan(projektId, lagring) {
   try {
-    const v = JSON.parse(lagring?.getItem(PLAN_NYCKEL(projektId)) || "null");
+    const v = JSON.parse(sessionen(lagring)?.getItem(PLAN_NYCKEL(projektId)) || "null");
     return v && typeof v.bild === "string" ? v : null;
   } catch {
     return null;
@@ -241,9 +246,9 @@ export function lasPlan(projektId, lagring = globalThis.sessionStorage) {
  * Sparar planen i sessionStorage. Returnerar ett fel som text om lagringen
  * är full eller blockerad — bilden hamnar aldrig i portfolj/state.
  */
-export function sparaPlan(projektId, plan, lagring = globalThis.sessionStorage) {
+export function sparaPlan(projektId, plan, lagring) {
   try {
-    lagring.setItem(
+    sessionen(lagring).setItem(
       PLAN_NYCKEL(projektId),
       JSON.stringify({
         bild: plan.bild,
@@ -259,9 +264,9 @@ export function sparaPlan(projektId, plan, lagring = globalThis.sessionStorage) 
   }
 }
 
-export function rensaPlan(projektId, lagring = globalThis.sessionStorage) {
+export function rensaPlan(projektId, lagring) {
   try {
-    lagring.removeItem(PLAN_NYCKEL(projektId));
+    sessionen(lagring).removeItem(PLAN_NYCKEL(projektId));
   } catch {
     /* blockerad lagring — inget att ta bort */
   }

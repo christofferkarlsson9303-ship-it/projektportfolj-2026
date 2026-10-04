@@ -263,6 +263,24 @@ describe("situationsplanen ligger utanför state", () => {
     expect(JSON.stringify(last({ ...s, situationsplan: { bild } }))).not.toContain("data:image");
   });
 
+  it("blockerad sessionStorage (SecurityError redan vid uppslaget) kastar inte", () => {
+    const fore = Object.getOwnPropertyDescriptor(globalThis, "sessionStorage");
+    Object.defineProperty(globalThis, "sessionStorage", {
+      configurable: true,
+      get() {
+        throw new Error("SecurityError");
+      },
+    });
+    try {
+      expect(lasPlan("36037")).toBeNull();
+      expect(sparaPlan("36037", { bild, bredd: 80 })).toMatch(/får inte plats/);
+      expect(() => rensaPlan("36037")).not.toThrow();
+    } finally {
+      if (fore) Object.defineProperty(globalThis, "sessionStorage", fore);
+      else delete globalThis.sessionStorage;
+    }
+  });
+
   it("en full lagring ger ett fel i text, inget kastas", () => {
     const full = { setItem: () => { throw new Error("QuotaExceededError"); } };
     expect(sparaPlan("36037", { bild, bredd: 80 }, full)).toMatch(/får inte plats/);
