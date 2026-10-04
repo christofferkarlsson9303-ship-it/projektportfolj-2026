@@ -5,6 +5,9 @@ import { PTag } from "../components/ui/PTag.jsx";
 import { Callout, Card, StatusBadge } from "../components/ds/index.js";
 import { Vyvaljare } from "../components/ui/Vyvaljare.jsx";
 import { AGENDATYPER, arbetslage, dagsetikett } from "../lib/agenda.js";
+import { kritiskLinje } from "../lib/kritiskLinje.js";
+import { datumKort, idag } from "../lib/datum.js";
+import { useSnabbUtskrift } from "../components/field/SnabbUtskrift.jsx";
 
 /* Idag — projektledarens arbetslista.
 
@@ -19,7 +22,12 @@ import { AGENDATYPER, arbetslage, dagsetikett } from "../lib/agenda.js";
    (läget bärs av ett statusmärke, inte av en röd eller orange yta), varje
    grupp är ett Card med antal till höger och en smal kant i gruppens ton.
    Tomma grupper visas inte som egna kort — frister och förfallet slås ihop
-   till en rad när båda är tomma, så att det som finns hamnar högt upp. */
+   till en rad när båda är tomma, så att det som finns hamnar högt upp.
+
+   Bandet svarar först på "blir vi klara i tid" för valt projekt, ur
+   kritiskLinje() — samma motor som Tidplan, inget räknas om här. Sedan på
+   "vad gör jag nu": antalet att göra med dagens märke. Två märken, två frågor,
+   olika ord. Ytan förblir one-djup även när projektet är sent. */
 
 const HORISONTER = [
   ["14", "14 dagar"],
@@ -111,14 +119,58 @@ function Lista({ children }) {
   return <ul className="m-0 list-none p-0">{children}</ul>;
 }
 
+/** Ett tal i bandet. Egen rad, inte StatTile: bandet är mörkt och talen ska
+ *  inte bli vita kort i kortet. */
+function Bandtal({ etikett, varde, detalj, className = "" }) {
+  return (
+    <div className={`flex min-w-0 flex-col gap-1 py-2 sm:gap-1.5 sm:px-4 sm:py-3 sm:first:pl-0 ${className}`}>
+      <span className="text-[11px] font-bold uppercase tracking-wider text-white/70">{etikett}</span>
+      <span className="text-2xl font-bold leading-none tabular-nums text-white">{varde}</span>
+      {detalj ? <span className="text-[12px] leading-snug text-white/70">{detalj}</span> : null}
+    </div>
+  );
+}
+
+const lankKlass =
+  "cursor-pointer border-0 bg-transparent p-0 font-body text-white underline underline-offset-2 hover:text-white/80";
+
 /* ---------- Sektionen ---------- */
 
 export function Idag() {
   const { state } = usePortfolj();
-  const { visa, setValtProjekt, oppnaPost } = useUi();
+  const { visa, setValtProjekt, oppnaPost, valtProjekt } = useUi();
   const [horisont, setHorisont] = useState("30");
+  const snabb = useSnabbUtskrift();
 
   const l = useMemo(() => arbetslage(state, Number(horisont)), [state, horisont]);
+
+  /* Domen för valt projekt — samma motor som Tidplan. */
+  const p = state.projekt.find((x) => x.id === valtProjekt) || state.projekt[0];
+  const nu = idag();
+  const k = useMemo(() => (p ? kritiskLinje(state, p.id, nu) : null), [state, p, nu]);
+  const kritiska = k ? k.faser.filter((f) => f.kritisk) : [];
+  const dom = !k || k.forsening === null
+    ? { ton: "warn", text: "Uppgifter saknas" }
+    : k.forsening > 0
+      ? { ton: "bad", text: `${k.forsening} ${k.forsening === 1 ? "dag" : "dagar"} sent` }
+      : { ton: "ok", text: "I tid" };
+  const domMening = !k
+    ? "Ange start och slut på projektet."
+    : k.forsening > 0
+      ? `Beräknat ${k.forsening} ${k.forsening === 1 ? "dag" : "dagar"} efter kontraktets färdigdatum. ${kritiska.length === 1 ? "Den kritiska fasen flyttar" : "De kritiska faserna flyttar"} slutbesiktningen.`
+      : k.slutPrognos
+        ? `Slutbesiktning beräknas till ${datumKort(k.slutPrognos)}${k.kontrakt ? `, kontraktet säger ${datumKort(k.kontrakt)}` : ""}.`
+        : "Slutbesiktningen kan inte beräknas ännu.";
+  const dagar = (n) => (n === 0 ? "0 dagar" : `${n > 0 ? "+" : "−"}${Math.abs(n)} ${Math.abs(n) === 1 ? "dag" : "dagar"}`);
+
+  /* Utförare med öppna punkter i listan, för valt projekt — papper via snabbutskrift. */
+  const utforareIListan = p
+    ? [...new Set([...l.forfallet, ...l.idag, ...l.veckan]
+        .filter((r) => r.typ === "Punkt" && (r.pid === p.id || r.pid === "bada"))
+        .map((r) => (state.punkter || []).find((x) => x.id === r.id))
+        .map((x) => x?.utforare || "")
+        .filter(Boolean))].sort((a, b) => a.localeCompare(b, "sv")).slice(0, 4)
+    : [];
 
   /* Hoppa till en agendapost: byt projekt och gå till den vy som äger typen. */
   const oppnaAgenda = (rad) => {
@@ -171,17 +223,56 @@ export function Idag() {
       {/* ---------- Sammanfattning ---------- */}
       <section
         aria-label="Sammanfattning"
-        className="flex flex-wrap items-center gap-x-6 gap-y-4 rounded-xl bg-one-djup px-5 py-5 text-white shadow-sm md:px-6"
+        className="flex flex-col gap-3 rounded-xl bg-one-djup print:hidden px-5 py-5 text-white shadow-sm md:px-6"
       >
-        <div className="text-[42px] font-bold leading-none tabular-nums">{attGora}</div>
-        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[12px] font-bold uppercase tracking-wider text-white/80">
-              {attGora === 1 ? "sak kräver din åtgärd" : "saker kräver din åtgärd"}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-[12px] font-bold uppercase tracking-wider text-white/80">Blir vi klara i tid</span>
+          <StatusBadge ton={dom.ton} label={dom.text} />
+        </div>
+        {p ? (
+          <p className="m-0 text-[19px] font-semibold leading-snug text-white">
+            {p.nr ? `${p.nr} ` : ""}
+            {p.namn}
+          </p>
+        ) : null}
+        <p className="m-0 text-[14px] text-white/80">{domMening}</p>
+
+        <div className="grid grid-cols-1 border-0 border-t border-solid border-white/15 sm:grid-cols-3 lg:grid-cols-4">
+          <Bandtal
+            etikett="Beräknad slutbesiktning"
+            varde={k?.slutPrognos ? datumKort(k.slutPrognos) : "—"}
+            detalj={k?.kontrakt ? `kontraktet: ${datumKort(k.kontrakt)}` : null}
+          />
+          <Bandtal
+            className="sm:border-0 sm:border-l sm:border-solid sm:border-white/15"
+            etikett="Mot ursprunglig plan"
+            varde={k?.baslinje && k.motBaslinje !== null ? dagar(k.motBaslinje) : "—"}
+            detalj={
+              k && !k.baslinje ? (
+                <>
+                  Ingen baslinje.{" "}
+                  <button type="button" className={lankKlass} onClick={() => visa("tidplan")}>
+                    Spara på tidplanen
+                  </button>
+                </>
+              ) : k?.baslinje ? `sparad ${k.baslinje.sparad}` : null
+            }
+          />
+          <Bandtal
+            className="sm:border-0 sm:border-l sm:border-solid sm:border-white/15"
+            etikett="Styr slutdatumet"
+            varde={k ? `${kritiska.length} ${kritiska.length === 1 ? "fas" : "faser"}` : "—"}
+            detalj={k ? `av ${k.faser.length} faser` : null}
+          />
+          <div className="flex min-w-0 flex-col gap-1.5 border-0 border-t border-solid border-white/15 py-3 sm:col-span-3 lg:col-span-1 lg:border-l lg:border-t-0 lg:px-4">
+            <span className="flex flex-wrap items-center gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-white/70">
+                {attGora === 1 ? "Sak kräver din åtgärd" : "Saker kräver din åtgärd"}
+              </span>
+              <StatusBadge ton={LAGE[lage].ton} label={LAGE[lage].text} />
             </span>
-            <StatusBadge ton={LAGE[lage].ton} label={LAGE[lage].text} />
-          </div>
-          <div className="text-[14px]">
+            <span className="text-2xl font-bold leading-none tabular-nums text-white">{attGora}</span>
+            <span className="text-[12px] leading-snug text-white/70">
             {l.forfallnaFrister.length
               ? `${l.forfallnaFrister.length} frist${l.forfallnaFrister.length > 1 ? "er" : ""} är överskriden — börja där.`
               : l.frister.length
@@ -191,9 +282,34 @@ export function Idag() {
                   : l.utanDatum.length
                     ? `${l.utanDatum.length} post${l.utanDatum.length > 1 ? "er" : ""} saknar händelsedatum — fyll i det först.`
                     : "Inga frister löper. Nedan ligger det närmaste i tiden."}
+            </span>
           </div>
         </div>
+
+        <div className="border-0 border-t border-solid border-white/15 pt-3 text-[13px]">
+          {!k ? null : kritiska.length ? (
+            <p className="m-0 font-semibold text-white">
+              <span className="font-normal text-white/70">Faser som styr: </span>
+              {kritiska.map((f, i) => (
+                <span key={f.nr}>
+                  {i ? <span aria-hidden="true" className="text-white/50"> · </span> : null}
+                  <button type="button" className={`${lankKlass} font-semibold`} onClick={() => { setValtProjekt(p.id); oppnaPost("epc", `fas-${f.nr}`); }}>
+                    {f.nr} {f.kort}
+                  </button>
+                </span>
+              ))}
+            </p>
+          ) : (
+            <p className="m-0 text-white/80">Ingen fas styr slutdatumet.</p>
+          )}
+        </div>
       </section>
+
+      {!k && p ? (
+        <Callout ton="info">
+          Ange projektets startdatum och färdigdatum under Översikt eller Bygga batteripark. Då räknas planen fram.
+        </Callout>
+      ) : null}
 
       {l.utanDatum.length ? (
         <Callout ton="bad">
@@ -272,6 +388,17 @@ export function Idag() {
           {l.veckan.map(agendaRad)}
         </Lista>
       </Grupp>
+
+      {utforareIListan.length ? (
+        <div className="flex flex-wrap items-center gap-2 text-[13px]" role="group" aria-label="Skriv ut arbetslista">
+          <span className="text-ink-soft">Papper till laget:</span>
+          {utforareIListan.map((n) => (
+            <button key={n} type="button" className="btn sec mini" onClick={() => snabb.arbetslista(p.id, { utforare: n })}>
+              Skriv ut arbetslista – {n}
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       {/* ---------- Längre fram ---------- */}
       <Grupp
