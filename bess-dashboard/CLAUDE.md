@@ -1,5 +1,10 @@
 # Claude — läs detta innan du skriver kod
 
+## Byggorder
+
+När Christoffer säger att prototypen ska in på webbplatsen: genomför [`docs/byggorder.md`](docs/byggorder.md) från början till slut. Den filen är körningen. Den här filen och [`docs/prototyp-36037.md`](docs/prototyp-36037.md) är kontraktet. Börja inte om med en ny plan.
+
+
 Du är i **bess-dashboard**: Vite, React, Tailwind, `localStorage` eller Supabase JSONB. Inte TanStack Start. Inte zustand. Inte en ny app.
 
 En visuell prototyp byggdes 2026-10-04 i ett annat verktyg (Grok). Den ligger **inte** i det här repot och ska inte klistras in. Beteendet som är värt att behålla står i [`docs/prototyp-36037.md`](docs/prototyp-36037.md). Läs den filen helt innan du rör Idag, tidplan, ÄTA eller site.
