@@ -243,6 +243,11 @@ export const SEED = {
   /* Bilagor — foton och filer. assetId pekar på artifactens assetlagring. */
   bilagor: [],
 
+  /* Siten i 3D: volymer och nålar per projekt (lib/site.js).
+     {id, projektId, typ, x, z, rotation, namn, bredd, djup, hojd} — en nål har
+     punktId i stället för namn och mått. Situationsplanen ligger inte här. */
+  siteObjekt: [],
+
   /* Ändringslogg — statusändringar m.fl. händelser, senaste ~150 posterna, nyast först. */
   andringslogg: []
 };

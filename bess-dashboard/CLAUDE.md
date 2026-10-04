@@ -14,7 +14,7 @@ En visuell prototyp byggdes 2026-10-04 i ett annat verktyg (Grok). Den ligger **
 ## Gör inte
 
 - Portera inte prototypens filer (`src/routes/*`, zustand-store, `@react-three/fiber`).
-- Lägg inte `three` i den här PR:en. 3D är en egen gren när den beställs.
+- `three` finns bara för siten (`src/sections/Site/`, PR `site-3d`). Lägg inte till `@react-three/fiber`, `drei` eller ett UI-kit.
 - Skriv inte över användarens portfölj med prototypens seed (36037, ÄTA-012, Lag A–C).
 - Lägg inte in montörsinloggning, chatt eller drag-and-drop i Gantt.
 - Döp inte om `SnabbUtskrift`, `KritiskLinje`, `DataTable` eller `byggFaltmaterial`.

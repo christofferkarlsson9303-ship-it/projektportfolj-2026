@@ -6,6 +6,7 @@ const VYER = [
   "Idag",
   "Översikt",
   "Bygga batteripark",
+  "Siten i 3D",
   "Tavla",
   "Tidplan",
   "Handlingsplan",
@@ -31,7 +32,7 @@ const VYER = [
 ];
 
 test("alla vyer renderar utan konsolfel", async ({ page }) => {
-  // Varje vybyte på mobil kräver att menyn öppnas först — 25 vyer hinner inte
+  // Varje vybyte på mobil kräver att menyn öppnas först — 26 vyer hinner inte
   // på standardgränsen.
   test.setTimeout(180_000);
   const { fel } = await oppna(page);

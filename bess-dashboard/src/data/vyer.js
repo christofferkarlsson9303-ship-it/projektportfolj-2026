@@ -14,6 +14,11 @@ const TILLAGDA = [
     "Idag",
     "Allt som kräver din åtgärd — frister som löper, förfallet och det närmaste i tiden.",
   ],
+  [
+    "site",
+    "Siten i 3D",
+    "Projektets tomt med skid, containrar, E-House, trafo och nålar på öppna punkter. Gå runt i den.",
+  ],
 ];
 
 /* Tillagda vyer som ska ligga på en bestämd plats i listan i stället för
@@ -44,6 +49,8 @@ const IKONER_TILLAGDA = {
   epc: '<rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 2.5h6v3H9z"/><path d="M8.5 11l1.5 1.5 2.5-2.5M14 11.5h2M8.5 16.5l1.5 1.5 2.5-2.5M14 17h2"/>',
   // Dokument med sigill: kontraktet.
   kontrakt: '<path d="M6 3h9l4 4v8"/><path d="M15 3v4h4"/><path d="M6 3v18h7"/><path d="M9 9h5M9 13h4"/><circle cx="17.5" cy="18" r="2.5"/><path d="M16.5 20.3 16 23l1.5-.8 1.5.8-.5-2.7"/>',
+  // Kub: volymerna på tomten.
+  site: '<path d="M12 2.5 3.5 7v10L12 21.5 20.5 17V7z"/><path d="M3.5 7 12 11.5 20.5 7M12 11.5v10"/>',
   // Måltavla: mål → åtgärder.
   handlingsplan: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>',
 };
@@ -61,7 +68,7 @@ function medInskjutna(lista) {
 const URSPRUNG = Object.fromEntries(medInskjutna([...TILLAGDA, ...VYER_ORIGINAL]).filter(([id]) => id !== "_sek").map((v) => [v[0], v]));
 const GRUPPER = [
   ["Börja här", ["metod", "idag", "oversikt"]],
-  ["Planera jobbet", ["kontrakt", "epc", "tidplan", "handlingsplan", "resurser", "kontakter"]],
+  ["Planera jobbet", ["kontrakt", "epc", "site", "tidplan", "handlingsplan", "resurser", "kontakter"]],
   ["Gör och följ upp", ["punkter", "tavla", "moten", "vecka", "dagbok", "hseq", "risker", "storning"]],
   ["Följ pengarna", ["ata", "budget", "tid", "ekonomi", "milstolpar", "faktura"]],
   ["Lämna över och spara", ["slutdok", "rapport", "rutiner", "data"]],
@@ -71,6 +78,7 @@ const ENKLA_LEADS = {
   idag: "Vad behöver du ta hand om först? Öppna en rad för att komma till rätt ärende.",
   oversikt: "Se läget i dina projekt, nästa arbete och frågor som behöver hjälp.",
   epc: "Följ batteriparken genom 16 faser. En grind är ett klartecken för nästa steg.",
+  site: "Placera skid, containrar och E-House på tomten och gå runt bland dem. Nålar visar öppna punkter.",
   tavla: "Se uppgifter och ärenden som kort. Flytta dem när arbetsläget ändras.",
   tidplan: "Se när arbeten och leveranser ska ske. Öppna en rad för detaljer.",
   handlingsplan: "Skriv målet och vad som behöver göras, av vem och när.",
