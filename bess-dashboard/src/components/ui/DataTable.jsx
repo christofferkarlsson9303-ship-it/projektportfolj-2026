@@ -63,6 +63,8 @@ export function DataTable({
   maxHojd,
   fotnot,
   onUrval,
+  urvalText = "Fältmaterial av markerade",
+  onUrvalFler,
 }) {
   const { tathet, visaToast } = useUi();
   const bas = useId();
@@ -209,7 +211,8 @@ export function DataTable({
 
           <div className="ml-auto flex flex-wrap items-center gap-2">
             {verktyg}
-            {onUrval ? <button type="button" className="btn sec mini" disabled={!valda.length} onClick={() => onUrval(valda)}>Fältmaterial av markerade ({valda.length})</button> : null}
+            {onUrval ? <button type="button" className="btn sec mini" disabled={!valda.length} onClick={() => onUrval(valda)}>{urvalText} ({valda.length})</button> : null}
+            {onUrvalFler ? <button type="button" className="btn sec mini" disabled={!valda.length} onClick={() => onUrvalFler(valda)}>Fler val för markerade ({valda.length})</button> : null}
             {exportNamn && (
               <>
                 <button type="button" className="btn sec mini" onClick={exportera}>Exportera CSV</button>

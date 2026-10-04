@@ -79,7 +79,7 @@ export function FaltmaterialPanel({ projekt, urval, onValjProjekt, onStang }) {
   return <dialog ref={dialog} className="field-material-dialog m-0 fixed left-1/2 top-1/2 max-h-[92dvh] w-[min(900px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto scroll-pt-40 scroll-pb-28 rounded-card border border-solid border-hairline bg-surface p-0 text-ink shadow-lift" aria-label={`Fältmaterial – ${projekt.namn}`} onCancel={(e) => { e.preventDefault(); stang(); }}>
     <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-0 border-b border-solid border-hairline bg-surface p-4">
       <div><h2 id="falt-titel" className="m-0 font-head text-xl">Fältmaterial – {projekt.namn}</h2><p className="m-0 mt-1 text-sm text-ink-soft">Följ projektets kontroller. Registrera resultat och bevis eller skriv ut en blank checklista.</p></div>
-      <button type="button" className="btn sec mini" onClick={stang}>Stäng</button>
+      <div className="flex flex-wrap gap-2"><button type="button" className="btn mini" disabled={!kanExportera} onClick={print} aria-label="Skriv ut nu">Skriv ut</button><button type="button" className="btn sec mini" onClick={stang}>Stäng</button></div>
     </header>
     <div className="flex flex-col gap-5 p-4 sm:p-6">
       <label className="flex flex-col gap-1 text-sm font-semibold">Projekt<select value={projekt.id} onChange={(e) => onValjProjekt(e.target.value)}>{state.projekt.map((p) => <option value={p.id} key={p.id}>{p.nr || p.id} · {p.namn}</option>)}</select></label>

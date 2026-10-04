@@ -9,7 +9,7 @@ export const SIDHJALP = {
   handlingsplan: ["Gör mål till tydliga uppgifter", "Skriv vad projektet ska uppnå.", "Lägg till åtgärder med ansvarig och datum.", "Följ upp att åtgärderna faktiskt hjälper projektet."],
   resurser: ["Planera vem som gör jobbet", "Välj vecka och se lediga timmar.", "Boka personer på rätt projekt.", "Minska eller flytta bokningar som går över personens kapacitet."],
   kontakter: ["Hitta rätt person snabbt", "Sök personen eller företaget.", "Kontrollera roll, telefon och e-post.", "Uppdatera kontaktuppgifterna när ansvaret ändras."],
-  punkter: ["Ge varje uppgift en ägare", "Skriv vad som ska göras, vem som gör det och när.", "Lägg till instruktion och ritningsreferens.", "Markera uppgifter och skapa fältmaterial när laget ska ha en utskrift."],
+  punkter: ["Ge varje uppgift en ägare", "Skriv vad som ska göras, vem som gör det och när.", "Lägg till instruktion och ritningsreferens.", "Välj utförare och klicka Skriv ut arbetslista när laget ska ha papper."],
   tavla: ["Flytta arbetet framåt", "Hitta ärendet som ska hanteras.", "Flytta det till rätt läge på tavlan.", "Öppna ärendet om datum, ansvar eller underlag också behöver ändras."],
   moten: ["Skriv beslut som går att följa upp", "Välj rätt projekt och möte.", "Skriv beslut, ansvarig och sista datum.", "Granska protokollet före utskrift och distribution."],
   vecka: ["Stäm av projektet en gång i veckan", "Besvara frågorna för valt projekt.", "Skapa en åtgärd när ett svar visar ett problem.", "Följ upp förra veckans öppna frågor."],

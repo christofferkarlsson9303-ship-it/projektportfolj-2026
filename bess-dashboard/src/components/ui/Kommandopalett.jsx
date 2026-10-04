@@ -4,6 +4,8 @@ import { MILSTOLPE_MODELL, PILL } from "../../data/konstanter.js";
 import { VYER } from "../../data/vyer.js";
 import { riskvarde } from "../../lib/berakningar.js";
 import { ALLA_PUNKTER } from "../../data/bessChecklistData.ts";
+import { useSnabbUtskrift } from "../field/SnabbUtskrift.jsx";
+import { FASBLANKETTER, utforareMedUppgifter } from "../../lib/snabbutskrift.js";
 
 /* Kommandopalett (Ctrl/Cmd+K).
    Tillgänglighet: i standalone-versionen låg aria-selected på vanliga <li> utan
@@ -11,7 +13,8 @@ import { ALLA_PUNKTER } from "../../data/bessChecklistData.ts";
    aria-activedescendant, så det aktiva alternativet läses upp vid piltangenter. */
 export function Kommandopalett() {
   const { state } = usePortfolj();
-  const { visa, setValtProjekt, oppnaPost, oppnaFaltmaterial, sokOppen: oppen, setSokOppen: setOppen } = useUi();
+  const { visa, setValtProjekt, valtProjekt, oppnaPost, oppnaFaltmaterial, sokOppen: oppen, setSokOppen: setOppen } = useUi();
+  const snabb = useSnabbUtskrift();
   const [q, setQ] = useState("");
   const [vald, setVald] = useState(0);
   const inputRef = useRef(null);
@@ -20,6 +23,17 @@ export function Kommandopalett() {
 
   const index = useMemo(() => {
     const ut = [{ t: "Vy", label: "Projektets egenkontrollrapport", sub: "Beställare / slutdokumentation / hela projektet", kor: () => oppnaFaltmaterial({ mallpaket: "projekt" }) }, { t: "Vy", label: "Skapa fältmaterial", sub: "Arbetslista / egenkontroll / PDF", kor: () => oppnaFaltmaterial() }];
+    const vp = state.projekt.find((p) => p.id === valtProjekt);
+    if (vp) {
+      const pn = `${vp.nr ? vp.nr + " " : ""}${vp.namn}`;
+      utforareMedUppgifter(state, vp.id).forEach((n) =>
+        ut.push({ t: "Skriv ut", label: `Arbetslista till ${n}`, sub: `Öppna uppgifter · ${pn}`, kor: () => snabb.arbetslista(vp.id, { utforare: n }) })
+      );
+      ut.push({ t: "Skriv ut", label: "Arbetslista för alla", sub: `Öppna uppgifter · ${pn}`, kor: () => snabb.arbetslista(vp.id) });
+      FASBLANKETTER.forEach((f) =>
+        ut.push({ t: "Skriv ut", label: `Egenkontroll fas ${f.fas} – ${f.titel}`, sub: `Blank blankett · ${pn}`, kor: () => snabb.fasblankett(vp.id, f.fas) })
+      );
+    }
     VYER.filter((v) => v[0] !== "_sek").forEach(([id, namn, lead]) =>
       ut.push({ t: "Vy", label: namn, sub: lead, kor: () => visa(id) })
     );
@@ -78,7 +92,7 @@ export function Kommandopalett() {
       ut.push({ t: "Kontakt", label: k.namn, sub: `${k.roll} · ${k.org}`, kor: () => visa("kontakter") })
     );
     return ut;
-  }, [state, visa, setValtProjekt, oppnaPost, oppnaFaltmaterial]);
+  }, [state, visa, setValtProjekt, valtProjekt, oppnaPost, oppnaFaltmaterial, snabb]);
 
   const traffar = useMemo(() => {
     const s = q.toLowerCase().trim();

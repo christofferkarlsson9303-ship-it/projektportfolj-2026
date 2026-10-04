@@ -9,6 +9,7 @@ import { DatumFalt, SelStatus } from "../components/ui/Falt.jsx";
 import { dagarTill } from "../lib/datum.js";
 import { gallerFor, projekt } from "../lib/berakningar.js";
 import { hamtaNamn } from "../state/portfolj-reducer.js";
+import { ArbetslistaSnabb, useSnabbUtskrift } from "../components/field/SnabbUtskrift.jsx";
 
 /* Öppna punkter på designsystemet: nyckeltal överst och registret som Card
    med täthetsväljaren i huvudet. */
@@ -18,6 +19,7 @@ export function Punkter() {
   const { valtProjekt: pid, fraga, oppnaFaltmaterial } = useUi();
 
   const proj = projekt(state, pid);
+  const snabb = useSnabbUtskrift();
 
   const rader = useMemo(
     () =>
@@ -84,6 +86,10 @@ export function Punkter() {
           <StatTile label="Utan datum" value={utanDatum} hint="sätt förfallodatum så syns de i Idag" />
         </div>
 
+        <Card id="punkter-utskrift" title="Ge laget papper" subtitle="Välj utförare och skriv ut. Listan har rutor att bocka, instruktion och ritningsreferens.">
+          <ArbetslistaSnabb key={pid} pid={pid} />
+        </Card>
+
         <Card
           id="punkter-rubrik"
           title={`Öppna punkter — ${(proj.nr ? proj.nr + " " : "") + proj.namn}`}
@@ -94,7 +100,9 @@ export function Punkter() {
             etikett="Öppna punkter"
             exportNamn="Oppna_punkter"
             rader={rader}
-            onUrval={(rader) => oppnaFaltmaterial({ ids: rader.map((r) => r.id) })}
+            onUrval={(rader) => snabb.arbetslista(pid, { ids: rader.map((r) => r.id) })}
+            urvalText="Skriv ut markerade"
+            onUrvalFler={(rader) => oppnaFaltmaterial({ ids: rader.map((r) => r.id) })}
             tomText="Inga öppna punkter."
             radKlass={(pt) => (arSen(pt) ? "rad-sen" : "")}
             verktyg={
