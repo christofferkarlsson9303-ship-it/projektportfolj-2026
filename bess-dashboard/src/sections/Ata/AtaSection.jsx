@@ -14,6 +14,7 @@ import { AtaKanbanView } from "./AtaKanbanView.jsx";
 import { AtaTableView } from "./AtaTableView.jsx";
 import { AtaTimelineView } from "./AtaTimelineView.jsx";
 import { AtaDrawerDetails } from "./AtaDrawerDetails.jsx";
+import { AtaKalkyl } from "./AtaKalkyl.jsx";
 
 /* ÄTA och hinder.
 
@@ -42,6 +43,7 @@ export function Ata() {
   const { valtProjekt: pid, fraga, postFokus } = useUi();
   const [vy, setVy] = useAtaVy("board");
   const [oppen, setOppen] = useState(null);
+  const [kalkylId, setKalkylId] = useState(null);
 
   /* Idag-vyn och andra sektioner kan peka ut ett enskilt ärende. Justering
      under render så att panelen är öppen redan i första målningen. */
@@ -66,6 +68,14 @@ export function Ata() {
   }, [state, pid]);
 
   const valdPost = n.rader.find((u) => u.id === oppen) || null;
+  const kalkylPost = n.rader.find((u) => u.id === kalkylId) || null;
+
+  /* "Öppna i kalkyl" — från registret eller ärendepanelen. Panelen stängs så
+     att kalkylen syns. */
+  const oppnaKalkyl = (id) => {
+    setOppen(null);
+    setKalkylId(id);
+  };
 
   if (!p) return null;
 
@@ -177,12 +187,15 @@ export function Ata() {
               tomText={`Inga poster registrerade för ${p.nr || p.namn}.`}
               vald={oppen}
               onOppna={setOppen}
+              onKalkyl={oppnaKalkyl}
               verktyg={nyKnapp}
             />
           ) : null}
 
           {vy === "timeline" ? <AtaTimelineView rader={n.rader} onOppna={setOppen} /> : null}
         </Card>
+
+        {kalkylPost ? <AtaKalkyl u={kalkylPost} onStang={() => setKalkylId(null)} /> : null}
 
         <Card
           id="ata-processen"
@@ -214,7 +227,9 @@ export function Ata() {
         </Card>
       </div>
 
-      {valdPost ? <AtaDrawerDetails u={valdPost} onStang={() => setOppen(null)} /> : null}
+      {valdPost ? (
+        <AtaDrawerDetails u={valdPost} onStang={() => setOppen(null)} onKalkyl={() => oppnaKalkyl(valdPost.id)} />
+      ) : null}
     </>
   );
 }

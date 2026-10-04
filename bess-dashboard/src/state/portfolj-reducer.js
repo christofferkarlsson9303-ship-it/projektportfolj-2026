@@ -10,6 +10,8 @@ import { nyApdRad } from "../lib/apd.js";
 import { idag } from "../lib/datum.js";
 import { forslagText, kanTillampas, tillampaForslag } from "../lib/importera.js";
 import { angraFakturaunderlag, skapaFakturaunderlag } from "../lib/planering.js";
+import { kalkylRader, kalkylSummor } from "../lib/atakalkyl.js";
+import { fmtSEK } from "../lib/format.js";
 import { projektstartFel } from "../lib/projektstart.js";
 import { granskaProfil, rensaProfil } from "../lib/kontraktsprofil.js";
 
@@ -211,6 +213,18 @@ function uppsatt(lista, matchar, ny, andring) {
 }
 
 /** Lägger en fritextpost i ändringsloggen. */
+/** Ändrar kalkylraderna på en ÄTA-post. En post med originalverktygets
+ *  kalkyl får sina rader omlästa först, så att inget av det gamla tappas. */
+function medKalkylrader(state, id, andra) {
+  const u = state.ur.find((r) => r.id === id);
+  if (!u) return state;
+  const rader = andra(kalkylRader(u));
+  return {
+    ...state,
+    ur: byt(state.ur, id, (r) => ({ ...r, kalkyl: { ...(r.kalkyl || {}), rader, uppdaterad: idag() } })),
+  };
+}
+
 function loggat(state, projektId, text) {
   const post = { ts: new Date().toISOString(), anvandare: hamtaNamn() || "Okänd", projektId: projektId || null, text };
   return { ...state, andringslogg: [post, ...(state.andringslogg || [])].slice(0, 150) };
@@ -455,6 +469,45 @@ export function reducer(state, action) {
       const ut = angraFakturaunderlag(state, action.id);
       if (ut === state) return state;
       return loggat(ut, f.projektId, `Fakturaunderlag ${f.nr} ångrat — raderna är upplåsta`);
+    }
+
+    /* ---------- ÄTA-kalkylen ----------
+       Raderna ligger på posten (kalkyl.rader) och sparas som allt annat.
+       Beloppet på posten ändras bara när användaren sparar kalkylen — då
+       skrivs nettot (exkl. moms) och ändringen loggas. */
+    case "ATA_KALKYL_LAGG_TILL": {
+      const { id, rader, efter } = action;
+      return medKalkylrader(state, id, (fore) => {
+        const i = efter ? fore.findIndex((r) => r.id === efter) : -1;
+        return i < 0 ? [...fore, ...rader] : [...fore.slice(0, i + 1), ...rader, ...fore.slice(i + 1)];
+      });
+    }
+
+    case "ATA_KALKYL_ANDRA": {
+      const { id, radId, andring } = action;
+      return medKalkylrader(state, id, (fore) => fore.map((r) => (r.id === radId ? { ...r, ...andring } : r)));
+    }
+
+    case "ATA_KALKYL_TA_BORT": {
+      const { id, radId } = action;
+      return medKalkylrader(state, id, (fore) => fore.filter((r) => r.id !== radId));
+    }
+
+    case "ATA_KALKYL_SPARA": {
+      const u = state.ur.find((r) => r.id === action.id);
+      if (!u) return state;
+      const rader = kalkylRader(u);
+      const { netto } = kalkylSummor(rader);
+      const ut = {
+        ...state,
+        ur: byt(state.ur, u.id, (r) => ({
+          ...r,
+          belopp: netto,
+          kalkyl: { ...(r.kalkyl || {}), rader, uppdaterad: idag(), sparad: idag() },
+        })),
+      };
+      const fore = u.belopp === null || u.belopp === undefined || u.belopp === "" ? "utan belopp" : fmtSEK(u.belopp);
+      return loggat(ut, u.projektId, `${u.nr}: belopp ur kalkylen ${fore} → ${fmtSEK(netto)} (exkl. moms)`);
     }
 
     /* ---------- Byggmöten ----------
