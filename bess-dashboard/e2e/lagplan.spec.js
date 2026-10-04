@@ -61,7 +61,7 @@ test("engångslista av markerade uppgifter bevarar projektets lagval", async ({ 
   await d.getByRole("button", { name: "Stäng", exact: true }).click();
   await gaTill(page, "Öppna punkter");
   await page.getByRole("region", { name: "Öppna punkter", exact: true }).locator("tbody tr").first().getByRole("checkbox", { name: /^Markera/ }).check();
-  await page.getByRole("button", { name: "Fältmaterial av markerade (1)" }).click();
+  await page.getByRole("button", { name: "Fler val för markerade (1)" }).click();
   await expect(d.getByRole("status")).toContainText("1 projektuppgifter");
   await d.getByRole("button", { name: "Stäng", exact: true }).click();
   await page.getByRole("button", { name: "Fältmaterial", exact: true }).click();

@@ -3,7 +3,7 @@ import { useUi } from "../../state/hooks.js";
 import { laddaNer } from "../../lib/export.js";
 import { faltFilnamn } from "../../lib/faltmaterial.js";
 
-export function PdfExporter({ dokument, typ, disabled, label = "Ladda ned PDF" }) {
+export function PdfExporter({ dokument, typ, disabled, label = "Ladda ned PDF", className = "btn" }) {
   const [arbetar, setArbetar] = useState(false);
   const { visaToast } = useUi();
   const exportera = async () => {
@@ -23,7 +23,7 @@ export function PdfExporter({ dokument, typ, disabled, label = "Ladda ned PDF" }
       setArbetar(false);
     }
   };
-  return <button type="button" className="btn" disabled={disabled || arbetar} aria-busy={arbetar} onClick={exportera}>
+  return <button type="button" className={className} disabled={disabled || arbetar} aria-busy={arbetar} onClick={exportera}>
     {arbetar ? "Skapar PDF…" : label}
   </button>;
 }

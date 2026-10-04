@@ -68,11 +68,8 @@ test("markerade projektuppgifter skrivs ut med utförare och ritningsreferens", 
   await rad.getByRole("textbox", { name: /^Ritning\/revision för/ }).fill("EL-123 rev C");
   await page.keyboard.press("Enter");
   await rad.getByRole("checkbox", { name: /^Markera/ }).check();
-  await page.getByRole("button", { name: "Fältmaterial av markerade (1)" }).click();
-  const dialog = page.getByRole("dialog", { name: /Fältmaterial/ });
-  await expect(dialog.getByRole("status")).toContainText("1 projektuppgifter");
   await page.evaluate(() => { window.print = () => {}; });
-  await dialog.getByRole("button", { name: "Skriv ut", exact: true }).click();
+  await page.getByRole("button", { name: "Skriv ut markerade (1)" }).click();
   await expect(page.locator("#utskrift")).toContainText("EL-123 rev C");
   await expect(page.locator("#utskrift")).toContainText("Utförare: Dan");
 });
