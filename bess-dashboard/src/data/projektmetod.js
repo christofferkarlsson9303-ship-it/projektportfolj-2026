@@ -19,6 +19,7 @@ export const SIDHJALP = {
   risker: ["Ta hand om problem innan de händer", "Skriv vad som kan gå fel och vad följden blir.", "Bedöm risken och välj en åtgärd.", "Utse ansvarig och följ upp om åtgärden fungerar."],
   storning: ["Dokumentera när arbetet hindras", "Skriv vad som stoppade arbetet och när.", "Beskriv påverkan på tid och kostnad.", "Granska underrättelsen och följ upp beställarens svar."],
   ata: ["Få kontroll på ändrat arbete", "Skapa ett ärende när omfattningen ändras eller ett hinder uppstår.", "Spara underrättelse, beställning, pris och bevis.", "Följ ärendet till beslut och fakturering. Projektets kontrakt styr frister och ersättning."],
+  atakalkyl: ["Räkna fram ÄTA-beloppet", "Välj ärende överst, eller skapa ett nytt.", "Klicka på snabbval och fyll i antal, övertid och faktisk kostnad.", "Spara beloppet på ärendet. Skriv ut avin eller ta CSV till beställaren."],
   budget: ["Jämför planerad och använd kostnad", "Lägg budget på projektets aktiviteter.", "Registrera kostnader och stäm av rapporterade timmar.", "Utred skillnader tidigt. Kvar i budget är inte automatiskt en slutkostnadsprognos."],
   tid: ["Registrera arbetade timmar", "Välj person, dag, projekt och aktivitet.", "Ange timmar och om tiden ska ingå i fakturaunderlag.", "Kontrollera veckans timmar före överlämning."],
   ekonomi: ["Se kontrakt, betalningar och ändringar", "Kontrollera kontraktssumma och betalplan.", "Stäm av ÄTA-belopp och vad som är fakturerat.", "Jämför med Budget och utfall för att se projektets kostnader."],

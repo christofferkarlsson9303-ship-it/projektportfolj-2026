@@ -14,6 +14,7 @@ import { Kontakter } from "./Kontakter.jsx";
 import { Tavla } from "./Tavla.jsx";
 import { Tidplan } from "./Tidplan.jsx";
 import { Ata } from "./Ata/AtaSection.jsx";
+import { AtaKalkylVy } from "./Ata/AtaKalkylVy.jsx";
 import { Byggmoten } from "./Byggmoten.jsx";
 import { Dagbok } from "./Dagbok.jsx";
 import { Storning } from "./Storning.jsx";
@@ -46,6 +47,7 @@ export const SEKTIONER = {
   faktura: Faktura,
   milstolpar: Milstolpar,
   ata: Ata,
+  atakalkyl: AtaKalkylVy,
   ekonomi: Ekonomi,
   moten: Byggmoten,
   dagbok: Dagbok,
