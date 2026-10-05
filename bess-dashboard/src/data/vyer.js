@@ -111,7 +111,10 @@ const ENKLA_LEADS = {
   data: "Kontrollera lagringen, granska importer och ta en säkerhetskopia.",
 };
 export const VYER = GRUPPER.flatMap(([namn, ids]) => [["_sek", namn], ...ids.map((id) => [id, URSPRUNG[id][1], ENKLA_LEADS[id] || URSPRUNG[id][2]])]);
-export const ENKEL_MENY = new Set(["metod", "idag", "oversikt", "kontrakt", "epc", "tidplan", "punkter", "ata", "atakalkyl", "hseq", "slutdok"]);
+/* Den enkla menyn: det som används varje dag. Sju flikar, utan grupprubriker.
+   Allt annat finns under "Visa alla funktioner" och i Ctrl/Cmd+K. ÄTA-kalkylen
+   nås från ÄTA-vyn ("Öppna i kalkyl"), projektmetoden från sidhjälpen. */
+export const ENKEL_MENY = new Set(["idag", "oversikt", "epc", "tidplan", "punkter", "ata", "hseq"]);
 
 export const NAVIKONER = { ...NAVIKON, ...IKONER_TILLAGDA, metod: '<path d="M4 5h16v14H4zM8 9h8M8 13h8M8 17h4"/>' };
 
