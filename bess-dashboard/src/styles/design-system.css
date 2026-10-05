@@ -1544,6 +1544,7 @@ button.ov-chip:hover{border-color:var(--one-bla);color:var(--ink)}
 .ov-varning{display:flex;align-items:flex-start;gap:8px;font-size:12.5px;line-height:1.45;color:var(--bad-ink);
   background:var(--bad-bg);border-radius:9px;padding:9px 11px}
 .ov-varning svg{flex:0 0 auto;margin-top:1px}
+.ov-varning.warn{color:var(--warn-ink);background:var(--warn-bg)}
 
 /* ----- Risker ----- */
 .ov-risklista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
@@ -1979,6 +1980,10 @@ button.ov-gantt-rad:focus-visible{outline:3px solid var(--one-bla);outline-offse
   box-shadow:inset 0 0 0 1px var(--hairline-stark);animation:ovAvsloja .8s var(--ease) .15s both}
 .ov-gantt-stapel i{display:block;height:100%;background:var(--viz-pagar)}
 .ov-gantt-fas.klar .ov-gantt-stapel{background:var(--viz-klar);box-shadow:none}
+/* Klar i tid men inte styrkt: randig varningston i stället för fylld klar-ton,
+   så en härledd grind inte ser ut som en godkänd. Texten bredvid säger varför. */
+.ov-gantt-fas.ostyrkt .ov-gantt-nr{background:var(--warn-bg);color:var(--warn-ink)}
+.ov-gantt-fas.ostyrkt .ov-gantt-stapel{background:repeating-linear-gradient(135deg,var(--warn-bg) 0 6px,var(--surface) 6px 10px);box-shadow:inset 0 0 0 1.5px var(--warn-ink)}
 .ov-gantt-fas.pagar .ov-gantt-stapel{
   background:color-mix(in srgb,var(--viz-pagar) 30%,var(--surface));box-shadow:inset 0 0 0 1.5px var(--viz-pagar)}
 .ov-gantt-fas.sen .ov-gantt-stapel{background:var(--bad-bg);box-shadow:inset 0 0 0 1.5px var(--rod)}
@@ -2007,6 +2012,7 @@ button.ov-gantt-rad:focus-visible{outline:3px solid var(--one-bla);outline-offse
 button.ov-gantt-rad:hover .ov-gantt-tips,button.ov-gantt-rad:focus-visible .ov-gantt-tips,.ov-gantt-ms:hover .ov-gantt-tips{display:block}
 .ov-gantt-fot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 20px}
 .ov-legend i.sen{background:var(--bad-bg);box-shadow:inset 0 0 0 1.5px var(--rod)}
+.ov-legend i.ostyrkt{background:repeating-linear-gradient(135deg,var(--warn-bg) 0 3px,var(--surface) 3px 5px);box-shadow:inset 0 0 0 1.5px var(--warn-ink)}
 .ov-legend i.kritisk{background:var(--surface);box-shadow:inset 0 0 0 2.5px var(--ink)}
 .ov-legend i.grind{border-radius:2px;transform:rotate(45deg) scale(.8);background:var(--surface);box-shadow:inset 0 0 0 2px var(--orange)}
 .ov-gantt-mslista{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--ink-soft)}
