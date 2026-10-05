@@ -424,9 +424,30 @@ export function datumUrFilnamn(filnamn) {
   return m ? `${m[1]}-${m[2]}-${m[3]}` : "";
 }
 
-export function forslagProtokoll(state, { filnamn = "", projektId = null, datum = "" } = {}) {
+/** Ansvarig i protokollet → appens roll på mötespunkten (PUNKTROLL). */
+const UE_NAMN = /Elleholms|A-Bygg|Jinert|Techinova|Structor|Securitas|Spark|Bravida/i;
+function punktroll(ansvarig, var_, tolkning) {
+  if (!ansvarig || var_) return "PL";
+  if (/Ingrid/i.test(ansvarig) || (tolkning?.deltagare || []).some((d) => d.namn === ansvarig && d.org === "Ingrid Capacity")) return "Beställare";
+  if (/VEAB|Vexnet|Växjö Energi|nätägare/i.test(ansvarig)) return "Nätägare";
+  if (UE_NAMN.test(ansvarig)) return "UE";
+  return "PL";
+}
+
+/** Öppna punkter i projektet som redan har samma text — de föreslås inte igen. */
+const redanPunkt = (state, pid, text) =>
+  (state.punkter || []).some((p) => (p.projektId === pid || p.projektId === "bada") && String(p.titel || "").trim() === text.trim());
+
+/**
+ * Mötesprotokoll → Byggmöten. Med `tolkning` (lib/protokolltolkning.js) fylls
+ * mötet med huvud och punkter, och förslaget får en lista med åtgärder som
+ * kan bli öppna punkter. Utan tolkning (äldre .doc, okänd mall) arkiveras
+ * protokollet som förut och mötet skapas tomt.
+ */
+export function forslagProtokoll(state, { filnamn = "", projektId = null, datum = "", tolkning = null } = {}) {
   const pid = projektId || hittaProjekt(state, filnamn);
-  const nr = moteNrUrFilnamn(filnamn);
+  const nr = moteNrUrFilnamn(filnamn) || tolkning?.moteNr || "";
+  const t = tolkning && tolkning.punkter ? tolkning : null;
   const bas = {
     typ: "protokoll",
     titel: "Mötesprotokoll → Byggmöten",
@@ -436,38 +457,85 @@ export function forslagProtokoll(state, { filnamn = "", projektId = null, datum 
     nya: [],
     uppdateringar: [],
     oforandrade: 0,
-    varningar: [],
+    varningar: [...(t?.varningar || [])],
     info: ["Protokollet blir MASTER om mötesnumret är det högsta för projektet — annars arkiveras det direkt."],
     moteNr: nr,
+    tolkning: t,
+    atgarder: [],
   };
+  if (t) {
+    const antal = t.atgarder.length;
+    bas.info.unshift(
+      `Tolkat ur protokollet: ${t.punkter.length} punkter, ${antal} ${antal === 1 ? "åtgärd" : "åtgärder"}. Kryssa i de åtgärder som ska bli öppna punkter.`
+    );
+    if (t.dolda) bas.info.push(`${t.dolda} rader med inloggningsuppgifter hoppades över. De sparas inte i appen.`);
+  }
   if (!pid) bas.varningar.push("Kunde inte avgöra projektet ur filnamnet — välj projekt innan du tillämpar.");
   if (!nr) bas.info.push("Mötesnummer saknas i filnamnet — protokollet arkiveras utan att kopplas till ett möte.");
   if (!pid || !nr) return bas;
 
+  const motesPunkter = t
+    ? t.punkter.map((p) => ({
+        id: `${pid}-${p.id}`,
+        para: p.para,
+        text: `${p.avsnitt} ${p.rubrik}: ${p.text}`,
+        ansvarig: punktroll(p.ansvarig, p.atgarder[0]?.var, t),
+        status: p.typ === "atgard" ? "oppen" : "avslutad",
+        urId: "",
+      }))
+    : [];
+  const huvud = t ? { plats: t.plats || "", nasta: t.nasta || "", deltagare: t.deltagareText || "" } : {};
+
+  bas.atgarder = t
+    ? t.atgarder.map((a) => {
+        const finns = redanPunkt(state, pid, a.text);
+        return { ...a, id: `p-${pid}-${a.id}`, finns, vald: !finns && a.var !== false };
+      })
+    : [];
+
   const finns = (state.byggmoten || []).find((m) => m.projektId === pid && m.nr === nr);
   if (finns) {
-    bas.uppdateringar.push({
-      id: finns.id,
-      etikett: nr,
-      fore: { protokollFil: finns.protokollFil || "" },
-      efter: { protokollFil: filnamn },
-    });
+    // Ett möte som redan förts i appen skrivs inte över — bara filen kopplas.
+    // Är mötet tomt fylls det från protokollet.
+    const tomt = !(finns.punkter || []).length;
+    const efter = { protokollFil: filnamn, ...(t && tomt ? { ...huvud, punkter: motesPunkter } : {}) };
+    const fore = Object.fromEntries(Object.keys(efter).map((k) => [k, finns[k] ?? ""]));
+    bas.uppdateringar.push({ id: finns.id, etikett: nr, fore, efter });
+    if (t && !tomt) bas.info.push(`${nr} finns redan med punkter i Byggmöten. Mötet ändras inte, bara filen kopplas.`);
   } else {
     bas.nya.push({
       id: "bm" + Date.now(),
       projektId: pid,
       nr,
-      datum,
+      datum: t?.datum || datum,
       plats: "",
       nasta: "",
       deltagare: "",
       status: "justerat",
-      punkter: [],
+      punkter: motesPunkter,
       protokollFil: filnamn,
       importerat: true,
+      ...huvud,
     });
   }
   return bas;
+}
+
+/** Valda åtgärder → öppna punkter i projektet. */
+export function punkterUrAtgarder(f) {
+  const t = f.tolkning;
+  return (f.atgarder || [])
+    .filter((a) => a.vald && !a.finns)
+    .map((a) => ({
+      id: a.id,
+      projektId: f.projektId,
+      titel: a.text,
+      agare: a.ansvarig || "",
+      forfaller: a.forfaller || "",
+      status: "oppen",
+      instruktion: `Ur ${f.moteNr}${t?.datum ? " " + t.datum : ""}, ${a.avsnitt} ${a.rubrik}: ${a.stycke}`,
+      kalla: f.moteNr,
+    }));
 }
 
 /* ---------- Gemensamt ---------- */
@@ -502,6 +570,8 @@ export function forslagText(f) {
   const delar = [];
   if (f.nya.length) delar.push(`${f.nya.length} nya`);
   if (f.uppdateringar.length) delar.push(`${f.uppdateringar.length} uppdaterade`);
+  const punkter = f.typ === "protokoll" ? punkterUrAtgarder(f).length : 0;
+  if (punkter) delar.push(`${punkter} öppna ${punkter === 1 ? "punkt" : "punkter"} ur protokollet`);
   return `Import ${f.filnamn}: ${delar.join(", ") || "inga ändringar"}`;
 }
 
@@ -526,5 +596,11 @@ export function tillampaForslag(state, f) {
   const lista = f.lista;
   const andringar = new Map(f.uppdateringar.map((u) => [u.id, u.efter]));
   const uppdaterad = (state[lista] || []).map((r) => (andringar.has(r.id) ? { ...r, ...andringar.get(r.id) } : r));
-  return { ...state, [lista]: [...uppdaterad, ...f.nya] };
+  const ut = { ...state, [lista]: [...uppdaterad, ...f.nya] };
+  if (f.typ === "protokoll") {
+    const finns = new Set((state.punkter || []).map((p) => p.id));
+    const nya = punkterUrAtgarder(f).filter((p) => !finns.has(p.id));
+    if (nya.length) ut.punkter = [...(state.punkter || []), ...nya];
+  }
+  return ut;
 }

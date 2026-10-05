@@ -1,4 +1,5 @@
 import { crc32, deflateRawSync } from "node:zlib";
+import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { excelDatum, kolIndex, lasXlsx } from "./xlsx.js";
 import {
@@ -21,6 +22,7 @@ import { byggCsv } from "./export.js";
 import { SEED } from "../data/seed.js";
 import { efterInlasning, normalisera, reducer } from "../state/portfolj-reducer.js";
 import { medNyMaster, perProjekt } from "../state/protokoll-arkiv.js";
+import { tolkaProtokoll } from "./protokolltolkning.js";
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -365,6 +367,47 @@ describe("protokoll", () => {
     const igen = forslagProtokoll(efter, { filnamn: "Byggmöte_9_-_Växjö_rev2.pdf" });
     expect(igen.nya).toEqual([]);
     expect(igen.uppdateringar[0].efter).toEqual({ protokollFil: "Byggmöte_9_-_Växjö_rev2.pdf" });
+  });
+});
+
+describe("Protokoll med tolkning", () => {
+  const TEXT = readFileSync(new URL("./__fixtures__/byggmote-ingrid.txt", import.meta.url), "utf8");
+  const tolkning = tolkaProtokoll(TEXT, { filnamn: "Byggmöte_10_Växjö.pdf" });
+
+  it("mötet får huvud och punkter, och våra åtgärder är förvalda", () => {
+    const s = last();
+    const f = forslagProtokoll(s, { filnamn: "Byggmöte_10_Växjö.pdf", tolkning });
+    expect(f.nya[0]).toMatchObject({ nr: "BM-10", datum: "2026-09-28", plats: "Digitalt via Teams", nasta: "2026-10-12" });
+    expect(f.nya[0].punkter.length).toBe(tolkning.punkter.length);
+    expect(f.nya[0].punkter.find((p) => p.para === "4")).toMatchObject({ status: "oppen", urId: "" });
+    const valda = f.atgarder.filter((a) => a.vald).map((a) => a.ansvarig);
+    expect(valda.every((v) => v !== "A-Bygg")).toBe(true);
+    expect(f.atgarder.find((a) => a.ansvarig === "A-Bygg").vald).toBe(false);
+  });
+
+  it("tillämpat: valda åtgärder blir öppna punkter med källa, en gång", () => {
+    const s = last();
+    const f = forslagProtokoll(s, { filnamn: "Byggmöte_10_Växjö.pdf", tolkning });
+    const efter = reducer(s, { type: "IMPORTERA", forslag: f });
+    const nya = efter.punkter.filter((p) => p.kalla === "BM-10");
+    expect(nya.length).toBe(f.atgarder.filter((a) => a.vald).length);
+    expect(nya[0]).toMatchObject({ projektId: "36037", status: "oppen" });
+    expect(nya[0].instruktion).toMatch(/^Ur BM-10 2026-09-28, /);
+    expect(efter.andringslogg[0].text).toMatch(/öppna punkter ur protokollet/);
+    expect(JSON.stringify(efter)).not.toMatch(/hemligt/);
+
+    // Samma protokoll igen: mötet finns med punkter och åtgärderna finns redan.
+    const igen = forslagProtokoll(efter, { filnamn: "Byggmöte_10_Växjö.pdf", tolkning });
+    expect(igen.uppdateringar[0].efter).toEqual({ protokollFil: "Byggmöte_10_Växjö.pdf" });
+    expect(igen.atgarder.filter((a) => a.finns).length).toBe(nya.length);
+    expect(igen.atgarder.some((a) => a.vald)).toBe(false);
+  });
+
+  it("ett tomt möte som redan finns fylls från protokollet", () => {
+    const s = { ...last(), byggmoten: [{ id: "m1", projektId: "36037", nr: "BM-10", datum: "2026-09-28", punkter: [], status: "utkast" }] };
+    const f = forslagProtokoll(s, { filnamn: "Byggmöte_10_Växjö.pdf", tolkning });
+    expect(f.uppdateringar[0].efter).toMatchObject({ protokollFil: "Byggmöte_10_Växjö.pdf", nasta: "2026-10-12" });
+    expect(f.uppdateringar[0].efter.punkter.length).toBeGreaterThan(0);
   });
 });
 
