@@ -71,7 +71,8 @@ test("markerade projektuppgifter skrivs ut med utförare och ritningsreferens", 
   await page.evaluate(() => { window.print = () => {}; });
   await page.getByRole("button", { name: "Skriv ut markerade (1)" }).click();
   await expect(page.locator("#utskrift")).toContainText("EL-123 rev C");
-  await expect(page.locator("#utskrift")).toContainText("Utförare: Dan");
+  // Arbetslistan i klartext skriver "Vem:" vid varje uppgift.
+  await expect(page.locator("#utskrift")).toContainText("Vem: Dan");
 });
 
 test("Excel exporterar filtrerad tabell och svensk beloppsredigering kan avbrytas", async ({ page }) => {
