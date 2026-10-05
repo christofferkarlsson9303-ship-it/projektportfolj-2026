@@ -9,6 +9,7 @@ En visuell prototyp byggdes 2026-10-04 i ett annat verktyg (Grok). Den ligger **
 - **Tidplanen ”Blir vi klara i tid” finns.** `src/components/tidplan/KritiskLinje.jsx` + `src/lib/kritiskLinje.js` + `src/data/fasberoenden.js`. Kolumnerna fas, standardplan, beräknat, försening, marginal, väntar på, och tabellen M1–M7, är redan där. Prototypens ”0 dagar” och fasta datum 2026-12-02 är seed för 36037, inte en kalkyl. Byt inte ut motorn.
 - **Ett klick till papper är PR 28**, grenen `snabbutskrift`. `useSnabbUtskrift()` i `src/components/field/SnabbUtskrift.jsx` skriver ut arbetslista och fasblankett utan att öppna panelen. Panelen (`FaltmaterialPanel.jsx`) finns kvar för fler val. Ctrl/Cmd+K har samma dokument. Bygg inte en ny utskriftsväg.
 - **Designsystemet** är `src/components/ds/` (`Card`, `StatTile`, `StatusBadge`, `Callout`). Nya ytor använder det. Inga nya hex-färger, inget parallellt tema.
+- **ÄTA-kalkylen finns på två ställen med samma kod.** Kortet i vy `ata` (”Öppna i kalkyl”) och egen flik `atakalkyl` (`AtaKalkylVy.jsx`). Logiken ligger i `src/sections/Ata/useAtaKalkyl.jsx` och tabellen i `KalkylTabell.jsx`. Ändra där, inte i två kopior.
 - **Data** är två JSONB-rader: `portfolj/state` och `portfolj/ekonomi`. RLS skyddar. Ändra inte schemat för en kalkylator eller en bild.
 
 ## Gör inte

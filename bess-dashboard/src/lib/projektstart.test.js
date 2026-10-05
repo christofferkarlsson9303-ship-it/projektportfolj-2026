@@ -11,8 +11,8 @@ describe("Återanvändbar projektmetod", () => {
     for (const s of METODSTEG) for (const id of s.vyer) expect(GILTIGA_VYER.has(id)).toBe(true);
     expect(METODSTEG.flatMap((s) => s.faser)).toEqual(Array.from({ length: 16 }, (_, i) => i));
     for (const id of ENKEL_MENY) expect(GILTIGA_VYER.has(id)).toBe(true);
-    expect(GILTIGA_VYER.size).toBe(28);
-    expect(ENKEL_MENY.size).toBe(10);
+    expect(GILTIGA_VYER.size).toBe(29);
+    expect(ENKEL_MENY.size).toBe(11);
   });
   it("startar tomma projekt utan gamla resultat, antagna datum eller ekonomivärden", () => {
     const state = efterInlasning(structuredClone(SEED));
