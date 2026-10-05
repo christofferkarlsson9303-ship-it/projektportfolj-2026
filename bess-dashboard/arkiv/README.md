@@ -12,3 +12,7 @@ kommentarer i koden som hänvisar till "standalone-versionen" eller
 
 Öppna den direkt i en webbläsare för att jämföra. Den sparar i sin egen
 lagring och påverkar inte appens data.
+
+`ATA-kalkylator_2026-10-05.html` är ÄTA-kalkylatorn exporterad från
+Claude-artefakten 2026-10-05 — självbärande, öppnas direkt i webbläsare.
+Används inte av appen, bygget eller testen.
