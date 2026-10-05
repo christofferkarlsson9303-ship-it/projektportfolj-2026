@@ -249,5 +249,9 @@ export const SEED = {
   siteObjekt: [],
 
   /* Ändringslogg — statusändringar m.fl. händelser, senaste ~150 posterna, nyast först. */
-  andringslogg: []
+  andringslogg: [],
+
+  /* Utanför appen: {id, ts, vart, vad, projektId} — varje gång Excel, Teams,
+     mejl eller papper behövdes i stället. Se lib/utanfor.js. */
+  utanfor: []
 };

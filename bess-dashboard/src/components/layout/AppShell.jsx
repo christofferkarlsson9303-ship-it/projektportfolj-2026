@@ -7,6 +7,7 @@ import { Toast } from "../ui/Toast.jsx";
 import { Kommandopalett } from "../ui/Kommandopalett.jsx";
 import { Utskriftsyta } from "../ui/Utskrift.jsx";
 import { usePortfolj, useUi } from "../../state/hooks.js";
+import { UtanforDialog } from "../ui/UtanforDialog.jsx";
 import { underlagsstampel } from "../../lib/berakningar.js";
 import { Sidhjalp } from "../ui/Sidhjalp.jsx";
 
@@ -64,6 +65,7 @@ export function AppShell({ children }) {
       <Toast />
       <Dialog />
       <Kommandopalett />
+      <UtanforDialog />
       {faltmaterial && state.projekt.length ? <FaltmaterialPanel
         key={valtProjekt}
         projekt={state.projekt.find((p) => p.id === valtProjekt) || state.projekt[0]}

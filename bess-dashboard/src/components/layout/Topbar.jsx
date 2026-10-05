@@ -2,7 +2,7 @@ import { VYMETA as META } from "../../data/vyer.js";
 import { useUi } from "../../state/hooks.js";
 
 export function Topbar() {
-  const { aktivVy, navOppen, setNavOppen, tema, vaxlaTema, oppnaFaltmaterial, setSokOppen } = useUi();
+  const { aktivVy, navOppen, setNavOppen, tema, vaxlaTema, oppnaFaltmaterial, setSokOppen, setUtanforOppen } = useUi();
   const m = META[aktivVy] || { namn: "", lead: "" };
 
   const temaEtikett =
@@ -29,6 +29,15 @@ export function Topbar() {
 
       <button type="button" className="kbd !text-xs" onClick={() => setSokOppen(true)} aria-haspopup="dialog" title="Sök sidor, projekt och ärenden (Ctrl/Cmd+K)">Sök</button>
       <button type="button" className="kbd !text-xs" onClick={() => oppnaFaltmaterial()} aria-haspopup="dialog">Fältmaterial</button>
+      <button
+        type="button"
+        className="kbd !text-xs"
+        onClick={() => setUtanforOppen(true)}
+        aria-haspopup="dialog"
+        title="Logga när du fick gå till Excel, Teams, mejl eller papper i stället"
+      >
+        Utanför appen
+      </button>
 
       <button type="button" className="kbd" onClick={vaxlaTema} aria-label={temaEtikett} title={temaEtikett}>
         <span aria-hidden="true">{tema === "dark" ? "☀" : "☾"}</span>

@@ -55,6 +55,7 @@ export function UiProvider({ children }) {
   const [utskrift, setUtskrift] = useState(null);
   const [faltmaterial, setFaltmaterial] = useState(null);
   const [sokOppen, setSokOppen] = useState(false);
+  const [utanforOppen, setUtanforOppen] = useState(false);
   const oppnaFaltmaterial = useCallback((urval = {}) => setFaltmaterial(urval), []);
   const stangFaltmaterial = useCallback(() => setFaltmaterial(null), []);
   const rensaUtskrift = useCallback(() => setUtskrift(null), []);
@@ -209,11 +210,12 @@ export function UiProvider({ children }) {
       rensaUtskrift,
       faltmaterial, oppnaFaltmaterial, stangFaltmaterial,
       sokOppen, setSokOppen,
+      utanforOppen, setUtanforOppen,
     }),
     [
       aktivVy, visa, valtProjekt, tema, vaxlaTema, tathet, setTathet, toast, visaToast,
       modal, fraga, bekrafta, stangModal, navOppen, fokus, oppnaFlagga,
-      postFokus, oppnaPost, utskrift, skrivUt, rensaUtskrift, faltmaterial, oppnaFaltmaterial, stangFaltmaterial, sokOppen,
+      postFokus, oppnaPost, utskrift, skrivUt, rensaUtskrift, faltmaterial, oppnaFaltmaterial, stangFaltmaterial, sokOppen, utanforOppen,
     ]
   );
 

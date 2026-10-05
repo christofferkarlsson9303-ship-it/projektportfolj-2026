@@ -13,7 +13,7 @@ import { FASBLANKETTER, utforareMedUppgifter } from "../../lib/snabbutskrift.js"
    aria-activedescendant, så det aktiva alternativet läses upp vid piltangenter. */
 export function Kommandopalett() {
   const { state } = usePortfolj();
-  const { visa, setValtProjekt, valtProjekt, oppnaPost, oppnaFaltmaterial, sokOppen: oppen, setSokOppen: setOppen } = useUi();
+  const { visa, setValtProjekt, valtProjekt, oppnaPost, oppnaFaltmaterial, setUtanforOppen, sokOppen: oppen, setSokOppen: setOppen } = useUi();
   const snabb = useSnabbUtskrift();
   const [q, setQ] = useState("");
   const [vald, setVald] = useState(0);
@@ -22,7 +22,7 @@ export function Kommandopalett() {
   const forraFokus = useRef(null);
 
   const index = useMemo(() => {
-    const ut = [{ t: "Vy", label: "Projektets egenkontrollrapport", sub: "Beställare / slutdokumentation / hela projektet", kor: () => oppnaFaltmaterial({ mallpaket: "projekt" }) }, { t: "Vy", label: "Skapa fältmaterial", sub: "Arbetslista / egenkontroll / PDF", kor: () => oppnaFaltmaterial() }];
+    const ut = [{ t: "Vy", label: "Projektets egenkontrollrapport", sub: "Beställare / slutdokumentation / hela projektet", kor: () => oppnaFaltmaterial({ mallpaket: "projekt" }) }, { t: "Vy", label: "Skapa fältmaterial", sub: "Arbetslista / egenkontroll / PDF", kor: () => oppnaFaltmaterial() }, { t: "Verktyg", label: "Gick utanför appen", sub: "Logga Excel, Teams, mejl eller papper", kor: () => setUtanforOppen(true) }];
     const vp = state.projekt.find((p) => p.id === valtProjekt);
     if (vp) {
       const pn = `${vp.nr ? vp.nr + " " : ""}${vp.namn}`;
@@ -92,7 +92,7 @@ export function Kommandopalett() {
       ut.push({ t: "Kontakt", label: k.namn, sub: `${k.roll} · ${k.org}`, kor: () => visa("kontakter") })
     );
     return ut;
-  }, [state, visa, setValtProjekt, valtProjekt, oppnaPost, oppnaFaltmaterial, snabb]);
+  }, [state, visa, setValtProjekt, valtProjekt, oppnaPost, oppnaFaltmaterial, setUtanforOppen, snabb]);
 
   const traffar = useMemo(() => {
     const s = q.toLowerCase().trim();
