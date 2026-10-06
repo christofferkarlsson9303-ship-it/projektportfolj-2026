@@ -26,8 +26,10 @@ import {
   MILSTOLPAR,
   PUNKT_FOR_ID,
 } from "../data/bessChecklistData.ts";
+import { PROJEKTKONTROLL_REVISION, PROJEKTMALLAR } from "../data/projektkontroll.js";
 import { BESS_MATCH, betalRad, projekt } from "./berakningar.js";
 import { datumKort, idag, lokaltDatum } from "./datum.js";
+import { kontrollBrister } from "./projektkontroll.js";
 
 /** Status → [ton, text] för faser och ledtider. Tonen är designsystemets
  *  (ok/info/warn/bad); texten står alltid bredvid färgen. */
@@ -37,6 +39,21 @@ export const FAS_STATUS = {
   sen: ["bad", "Försenad"],
   kommande: ["", "Kommande"],
   odaterad: ["", "Ej planerad"],
+};
+
+/** Hur långt en fas har kommit i att bli styrkt, skilt från tidsstatusen.
+ *  Tre lägen, svagast först:
+ *  - fardigt     arbetet är färdigt: alla punkter bockade, eller grinden
+ *                passerad på något sätt (även härledd ur betalplanen)
+ *  - verifierad  alla fasens egenkontroller har komplett resultat, datum,
+ *                kontrollant och bevis
+ *  - godkand     kontrollerna är verifierade OCH grinden har ett angivet
+ *                datum — det dokumenterade klartecknet för nästa steg
+ *  En fakturerad milstolpe visar betalningsläget men styrker ingenting. */
+export const FAS_LAGE = {
+  godkand: ["ok", "Fas godkänd"],
+  verifierad: ["info", "Kontroll verifierad"],
+  fardigt: ["warn", "Arbete färdigt – ej verifierat"],
 };
 
 export const LEDTID_STATUS = {
@@ -185,13 +202,63 @@ function rakna(punkter, pl) {
   return r;
 }
 
+/* ---------- Verkliga egenkontroller ---------- */
+
+/** Fasens egenkontroller ur fältmaterialet (state.faltkontroller), räknade
+ *  mot fasens projektmall. En kontrollpunkt är verifierad när minst en
+ *  kontrollomfattning har ett komplett resultat — resultat, datum,
+ *  kontrollant, bevis och aktuell mallrevision — och ingen omfattning har
+ *  en öppen avvikelse (Ej OK). Det är samma krav som egenkontrollrapporten
+ *  ställer, så siffran här och rapporten kan inte säga emot varandra. */
+export function kontrollage(state, pid) {
+  const perPunkt = new Map();
+  for (const r of state.faltkontroller || []) {
+    if (r.projektId !== pid || !r.punktId) continue;
+    if (!perPunkt.has(r.punktId)) perPunkt.set(r.punktId, []);
+    perPunkt.get(r.punktId).push(r);
+  }
+  return FASER.map((f, i) => {
+    const punkter = PROJEKTMALLAR[i]?.punkter || [];
+    let verifierade = 0;
+    let avvikelser = 0;
+    for (const p of punkter) {
+      const rader = perPunkt.get(p.id) || [];
+      if (rader.some((r) => r.resultat === "ej-ok")) avvikelser++;
+      else if (rader.some((r) => !kontrollBrister(r, PROJEKTKONTROLL_REVISION).length)) verifierade++;
+    }
+    return { totalt: punkter.length, verifierade, avvikelser, kvar: punkter.length - verifierade };
+  });
+}
+
+/** Fasens tre lägen och det som saknas för nästa. `harledda` är punkter som
+ *  bara räknas som klara för att grinden passerats — inte avbockade av någon. */
+function verifiering(grind, kontroll, kvarPunkter, harledda) {
+  const arbete = grind.passerad || kvarPunkter === 0;
+  const verifierad = kontroll.totalt > 0 && kontroll.kvar === 0;
+  const godkand = grind.passerad && grind.kalla === "angiven";
+  const lage = godkand && verifierad ? "godkand" : verifierad ? "verifierad" : arbete ? "fardigt" : null;
+  const saknas = [];
+  if (lage && lage !== "godkand") {
+    if (!verifierad) {
+      saknas.push(`${kontroll.kvar} av ${kontroll.totalt} egenkontroller ej verifierade`);
+      if (kontroll.avvikelser) saknas.push(`${kontroll.avvikelser} avvikelse${kontroll.avvikelser > 1 ? "r" : ""} öppen`);
+    }
+    if (!godkand) saknas.push("klartecken (grinddatum) saknas");
+    if (harledda) saknas.push(`${harledda} punkter klara endast via grinden`);
+  }
+  return { arbete, verifierad, godkand, lage, saknas, harledda, kontroll };
+}
+
 /* ---------- Faser ---------- */
 
-/** Allt om projektets faser i ett svep — det Gantt-schemat och kapitlet ritar. */
+/** Allt om projektets faser i ett svep — det Gantt-schemat och kapitlet ritar.
+ *  `status` är tidsläget (klar/pågår/sen …) och styr planeringen; `verifiering`
+ *  säger om det som är klart också är styrkt. */
 export function faslage(state, pid, nu = idag()) {
   const plan = fasplan(state, pid);
   const g = grindar(state, pid);
   const pl = punktlage(state, pid, g);
+  const kl = kontrollage(state, pid);
 
   return FASER.map((f, i) => {
     const punkter = PUNKTER_I_FAS[i];
@@ -204,6 +271,9 @@ export function faslage(state, pid, nu = idag()) {
     else if (nu >= start) status = "pagar";
     else status = "kommande";
 
+    const antal = rakna(punkter, pl);
+    const harledda = punkter.filter((p) => pl.get(p.id).kalla === "grind").length;
+
     return {
       fas: f,
       start,
@@ -211,7 +281,8 @@ export function faslage(state, pid, nu = idag()) {
       egenPlan: egen,
       grind: g[i],
       status,
-      ...rakna(punkter, pl),
+      ...antal,
+      verifiering: verifiering(g[i], kl[i], antal.kvar, harledda),
     };
   });
 }

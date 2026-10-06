@@ -2,9 +2,9 @@ import { useMemo, useState } from "react";
 import { GanttChart } from "lucide-react";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { DatumFalt } from "../ui/Falt.jsx";
-import { FasStatus } from "../epc/Delar.jsx";
+import { FasLage, FasStatus } from "../epc/Delar.jsx";
 import { dagarTill, datumKort, idag, MANADER } from "../../lib/datum.js";
-import { FAS_STATUS, dagarMellan, faslage, milstolpslage, planAnkare } from "../../lib/epc.js";
+import { FAS_LAGE, FAS_STATUS, dagarMellan, faslage, milstolpslage, planAnkare } from "../../lib/epc.js";
 import { kritiskLinje } from "../../lib/kritiskLinje.js";
 import { Lank, Ruta } from "./Ruta.jsx";
 
@@ -15,7 +15,13 @@ import { Lank, Ruta } from "./Ruta.jsx";
    validerade ramp som nyckeltalen; bara försenad bär statusrött. Varje rad
    är en knapp som öppnar fasen i guiden, och verktygstipset visas på
    både hover och tangentbordsfokus. Milstolparna står även som text under
-   schemat, så ingenting hänger på att man hovrar. */
+   schemat, så ingenting hänger på att man hovrar.
+
+   En passerad grind betyder inte att fasen är styrkt. Härleds grinden ur en
+   fakturerad milstolpe eller en senare grind, eller saknar fasen verifierade
+   egenkontroller, får stapeln en randig varningston och raden säger vad som
+   saknas. Bara en godkänd fas (verifierade kontroller + angivet grinddatum)
+   får den fyllda klar-tonen. */
 
 const GRIND_KALLA = { angiven: "angiven", betalplan: "härledd ur betalplanen", följd: "följer av senare grind" };
 const MS_TEXT = { fakturerad: "Fakturerad", pagaende: "Pågående", kvar: "Kvar" };
@@ -108,6 +114,9 @@ export function Gantt({ i }) {
   const synliga = doljKlara ? faser.filter((f) => f.status !== "klar") : faser;
   const sena = faser.filter((f) => f.status === "sen");
   const passerade = faser.filter((f) => f.grind.passerad).length;
+  const godkanda = faser.filter((f) => f.verifiering.lage === "godkand").length;
+  // Klara i tid men inte styrkta — det som kan se färdigt ut utan att vara det.
+  const ostyrkta = faser.filter((f) => f.grind.passerad && f.verifiering.lage !== "godkand");
 
   return (
     <Ruta
@@ -117,7 +126,7 @@ export function Gantt({ i }) {
       titel="Fasplan, grindar och betalningar"
       under={
         p
-          ? `${p.nr ? p.nr + " " : ""}${p.namn} · ${passerade} av 16 grindar passerade${
+          ? `${p.nr ? p.nr + " " : ""}${p.namn} · ${passerade} av 16 grindar passerade · ${godkanda} godkända${
               p.fardigstallande && dagarTill(p.fardigstallande) >= 0
                 ? ` · slutbesiktning om ${dagarTill(p.fardigstallande)} d`
                 : ""
@@ -216,6 +225,10 @@ export function Gantt({ i }) {
                   const bredd = harDatum ? Math.max(0.6, x(f.slut) - vanster) : 0;
                   const sida = (vanster > 62 ? " hoger" : "") + (rad < 3 ? " under" : "");
                   const [, statusText] = FAS_STATUS[f.status];
+                  const v = f.verifiering;
+                  const ostyrkt = f.grind.passerad && v.lage !== "godkand";
+                  const lageText = v.lage ? FAS_LAGE[v.lage][1] : "";
+                  const saknasText = v.saknas.length ? `Saknas: ${v.saknas.join(", ")}` : "";
                   const grindText = f.grind.passerad
                     ? `${f.fas.grind.kod} passerad${f.grind.datum ? " " + f.grind.datum : ""} (${GRIND_KALLA[f.grind.kalla]})`
                     : `${f.fas.grind.kod} ej passerad`;
@@ -223,13 +236,13 @@ export function Gantt({ i }) {
                     <button
                       key={f.fas.nr}
                       type="button"
-                      className={`ov-gantt-rad ov-gantt-fas ${f.status}${kritiska.has(f.fas.nr) ? " kritisk" : ""}`}
+                      className={`ov-gantt-rad ov-gantt-fas ${f.status}${ostyrkt ? " ostyrkt" : ""}${kritiska.has(f.fas.nr) ? " kritisk" : ""}`}
                       onClick={() => oppnaPost("epc", `fas-${f.fas.nr}`)}
                       aria-label={`Fas ${f.fas.nr} ${f.fas.titel}: ${statusText}, ${
                         harDatum ? `${f.start} till ${f.slut}` : "ej planerad"
-                      }, ${f.klara} av ${f.punkter} punkter klara, ${grindText}${
-                        kritiska.has(f.fas.nr) ? ", styr slutdatumet" : ""
-                      }. Öppna i guiden.`}
+                      }, ${f.klara} av ${f.punkter} punkter klara, ${grindText}${lageText ? `, ${lageText}` : ""}${
+                        saknasText ? `. ${saknasText}` : ""
+                      }${kritiska.has(f.fas.nr) ? ", styr slutdatumet" : ""}. Öppna i guiden.`}
                     >
                       <span className="ov-gantt-etikett">
                         <span className="ov-gantt-nr">{f.fas.nr}</span>
@@ -265,6 +278,18 @@ export function Gantt({ i }) {
                               <br />
                               {grindText}
                               {f.fas.milstolpe ? ` · låser ${f.fas.milstolpe}` : ""}
+                              {lageText ? (
+                                <>
+                                  <br />
+                                  {lageText} · egenkontroller {v.kontroll.verifierade}/{v.kontroll.totalt}
+                                  {saknasText ? (
+                                    <>
+                                      <br />
+                                      {saknasText}
+                                    </>
+                                  ) : null}
+                                </>
+                              ) : null}
                             </span>
                           </>
                         ) : null}
@@ -280,7 +305,11 @@ export function Gantt({ i }) {
             <ul className="ov-legend">
               <li>
                 <i className="klar" aria-hidden="true" />
-                Grind passerad
+                Fas godkänd
+              </li>
+              <li>
+                <i className="ostyrkt" aria-hidden="true" />
+                Klar men ej styrkt
               </li>
               <li>
                 <i className="pagar" aria-hidden="true" />
@@ -314,6 +343,18 @@ export function Gantt({ i }) {
               ))}
             </ul>
           </div>
+
+          {ostyrkta.length ? (
+            <div className="ov-varning warn m-0" role="note" aria-label="Faser som inte är styrkta">
+              <FasLage lage="fardigt" />
+              <span>
+                {ostyrkta.length} {ostyrkta.length === 1 ? "fas räknas" : "faser räknas"} som klar
+                {ostyrkta.length === 1 ? "" : "a"} utan dokumenterat klartecken:{" "}
+                {ostyrkta.map((f) => `${f.fas.nr} ${f.fas.kort}`).join(", ")}. Fakturerad milstolpe visar
+                betalning, inte utförd kontroll.
+              </span>
+            </div>
+          ) : null}
 
           {sena.length ? (
             <p className="ov-varning m-0">

@@ -1,5 +1,5 @@
 import { MARKERINGAR } from "../../data/bessChecklistData.ts";
-import { FAS_STATUS, LEDTID_STATUS } from "../../lib/epc.js";
+import { FAS_LAGE, FAS_STATUS, LEDTID_STATUS } from "../../lib/epc.js";
 import { FAS_TILL_STATUS, LEDTID_TILL_STATUS } from "../../lib/status.js";
 import { StatusBadge } from "../ds/StatusBadge.jsx";
 
@@ -32,6 +32,14 @@ export function Markeringar({ badges }) {
 export function FasStatus({ status }) {
   const [, text] = FAS_STATUS[status] || ["", status];
   return <StatusBadge status={FAS_TILL_STATUS[status]} label={text} />;
+}
+
+/** Verifieringsläget för en fas (arbete färdigt / kontroll verifierad / fas
+ *  godkänd). Ingenting renderas för en fas som inte kommit så långt. */
+export function FasLage({ lage }) {
+  if (!FAS_LAGE[lage]) return null;
+  const [ton, text] = FAS_LAGE[lage];
+  return <StatusBadge ton={ton} label={text} />;
 }
 
 export function LedtidStatus({ status }) {
