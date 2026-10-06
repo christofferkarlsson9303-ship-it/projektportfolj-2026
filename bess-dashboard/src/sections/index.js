@@ -31,9 +31,11 @@ import { Budget } from "./Budget.jsx";
 import { Faktura } from "./Faktura.jsx";
 import { Kontrakt } from "./Kontrakt.jsx";
 import { Site } from "./Site/Site.jsx";
+import { Projektstart } from "./Projektstart/Projektstart.jsx";
 
 export const SEKTIONER = {
   metod: Projektmetod,
+  start: Projektstart,
   kontrakt: Kontrakt,
   idag: Idag,
   oversikt: DashboardView,

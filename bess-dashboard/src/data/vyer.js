@@ -7,6 +7,7 @@
 import { NAVIKON, VYER as VYER_ORIGINAL } from "./konstanter.js";
 
 const TILLAGDA = [
+  ["start", "Projektstart", "Gå igenom ONE-P-startens fjorton steg. När du är klar skapas projektet med risker och milstolpar."],
   ["kontrakt", "Kontraktet", "Det viktigaste i projektets avtal: frister, betalningar, viten, säkerheter och priser."],
   ["metod", "Min projektmetod", "Så leder du projektet: vad du gör varje dag, varje vecka och inför nästa steg."],
   [
@@ -58,6 +59,8 @@ const IKONER_TILLAGDA = {
   atakalkyl: '<rect x="5" y="2.5" width="14" height="19" rx="2"/><path d="M8 6.5h8v3H8z"/><path d="M8.5 13h.01M12 13h.01M15.5 13h.01M8.5 16.5h.01M12 16.5h.01M15.5 16.5h.01"/>',
   // Kub: volymerna på tomten.
   site: '<path d="M12 2.5 3.5 7v10L12 21.5 20.5 17V7z"/><path d="M3.5 7 12 11.5 20.5 7M12 11.5v10"/>',
+  // Flagga på stolpe: start.
+  start: '<path d="M5 21V4"/><path d="M5 4h12l-2.5 4L17 12H5"/>',
   // Måltavla: mål → åtgärder.
   handlingsplan: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>',
 };
@@ -74,13 +77,14 @@ function medInskjutna(lista) {
 /** Hela vylistan, med de tillagda vyerna först och de inskjutna på sin plats. */
 const URSPRUNG = Object.fromEntries(medInskjutna([...TILLAGDA, ...VYER_ORIGINAL]).filter(([id]) => id !== "_sek").map((v) => [v[0], v]));
 const GRUPPER = [
-  ["Börja här", ["metod", "idag", "oversikt"]],
+  ["Börja här", ["metod", "start", "idag", "oversikt"]],
   ["Planera jobbet", ["kontrakt", "epc", "site", "tidplan", "handlingsplan", "resurser", "kontakter"]],
   ["Gör och följ upp", ["punkter", "tavla", "moten", "vecka", "dagbok", "hseq", "risker", "storning"]],
   ["Följ pengarna", ["ata", "atakalkyl", "budget", "tid", "ekonomi", "milstolpar", "faktura"]],
   ["Lämna över och spara", ["slutdok", "rapport", "rutiner", "data"]],
 ];
 const ENKLA_LEADS = {
+  start: "Gå igenom startens steg. När du är klar skapas projektet.",
   kontrakt: "Frister, betalningar och viten ur avtalet, med paragraf att slå upp.",
   idag: "Vad behöver du ta hand om först? Öppna en rad för att komma till rätt ärende.",
   oversikt: "Se läget i dina projekt, nästa arbete och frågor som behöver hjälp.",

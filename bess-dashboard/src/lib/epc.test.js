@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SEED } from "../data/seed.js";
 import { efterInlasning, normalisera, reducer } from "../state/portfolj-reducer.js";
+import { PROJEKTKONTROLL_REVISION, PROJEKTMALLAR } from "../data/projektkontroll.js";
+import { kontrollId } from "./projektkontroll.js";
 import {
   VARNING_DAGAR,
   checklistsummering,
@@ -9,6 +11,7 @@ import {
   fasplan,
   grindar,
   kommandeHallpunkter,
+  kontrollage,
   lagesbild,
   ledtiderPortfolj,
   ledtidslage,
@@ -338,5 +341,88 @@ describe("erfarenheter", () => {
   it("sparar ingen tom kommentar", () => {
     const s = seed();
     expect(kommentar(s, "36037", "4.6", "notering", "   ")).toBe(s);
+  });
+});
+
+/* ---------- Verifiering: arbete färdigt / kontroll verifierad / fas godkänd ---------- */
+
+/** Registrerar en komplett (eller avvikande) egenkontroll för varje punkt i fasens mall. */
+function kontrollera(s, pid, fas, falt = {}) {
+  for (const p of PROJEKTMALLAR[fas].punkter) {
+    const rad = {
+      id: kontrollId(pid, "Hela anläggningen", p.id),
+      projektId: pid,
+      omfattning: "Hela anläggningen",
+      punktId: p.id,
+      resultat: "ok",
+      datum: "2026-09-20",
+      kontrollant: "A. Kontrollant",
+      referens: "EK-" + p.id,
+      mallrevision: PROJEKTKONTROLL_REVISION,
+      ...falt,
+    };
+    s = reducer(s, { type: "FALT_KONTROLL", rad });
+  }
+  return s;
+}
+
+describe("verifiering", () => {
+  it("räknar inte en grind ur betalplanen som godkänd", () => {
+    const f = faslage(seed(), "36037", NU)[7]; // G7 härledd ur fakturerad M3
+    expect(f.status).toBe("klar"); // tidsläget är oförändrat
+    expect(f.grind.kalla).toBe("betalplan");
+    expect(f.verifiering).toMatchObject({ arbete: true, verifierad: false, godkand: false, lage: "fardigt" });
+    expect(f.verifiering.harledda).toBeGreaterThan(0);
+    expect(f.verifiering.saknas.join(" ")).toMatch(/egenkontroller ej verifierade/);
+    expect(f.verifiering.saknas.join(" ")).toMatch(/klartecken/);
+  });
+
+  it("ger kontroll verifierad när alla egenkontroller är kompletta men grinddatum saknas", () => {
+    const s = kontrollera(seed(), "36037", 7);
+    const v = faslage(s, "36037", NU)[7].verifiering;
+    expect(v.kontroll).toMatchObject({ verifierade: v.kontroll.totalt, kvar: 0, avvikelser: 0 });
+    expect(v).toMatchObject({ verifierad: true, godkand: false, lage: "verifierad" });
+    expect(v.saknas).toContain("klartecken (grinddatum) saknas");
+  });
+
+  it("ger fas godkänd först med verifierade kontroller och angivet grinddatum", () => {
+    let s = reducer(seed(), { type: "EPC_FAS", pid: "36037", fas: 7, falt: "grindDatum", varde: "2026-09-21" });
+    expect(faslage(s, "36037", NU)[7].verifiering.lage).toBe("fardigt"); // grind utan kontroller räcker inte
+    s = kontrollera(s, "36037", 7);
+    const v = faslage(s, "36037", NU)[7].verifiering;
+    expect(v).toMatchObject({ arbete: true, verifierad: true, godkand: true, lage: "godkand", saknas: [] });
+  });
+
+  it("räknar ofullständiga kontroller och öppna avvikelser som ej verifierade", () => {
+    let s = kontrollera(seed(), "36037", 7, { kontrollant: "" });
+    expect(kontrollage(s, "36037")[7].verifierade).toBe(0);
+    s = kontrollera(seed(), "36037", 7);
+    const forsta = PROJEKTMALLAR[7].punkter[0];
+    // En avvikelse i en annan omfattning gör punkten overifierad trots OK i helheten.
+    s = reducer(s, {
+      type: "FALT_KONTROLL",
+      rad: { id: kontrollId("36037", "Container 3", forsta.id), projektId: "36037", omfattning: "Container 3",
+        punktId: forsta.id, resultat: "ej-ok", datum: "2026-09-20", kontrollant: "B", referens: "R",
+        mallrevision: PROJEKTKONTROLL_REVISION },
+    });
+    const k = kontrollage(s, "36037")[7];
+    expect(k).toMatchObject({ avvikelser: 1, kvar: 1 });
+    expect(faslage(s, "36037", NU)[7].verifiering.saknas.join(" ")).toMatch(/1 avvikelse öppen/);
+  });
+
+  it("håller kontrollerna per projekt och lämnar faser som inte kommit så långt utan läge", () => {
+    const s = kontrollera(seed(), "36037", 7);
+    expect(kontrollage(s, "36038")[7].verifierade).toBe(0);
+    const f = faslage(s, "36037", NU)[11];
+    expect(f.status).toBe("kommande");
+    expect(f.verifiering.lage).toBeNull();
+    expect(f.verifiering.saknas).toEqual([]);
+  });
+
+  it("låter grindar och tidsstatus vara orörda så att planeringen räknar som förut", () => {
+    const s = kontrollera(seed(), "36037", 7);
+    expect(faslage(s, "36037", NU).map((f) => [f.status, f.grind.passerad])).toEqual(
+      faslage(seed(), "36037", NU).map((f) => [f.status, f.grind.passerad])
+    );
   });
 });
