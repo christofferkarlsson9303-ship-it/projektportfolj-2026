@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { Callout, Card, CheckList, Meter, Overline, StatusBadge } from "../../components/ds/index.js";
+import { PdfExporter } from "../../components/print/PdfExporter.jsx";
+import { hamtaNamn } from "../../state/portfolj-reducer.js";
+import { idag } from "../../lib/datum.js";
 import { Kraftkurva } from "../../components/oversikt/Hero.jsx";
 import { KATALOG_RUBRIK, STEG } from "../../data/projektstartSteg.js";
 import {
@@ -12,6 +15,7 @@ import {
   luckor,
   nyTabellrad,
   projektFranUtkast,
+  projektstartDokument,
   projektstartFel,
   stegPunkter,
   tomtUtkast,
@@ -42,7 +46,7 @@ function Faltruta({ f, varde, onChange }) {
         <textarea id={id} rows={3} value={varde} onChange={(e) => onChange(e.target.value)} />
       ) : f.typ === "select" ? (
         <select id={id} value={varde} onChange={(e) => onChange(e.target.value)}>
-          {f.id === "beslut" || f.id === "niva" ? <option value="">Välj …</option> : null}
+          {["beslut", "niva", "offra"].includes(f.id) ? <option value="">Välj …</option> : null}
           {f.alternativ.map((a) => (
             <option key={a} value={a}>
               {a}
@@ -183,9 +187,17 @@ function Sammanfattning({ utkast, fel, kanSkapa, onSkapa, onGaTill }) {
 
       {fel ? <Callout ton="bad"><b>Projektet kan inte skapas ännu</b>{fel}</Callout> : null}
 
-      <div>
+      <div className="flex flex-wrap items-center gap-3">
         <button type="button" className="btn" disabled={!kanSkapa} onClick={onSkapa}>Skapa projekt</button>
+        <PdfExporter
+          dokument={projektstartDokument(utkast, { datum: idag(), skapadAv: hamtaNamn() || "" })}
+          typ="projektstart"
+          label="Ladda ned PDF"
+          className="btn sec"
+          disabled={!v.namn?.trim()}
+        />
       </div>
+      <p className="m-0 text-[12.5px] text-ink-soft">Ladda ned PDF:en först om du vill spara guiden. När projektet är skapat töms utkastet.</p>
     </div>
   );
 }

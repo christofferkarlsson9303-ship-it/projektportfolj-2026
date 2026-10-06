@@ -12,7 +12,9 @@ export function PdfExporter({ dokument, typ, disabled, label = "Ladda ned PDF", 
       const [{ pdf }, { EgenkontrollPdf }] = await Promise.all([
         import("@react-pdf/renderer"), import("./EgenkontrollPdf.jsx"),
       ]);
-      const Komponent = dokument.ata ? (await import("./AtaPdf.jsx")).AtaPdf : EgenkontrollPdf;
+      const Komponent = dokument.ata
+        ? (await import("./AtaPdf.jsx")).AtaPdf
+        : dokument.projektstart ? (await import("./ProjektstartPdf.jsx")).ProjektstartPdf : EgenkontrollPdf;
       const blob = await pdf(<Komponent dokument={dokument} typ={typ} />).toBlob();
       const r = await laddaNer(faltFilnamn(dokument, dokument.ata ? `${dokument.ata.nr}_${typ}` : typ, "pdf"), blob, "application/pdf");
       if (!r.tyst) visaToast(r.txt, r.typ);

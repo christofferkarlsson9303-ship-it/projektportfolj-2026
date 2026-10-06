@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SEED } from "../data/seed.js";
-import { lasUtkast, luckor, nyttProjekt, projektFranUtkast, projektstartFel, tomtUtkast } from "./projektstart.js";
+import { lasUtkast, luckor, nyttProjekt, projektFranUtkast, projektstartDokument, projektstartFel, tomtUtkast } from "./projektstart.js";
 import { STEG } from "../data/projektstartSteg.js";
 import { efterInlasning, reducer } from "../state/portfolj-reducer.js";
 import { GILTIGA_VYER, VYER, ENKEL_MENY } from "../data/vyer.js";
@@ -62,5 +62,21 @@ describe("Återanvändbar projektmetod", () => {
     expect(l.v.namn).toBe("X");
     expect(l.v.okant).toBeUndefined();
     expect(l.kryss).toEqual({ calloff: { signed: true } });
+  });
+  it("bygger PDF-underlag med bara ifyllda fält, tabellrader och öppna kritiska punkter", () => {
+    const u = tomtUtkast();
+    Object.assign(u.v, { namn: "Kalmar", nr: "90003", bestallare: "Kund" });
+    u.rader.risker = [{ id: "a", titel: "Leverans sen", sannolikhet: "4", konsekvens: "5", agare: "PL", atgard: "" }];
+    u.kryss.calloff = { signed: true };
+    const d = projektstartDokument(u, { datum: "2026-10-06", skapadAv: "CK" });
+    expect(d.projekt).toMatchObject({ nr: "90003", namn: "Kalmar" });
+    const kort = d.projektstart.sektioner.find((x) => x.id === "projekt");
+    expect(kort.falt.map(([k]) => k)).toEqual(["Bolag", "Projektnamn", "Projektnummer", "Beställare", "Kontraktsform"]);
+    expect(d.projektstart.sektioner.find((x) => x.id === "risker").tabell.rader[0]).toContain("Leverans sen");
+    expect(d.projektstart.sektioner.find((x) => x.id === "intressenter").tabell).toBeNull();
+    const avrop = d.projektstart.sektioner.find((x) => x.id === "avrop");
+    expect(avrop.kontroll.klara).toBe(1);
+    expect(avrop.kontroll.kritiskaOppna.length).toBeGreaterThan(0);
+    expect(d.projektstart.sektioner.some((x) => x.id === "sammanfattning")).toBe(false);
   });
 });

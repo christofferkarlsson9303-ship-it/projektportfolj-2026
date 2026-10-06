@@ -37,7 +37,7 @@ export function tomtUtkast() {
   const v = {};
   for (const s of STEG) for (const f of s.falt || []) v[f.id] = f.standard ?? f.alternativ?.[0] ?? "";
   v.bolag = "ONE Nordic AB";
-  for (const id of ["beslut", "niva"]) v[id] = "";
+  for (const id of ["beslut", "niva", "offra"]) v[id] = "";
   const rader = {};
   for (const s of STEG) if (s.tabell) rader[s.tabell.id] = (s.tabell.start?.length ? s.tabell.start : [{}]).map((g) => nyRad(s.tabell, g));
   return { steg: STEG[0].id, besokta: [], v, rader, kryss: {} };
@@ -97,4 +97,35 @@ export function projektFranUtkast(u, id) {
     .filter((m) => m.namn?.trim() && m.datum)
     .map((m, i) => ({ id: `m-${id}-${i + 1}`, projektId: id, titel: m.namn.trim(), datum: m.datum, status: "planerad" }));
   return { projekt, risker, milstolpar };
+}
+
+/** Underlaget till PDF:en. Samma dokumentform som övriga PDF:er (projekt, datum,
+ *  skapadAv) plus `projektstart` med sektioner per steg. Tomma fält och rader
+ *  utelämnas, så PDF:en blir lika kort som utkastet är ifyllt. */
+export function projektstartDokument(u, { datum, skapadAv = "" }) {
+  const v = u.v;
+  const sektioner = STEG.filter((s) => s.id !== SISTA_STEG).map((s) => {
+    const falt = (s.falt || []).map((f) => [f.etikett, (v[f.id] || "").trim()]).filter(([, val]) => val);
+    const tabell = s.tabell
+      ? {
+          titel: s.tabell.titel,
+          kolumner: s.tabell.kolumner.map((k) => k.etikett),
+          rader: (u.rader[s.tabell.id] || [])
+            .filter((r) => s.tabell.kolumner.some((k) => (r[k.id] || "").trim() && (k.typ === "text" || k.typ === "date")))
+            .map((r) => s.tabell.kolumner.map((k) => (r[k.id] || "").trim())),
+        }
+      : null;
+    const punkter = stegPunkter(s);
+    const kontroll = punkter.length
+      ? { klara: punkter.filter((p) => arAvbockad(u, p)).length, totalt: punkter.length, kritiskaOppna: punkter.filter((p) => p.kritisk && !arAvbockad(u, p)).map((p) => p.text) }
+      : null;
+    return { id: s.id, fas: s.fas, titel: s.titel, falt, tabell: tabell?.rader.length ? tabell : null, kontroll, besokt: u.besokta.includes(s.id) };
+  });
+  const l = luckor(u);
+  return {
+    projekt: { id: (v.nr || "").trim() || "utkast", nr: (v.nr || "").trim(), namn: (v.namn || "").trim(), bestallare: (v.bestallare || "").trim() },
+    datum,
+    skapadAv,
+    projektstart: { sektioner, klara: l.klara, totalt: l.totalt, kritiskaOppna: l.kritiskaOppna.length, kritiskaTotalt: l.kritiskaTotalt },
+  };
 }

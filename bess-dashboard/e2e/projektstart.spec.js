@@ -38,3 +38,13 @@ test("Skapa projekt är låst medan steg återstår", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Skapa projekt" })).toBeDisabled();
   await expect(page.getByText(/steg är inte genomgångna/)).toBeVisible();
 });
+
+test("sammanfattningen kan laddas ned som PDF", async ({ page }) => {
+  await oppna(page, "Projektstart");
+  await page.getByLabel("Projektnamn").fill("PDF-test");
+  await gaTillSteg(page, 14, "Granska och skapa");
+  const nedladdning = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Ladda ned PDF" }).click();
+  const d = await nedladdning;
+  expect(d.suggestedFilename()).toMatch(/^projektstart_.*\.pdf$/);
+});
