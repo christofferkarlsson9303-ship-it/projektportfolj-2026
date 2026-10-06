@@ -79,6 +79,24 @@ describe("Återanvändbar projektmetod", () => {
     expect(avrop.kontroll.kritiskaOppna.length).toBeGreaterThan(0);
     expect(d.projektstart.sektioner.some((x) => x.id === "sammanfattning")).toBe(false);
   });
+  it("PDF-underlaget har alla steg numrerade och alla kontrollpunkter med avbockning", () => {
+    const u = tomtUtkast();
+    Object.assign(u.v, { namn: "Vaggeryd", nr: "-", plats: "Båramo" });
+    u.kryss.calloff = { signed: true };
+    const d = projektstartDokument(u, { datum: "2026-10-06" });
+    const ps = d.projektstart;
+    expect(ps.sektioner.map((x) => x.nr)).toEqual(ps.sektioner.map((_, i) => i + 1));
+    expect(d.projekt.nr).toBe("");
+    expect(ps.kort.plats).toBe("Båramo");
+    const avrop = ps.sektioner.find((x) => x.id === "avrop");
+    const punkter = avrop.kontroll.grupper.flatMap((g) => g.punkter);
+    expect(punkter).toHaveLength(avrop.kontroll.totalt);
+    expect(punkter.filter((p) => p.klar)).toHaveLength(1);
+    expect(avrop.tomma).toContain("Motivering");
+    const risker = ps.sektioner.find((x) => x.id === "risker");
+    expect(risker.tabell.vikter[0]).toBeGreaterThan(risker.tabell.vikter[1]);
+    expect(ps.sektioner.find((x) => x.id === "intressenter").tomTabell).toBe("Intressenter");
+  });
   it("sparar guiden på projektet och öppnar den igen med alla steg genomgångna", () => {
     const u = tomtUtkast();
     Object.assign(u.v, { namn: "Kalmar", nr: "90004", plats: "Kalmar" });

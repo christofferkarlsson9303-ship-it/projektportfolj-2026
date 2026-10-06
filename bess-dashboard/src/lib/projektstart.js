@@ -1,4 +1,4 @@
-import { STEG } from "../data/projektstartSteg.js";
+import { KATALOG_RUBRIK, STEG } from "../data/projektstartSteg.js";
 import { KATALOG } from "../data/projektstartKatalog.js";
 
 export function projektstartFel(state, v) {
@@ -102,31 +102,82 @@ export function projektFranUtkast(u, id) {
 /** Underlaget till PDF:en. Samma dokumentform som övriga PDF:er (projekt, datum,
  *  skapadAv) plus `projektstart` med sektioner per steg. Tomma fält och rader
  *  utelämnas, så PDF:en blir lika kort som utkastet är ifyllt. */
+/** Platshållare som "-" eller "—" räknas som tomt, så att ett bindestreck i
+ *  projektnumret inte hamnar i sidhuvudet som "- · Projekt". */
+const varde = (x) => {
+  const t = (x || "").trim();
+  return /^[-–—_.]+$/.test(t) ? "" : t;
+};
+
+/** Relativ kolumnbredd i PDF:en: breda textkolumner får mer plats, val och datum mindre. */
+const kolumnVikt = (k) => (k.bredd === "wide" ? 3 : k.typ === "select" ? 1 : k.typ === "date" ? 1.2 : 2);
+
 export function projektstartDokument(u, { datum, skapadAv = "" }) {
   const v = u.v;
-  const sektioner = STEG.filter((s) => s.id !== SISTA_STEG).map((s) => {
-    const falt = (s.falt || []).map((f) => [f.etikett, (v[f.id] || "").trim()]).filter(([, val]) => val);
+  const sektioner = STEG.filter((s) => s.id !== SISTA_STEG).map((s, i) => {
+    const falt = (s.falt || []).map((f) => [f.etikett, varde(v[f.id])]).filter(([, val]) => val);
+    const tomma = (s.falt || []).filter((f) => !varde(v[f.id])).map((f) => f.etikett);
     const tabell = s.tabell
       ? {
           titel: s.tabell.titel,
           kolumner: s.tabell.kolumner.map((k) => k.etikett),
+          vikter: s.tabell.kolumner.map(kolumnVikt),
           rader: (u.rader[s.tabell.id] || [])
             .filter((r) => s.tabell.kolumner.some((k) => (r[k.id] || "").trim() && (k.typ === "text" || k.typ === "date")))
             .map((r) => s.tabell.kolumner.map((k) => (r[k.id] || "").trim())),
         }
       : null;
     const punkter = stegPunkter(s);
+    /* Alla kontrollpunkter i stegets ordning, grupperade som i guiden, med avbockning. */
+    const grupper = [];
+    for (const p of punkter) {
+      const rubrik = s.katalog.length > 1 ? `${KATALOG_RUBRIK[p.bucket]}: ${p.grupp}` : p.grupp;
+      let g = grupper.at(-1);
+      if (!g || g.rubrik !== rubrik) grupper.push((g = { rubrik, punkter: [] }));
+      g.punkter.push({ text: p.text, kritisk: !!p.kritisk, klar: arAvbockad(u, p) });
+    }
     const kontroll = punkter.length
-      ? { klara: punkter.filter((p) => arAvbockad(u, p)).length, totalt: punkter.length, kritiskaOppna: punkter.filter((p) => p.kritisk && !arAvbockad(u, p)).map((p) => p.text) }
+      ? {
+          klara: punkter.filter((p) => arAvbockad(u, p)).length,
+          totalt: punkter.length,
+          kritiskaOppna: punkter.filter((p) => p.kritisk && !arAvbockad(u, p)).map((p) => p.text),
+          grupper,
+        }
       : null;
-    return { id: s.id, fas: s.fas, titel: s.titel, falt, tabell: tabell?.rader.length ? tabell : null, kontroll, besokt: u.besokta.includes(s.id) };
+    return {
+      id: s.id,
+      nr: i + 1,
+      fas: s.fas,
+      titel: s.titel,
+      sammanfattning: s.sammanfattning || "",
+      falt,
+      tomma,
+      tabell: tabell?.rader.length ? tabell : null,
+      tomTabell: tabell && !tabell.rader.length ? tabell.titel : "",
+      kontroll,
+      besokt: u.besokta.includes(s.id),
+    };
   });
   const l = luckor(u);
   return {
-    projekt: { id: (v.nr || "").trim() || "utkast", nr: (v.nr || "").trim(), namn: (v.namn || "").trim(), bestallare: (v.bestallare || "").trim() },
+    projekt: { id: varde(v.nr) || "utkast", nr: varde(v.nr), namn: (v.namn || "").trim(), bestallare: varde(v.bestallare) },
     datum,
     skapadAv,
-    projektstart: { sektioner, klara: l.klara, totalt: l.totalt, kritiskaOppna: l.kritiskaOppna.length, kritiskaTotalt: l.kritiskaTotalt },
+    projektstart: {
+      sektioner,
+      klara: l.klara,
+      totalt: l.totalt,
+      kritiskaOppna: l.kritiskaOppna.length,
+      kritiskaTotalt: l.kritiskaTotalt,
+      kort: {
+        plats: varde(v.plats),
+        start: varde(v.startdatum),
+        slut: varde(v.fardigdatum),
+        kontraktsform: varde(v.kontraktsform),
+        niva: varde(v.niva),
+        beslut: varde(v.beslut),
+      },
+    },
   };
 }
 

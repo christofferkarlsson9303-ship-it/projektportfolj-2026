@@ -331,19 +331,39 @@ export function Projektstart() {
           <span className="text-[12px] opacity-80">one-nordic.se</span>
         </div>
       </section>
+      {state.projekt.length ? (
+        <Card
+          id="ps-befintliga"
+          title={redigerar ? `Du ändrar projektstarten för ${projektet?.nr ? projektet.nr + " " : ""}${projektet?.namn || ""}` : "Ändra ett befintligt projekt"}
+          subtitle={
+            redigerar
+              ? "Ändringarna sparas när du trycker Spara på sista steget. PDF:en kan laddas ned där när som helst."
+              : "Öppna projektstarten för ett projekt du redan har för att fylla i, ändra eller ta en ny PDF."
+          }
+        >
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Befintliga projekt">
+            {redigerar ? (
+              <button type="button" className="btn sec mini" onClick={() => bytLage("ny")}>
+                <ChevronLeft size={14} aria-hidden="true" /> Ny projektstart
+              </button>
+            ) : null}
+            {state.projekt.map((pr) => (
+              <button
+                key={pr.id}
+                type="button"
+                className={`btn mini ${pr.id === lage ? "" : "sec"}`}
+                aria-pressed={pr.id === lage}
+                onClick={() => bytLage(pr.id)}
+              >
+                {pr.nr ? `${pr.nr} ` : ""}{pr.namn}
+                {sparadeFor(pr.id) ? "" : <span className="ml-1 opacity-70">· ej ifylld</span>}
+              </button>
+            ))}
+          </div>
+        </Card>
+      ) : null}
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-6">
       <nav aria-label="Stegen i projektstarten" className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-4">
-        {state.projekt.length ? (
-          <label className="flex flex-col gap-1">
-            <Overline as="span">Arbeta med</Overline>
-            <select value={lage} onChange={(e) => bytLage(e.target.value)} aria-label="Arbeta med">
-              <option value="ny">Ny projektstart</option>
-              {state.projekt.map((pr) => (
-                <option key={pr.id} value={pr.id}>{pr.nr ? `${pr.nr} ` : ""}{pr.namn}{sparadeFor(pr.id) ? "" : " (ej sparad start)"}</option>
-              ))}
-            </select>
-          </label>
-        ) : null}
         <label className="flex flex-col gap-1 lg:hidden">
           <Overline as="span">Steg {index + 1} av {STEG.length}</Overline>
           <select value={steg.id} onChange={(e) => gaTill(e.target.value)} aria-label="Välj steg">
