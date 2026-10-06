@@ -93,36 +93,17 @@ test("en nål måste peka på en öppen punkt — utan punkt placeras ingenting"
   await expect(panel.getByLabel("Punkt")).not.toContainText("Välj punkt");
 });
 
-test("Idag visar toppvyn under bandet först när det finns volymer, och klick öppnar siten", async ({ page }) => {
+test("Idag får en genväg till siten först när det finns volymer", async ({ page }) => {
   await oppna(page);
-  await expect(page.getByRole("region", { name: "Siten", exact: true })).toHaveCount(0);
+  const genvagar = () => page.getByRole("navigation", { name: "Genvägar" });
+  await expect(genvagar().getByRole("button", { name: VY, exact: true })).toHaveCount(0);
 
   await gaTill(page, VY);
   await kort(page).getByRole("button", { name: "+ Container", exact: true }).click();
   await kort(page).getByRole("button", { name: "Placera mitt på tomten" }).click();
-  await kort(page).getByRole("button", { name: "+ Nål", exact: true }).click();
-  await kort(page).getByLabel("Punkt för nålen").selectOption("p5");
-  await klickaPlan(page, 12, 12);
 
   await gaTill(page, "Idag");
-  const site = page.getByRole("region", { name: "Siten", exact: true });
-  await expect(site).toBeVisible();
-  await expect(site).toContainText("1 volym, 1 nål på öppna punkter");
-  await expect(site).toContainText("UR006 kabelskåp");
-  // Samma volymer som siten: en rektangel och en nål i toppvyn.
-  await expect(site.locator("[data-roll=toppvy] [data-objekt]")).toHaveCount(2);
-
-  // Under bandet och ovanför listan.
-  const ordning = await page.locator("main").evaluate((m) => {
-    const band = m.querySelector('[aria-label="Sammanfattning"]');
-    const site = m.querySelector("#idag-site");
-    const lista = m.querySelector("#idag-veckan");
-    const fore = (a, b) => !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
-    return { bandForeSite: fore(band, site), siteForeLista: fore(site, lista) };
-  });
-  expect(ordning).toEqual({ bandForeSite: true, siteForeLista: true });
-
-  await site.getByRole("button", { name: /^Öppna siten för 36037/ }).click();
+  await genvagar().getByRole("button", { name: VY, exact: true }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(VY);
 });
 
@@ -163,7 +144,7 @@ test("situationsplanen ligger i sessionStorage och följer inte med portföljen"
   await expect(kort(page)).toContainText("Utan situationsplan: grus och körytor.");
 });
 
-test("Återställ tömmer projektets site och toppvyn på Idag försvinner", async ({ page }) => {
+test("Återställ tömmer projektets site och genvägen på Idag försvinner", async ({ page }) => {
   await oppna(page, VY);
   await kort(page).getByRole("button", { name: "+ E-House", exact: true }).click();
   await klickaPlan(page, -30, 0);
@@ -179,7 +160,7 @@ test("Återställ tömmer projektets site och toppvyn på Idag försvinner", asy
   await expect.poll(async () => ((await portfolj(page)).siteObjekt || []).filter((o) => o.projektId === "36037").length).toBe(0);
 
   await gaTill(page, "Idag");
-  await expect(page.getByRole("region", { name: "Siten", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("navigation", { name: "Genvägar" }).getByRole("button", { name: VY, exact: true })).toHaveCount(0);
 });
 
 test("Gå in och Orbit är knappar, och på pekskärm finns en joystick på minst 44 px", async ({ page, isMobile }) => {

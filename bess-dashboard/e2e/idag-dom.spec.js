@@ -32,16 +32,15 @@ test("bandet visar samma dom och slutbesiktning som Tidplan", async ({ page }) =
   utanKonsolfel(fel);
 });
 
-test("projekt utan start eller slut: tankstreck, Uppgifter saknas och Callout", async ({ page }) => {
+test("projekt utan start eller slut: tankstreck och Uppgifter saknas", async ({ page }) => {
   await oppna(page, "Tidplan");
   await page.getByRole("group", { name: "Välj projekt" }).getByRole("button", { name: /Göteborg Skogome/ }).click();
   await gaTill(page, "Idag");
   const b = band(page);
   await expect(b).toContainText("Göteborg Skogome");
   await expect(b).toContainText("Uppgifter saknas");
-  await expect(b).toContainText("Ange start och slut på projektet.");
+  await expect(b).toContainText("Ange start och slut på projektet");
   await expect(b).not.toContainText("I tid");
-  await expect(page.locator("main")).toContainText("Ange projektets startdatum och färdigdatum");
 });
 
 test("sent projekt: bad-märke, bandet förblir one-djup, faslänken öppnar fasen", async ({ page }) => {

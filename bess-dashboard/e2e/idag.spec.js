@@ -7,41 +7,49 @@ test("Idag är startvy", async ({ page }) => {
   utanKonsolfel(fel);
 });
 
-test("sammanfattningen räknar det som kräver åtgärd", async ({ page }) => {
+test("Idag är tre block: bandet, Att göra och Längre fram infällt", async ({ page }) => {
   await oppna(page);
 
-  // Frister och förfallet visas som egna grupper när de har poster, annars
-  // som en gemensam rad. Någon av formerna ska alltid finnas.
-  const frister = page.getByRole("region", { name: "Frister som löper" });
-  const forfallet = page.getByRole("region", { name: "Har passerat sitt datum" });
-  const tomrad = page.getByRole("region", { name: "Frister och förfallet" });
-  const veckan = page.getByRole("region", { name: "Idag och inom sju dagar" });
+  await expect(page.getByRole("region", { name: "Sammanfattning" })).toBeVisible();
+  const attGora = page.getByRole("region", { name: "Att göra", exact: true });
+  await expect(attGora).toBeVisible();
 
-  const grupper = (await frister.count()) + (await forfallet.count());
-  if (grupper) await expect(tomrad).toHaveCount(0);
-  else await expect(tomrad).toBeVisible();
-  await expect(veckan).toBeVisible();
+  // Rubrikerna inne i kortet visas bara när de har rader. Är alla tomma står
+  // en rad om att inget är brådskande.
+  const delar = ["Brådskande", "Idag", "Denna vecka"];
+  let synliga = 0;
+  for (const d of delar) synliga += await attGora.getByRole("region", { name: new RegExp(`^${d}`) }).count();
+  if (!synliga) await expect(attGora).toContainText("Inget brådskande");
+
+  // Förklaringsrutan och site-kortet ligger inte längre på sidan.
+  await expect(page.locator("main")).not.toContainText("Vad som räknas här.");
+  await expect(page.getByRole("region", { name: "Siten", exact: true })).toHaveCount(0);
+
+  // Längre fram är infällt tills man öppnar det.
+  const kommande = page.locator("#idag-kommande");
+  await expect(kommande).not.toHaveAttribute("open", "");
 });
 
 test("horisonten styr hur långt fram listan når", async ({ page }) => {
   await oppna(page);
+  await page.locator("#idag-kommande summary").click();
 
   const grupp = () => page.getByRole("region", { name: /^Längre fram/ });
   await expect(grupp()).toBeVisible();
 
-  const grupp14 = page.getByRole("radiogroup", { name: "Horisont" });
-  await grupp14.getByRole("radio", { name: "14 dagar" }).click();
+  const horisont = page.getByRole("radiogroup", { name: "Horisont" });
+  await horisont.getByRole("radio", { name: "14 dagar" }).click();
   await expect(page.getByRole("region", { name: "Längre fram — inom 14 dagar" })).toBeVisible();
 
-  await grupp14.getByRole("radio", { name: "90 dagar" }).click();
+  await horisont.getByRole("radio", { name: "90 dagar" }).click();
   await expect(page.getByRole("region", { name: "Längre fram — inom 90 dagar" })).toBeVisible();
 });
 
 test("en frist leder direkt till rätt ÄTA-ärende", async ({ page }) => {
   await oppna(page);
 
-  const frister = page.getByRole("region", { name: "Frister som löper" });
-  const rader = frister.getByRole("listitem");
+  const bradskande = page.getByRole("region", { name: /^Brådskande/ });
+  const rader = bradskande.getByRole("listitem").filter({ hasText: "ÄTA-frist" });
   test.skip((await rader.count()) === 0, "inga löpande frister i grunddatan");
 
   const titel = (await rader.first().locator("[data-titel]").textContent()).trim();
@@ -59,10 +67,10 @@ test("en frist leder direkt till rätt ÄTA-ärende", async ({ page }) => {
 test("en agendarad leder till den vy som äger posten", async ({ page }) => {
   await oppna(page);
 
-  const grupper = ["Har passerat sitt datum", "Idag och inom sju dagar", /^Längre fram/];
+  const attGora = page.getByRole("region", { name: "Att göra", exact: true });
   let rad = null;
-  for (const namn of grupper) {
-    const kandidat = page.getByRole("region", { name: namn }).getByRole("listitem").first();
+  for (const namn of [/^Idag/, /^Denna vecka/, /^Brådskande/]) {
+    const kandidat = attGora.getByRole("region", { name: namn }).getByRole("listitem").first();
     if (await kandidat.isVisible().catch(() => false)) {
       rad = kandidat;
       break;

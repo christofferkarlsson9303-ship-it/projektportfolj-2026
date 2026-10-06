@@ -84,7 +84,8 @@ export function Sidebar() {
         <nav className="sidenav" id="nav" aria-label="Huvudmeny">
           {GRUPPER.map((g) => ({ ...g, poster: g.poster.filter((v) => hela || ENKEL_MENY.has(v.id) || v.id === aktivVy) })).filter((g) => g.poster.length).map((g, gi) => (
             <div key={g.rubrik || `grupp-${gi}`} role="group" aria-label={g.rubrik || "Portfölj"}>
-              {g.rubrik ? <div className="navsek">{g.rubrik}</div> : null}
+              {/* Grupprubriker bara i hela menyn — sju flikar behöver inga. */}
+              {g.rubrik && hela ? <div className="navsek">{g.rubrik}</div> : null}
               {g.poster.map((v) => {
                 const aktiv = v.id === aktivVy;
                 return (

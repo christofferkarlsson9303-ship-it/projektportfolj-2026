@@ -17,7 +17,12 @@ test("enkel meny, synlig sökknapp och ordlista hjälper utan att dölja funktio
   const ham = page.getByRole("button", { name: /Öppna menyn|Stäng menyn/ });
   if (await ham.isVisible() && await ham.getAttribute("aria-expanded") === "false") await ham.click();
   const nav = page.getByRole("navigation", { name: "Huvudmeny" });
+  // Projektmetoden ligger inte i den enkla menyn, så vägen hit fällde ut hela.
+  const enkel = nav.getByRole("button", { name: "Visa enkel meny", exact: true });
+  if (await enkel.count()) await enkel.click();
   await expect(nav.getByRole("button", { name: "Tidrapport", exact: true })).toHaveCount(0);
+  // Aktiv vy syns även när den inte hör till den enkla menyn.
+  await expect(nav.getByRole("button", { name: "Min projektmetod", exact: true })).toHaveAttribute("aria-current", "page");
   await nav.getByRole("button", { name: "Visa alla funktioner", exact: true }).click();
   await expect(nav.getByRole("button", { name: "Tidrapport", exact: true })).toBeVisible();
   await nav.getByRole("button", { name: "Visa enkel meny", exact: true }).click();
