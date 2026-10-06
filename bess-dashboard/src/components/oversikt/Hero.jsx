@@ -34,7 +34,7 @@ function LiveMarke() {
 }
 
 /** Kraftkurvan: ONE Nordics signaturelement, ritat in en gång när vyn öppnas. */
-function Kraftkurva() {
+export function Kraftkurva() {
   const kurvor = [
     ["M0 196 C180 190 300 168 380 118 S500 20 540 6", "var(--one-bla)"],
     ["M0 198 C200 194 320 176 400 138 S510 52 540 34", "var(--turkos)"],

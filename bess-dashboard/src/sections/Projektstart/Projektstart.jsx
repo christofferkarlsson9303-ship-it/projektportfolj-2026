@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { Callout, Card, CheckList, Meter, Overline, StatusBadge } from "../../components/ds/index.js";
+import { Kraftkurva } from "../../components/oversikt/Hero.jsx";
 import { KATALOG_RUBRIK, STEG } from "../../data/projektstartSteg.js";
 import {
   SISTA_STEG,
@@ -248,7 +249,17 @@ export function Projektstart() {
   };
 
   return (
-    <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-6">
+    <div className="flex flex-col gap-4 lg:gap-6">
+      <section aria-label="Projektstart" className="relative overflow-hidden rounded-xl bg-one-djup px-4 py-5 text-white md:min-h-[210px] md:px-6 md:py-6">
+        <Kraftkurva />
+        <div className="relative flex max-w-[34rem] flex-col gap-3">
+          <span className="text-[11px] font-bold uppercase tracking-wider opacity-80">ONE-P · Steg {index + 1} av {STEG.length}</span>
+          <h2 className="m-0 font-head text-[22px] leading-tight text-white">{steg.titel}</h2>
+          <Meter value={index + 1} max={STEG.length} label="Steg i guiden" ton="pagar" />
+          <span className="text-[12px] opacity-80">one-nordic.se</span>
+        </div>
+      </section>
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-6">
       <nav aria-label="Stegen i projektstarten" className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-4">
         <label className="flex flex-col gap-1 lg:hidden">
           <Overline as="span">Steg {index + 1} av {STEG.length}</Overline>
@@ -316,6 +327,7 @@ export function Projektstart() {
           )}
         </div>
       </div>
+    </div>
     </div>
   );
 }
