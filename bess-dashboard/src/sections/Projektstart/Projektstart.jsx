@@ -16,7 +16,12 @@ import {
   luckor,
   nyTabellrad,
   projektFranUtkast,
+  kortAndringar,
   projektstartDokument,
+  projektstartPost,
+  utkastAndrat,
+  utkastFranProjekt,
+  utkastFranPost,
   projektstartFel,
   stegPunkter,
   tomtUtkast,
@@ -132,7 +137,7 @@ function Kontrollpunkter({ steg, utkast, onToggle }) {
   );
 }
 
-function Sammanfattning({ utkast, fel, kanSkapa, skapar, onSkapa, onGaTill }) {
+function Sammanfattning({ utkast, fel, kanSkapa, skapar, redigerar, andrat, ejSparad, onSkapa, onSpara, onGaTill }) {
   const l = luckor(utkast);
   const v = utkast.v;
   const risker = (utkast.rader.risker || []).filter((r) => r.titel?.trim()).length;
@@ -147,7 +152,7 @@ function Sammanfattning({ utkast, fel, kanSkapa, skapar, onSkapa, onGaTill }) {
   ];
   return (
     <div className="flex flex-col gap-4">
-      <Card id="ps-sammanfattning" title="Det här skapas">
+      <Card id="ps-sammanfattning" title={redigerar ? "Sparad projektstart" : "Det här skapas"}>
         <dl className="m-0 grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2 xl:grid-cols-3">
           {rader.map(([k, val]) => (
             <div key={k} className="min-w-0">
@@ -157,7 +162,9 @@ function Sammanfattning({ utkast, fel, kanSkapa, skapar, onSkapa, onGaTill }) {
           ))}
         </dl>
         <p className="m-0 text-[13.5px] text-ink">
-          Projektet skapas med {risker} riskrader och {milstolpar} milstolpar. Mallarna för handlingsplan, APD och slutdokumentation kommer med automatiskt.
+          {redigerar
+            ? "Ändringarna sparas i projektstarten och projektkortet. Risker och milstolpar som redan finns i projektet ändras inte här."
+            : `Projektet skapas med ${risker} riskrader och ${milstolpar} milstolpar. Mallarna för handlingsplan, APD och slutdokumentation kommer med automatiskt.`}
         </p>
         <div className="flex flex-col gap-1">
           <div className="flex items-baseline justify-between gap-3 text-[13px]">
@@ -168,7 +175,7 @@ function Sammanfattning({ utkast, fel, kanSkapa, skapar, onSkapa, onGaTill }) {
         </div>
       </Card>
 
-      {l.stegKvar.length ? (
+      {!redigerar && l.stegKvar.length ? (
         <Callout ton="warn">
           <b>{l.stegKvar.length} steg är inte genomgångna</b>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -189,7 +196,11 @@ function Sammanfattning({ utkast, fel, kanSkapa, skapar, onSkapa, onGaTill }) {
       {fel ? <Callout ton="bad"><b>Projektet kan inte skapas ännu</b>{fel}</Callout> : null}
 
       <div className="flex flex-wrap items-center gap-3">
-        <button type="button" className="btn" disabled={!kanSkapa || skapar} aria-busy={skapar} onClick={onSkapa}>{skapar ? "Skapar …" : "Skapa projekt"}</button>
+        {redigerar ? (
+          <button type="button" className="btn" disabled={!kanSkapa || (!andrat && !ejSparad)} onClick={onSpara}>{ejSparad ? "Spara projektstart" : "Spara ändringar"}</button>
+        ) : (
+          <button type="button" className="btn" disabled={!kanSkapa || skapar} aria-busy={skapar} onClick={onSkapa}>{skapar ? "Skapar …" : "Skapa projekt"}</button>
+        )}
         <PdfExporter
           dokument={projektstartDokument(utkast, { datum: idag(), skapadAv: hamtaNamn() || "" })}
           typ="projektstart"
@@ -198,36 +209,76 @@ function Sammanfattning({ utkast, fel, kanSkapa, skapar, onSkapa, onGaTill }) {
           disabled={!v.namn?.trim()}
         />
       </div>
-      <p className="m-0 text-[12.5px] text-ink-soft">PDF:en laddas ned automatiskt när du skapar projektet. Du kan också ladda ned den separat här.</p>
+      <p className="m-0 text-[12.5px] text-ink-soft">{redigerar ? "PDF:en innehåller det som står i guiden just nu, även osparade ändringar." : "PDF:en laddas ned automatiskt när du skapar projektet. Du kan också ladda ned den separat här."}</p>
     </div>
   );
 }
 
 export function Projektstart() {
-  const { state, dispatch, laggTill } = usePortfolj();
+  const { state, dispatch, laggTill, sattLista, uppd } = usePortfolj();
   const { visa, visaToast, setValtProjekt, bekrafta } = useUi();
   const [utkast, setUtkast] = useState(laddaUtkast);
   const [skapar, setSkapar] = useState(false);
+  /* "ny" är den pågående nya projektstarten (utkast i webbläsaren). Ett projekt-id
+     öppnar den sparade projektstarten för det projektet, för ändringar och ny PDF. */
+  const [lage, setLage] = useState("ny");
+  const redigerar = lage !== "ny";
+  const sparadeFor = (pid) => (state.projektstart || []).find((x) => x.projektId === pid);
+  const post = redigerar ? sparadeFor(lage) : null;
+  const projektet = redigerar ? state.projekt.find((p) => p.id === lage) : null;
+  /* Det som senast sparades (eller första ifyllningen), för Ångra och för att se om något ändrats. */
+  const [grund, setGrund] = useState(null);
+  const andrat = !!grund && utkastAndrat(utkast, grund);
 
   useEffect(() => {
+    if (redigerar) return;
     try {
       window.localStorage.setItem(UTKAST_NYCKEL, JSON.stringify(utkast));
     } catch {
       /* Utkastet fungerar även utan lagring, men sparas då inte mellan besök. */
     }
-  }, [utkast]);
+  }, [utkast, redigerar]);
 
   const index = Math.max(0, STEG.findIndex((s) => s.id === utkast.steg));
   const steg = STEG[index];
   const sista = steg.id === SISTA_STEG;
 
   const forhandsrad = useMemo(() => projektFranUtkast(utkast, "forhandsgranskning").projekt, [utkast]);
-  const fel = sista ? projektstartFel(state, forhandsrad) || (luckor(utkast).stegKvar.length ? "Gå igenom alla steg först." : "") : "";
+  const utanDetta = redigerar ? { ...state, projekt: state.projekt.filter((p) => p.id !== lage) } : state;
+  const fel = sista ? projektstartFel(utanDetta, forhandsrad) || (!redigerar && luckor(utkast).stegKvar.length ? "Gå igenom alla steg först." : "") : "";
 
   const sattFalt = (id, v) => setUtkast((u) => ({ ...u, v: { ...u.v, [id]: v } }));
   const sattRader = (id, rader) => setUtkast((u) => ({ ...u, rader: { ...u.rader, [id]: rader } }));
   const kryssa = (bucket, pid, v) => setUtkast((u) => ({ ...u, kryss: { ...u.kryss, [bucket]: { ...u.kryss[bucket], [pid]: v } } }));
   const gaTill = (id) => setUtkast((u) => ({ ...u, steg: id, besokta: u.besokta.includes(u.steg) ? u.besokta : [...u.besokta, u.steg] }));
+
+  const bytLage = async (nytt) => {
+    if (nytt === lage) return;
+    if (andrat && !(await bekrafta("Dina ändringar i den sparade projektstarten är inte sparade och försvinner.", { titel: "Osparade ändringar", ok: "Byt ändå", fara: true }))) return;
+    const valt = nytt === "ny" ? null : state.projekt.find((p) => p.id === nytt);
+    const sparad = valt ? sparadeFor(valt.id) : null;
+    const oppnat = !valt ? laddaUtkast() : sparad ? utkastFranPost(sparad) : utkastFranProjekt(valt, state);
+    setLage(nytt);
+    setUtkast(oppnat);
+    setGrund(valt ? oppnat : null);
+  };
+
+  const sparaAndringar = () => {
+    if (!projektet) return;
+    const f = projektstartFel(utanDetta, forhandsrad);
+    if (f) {
+      visaToast(f, "warn");
+      return;
+    }
+    const nu = new Date().toISOString();
+    if (post) sattLista("projektstart", state.projektstart.map((x) => (x.id === post.id ? { ...x, utkast: { v: utkast.v, rader: utkast.rader, kryss: utkast.kryss }, uppdaterad: nu } : x)));
+    else laggTill("projektstart", projektstartPost(projektet.id, utkast, nu));
+    setGrund(utkast);
+    for (const [falt, varde] of kortAndringar(utkast, projektet)) uppd("projekt", projektet.id, falt, varde);
+    visaToast("Projektstarten är sparad. Projektkortet är uppdaterat. Risker och milstolpar ändrar du på sina egna sidor.");
+  };
+
+  const angra = () => grund && setUtkast({ ...grund, steg: utkast.steg });
 
   const borjaOm = async () => {
     const ja = await bekrafta("Allt du skrivit i guiden tas bort. Projekt som redan är skapade påverkas inte.", { titel: "Börja om", ok: "Börja om", fara: true });
@@ -249,6 +300,7 @@ export function Projektstart() {
     dispatch({ type: "SKAPA_PROJEKT", rad: projekt });
     for (const r of risker) laggTill("risker", r);
     for (const m of milstolpar) laggTill("milstolpar", m);
+    laggTill("projektstart", projektstartPost(id, utkast));
     const pdfKlar = await laddaNerPdf(pdfUnderlag, "projektstart", visaToast);
     try {
       window.localStorage.removeItem(UTKAST_NYCKEL);
@@ -273,7 +325,7 @@ export function Projektstart() {
       <section aria-label="Projektstart" className="relative overflow-hidden rounded-xl bg-one-djup px-4 py-5 text-white md:min-h-[210px] md:px-6 md:py-6">
         <Kraftkurva />
         <div className="relative flex max-w-[34rem] flex-col gap-3">
-          <span className="text-[11px] font-bold uppercase tracking-wider opacity-80">ONE-P · Steg {index + 1} av {STEG.length}</span>
+          <span className="text-[11px] font-bold uppercase tracking-wider opacity-80">ONE-P · {redigerar ? `${projektet?.nr || ""} ${projektet?.namn || ""} · ` : ""}Steg {index + 1} av {STEG.length}</span>
           <h2 className="m-0 font-head text-[22px] leading-tight text-white">{steg.titel}</h2>
           <Meter value={index + 1} max={STEG.length} label="Steg i guiden" ton="pagar" />
           <span className="text-[12px] opacity-80">one-nordic.se</span>
@@ -281,6 +333,17 @@ export function Projektstart() {
       </section>
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-6">
       <nav aria-label="Stegen i projektstarten" className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-4">
+        {state.projekt.length ? (
+          <label className="flex flex-col gap-1">
+            <Overline as="span">Arbeta med</Overline>
+            <select value={lage} onChange={(e) => bytLage(e.target.value)} aria-label="Arbeta med">
+              <option value="ny">Ny projektstart</option>
+              {state.projekt.map((pr) => (
+                <option key={pr.id} value={pr.id}>{pr.nr ? `${pr.nr} ` : ""}{pr.namn}{sparadeFor(pr.id) ? "" : " (ej sparad start)"}</option>
+              ))}
+            </select>
+          </label>
+        ) : null}
         <label className="flex flex-col gap-1 lg:hidden">
           <Overline as="span">Steg {index + 1} av {STEG.length}</Overline>
           <select value={steg.id} onChange={(e) => gaTill(e.target.value)} aria-label="Välj steg">
@@ -308,10 +371,20 @@ export function Projektstart() {
             );
           })}
         </ol>
-        <button type="button" className="btn sec mini self-start" onClick={borjaOm}>Börja om</button>
+        {redigerar ? (
+          <button type="button" className="btn sec mini self-start" disabled={!andrat} onClick={angra}>Ångra ändringar</button>
+        ) : (
+          <button type="button" className="btn sec mini self-start" onClick={borjaOm}>Börja om</button>
+        )}
       </nav>
 
       <div className="flex min-w-0 flex-col gap-4 lg:gap-6">
+        {redigerar && !post ? (
+          <Callout ton="info">
+            <b>Projektet har ingen sparad projektstart</b>
+            Guiden är ifylld från projektkortet, riskregistret och milstolparna. Checklistor och direktiv är tomma. Gå igenom stegen och tryck Spara projektstart på sista steget.
+          </Callout>
+        ) : null}
         <Card
           id="ps-steg"
           title={`${index + 1}. ${steg.titel}`}
@@ -333,7 +406,7 @@ export function Projektstart() {
 
         {steg.tabell ? <Tabell tabell={steg.tabell} rader={utkast.rader[steg.tabell.id] || []} onChange={(r) => sattRader(steg.tabell.id, r)} /> : null}
         {steg.katalog ? <Kontrollpunkter steg={steg} utkast={utkast} onToggle={kryssa} /> : null}
-        {sista ? <Sammanfattning utkast={utkast} fel={fel} kanSkapa={!fel} skapar={skapar} onSkapa={skapa} onGaTill={gaTill} /> : null}
+        {sista ? <Sammanfattning utkast={utkast} fel={fel} kanSkapa={!fel} skapar={skapar} redigerar={redigerar} andrat={andrat} ejSparad={redigerar && !post} onSkapa={skapa} onSpara={sparaAndringar} onGaTill={gaTill} /> : null}
 
         <div className="flex items-center justify-between gap-3">
           <button type="button" className="btn sec" disabled={index === 0} onClick={() => gaTill(STEG[index - 1].id)}>

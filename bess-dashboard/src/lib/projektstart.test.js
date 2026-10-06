@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SEED } from "../data/seed.js";
-import { lasUtkast, luckor, nyttProjekt, projektFranUtkast, projektstartDokument, projektstartFel, tomtUtkast } from "./projektstart.js";
+import { utkastFranProjekt, kortAndringar, lasUtkast, projektstartPost, utkastAndrat, utkastFranPost, luckor, nyttProjekt, projektFranUtkast, projektstartDokument, projektstartFel, tomtUtkast } from "./projektstart.js";
 import { STEG } from "../data/projektstartSteg.js";
 import { efterInlasning, reducer } from "../state/portfolj-reducer.js";
 import { GILTIGA_VYER, VYER, ENKEL_MENY } from "../data/vyer.js";
@@ -78,5 +78,36 @@ describe("Återanvändbar projektmetod", () => {
     expect(avrop.kontroll.klara).toBe(1);
     expect(avrop.kontroll.kritiskaOppna.length).toBeGreaterThan(0);
     expect(d.projektstart.sektioner.some((x) => x.id === "sammanfattning")).toBe(false);
+  });
+  it("sparar guiden på projektet och öppnar den igen med alla steg genomgångna", () => {
+    const u = tomtUtkast();
+    Object.assign(u.v, { namn: "Kalmar", nr: "90004", plats: "Kalmar" });
+    const post = projektstartPost("p9", u, "2026-10-06T10:00:00Z");
+    expect(post).toMatchObject({ id: "ps-p9", projektId: "p9", skapad: "2026-10-06T10:00:00Z" });
+    const igen = utkastFranPost(JSON.parse(JSON.stringify(post)));
+    expect(igen.v.namn).toBe("Kalmar");
+    expect(luckor(igen).stegKvar).toEqual([]);
+    expect(utkastAndrat(igen, utkastFranPost(post))).toBe(false);
+    igen.v.namn = "Kalmar Syd";
+    expect(utkastAndrat(igen, utkastFranPost(post))).toBe(true);
+  });
+  it("för bara ändrade projektkortsfält över till projektet", () => {
+    const u = tomtUtkast();
+    Object.assign(u.v, { namn: "Nytt namn", nr: "90004", plats: "Kalmar", bestallare: "" });
+    const projekt = { namn: "Gammalt namn", nr: "90004", ort: "Kalmar", bestallare: "Kund" };
+    expect(kortAndringar(u, projekt)).toEqual([["namn", "Nytt namn"], ["bestallare", ""]]);
+    u.v.namn = "";
+    expect(kortAndringar(u, projekt).some(([f]) => f === "namn")).toBe(false);
+  });
+  it("fyller guiden för ett befintligt projekt ur projektkort, risker och milstolpar", () => {
+    const state = efterInlasning(structuredClone(SEED));
+    const projekt = state.projekt.find((p) => p.id === "36037");
+    const u = utkastFranProjekt(projekt, state);
+    expect(u.v).toMatchObject({ namn: "Växjö Batteripark", nr: "36037", plats: "Växjö", natagare: "Växjö Energi", fardigdatum: "2026-12-02" });
+    expect(u.rader.risker.some((r) => r.titel.includes("Marginal mellan batterileverans") && r.sannolikhet === "3")).toBe(true);
+    expect(u.rader.milstolpar.map((m) => m.namn)).toContain("BESS-batteri leverans");
+    expect(luckor(u).stegKvar).toEqual([]);
+    const tomt = utkastFranProjekt({ id: "x", namn: "Tomt" }, state);
+    expect(tomt.rader.risker.length).toBeGreaterThan(0);
   });
 });

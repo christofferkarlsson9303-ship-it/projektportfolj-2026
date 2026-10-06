@@ -129,3 +129,51 @@ export function projektstartDokument(u, { datum, skapadAv = "" }) {
     projektstart: { sektioner, klara: l.klara, totalt: l.totalt, kritiskaOppna: l.kritiskaOppna.length, kritiskaTotalt: l.kritiskaTotalt },
   };
 }
+
+/** Sparad projektstart: guidens svar, knutna till projektet. */
+export function projektstartPost(projektId, u, nu = new Date().toISOString()) {
+  return { id: `ps-${projektId}`, projektId, utkast: { v: u.v, rader: u.rader, kryss: u.kryss }, skapad: nu, uppdaterad: nu };
+}
+
+/** Öppnar en sparad projektstart i guiden. Alla steg räknas som genomgångna. */
+export function utkastFranPost(post) {
+  const u = lasUtkast(post?.utkast);
+  u.besokta = STEG.filter((s) => s.id !== SISTA_STEG).map((s) => s.id);
+  u.steg = STEG[0].id;
+  return u;
+}
+
+const KORTFALT = [["namn", "namn"], ["nr", "nr"], ["plats", "ort"], ["bestallare", "bestallare"], ["startdatum", "startdatum"], ["fardigdatum", "fardigstallande"], ["natagare", "natagare"]];
+
+/** Ändringar i projektkortet som ska föras över till projektet: [fält, nytt värde]. */
+export function kortAndringar(u, projekt) {
+  return KORTFALT.map(([fran, till]) => [till, (u.v[fran] || "").trim()]).filter(([till, varde]) => varde !== (projekt[till] || "") && (till !== "namn" || varde));
+}
+
+export const utkastAndrat = (a, b) => JSON.stringify([a.v, a.rader, a.kryss]) !== JSON.stringify([b.v, b.rader, b.kryss]);
+
+/** Guiden för ett projekt som saknar sparad projektstart: ifylld från projektkortet,
+ *  riskregistret och milstolparna. Checklistor och direktiv börjar tomma. */
+export function utkastFranProjekt(projekt, state) {
+  const u = utkastFranPost(null);
+  Object.assign(u.v, {
+    namn: projekt.namn || "",
+    nr: projekt.nr || "",
+    plats: projekt.ort || "",
+    bestallare: projekt.bestallare || "",
+    startdatum: projekt.startdatum || "",
+    fardigdatum: projekt.fardigstallande || "",
+    natagare: projekt.natagare || "",
+  });
+  const risker = (state.risker || []).filter((r) => r.projektId === projekt.id);
+  if (risker.length) {
+    const t = STEG.find((x) => x.id === "risker").tabell;
+    u.rader.risker = risker.map((r) => nyRad(t, { titel: r.titel, sannolikhet: String(r.sannolikhet ?? 3), konsekvens: String(r.konsekvens ?? 3), agare: r.agare, atgard: r.atgard }));
+  }
+  const milstolpar = (state.milstolpar || []).filter((m) => m.projektId === projekt.id);
+  if (milstolpar.length) {
+    const t = STEG.find((x) => x.id === "kontrakt").tabell;
+    u.rader.milstolpar = milstolpar.map((m) => nyRad(t, { namn: m.titel, datum: m.datum }));
+  }
+  return u;
+}
