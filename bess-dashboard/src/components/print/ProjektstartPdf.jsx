@@ -45,12 +45,17 @@ const s = StyleSheet.create({
   tileEtikett: { fontSize: 7.5, color: F.dov, marginTop: 2 },
 
   /* Innehållssidor */
-  page: { fontFamily: "FieldSans", fontSize: 9, paddingTop: 74, paddingBottom: 50, paddingHorizontal: 40, color: F.text, backgroundColor: "#fff", lineHeight: 1.35 },
+  page: { fontFamily: "FieldSans", fontSize: 9, paddingTop: 74, paddingBottom: 50, paddingHorizontal: 40, color: F.text, backgroundColor: "#fff" },
   head: { position: "absolute", top: 24, left: 40, right: 40, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottom: `1.5pt solid ${F.bla}`, paddingBottom: 7 },
   headLogo: { width: 48, height: 19, objectFit: "contain" },
   headText: { fontSize: 8, color: F.dov, textAlign: "right" },
   headTitel: { fontSize: 9, fontWeight: 700, color: F.djup, textAlign: "right" },
-  foot: { position: "absolute", bottom: 22, left: 40, right: 40, flexDirection: "row", justifyContent: "space-between", fontSize: 7, color: F.dov, borderTop: `0.5pt solid ${F.linje}`, paddingTop: 5 },
+  /* Sidfoten och linjen ovanför är separata fasta element. Radavståndet sätts
+     per text och aldrig på sidan: ett lineHeight på Page ärvs av de fasta
+     elementen, och då försvann sidfoten på innehållssidorna eller fick en
+     orimlig höjd som fällde hela PDF:en (se ProjektstartPdf.test.js). */
+  foot: { position: "absolute", bottom: 22, left: 40, right: 40, flexDirection: "row", justifyContent: "space-between", fontSize: 7, color: F.dov },
+  footLinje: { position: "absolute", bottom: 34, left: 40, right: 40, height: 0.5, backgroundColor: F.linje },
 
   rubrikH2: { fontSize: 12, fontWeight: 700, color: F.djup, marginBottom: 8 },
 
@@ -71,7 +76,10 @@ const s = StyleSheet.create({
 
   faltRad: { flexDirection: "row", borderBottom: `0.5pt solid ${F.linje}` },
   faltEtikett: { width: "30%", padding: 5, fontWeight: 700, backgroundColor: F.ljus, fontSize: 8.5 },
-  faltVarde: { width: "70%", padding: 5 },
+  faltVarde: { width: "70%", padding: 5, fontSize: 9, lineHeight: 1.3 },
+  faltBlock: { borderBottom: `0.5pt solid ${F.linje}`, paddingBottom: 5 },
+  faltBlockEtikett: { fontWeight: 700, fontSize: 8.5, backgroundColor: F.ljus, paddingVertical: 4, paddingHorizontal: 5 },
+  faltBlockText: { paddingHorizontal: 5, paddingTop: 4, fontSize: 9, lineHeight: 1.3 },
   tomma: { fontSize: 7.5, color: F.dov, marginTop: 4, fontStyle: "normal" },
 
   tabellTitel: { fontSize: 9, fontWeight: 700, color: F.djup, marginTop: 9, marginBottom: 3 },
@@ -87,7 +95,7 @@ const s = StyleSheet.create({
   ruta: { width: 8.5, height: 8.5, border: `0.8pt solid ${F.djup}`, borderRadius: 1.5, marginRight: 6, marginTop: 1.5, alignItems: "center", justifyContent: "center" },
   rutaKlar: { backgroundColor: F.turkos, borderColor: F.turkos },
   bock: { fontSize: 6.5, color: "#fff", fontWeight: 700, marginTop: -0.5 },
-  punktText: { flex: 1, fontSize: 8.5 },
+  punktText: { flex: 1, fontSize: 8.5, lineHeight: 1.3 },
   punktKlar: { color: F.dov },
   kritisk: { fontSize: 6.5, fontWeight: 700, color: "#fff", backgroundColor: F.orange, borderRadius: 2, paddingHorizontal: 3, paddingVertical: 1, marginLeft: 6, marginTop: 1 },
 
@@ -100,6 +108,16 @@ const s = StyleSheet.create({
   signBox: { flex: 1, border: `0.5pt solid ${F.linje}`, borderRadius: 4, padding: 10 },
   signRad: { borderBottom: `0.5pt solid ${F.text}`, marginTop: 22, marginBottom: 2 },
   signEtikett: { fontSize: 7, color: F.dov },
+
+  /* Lägesruta till ledningen */
+  lage: { border: `0.8pt solid ${F.himmel}`, borderRadius: 4, marginBottom: 16 },
+  lageHuvud: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: F.ljus, paddingVertical: 6, paddingHorizontal: 10, borderBottom: `0.8pt solid ${F.himmel}` },
+  lageRubrik: { fontSize: 10, fontWeight: 700, color: F.djup },
+  skede: { fontSize: 7.5, fontWeight: 700, color: "#fff", backgroundColor: F.djup, borderRadius: 3, paddingVertical: 2, paddingHorizontal: 7 },
+  lageKropp: { paddingVertical: 8, paddingHorizontal: 10 },
+  lageEtikett: { fontSize: 7, color: F.dov, marginBottom: 2 },
+  lageText: { fontSize: 9, lineHeight: 1.45 },
+  beslut: { marginTop: 8, borderLeft: `3pt solid ${F.orange}`, paddingLeft: 8 },
 });
 
 function Stapel({ varde, max, bredd = "100%", farg = F.turkos, hojd = 4 }) {
@@ -135,7 +153,7 @@ function Omslag({ d }) {
     <Page size="A4" style={s.omslag}>
       <View style={s.band}>
         <View style={s.logoRuta}><Image src={logotyp} style={s.logo} /></View>
-        <Text style={s.overrubrik}>PROJEKTSTART ENLIGT ONE-P</Text>
+        <Text style={s.overrubrik}>PROJEKTSTART OCH LÄGESBILD ENLIGT ONE-P</Text>
         <Text style={s.omslagTitel}>{p.namn || "Projekt utan namn"}</Text>
         <Text style={s.omslagUnder}>Upprättad {d.datum}{d.skapadAv ? ` av ${d.skapadAv}` : ""}</Text>
       </View>
@@ -148,6 +166,24 @@ function Omslag({ d }) {
             </View>
           ))}
         </View>
+        {ps.lage.nulage || ps.lage.beslut || ps.lage.skede ? (
+          <View style={s.lage} wrap={false}>
+            <View style={s.lageHuvud}>
+              <Text style={s.lageRubrik}>Läget just nu{ps.sparad ? ` · senast sparad ${ps.sparad}` : ""}</Text>
+              {ps.lage.skede ? <Text style={s.skede}>{ps.lage.skede.toUpperCase()}</Text> : null}
+            </View>
+            <View style={s.lageKropp}>
+              <Text style={s.lageEtikett}>Nuläge till ledningen</Text>
+              <Text style={s.lageText}>{ps.lage.nulage || "Inget nuläge skrivet."}</Text>
+              {ps.lage.beslut ? (
+                <View style={s.beslut}>
+                  <Text style={s.lageEtikett}>Beslut som behövs från ledningen</Text>
+                  <Text style={s.lageText}>{ps.lage.beslut}</Text>
+                </View>
+              ) : null}
+            </View>
+          </View>
+        ) : null}
         <View style={s.tiles}>
           <View style={s.tile}>
             <Text style={s.tileVarde}>{ps.klara} / {ps.totalt}</Text>
@@ -199,10 +235,13 @@ function Omslag({ d }) {
 
 function Sidfot({ d }) {
   return (
-    <View fixed style={s.foot}>
-      <Text>{d.projekt.nr ? `${d.projekt.nr} · ` : ""}ONE Nordic AB · one-nordic.se · Arbetsmaterial</Text>
-      <Text render={({ pageNumber, totalPages }) => `Sida ${pageNumber} av ${totalPages}`} />
-    </View>
+    <>
+      <View fixed style={s.footLinje} />
+      <View fixed style={s.foot}>
+        <Text>{d.projekt.nr ? `${d.projekt.nr} · ` : ""}ONE Nordic AB · one-nordic.se · Arbetsmaterial</Text>
+        <Text render={({ pageNumber, totalPages }) => `Sida ${pageNumber} av ${totalPages}`} />
+      </View>
+    </>
   );
 }
 
@@ -234,7 +273,19 @@ function Kontrollpunkter({ k }) {
   );
 }
 
+/* Korta värden står bredvid etiketten. Långa värden (flera rader eller stycken)
+   står under etiketten i full bredd: en tvåkolumnsrad som delas över en
+   sidbrytning får react-pdf att räkna fel, medan en enkel textspalt delas rent. */
+const LANG = 220;
 function Faltrad({ k, v }) {
+  if (v.length > LANG || (v.match(/\n/g) || []).length > 2) {
+    return (
+      <View style={s.faltBlock}>
+        <Text style={s.faltBlockEtikett} minPresenceAhead={30}>{k}</Text>
+        <Text style={s.faltBlockText}>{v}</Text>
+      </View>
+    );
+  }
   return (
     <View style={s.faltRad} wrap={false}>
       <Text style={s.faltEtikett}>{k}</Text>
@@ -318,6 +369,7 @@ export function ProjektstartPdf({ dokument: d }) {
             <Text style={s.headText}>Upprättad {d.datum}{d.skapadAv ? ` · ${d.skapadAv}` : ""}</Text>
           </View>
         </View>
+        <Sidfot d={d} />
 
         {ps.sektioner.map((sek, i) => (
           <Steg
@@ -333,6 +385,30 @@ export function ProjektstartPdf({ dokument: d }) {
             }
           />
         ))}
+
+        {ps.historik.length ? (
+          <View style={{ marginBottom: 14 }}>
+            <View wrap={false}>
+              <Text style={[s.rubrikH2, { marginTop: 8 }]}>Uppdateringar</Text>
+              <View style={s.th}>
+                <Text style={[s.cell, { width: "13%" }]}>Datum</Text>
+                <Text style={[s.cell, { width: "17%" }]}>Av</Text>
+                <Text style={[s.cell, { width: "13%" }]}>Skede</Text>
+                <Text style={[s.cell, { width: "17%" }]}>Kontrollpunkter</Text>
+                <Text style={[s.cell, { width: "40%" }]}>Nuläge</Text>
+              </View>
+            </View>
+            {[...ps.historik].reverse().map((h, i) => (
+              <View key={`${h.datum}-${i}`} style={[s.tr, i % 2 ? { backgroundColor: F.ljus } : null]} wrap={false}>
+                <Text style={[s.cell, { width: "13%" }]}>{h.datum}</Text>
+                <Text style={[s.cell, { width: "17%" }]}>{h.av || "–"}</Text>
+                <Text style={[s.cell, { width: "13%" }]}>{h.skede || "–"}</Text>
+                <Text style={[s.cell, { width: "17%" }]}>{h.klara}/{h.totalt} · {h.kritiskaOppna} kritiska kvar</Text>
+                <Text style={[s.cell, { width: "40%" }]}>{h.nulage || "–"}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
 
         <View wrap={false}>
           <Text style={[s.rubrikH2, { marginTop: 8 }]}>Sammanfattning och godkännande</Text>
@@ -359,7 +435,6 @@ export function ProjektstartPdf({ dokument: d }) {
             ))}
           </View>
         </View>
-        <Sidfot d={d} />
       </Page>
     </Document>
   );

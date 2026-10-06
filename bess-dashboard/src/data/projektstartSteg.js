@@ -6,6 +6,7 @@
    Fält-id:n är platta nycklar i utkastets `v`, tabellerna ligger i `rader`. */
 
 import { ROLLER } from "./projektstartKatalog.js";
+import { PROJEKTSTATUS } from "./konstanter.js";
 
 const FORM = ["ABT 06", "ABT-U 07", "AB 04", "ABT 06 med särskilda villkor", "Annan"];
 const NIVA = ["Ej klassad", "Nivå 1", "Nivå 2", "Nivå 3", "Nivå 4"];
@@ -29,7 +30,9 @@ export const STEG = [
       { id: "niva", etikett: "Projektnivå", typ: "select", alternativ: NIVA },
       { id: "startdatum", etikett: "Start", typ: "date" },
       { id: "fardigdatum", etikett: "Slut", typ: "date" },
-      { id: "nulage", etikett: "Nuläge till ledningen", typ: "textarea", bred: true },
+      { id: "skede", etikett: "Skede", typ: "select", alternativ: PROJEKTSTATUS, standard: "Planering", tips: "Styr projektets status i portföljen. Anbud betyder att projektet inte är tilldelat än." },
+      { id: "nulage", etikett: "Nuläge till ledningen", typ: "textarea", bred: true, tips: "Skriv om inför varje rapport. Det här står först i PDF:en." },
+      { id: "beslutLedning", etikett: "Beslut som behövs från ledningen", typ: "textarea", bred: true, tips: "Vad, och senast när. Lämna tomt om inget behövs." },
     ],
   },
   {
