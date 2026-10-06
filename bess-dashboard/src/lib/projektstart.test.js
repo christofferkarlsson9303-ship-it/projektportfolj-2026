@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SEED } from "../data/seed.js";
-import { kortAndringar, lasUtkast, projektstartPost, utkastAndrat, utkastFranPost, luckor, nyttProjekt, projektFranUtkast, projektstartDokument, projektstartFel, tomtUtkast } from "./projektstart.js";
+import { utkastFranProjekt, kortAndringar, lasUtkast, projektstartPost, utkastAndrat, utkastFranPost, luckor, nyttProjekt, projektFranUtkast, projektstartDokument, projektstartFel, tomtUtkast } from "./projektstart.js";
 import { STEG } from "../data/projektstartSteg.js";
 import { efterInlasning, reducer } from "../state/portfolj-reducer.js";
 import { GILTIGA_VYER, VYER, ENKEL_MENY } from "../data/vyer.js";
@@ -98,5 +98,16 @@ describe("Återanvändbar projektmetod", () => {
     expect(kortAndringar(u, projekt)).toEqual([["namn", "Nytt namn"], ["bestallare", ""]]);
     u.v.namn = "";
     expect(kortAndringar(u, projekt).some(([f]) => f === "namn")).toBe(false);
+  });
+  it("fyller guiden för ett befintligt projekt ur projektkort, risker och milstolpar", () => {
+    const state = efterInlasning(structuredClone(SEED));
+    const projekt = state.projekt.find((p) => p.id === "36037");
+    const u = utkastFranProjekt(projekt, state);
+    expect(u.v).toMatchObject({ namn: "Växjö Batteripark", nr: "36037", plats: "Växjö", natagare: "Växjö Energi", fardigdatum: "2026-12-02" });
+    expect(u.rader.risker.some((r) => r.titel.includes("Marginal mellan batterileverans") && r.sannolikhet === "3")).toBe(true);
+    expect(u.rader.milstolpar.map((m) => m.namn)).toContain("BESS-batteri leverans");
+    expect(luckor(u).stegKvar).toEqual([]);
+    const tomt = utkastFranProjekt({ id: "x", namn: "Tomt" }, state);
+    expect(tomt.rader.risker.length).toBeGreaterThan(0);
   });
 });

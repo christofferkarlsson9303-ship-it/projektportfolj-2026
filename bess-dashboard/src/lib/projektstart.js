@@ -151,3 +151,29 @@ export function kortAndringar(u, projekt) {
 }
 
 export const utkastAndrat = (a, b) => JSON.stringify([a.v, a.rader, a.kryss]) !== JSON.stringify([b.v, b.rader, b.kryss]);
+
+/** Guiden för ett projekt som saknar sparad projektstart: ifylld från projektkortet,
+ *  riskregistret och milstolparna. Checklistor och direktiv börjar tomma. */
+export function utkastFranProjekt(projekt, state) {
+  const u = utkastFranPost(null);
+  Object.assign(u.v, {
+    namn: projekt.namn || "",
+    nr: projekt.nr || "",
+    plats: projekt.ort || "",
+    bestallare: projekt.bestallare || "",
+    startdatum: projekt.startdatum || "",
+    fardigdatum: projekt.fardigstallande || "",
+    natagare: projekt.natagare || "",
+  });
+  const risker = (state.risker || []).filter((r) => r.projektId === projekt.id);
+  if (risker.length) {
+    const t = STEG.find((x) => x.id === "risker").tabell;
+    u.rader.risker = risker.map((r) => nyRad(t, { titel: r.titel, sannolikhet: String(r.sannolikhet ?? 3), konsekvens: String(r.konsekvens ?? 3), agare: r.agare, atgard: r.atgard }));
+  }
+  const milstolpar = (state.milstolpar || []).filter((m) => m.projektId === projekt.id);
+  if (milstolpar.length) {
+    const t = STEG.find((x) => x.id === "kontrakt").tabell;
+    u.rader.milstolpar = milstolpar.map((m) => nyRad(t, { namn: m.titel, datum: m.datum }));
+  }
+  return u;
+}

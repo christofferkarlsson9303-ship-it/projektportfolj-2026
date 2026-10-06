@@ -85,3 +85,19 @@ test("den sparade projektstarten kan öppnas, ändras och laddas ned igen", asyn
   await expect(page.getByLabel("Projektnamn")).toHaveValue("Sparad start 2");
   expect(fel).toEqual([]);
 });
+
+test("ett befintligt projekt utan sparad start kan öppnas i guiden, fyllas på och sparas", async ({ page }) => {
+  const { fel } = await oppna(page, "Projektstart");
+  await page.getByLabel("Arbeta med").selectOption({ label: "36037 Växjö Batteripark (ej sparad start)" });
+  await expect(page.getByText("Projektet har ingen sparad projektstart")).toBeVisible();
+  await expect(page.getByLabel("Projektnamn")).toHaveValue("Växjö Batteripark");
+  await page.getByLabel("Beställare").fill("Ingrid Capacity");
+  await gaTillSteg(page, 14, "Granska och skapa");
+  await page.getByRole("button", { name: "Spara projektstart" }).click();
+
+  await page.reload();
+  await oppnaProjektstart(page);
+  await page.getByLabel("Arbeta med").selectOption({ label: "36037 Växjö Batteripark" });
+  await expect(page.getByLabel("Beställare")).toHaveValue("Ingrid Capacity");
+  expect(fel).toEqual([]);
+});
