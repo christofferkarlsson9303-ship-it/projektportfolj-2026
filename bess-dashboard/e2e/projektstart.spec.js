@@ -1,7 +1,13 @@
 import { expect, test } from "@playwright/test";
-import { oppna } from "./hjalpare.js";
+import { gaTill, oppna } from "./hjalpare.js";
 
 /* Fliken Projektstart: fjorton steg, och först på sista steget skapas projektet. */
+
+const STEGNAMN = ["Projektkort", "Avropsacceptans", "Projektdirektiv", "Intressenter", "Organisation och möten", "Kontrakt och kassaflöde", "Riskregister", "Tidplan och kritisk linje", "Godkänd lösning", "Tillstånd och nätägare", "HSEQ och etablering", "cBoP, eBoP och montage", "Provning, besiktning och garanti"];
+
+async function oppnaProjektstart(page) {
+  await gaTill(page, "Projektstart");
+}
 
 async function gaTillSteg(page, nummer, titel) {
   const val = page.getByLabel("Välj steg");
@@ -49,4 +55,33 @@ test("sammanfattningen kan laddas ned som PDF", async ({ page }) => {
   await page.getByRole("button", { name: "Ladda ned PDF" }).click();
   const d = await nedladdning;
   expect(d.suggestedFilename()).toMatch(/^projektstart_.*\.pdf$/);
+});
+
+test("den sparade projektstarten kan öppnas, ändras och laddas ned igen", async ({ page }) => {
+  const { fel } = await oppna(page, "Projektstart");
+  await page.getByLabel("Projektnamn").fill("Sparad start");
+  await page.getByLabel("Projektnummer").fill("90088");
+  await gaTillSteg(page, 14, "Granska och skapa");
+  for (let i = 1; i < 14; i++) {
+    await gaTillSteg(page, i, STEGNAMN[i - 1]);
+  }
+  await gaTillSteg(page, 14, "Granska och skapa");
+  await page.getByRole("button", { name: "Skapa projekt" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Min projektmetod");
+
+  await oppnaProjektstart(page);
+  await page.getByLabel("Arbeta med").selectOption({ label: "90088 Sparad start" });
+  await expect(page.getByLabel("Projektnamn")).toHaveValue("Sparad start");
+  await page.getByLabel("Projektnamn").fill("Sparad start 2");
+  await gaTillSteg(page, 14, "Granska och skapa");
+  await page.getByRole("button", { name: "Spara ändringar" }).click();
+
+  const nedladdning = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Ladda ned PDF" }).click();
+  expect((await nedladdning).suggestedFilename()).toMatch(/^projektstart_90088_.*\.pdf$/);
+  await page.reload();
+  await oppnaProjektstart(page);
+  await page.getByLabel("Arbeta med").selectOption({ label: "90088 Sparad start 2" });
+  await expect(page.getByLabel("Projektnamn")).toHaveValue("Sparad start 2");
+  expect(fel).toEqual([]);
 });

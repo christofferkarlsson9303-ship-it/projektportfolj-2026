@@ -129,3 +129,25 @@ export function projektstartDokument(u, { datum, skapadAv = "" }) {
     projektstart: { sektioner, klara: l.klara, totalt: l.totalt, kritiskaOppna: l.kritiskaOppna.length, kritiskaTotalt: l.kritiskaTotalt },
   };
 }
+
+/** Sparad projektstart: guidens svar, knutna till projektet. */
+export function projektstartPost(projektId, u, nu = new Date().toISOString()) {
+  return { id: `ps-${projektId}`, projektId, utkast: { v: u.v, rader: u.rader, kryss: u.kryss }, skapad: nu, uppdaterad: nu };
+}
+
+/** Öppnar en sparad projektstart i guiden. Alla steg räknas som genomgångna. */
+export function utkastFranPost(post) {
+  const u = lasUtkast(post?.utkast);
+  u.besokta = STEG.filter((s) => s.id !== SISTA_STEG).map((s) => s.id);
+  u.steg = STEG[0].id;
+  return u;
+}
+
+const KORTFALT = [["namn", "namn"], ["nr", "nr"], ["plats", "ort"], ["bestallare", "bestallare"], ["startdatum", "startdatum"], ["fardigdatum", "fardigstallande"], ["natagare", "natagare"]];
+
+/** Ändringar i projektkortet som ska föras över till projektet: [fält, nytt värde]. */
+export function kortAndringar(u, projekt) {
+  return KORTFALT.map(([fran, till]) => [till, (u.v[fran] || "").trim()]).filter(([till, varde]) => varde !== (projekt[till] || "") && (till !== "namn" || varde));
+}
+
+export const utkastAndrat = (a, b) => JSON.stringify([a.v, a.rader, a.kryss]) !== JSON.stringify([b.v, b.rader, b.kryss]);
