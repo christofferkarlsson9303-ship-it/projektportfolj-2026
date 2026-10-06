@@ -4,6 +4,7 @@ import regular from "../../assets/fonts/DejaVuSans.ttf?inline";
 import bold from "../../assets/fonts/DejaVuSans-Bold.ttf?inline";
 import { kontrollNamn, kontrollBrister, kontrollSummering, rapportStatus } from "../../lib/projektkontroll.js";
 import { FALT_FORUTSATTNING } from "../../data/faltmaterial.js";
+import { SA_HAR_GOR_DU, VID_FARA, arStopp, meningar, momentRubrik, sidfot, stegTitel, vem } from "../../lib/arbetslista.js";
 
 // Lokala typsnitt: svenska tecken, Ω, pilar och tomma rutor även utan nät.
 Font.register({ family: "FieldSans", fonts: [{ src: regular }, { src: bold, fontWeight: 700 }] });
@@ -28,6 +29,106 @@ const s = StyleSheet.create({
   writing: { marginTop: 5, minHeight: 17, borderBottom: "0.4pt solid #aab6bc", paddingBottom: 3 },
   foot: { position: "absolute", bottom: 18, left: 36, right: 36, fontSize: 6.5, color: "#435b67", flexDirection: "row", justifyContent: "space-between" },
 });
+
+/* Arbetslistan i klartext: större text, en mening per rad, ruta att kryssa
+   och STOPP i ONE Röd. Samma regler som utskriften (lib/arbetslista.js). */
+const a = StyleSheet.create({
+  page: { fontFamily: "FieldSans", fontSize: 10.5, color: "#172d38", backgroundColor: "#fff", paddingTop: 96, paddingBottom: 46, paddingHorizontal: 36 },
+  head: { position: "absolute", top: 22, left: 36, right: 36, borderBottom: "1.5pt solid #005f76", paddingBottom: 7 },
+  title: { fontSize: 17, fontWeight: 700, color: "#005f76" },
+  meta: { fontSize: 9.5, marginTop: 2 },
+  moment: { fontSize: 14, fontWeight: 700, color: "#005f76", marginBottom: 4 },
+  regler: { border: "1.5pt solid #005f76", borderRadius: 4, padding: 9, marginBottom: 12 },
+  reglerRubrik: { fontSize: 12, fontWeight: 700, color: "#005f76", marginBottom: 4 },
+  rad: { flexDirection: "row", marginBottom: 3 },
+  nr: { width: 14, fontWeight: 700 },
+  radText: { flex: 1, lineHeight: 1.2 },
+  fara: { marginTop: 6, paddingLeft: 7, borderLeft: "3pt solid #ea5549", fontWeight: 700 },
+  borja: { backgroundColor: "#f3f5f6", borderLeft: "2pt solid #005f76", padding: 6, marginBottom: 4, lineHeight: 1.2 },
+  var: { marginBottom: 8 },
+  steg: { border: "1pt solid #85959d", borderRadius: 4, padding: 9, marginBottom: 9 },
+  stopp: { border: "2.5pt solid #ea5549", borderRadius: 4, padding: 9, marginBottom: 9 },
+  stegHuvud: { flexDirection: "row", alignItems: "center", marginBottom: 5 },
+  ruta: { width: 15, height: 15, border: "1.5pt solid #172d38", borderRadius: 2, marginRight: 8 },
+  stegId: { fontSize: 8, fontWeight: 700, color: "#435b67", marginRight: 6 },
+  stoppMarke: { fontSize: 9, fontWeight: 700, color: "#fff", backgroundColor: "#ea5549", paddingHorizontal: 5, paddingVertical: 1.5, borderRadius: 2, marginRight: 6 },
+  stegTitel: { fontSize: 12, fontWeight: 700, flex: 1 },
+  tank: { fontSize: 8.5, backgroundColor: "#f3f5f6", padding: 5, marginTop: 3, marginBottom: 3, lineHeight: 1.2 },
+  vem: { fontSize: 9.5, marginTop: 3 },
+  sign: { fontSize: 9.5, marginTop: 7, paddingTop: 6, borderTop: "0.6pt dashed #85959d" },
+  foot: { position: "absolute", bottom: 16, left: 36, right: 36, fontSize: 6.5, color: "#435b67", flexDirection: "row", justifyContent: "space-between" },
+});
+
+function ArbetsHeader({ d, moment }) {
+  return <View fixed wrap={false} style={a.head}>
+    <View style={s.top}><Image src={logotyp} style={s.logo} /><Text style={a.title}>Arbetslista – BESS</Text></View>
+    <Text style={a.meta}>{d.projekt.nr || d.projekt.id} · {d.projekt.namn} · Datum: {d.datum}</Text>
+    <Text style={a.meta}>Utförare: {moment?.utforare || d.utforare || "________________"}</Text>
+  </View>;
+}
+
+function ArbetsFooter({ d }) {
+  return <View fixed wrap={false} style={a.foot}>
+    <Text style={{ flex: 1, marginRight: 12 }}>{sidfot(d)}</Text>
+    <Text render={({ pageNumber, totalPages }) => `Sida ${pageNumber} av ${totalPages}`} />
+  </View>;
+}
+
+function Numrerad({ rader }) {
+  return rader.map((r, i) => <View key={i} style={a.rad} wrap={false}><Text style={a.nr}>{i + 1}.</Text><Text style={a.radText}>{r}</Text></View>);
+}
+
+function Regler({ d }) {
+  return <View style={a.regler} wrap={false}>
+    <Text style={a.reglerRubrik}>Så här gör du</Text>
+    <Numrerad rader={SA_HAR_GOR_DU} />
+    <Text style={a.fara}>{VID_FARA}</Text>
+    {!d.komplett && d.moment.length ? <Text style={{ fontSize: 8.5, marginTop: 5 }}>Delurval: listan har bara en del av momenten.</Text> : null}
+  </View>;
+}
+
+function Steg({ p, moment }) {
+  const stopp = arStopp(p);
+  const rader = meningar(p.instruktion);
+  return <View style={stopp ? a.stopp : a.steg} wrap={false}>
+    <View style={a.stegHuvud}>
+      <View style={a.ruta} />
+      <Text style={a.stegId}>{p.id}</Text>
+      {stopp ? <Text style={a.stoppMarke}>STOPP</Text> : null}
+      <Text style={a.stegTitel}>{stegTitel(p)}</Text>
+    </View>
+    {rader.length > 1 ? <Numrerad rader={rader} /> : <Text style={a.radText}>{rader[0]}</Text>}
+    {p.verifiering ? <Text style={a.tank}>Tänk på: {p.verifiering}</Text> : null}
+    <Text style={a.vem}>Vem: {vem(p, moment) || "________________"}</Text>
+    <Text style={a.sign}>{stopp ? "Arbetsledaren ger klartecken. " : "Klart. "}Datum: __________   Namn: ________________________</Text>
+  </View>;
+}
+
+function ArbetslistaSidor({ d }) {
+  const sidor = d.moment.map((m, i) => <Page key={`arbetslista-${m.id}`} size="A4" style={a.page} wrap>
+    <ArbetsHeader d={d} moment={m} />
+    {i === 0 && !d.uppgifter.length ? <Regler d={d} /> : null}
+    <Text style={a.moment}>{momentRubrik(m)}</Text>
+    {m.flode ? <Text style={a.borja}>Börja när: {m.flode}</Text> : null}
+    {m.utrustning ? <Text style={a.var}>Var: {m.utrustning}{m.referens ? ` · Manual: ${m.referens}` : ""}</Text> : null}
+    {m.punkter.map((p) => <Steg key={p.id} p={p} moment={m} />)}
+    <ArbetsFooter d={d} />
+  </Page>);
+  if (d.uppgifter.length) sidor.unshift(<Page key="uppgifter" size="A4" style={a.page} wrap>
+    <ArbetsHeader d={d} />
+    <Regler d={d} />
+    <Text style={a.moment}>Uppgifter i projektet</Text>
+    {d.fran || d.till ? <Text style={a.var}>Period: {d.fran || "Alla datum"} – {d.till || "Alla datum"}</Text> : null}
+    {d.uppgifter.map((p) => <View style={a.steg} wrap={false} key={p.id}>
+      <View style={a.stegHuvud}><View style={a.ruta} /><Text style={a.stegTitel}>{p.titel}</Text></View>
+      {p.instruktion && p.instruktion !== p.titel ? <Text style={a.radText}>{p.instruktion}</Text> : null}
+      <Text style={a.vem}>Vem: {p.utforare || d.utforare || "________________"}{p.datum ? ` · Klart senast: ${p.datum}` : ""}{p.referens || d.ritning ? ` · Ritning: ${p.referens || d.ritning}` : ""}</Text>
+      <Text style={a.sign}>Klart. Datum: __________   Namn: ________________________</Text>
+    </View>)}
+    <ArbetsFooter d={d} />
+  </Page>);
+  return sidor;
+}
 
 function Header({ d, titel, moment }) {
   return <View fixed wrap={false} style={s.head}>
@@ -73,7 +174,8 @@ export function EgenkontrollPdf({ dokument: d, typ = "egenkontroll" }) {
   const typer = typ === "paket" ? ["arbetslista", "egenkontroll"] : [typ];
   return <Document title={`${d.dokumentNr} – BESS fältmaterial`} author={d.skapadAv || "ONE Nordic AB"}>
     {typer.flatMap((t) => {
-      const arbetslista = t === "arbetslista";
+      if (t === "arbetslista") return ArbetslistaSidor({ d });
+      const arbetslista = false;
       const sidor = d.moment.map((m) => <Page key={`${t}-${m.id}`} size="A4" style={s.page} wrap>
         <Header d={d} titel={arbetslista ? "Arbetslista – BESS" : "Egenkontroll – BESS"} moment={m} />
         <Text style={s.source}>{d.kalla} {d.komplett ? "Hela valda mallpaketet." : "Delurval – kontrollera överlämningar och återstående arbete."}</Text>
