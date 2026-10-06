@@ -17,6 +17,8 @@ import {
   kanTillampas,
 } from "../lib/importera.js";
 import { arEjAktiverat, perProjekt, skapaArkiv } from "../state/protokoll-arkiv.js";
+import { lasProtokollText } from "../lib/protokolltext.js";
+import { tolkaProtokoll } from "../lib/protokolltolkning.js";
 import { hamtaNamn } from "../state/portfolj-reducer.js";
 
 /* Data och backup.
@@ -43,13 +45,26 @@ const FALTNAMN = {
   loggKommentar: "Kommentar",
   status: "Status",
   protokollFil: "Protokoll",
+  plats: "Plats",
+  nasta: "Nästa möte",
+  deltagare: "Närvarande",
+  punkter: "Mötespunkter",
 };
 
 const EJ_AKTIVERAT =
   "Protokollarkivet är inte aktiverat i databasen ännu. Migreringen supabase/migrations/20260924114412_protokoll_arkiv.sql behöver köras innan protokoll kan laddas upp.";
 
-const visaVarde = (v) => (v === null || v === undefined || v === "" ? "—" : String(v));
+const visaVarde = (v) =>
+  Array.isArray(v) ? (v.length ? `${v.length} st` : "—") : v === null || v === undefined || v === "" ? "—" : String(v);
 const kB = (n) => (n >= 1024 * 1024 ? (n / 1024 / 1024).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " kB");
+
+/** Namn som tolkningen ska känna igen som personer: medarbetare och kontakter. */
+function kandaPersoner(state) {
+  return [
+    ...(state.medarbetare || []).map((m) => ({ namn: m.namn, var: true })),
+    ...(state.kontakter || []).map((k) => ({ namn: k.namn, var: /one nordic/i.test(k.org || "") })),
+  ];
+}
 
 /** Läser en fil till ett förslag. Filen själv följer med för protokoll. */
 async function tolkaFil(state, fil) {
@@ -66,7 +81,18 @@ async function tolkaFil(state, fil) {
   if (typ === "protokoll") {
     const datum =
       datumUrFilnamn(fil.name) || (fil.lastModified ? new Date(fil.lastModified).toISOString().slice(0, 10) : "");
-    return forslagProtokoll(state, { filnamn: fil.name, datum });
+    // Texten läses lokalt i webbläsaren. Går den inte att läsa arkiveras
+    // protokollet som förut, utan punkter.
+    let tolkning = null;
+    let lasfel = "";
+    try {
+      const text = await lasProtokollText(fil);
+      if (text) tolkning = tolkaProtokoll(text, { filnamn: fil.name, personer: kandaPersoner(state) });
+    } catch (e) {
+      lasfel = `Texten i ${fil.name} kunde inte läsas (${e.message || e}). Protokollet arkiveras utan punkter.`;
+    }
+    const f = forslagProtokoll(state, { filnamn: fil.name, datum, tolkning });
+    return lasfel ? { ...f, varningar: [lasfel, ...f.varningar] } : f;
   }
   return {
     typ: "okand",
@@ -82,7 +108,69 @@ async function tolkaFil(state, fil) {
 
 /* ---------- Ett importförslag ---------- */
 
-function Forslagskort({ f, projekt, onProjekt, onTillampa, onAvvisa, arbetar }) {
+const NAR = { datum: "datum i protokollet", vecka: "veckan i protokollet", nasta: "till nästa möte" };
+
+/** Åtgärderna ur ett tolkat protokoll — kryssa i det som ska bli öppna punkter. */
+function Atgardslista({ f, onAtgarder }) {
+  const atg = f.atgarder || [];
+  const valda = atg.filter((a) => a.vald).length;
+  const rubrikId = `atg-${f.nyckel}`;
+  return (
+    <section aria-labelledby={rubrikId} className="flex flex-col gap-2 rounded-lg border border-solid border-hairline p-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <h4 id={rubrikId} className="m-0 text-[14px] font-bold text-ink">
+          Åtgärder → öppna punkter
+        </h4>
+        <span className="text-[12.5px] text-ink-soft" role="status">
+          {valda} av {atg.filter((a) => !a.finns).length} valda
+        </span>
+        <span className="ml-auto flex flex-wrap gap-1.5">
+          <button type="button" className="btn sec mini" onClick={() => onAtgarder((a) => a.var !== false)}>
+            Våra
+          </button>
+          <button type="button" className="btn sec mini" onClick={() => onAtgarder(() => true)}>
+            Alla
+          </button>
+          <button type="button" className="btn sec mini" onClick={() => onAtgarder(() => false)}>
+            Ingen
+          </button>
+        </span>
+      </div>
+      <ul className="m-0 list-none p-0">
+        {atg.map((a) => (
+          <li key={a.id} className="border-0 border-t border-solid border-hairline py-2 first:border-t-0">
+            <label className={`flex items-start gap-3 ${a.finns ? "opacity-60" : "cursor-pointer"}`}>
+              <input
+                type="checkbox"
+                className="mt-1 h-4 w-4 shrink-0"
+                checked={!!a.vald}
+                disabled={a.finns}
+                onChange={(e) => onAtgarder((x) => (x.id === a.id ? e.target.checked : !!x.vald))}
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block text-[13.5px] font-semibold leading-snug text-ink">
+                  {a.text}
+                  {a.fraga ? <StatusBadge ton="info" label="Fråga" className="ml-2" /> : null}
+                  {a.finns ? <StatusBadge ton="neutral" label="Finns redan" className="ml-2" /> : null}
+                </span>
+                <span className="mt-0.5 block text-[12px] text-ink-soft">
+                  {a.ansvarig ? a.ansvarig : "Ansvarig saknas"}
+                  {a.var === false ? " (inte One Nordic)" : ""}
+                  {a.forfaller ? ` · senast ${a.forfaller}` : ""}
+                  {a.forfallerKalla ? ` (${NAR[a.forfallerKalla]})` : ""}
+                  {" · "}
+                  {a.avsnitt} {a.rubrik}
+                </span>
+              </span>
+            </label>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function Forslagskort({ f, projekt, onProjekt, onAtgarder, onTillampa, onAvvisa, arbetar }) {
   const [visaAlla, setVisaAlla] = useState(false);
   const behoverProjekt = f.typ === "urlogg" || f.typ === "protokoll";
   const rader = [...f.nya.map((n) => ({ typ: "ny", n })), ...f.uppdateringar.map((u) => ({ typ: "upd", u }))];
@@ -139,6 +227,8 @@ function Forslagskort({ f, projekt, onProjekt, onTillampa, onAvvisa, arbetar }) 
           {v}
         </p>
       ))}
+
+      {f.typ === "protokoll" && f.atgarder?.length && f.projektId ? <Atgardslista f={f} onAtgarder={onAtgarder} /> : null}
 
       {f.typ === "backup" && f.tabeller ? (
         <DataTable
@@ -359,7 +449,7 @@ export function Data() {
         omtolka.map(async (f) => {
           let ny;
           if (f.typ === "urlogg") ny = forslagUrLogg(state, await lasXlsx(await f.fil.arrayBuffer()), { filnamn: f.filnamn, projektId: f.projektId });
-          else ny = forslagProtokoll(state, { filnamn: f.filnamn, projektId: f.projektId, datum: f.nya[0]?.datum || "" });
+          else ny = forslagProtokoll(state, { filnamn: f.filnamn, projektId: f.projektId, datum: f.nya[0]?.datum || "", tolkning: f.tolkning });
           if (!f.projektId) ny = { ...ny, projektId: null };
           return { ...ny, nyckel: f.nyckel, fil: f.fil };
         })
@@ -507,6 +597,9 @@ export function Data() {
                 projekt={state.projekt}
                 arbetar={arbetar === f.nyckel}
                 onProjekt={(pid) => sattProjekt(f.nyckel, pid)}
+                onAtgarder={(fn) =>
+                  setForslag((fore) => fore.map((x) => (x.nyckel === f.nyckel ? { ...x, atgarder: x.atgarder.map((a) => (a.finns ? a : { ...a, vald: fn(a) })) } : x)))
+                }
                 onTillampa={() => tillampa(f)}
                 onAvvisa={() => setForslag((fore) => fore.filter((x) => x.nyckel !== f.nyckel))}
               />

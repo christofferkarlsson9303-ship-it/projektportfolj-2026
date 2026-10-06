@@ -1,0 +1,81 @@
+Docusign Envelope ID: 00000000-0000-0000-0000-000000000000
+
+Protokoll Startmöte
+Projekt: Växjö
+
+Protokoll Byggmöte 10 Växjö
+Projekt: Växjö
+
+Datum: 2026-09-28
+
+Tid: 14:00-15:00
+
+Plats: Digitalt via Teams
+
+Närvarande:
+
+Alex Young Projektledare IC KN
+Henrik Gyllenklo Byggledare IC SA
+
+Kim Wilton Ombud One Nordic KW
+Christoffer Karlsson Projektledare One Nordic CK
+Johan Adolfsson HMS One Nordic JA
+
+Distribution utöver närvarande deltagare:
+
+Protokolluppbyggnad
+
+Kvarvarande punkter från föregående möten görs kursiva
+
+Ingrid Capacity AB
+
+1 STARTMÖTE
+B – Beställare
+E – Entreprenör
+
+3 Tider
+Tider enligt kontrakt:
+SM One Nordic tar fram nya deltider samt produktionstidsplan. Till BM1. CK
+BM 9 Inga nya tider för BESS och AC leveranser har inkommit.
+Alex, stämmer av med CATL gällande leveransdag av AC-Block. AY
+BM 10 Nya leveranstider för AC-Block och batterier.
+AC-Block levereras 2026-10-16
+
+One Nordic håller kontakt med Jinert. CK
+
+4 Pågående och planerade arbeten
+BM 10 Datakabel för InCa och PPC skåp är draget och avstämt med Techinova.
+
+7 Arbetsmiljö
+BM 10 Byggstaket bytt (det som var trasigt).
+
+7.1 Olyckor och Tillbud
+Samtliga riskobservationer, tillbud och olyckor ska rapporteras i ENIA.
+Användarnamn: Testkonto
+Lösenord: @hemligt1
+
+10 Ekonomi
+10.3 ÄTA-arbeten
+BM 9 Nedan UR stängdes under UR möte 2026-09-11
+BM 10 Ny UR upprättas för datakabel i stationen till InCa och PPC skåp.
+Christoffer upprättar underlag i teams.
+
+12 Produktion & Tekniska frågor
+BM 10 Släckplåtar för oljegropar har blivit något för breda. Ny plåt tas fram.
+Christoffer har kontakten med Elleholms.
+
+Reläprover visar att skydd löser för sent. Enl Harju skall detta vara testat via FAT. Christoffer tillkallar ny provning senast v.41.
+
+14 Besiktningar
+BM 10 2026-09-28 Christoffer har underrättat Andreas, A-Bygg. De återkommer med tid för åtgärd.
+Punkter finns att åtgärda, dessa måste vara utförda innan leverans av AC-
+Block och batterier.
+
+15 Övriga frågor
+BM 10 Kabel till HSP-
+rummet höjs. Är brandtätningen klar?
+
+16 Kommande möten
+BM 9 Nästa byggmöte: 2026-09-28 BM 10 Nästa byggmöte: 2026-10-12
+
+Vid protokollet: Henrik Gyllenklo
