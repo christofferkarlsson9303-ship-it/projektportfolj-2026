@@ -1,6 +1,7 @@
 /* Vägledning, inte kontraktskrav. Varje sida beskriver en konkret arbetsuppgift. */
 export const SIDHJALP = {
   metod: ["Använd samma arbetssätt i varje projekt", "Välj projekt och kontrollera grunduppgifterna.", "Följ stegen nedan och öppna verktyget du behöver.", "Anpassa mallar och krav mot projektets egna handlingar."],
+  start: ["Starta ett nytt projekt på rätt sätt", "Fyll i projektkortet och gå vidare steg för steg.", "Bocka av kontrollpunkterna. De kritiska stoppar projektet om de glöms.", "På sista steget skapas projektet. Utkastet sparas i webbläsaren tills dess."],
   kontrakt: ["Ha kontraktets villkor framför dig", "Välj projekt och kontrollera att profilen är inläst och granskad.", "Läs fristerna först: de styr vad du måste göra och när.", "Slå upp paragrafen i originalavtalet när något är oklart. Originalet gäller."],
   idag: ["Börja arbetsdagen här", "Ta de röda datumen och svar som snart måste lämnas först.", "Klicka på en rad för att öppna rätt ärende.", "Sätt ansvarig och nästa datum så att frågan går att följa upp."],
   oversikt: ["Se hur projekten mår", "Se vilket projekt som behöver hjälp.", "Öppna nästa uppgift eller en varning.", "Ändra grunduppgifter med Redigera projektuppgifter."],
