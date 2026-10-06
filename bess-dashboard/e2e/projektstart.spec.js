@@ -25,7 +25,9 @@ test("projektet skapas först efter alla steg och får sina risker och milstolpa
   await expect(page.getByRole("heading", { name: "14. Granska och skapa" })).toBeVisible();
   await expect(page.getByText("3 riskrader")).toBeVisible();
   await expect(page.getByRole("button", { name: "Skapa projekt" })).toBeEnabled();
+  const nedladdning = page.waitForEvent("download");
   await page.getByRole("button", { name: "Skapa projekt" }).click();
+  expect((await nedladdning).suggestedFilename()).toMatch(/^projektstart_90077_.*\.pdf$/);
 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Min projektmetod");
   expect(fel).toEqual([]);

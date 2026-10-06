@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { Callout, Card, CheckList, Meter, Overline, StatusBadge } from "../../components/ds/index.js";
 import { PdfExporter } from "../../components/print/PdfExporter.jsx";
+import { laddaNerPdf } from "../../components/print/laddaNerPdf.jsx";
 import { hamtaNamn } from "../../state/portfolj-reducer.js";
 import { idag } from "../../lib/datum.js";
 import { Kraftkurva } from "../../components/oversikt/Hero.jsx";
@@ -131,7 +132,7 @@ function Kontrollpunkter({ steg, utkast, onToggle }) {
   );
 }
 
-function Sammanfattning({ utkast, fel, kanSkapa, onSkapa, onGaTill }) {
+function Sammanfattning({ utkast, fel, kanSkapa, skapar, onSkapa, onGaTill }) {
   const l = luckor(utkast);
   const v = utkast.v;
   const risker = (utkast.rader.risker || []).filter((r) => r.titel?.trim()).length;
@@ -188,7 +189,7 @@ function Sammanfattning({ utkast, fel, kanSkapa, onSkapa, onGaTill }) {
       {fel ? <Callout ton="bad"><b>Projektet kan inte skapas ännu</b>{fel}</Callout> : null}
 
       <div className="flex flex-wrap items-center gap-3">
-        <button type="button" className="btn" disabled={!kanSkapa} onClick={onSkapa}>Skapa projekt</button>
+        <button type="button" className="btn" disabled={!kanSkapa || skapar} aria-busy={skapar} onClick={onSkapa}>{skapar ? "Skapar …" : "Skapa projekt"}</button>
         <PdfExporter
           dokument={projektstartDokument(utkast, { datum: idag(), skapadAv: hamtaNamn() || "" })}
           typ="projektstart"
@@ -197,7 +198,7 @@ function Sammanfattning({ utkast, fel, kanSkapa, onSkapa, onGaTill }) {
           disabled={!v.namn?.trim()}
         />
       </div>
-      <p className="m-0 text-[12.5px] text-ink-soft">Ladda ned PDF:en först om du vill spara guiden. När projektet är skapat töms utkastet.</p>
+      <p className="m-0 text-[12.5px] text-ink-soft">PDF:en laddas ned automatiskt när du skapar projektet. Du kan också ladda ned den separat här.</p>
     </div>
   );
 }
@@ -206,6 +207,7 @@ export function Projektstart() {
   const { state, dispatch, laggTill } = usePortfolj();
   const { visa, visaToast, setValtProjekt, bekrafta } = useUi();
   const [utkast, setUtkast] = useState(laddaUtkast);
+  const [skapar, setSkapar] = useState(false);
 
   useEffect(() => {
     try {
@@ -232,7 +234,7 @@ export function Projektstart() {
     if (ja) setUtkast(tomtUtkast());
   };
 
-  const skapa = () => {
+  const skapa = async () => {
     const id = `projekt-${crypto.randomUUID()}`;
     const { projekt, risker, milstolpar } = projektFranUtkast(utkast, id);
     const f = projektstartFel(state, projekt);
@@ -240,9 +242,14 @@ export function Projektstart() {
       visaToast(f, "warn");
       return;
     }
+    setSkapar(true);
+    // PDF-underlaget byggs innan utkastet töms. Projektet skapas först, så att ett
+    // PDF-fel aldrig hindrar det.
+    const pdfUnderlag = projektstartDokument(utkast, { datum: idag(), skapadAv: hamtaNamn() || "" });
     dispatch({ type: "SKAPA_PROJEKT", rad: projekt });
     for (const r of risker) laggTill("risker", r);
     for (const m of milstolpar) laggTill("milstolpar", m);
+    const pdfKlar = await laddaNerPdf(pdfUnderlag, "projektstart", visaToast);
     try {
       window.localStorage.removeItem(UTKAST_NYCKEL);
     } catch {
@@ -251,7 +258,8 @@ export function Projektstart() {
     setUtkast(tomtUtkast());
     setValtProjekt(id);
     visa("metod");
-    visaToast("Projektet är skapat. Kontrollera kontrakt, betalplan, priser och kontrollkrav före användning.");
+    setSkapar(false);
+    visaToast(`Projektet är skapat${pdfKlar ? " och PDF:en är nedladdad" : ", men PDF:en kunde inte skapas"}. Kontrollera kontrakt, betalplan, priser och kontrollkrav före användning.`);
   };
 
   const stegStatus = (s) => {
@@ -325,7 +333,7 @@ export function Projektstart() {
 
         {steg.tabell ? <Tabell tabell={steg.tabell} rader={utkast.rader[steg.tabell.id] || []} onChange={(r) => sattRader(steg.tabell.id, r)} /> : null}
         {steg.katalog ? <Kontrollpunkter steg={steg} utkast={utkast} onToggle={kryssa} /> : null}
-        {sista ? <Sammanfattning utkast={utkast} fel={fel} kanSkapa={!fel} onSkapa={skapa} onGaTill={gaTill} /> : null}
+        {sista ? <Sammanfattning utkast={utkast} fel={fel} kanSkapa={!fel} skapar={skapar} onSkapa={skapa} onGaTill={gaTill} /> : null}
 
         <div className="flex items-center justify-between gap-3">
           <button type="button" className="btn sec" disabled={index === 0} onClick={() => gaTill(STEG[index - 1].id)}>
