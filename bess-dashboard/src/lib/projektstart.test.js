@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SEED } from "../data/seed.js";
-import { historikRad, medHistorik, milstolparUtanDatum, nyaRaderForProjekt, utkastFranProjekt, kortAndringar, lasUtkast, projektstartPost, utkastAndrat, utkastFranPost, luckor, nyttProjekt, projektFranUtkast, projektstartDokument, projektstartFel, tomtUtkast } from "./projektstart.js";
+import { arLangText, textstycken, historikRad, medHistorik, milstolparUtanDatum, nyaRaderForProjekt, utkastFranProjekt, kortAndringar, lasUtkast, projektstartPost, utkastAndrat, utkastFranPost, luckor, nyttProjekt, projektFranUtkast, projektstartDokument, projektstartFel, tomtUtkast } from "./projektstart.js";
 import { STEG } from "../data/projektstartSteg.js";
 import { efterInlasning, reducer } from "../state/portfolj-reducer.js";
 import { GILTIGA_VYER, VYER, ENKEL_MENY } from "../data/vyer.js";
@@ -156,6 +156,25 @@ describe("Återanvändbar projektmetod", () => {
     const d = projektstartDokument(u, { datum: "2026-10-07", historik: h, sparad: "2026-10-07" });
     expect(d.projektstart.historik).toHaveLength(2);
     expect(d.projektstart.lage).toMatchObject({ skede: "Anbud", nulage: "Anbud in 23/10" });
+  });
+  it("delar långa texter i stycken, milstolpskort och fetstilta nycklar", () => {
+    const t = "Förslag:\n\nMilstolpe 3 (Kablering, Förläggning & Station - 20–25 %):\nBetalas när kablarna är förlagda.\n\nAvtalsform: Totalentreprenad.\nKvalitet & Säkerhet: Enligt ESA.";
+    expect(textstycken(t)).toEqual([
+      { typ: "stycke", text: "Förslag:" },
+      { typ: "milstolpe", kod: "M3", namn: "Kablering, Förläggning & Station", andel: "20–25 %", text: "Betalas när kablarna är förlagda." },
+      { typ: "stycke", nyckel: "Avtalsform", text: "Totalentreprenad." },
+      { typ: "stycke", nyckel: "Kvalitet & Säkerhet", text: "Enligt ESA." },
+    ]);
+    expect(arLangText("kort")).toBe(false);
+    expect(arLangText("a\n\nb")).toBe(true);
+    expect(arLangText("x".repeat(231))).toBe(true);
+  });
+  it("skriver Ej skapat när projektnummer saknas och listar det inte som ej ifyllt", () => {
+    const u = tomtUtkast();
+    Object.assign(u.v, { namn: "Vaggeryd", nr: "-" });
+    const kort = projektstartDokument(u, { datum: "2026-10-07" }).projektstart.sektioner.find((x) => x.id === "projekt");
+    expect(kort.falt.find(([k]) => k === "Projektnummer")[1]).toBe("Ej skapat");
+    expect(kort.tomma).not.toContain("Projektnummer");
   });
   it("fyller guiden för ett befintligt projekt ur projektkort, risker och milstolpar", () => {
     const state = efterInlasning(structuredClone(SEED));

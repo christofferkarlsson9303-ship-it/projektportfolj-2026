@@ -142,14 +142,54 @@ export function medHistorik(historik, rad, max = 30) {
 /** Underlaget till PDF:en. Samma dokumentform som övriga PDF:er (projekt, datum,
  *  skapadAv) plus `projektstart` med sektioner per steg. Tomma fält och rader
  *  utelämnas, så PDF:en blir lika kort som utkastet är ifyllt. */
+/** Långa texter (flera stycken eller mer än några rader) visas som rubrik med
+ *  brödtext i stället för som en rad i en tabell. */
+export const arLangText = (t) => /\n\s*\n/.test(t) || t.length > 230;
+
+const MILSTOLPE = /^Milstolpe\s+(\d+)\s*\(([^)]*)\)\s*:?\s*([\s\S]*)$/;
+const NYCKEL = /^([A-ZÅÄÖ][^:\n]{1,44}?):\s+([\s\S]+)$/;
+
+/** Delar en lång text i stycken för PDF:en.
+ *  - Tom rad skiljer stycken.
+ *  - "Milstolpe N (Namn - andel %): utlösare" blir ett milstolpskort.
+ *  - "Nyckel: text" i början av ett stycke får nyckeln i fetstil. */
+export function textstycken(text) {
+  const ut = [];
+  for (const block of String(text || "").split(/\n\s*\n/)) {
+    const b = block.trim();
+    if (!b) continue;
+    const m = b.match(MILSTOLPE);
+    if (m) {
+      const inne = m[2].trim();
+      const i = inne.lastIndexOf(" - ");
+      ut.push({ typ: "milstolpe", kod: `M${m[1]}`, namn: i > 0 ? inne.slice(0, i).trim() : inne, andel: i > 0 ? inne.slice(i + 3).trim() : "", text: m[3].trim() });
+      continue;
+    }
+    // Rader som själva börjar med "Nyckel:" blir egna stycken.
+    for (const rad of b.split(/\n(?=[A-ZÅÄÖ][^:\n]{1,44}:\s)/)) {
+      const n = rad.trim().match(NYCKEL);
+      ut.push(n && !/https?$/i.test(n[1]) ? { typ: "stycke", nyckel: n[1].trim(), text: n[2].trim() } : { typ: "stycke", text: rad.trim() });
+    }
+  }
+  return ut;
+}
+
 /** Relativ kolumnbredd i PDF:en: breda textkolumner får mer plats, val och datum mindre. */
 const kolumnVikt = (k) => (k.bredd === "wide" ? 3 : k.typ === "select" ? 1 : k.typ === "date" ? 1.2 : 2);
 
 export function projektstartDokument(u, { datum, skapadAv = "", historik = [], sparad = "" }) {
   const v = u.v;
   const sektioner = STEG.filter((s) => s.id !== SISTA_STEG).map((s, i) => {
-    const falt = (s.falt || []).map((f) => [f.etikett, varde(v[f.id])]).filter(([, val]) => val);
-    const tomma = (s.falt || []).filter((f) => !varde(v[f.id])).map((f) => f.etikett);
+    /* Fält: [etikett, värde, stycken]. Långa fält får stycken och visas som
+       rubrik med brödtext i PDF:en, korta som rad. Saknat projektnummer skrivs
+       ut som "Ej skapat" så att ledningen ser att det saknas. */
+    const falt = (s.falt || [])
+      .map((f) => {
+        const val = f.id === "nr" ? varde(v[f.id]) || "Ej skapat" : varde(v[f.id]);
+        return [f.etikett, val, arLangText(val) ? textstycken(val) : null];
+      })
+      .filter(([, val]) => val);
+    const tomma = (s.falt || []).filter((f) => f.id !== "nr" && !varde(v[f.id])).map((f) => f.etikett);
     const tabell = s.tabell
       ? {
           titel: s.tabell.titel,
