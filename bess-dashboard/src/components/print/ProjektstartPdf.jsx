@@ -48,7 +48,7 @@ const F = {
 };
 
 const s = StyleSheet.create({
-  page: { fontFamily: BROD, fontSize: 9.5, color: F.text, backgroundColor: "#fff", paddingTop: 42, paddingBottom: 64, paddingHorizontal: 45 },
+  page: { fontFamily: BROD, fontSize: 10.5, color: F.text, backgroundColor: "#fff", paddingTop: 42, paddingBottom: 64, paddingHorizontal: 45 },
 
   /* Sidfot: fristående fasta element, ingen ram och ingen padding (se ovan). */
   footLinje: { position: "absolute", bottom: 46, left: 0, right: 0, height: 0.8, backgroundColor: F.bla },
@@ -57,94 +57,156 @@ const s = StyleSheet.create({
   footSida: { position: "absolute", bottom: 17, right: 45, width: 200, fontSize: 7.5, color: F.dov, textAlign: "right" },
 
   /* Försättsblad */
-  omslagTopp: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", paddingBottom: 16, borderBottom: `1.2pt solid ${F.bla}`, marginBottom: 22 },
+  omslagTopp: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    paddingBottom: 16,
+    borderBottom: `1.2pt solid ${F.bla}`,
+    marginBottom: 22,
+  },
   logo: { width: 76, height: 49, objectFit: "contain" },
-  logoUnder: { fontSize: 8, color: F.djup, fontWeight: 600, marginTop: 4, marginLeft: 6 },
+  logoUnder: { fontSize: 9, color: F.djup, fontWeight: 600, marginTop: 4, marginLeft: 6 },
   toppHoger: { alignItems: "flex-end", marginTop: 4 },
-  toppHogerFet: { fontSize: 9, fontWeight: 700, color: F.djup },
-  toppHogerText: { fontSize: 9, color: F.text, marginTop: 2 },
-  overrubrik: { fontSize: 8, fontWeight: 600, color: F.bla, letterSpacing: 1.6, marginBottom: 6 },
-  titel: { fontFamily: RUBRIK, fontSize: 25, fontWeight: 700, color: F.djup, marginBottom: 16 },
+  toppHogerFet: { fontSize: 10, fontWeight: 700, color: F.djup },
+  toppHogerText: { fontSize: 10, color: F.text, marginTop: 2 },
+  overrubrik: { fontSize: 9, fontWeight: 600, color: F.bla, letterSpacing: 1.6, marginBottom: 6 },
+  titel: { fontFamily: RUBRIK, fontSize: 28, fontWeight: 700, color: F.djup, marginBottom: 16 },
   meta: { backgroundColor: F.ljus, borderRadius: 8, paddingVertical: 14, paddingHorizontal: 17, flexDirection: "row", flexWrap: "wrap", marginBottom: 14 },
   metaCell: { width: "33.33%", paddingRight: 10, marginBottom: 10 },
   metaCellBred: { width: "66.66%", paddingRight: 10, marginBottom: 10 },
-  metaEtikett: { fontSize: 7.5, fontWeight: 600, color: F.djup, marginBottom: 3 },
-  metaVarde: { fontSize: 9.5, lineHeight: 1.4 },
+  metaEtikett: { fontSize: 8.5, fontWeight: 600, color: F.djup, marginBottom: 3 },
+  metaVarde: { fontSize: 10.5, lineHeight: 1.4 },
 
   lage: { backgroundColor: F.djup, borderRadius: 8, paddingVertical: 14, paddingHorizontal: 17, marginBottom: 14 },
   lageTopp: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
-  lageTitelRad: { fontSize: 8.5, fontWeight: 600, color: "#fff" },
-  skede: { fontSize: 7.5, fontWeight: 700, color: F.djup, backgroundColor: F.himmel, borderRadius: 4, paddingVertical: 2.5, paddingHorizontal: 8, letterSpacing: 1 },
-  lageRubrik: { fontFamily: RUBRIK, fontSize: 12.5, fontWeight: 700, color: "#fff", marginBottom: 4 },
-  lageText: { fontSize: 10, color: "#fff", lineHeight: 1.45 },
+  lageTitelRad: { fontSize: 9.5, fontWeight: 600, color: "#fff" },
+  skede: {
+    fontSize: 8.5,
+    fontWeight: 700,
+    color: F.djup,
+    backgroundColor: F.himmel,
+    borderRadius: 4,
+    paddingVertical: 2.5,
+    paddingHorizontal: 8,
+    letterSpacing: 1,
+  },
+  lageRubrik: { fontFamily: RUBRIK, fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 4 },
+  lageText: { fontSize: 11, color: "#fff", lineHeight: 1.45 },
   beslut: { marginTop: 10, borderLeft: `2.5pt solid ${F.orange}`, paddingLeft: 9 },
 
   tiles: { flexDirection: "row", marginBottom: 20 },
   tile: { flex: 1, border: `0.8pt solid ${F.linje}`, borderRadius: 7, paddingVertical: 10, paddingHorizontal: 13 },
-  tileTal: { fontFamily: BROD, fontSize: 19, fontWeight: 700 },
-  tileEtikett: { fontSize: 8, color: F.text, marginTop: 3 },
+  tileTal: { fontFamily: BROD, fontSize: 21.5, fontWeight: 700 },
+  tileEtikett: { fontSize: 9, color: F.text, marginTop: 3 },
 
-  h2: { fontFamily: RUBRIK, fontSize: 15, fontWeight: 700, color: F.djup, marginBottom: 9 },
+  h2: { fontFamily: RUBRIK, fontSize: 17, fontWeight: 700, color: F.djup, marginBottom: 9 },
 
   /* Tabeller */
-  th: { flexDirection: "row", backgroundColor: F.ljus, borderBottom: `1pt solid ${F.bla}`, paddingVertical: 6 },
-  thText: { fontSize: 8.5, fontWeight: 600, color: F.djup, paddingHorizontal: 6 },
-  tr: { flexDirection: "row", borderBottom: `0.6pt solid ${F.linje}`, paddingVertical: 6 },
-  td: { fontSize: 8.5, paddingHorizontal: 6, lineHeight: 1.4 },
+  th: { flexDirection: "row", backgroundColor: F.ljus, borderBottom: `1pt solid ${F.bla}`, paddingVertical: 7 },
+  thText: { fontSize: 9.5, fontWeight: 600, color: F.djup, paddingHorizontal: 6 },
+  tr: { flexDirection: "row", borderBottom: `0.6pt solid ${F.linje}`, paddingVertical: 7 },
+  td: { fontSize: 9.5, paddingHorizontal: 6, lineHeight: 1.4 },
 
   /* Fasband och steg */
   fasBand: { flexDirection: "row", alignItems: "center", marginTop: 14, marginBottom: 14 },
-  fasText: { fontSize: 7.5, fontWeight: 700, color: F.bla, letterSpacing: 1.8, marginRight: 8 },
+  fasText: { fontSize: 8.5, fontWeight: 700, color: F.bla, letterSpacing: 1.8, marginRight: 8 },
   fasLinje: { flex: 1, height: 0.6, backgroundColor: F.himmel },
   stegHuvud: { flexDirection: "row", alignItems: "flex-start", marginBottom: 8 },
   stegNr: { width: 24, height: 24, borderRadius: 5, backgroundColor: F.bla, marginRight: 11, marginTop: 1, alignItems: "center", justifyContent: "center" },
-  stegNrText: { fontSize: 10.5, fontWeight: 700, color: "#fff" },
-  stegTitel: { fontFamily: RUBRIK, fontSize: 16, fontWeight: 700, color: F.djup },
-  stegSammanfattning: { fontSize: 9, color: F.text, marginTop: 2 },
-  piller: { flexDirection: "row", alignItems: "center", backgroundColor: F.himmelLjus, borderRadius: 5, paddingVertical: 2.5, paddingHorizontal: 7, marginTop: 4 },
-  pillerText: { fontSize: 7.5, fontWeight: 600, color: F.djup },
+  stegNrText: { fontSize: 12, fontWeight: 700, color: "#fff" },
+  stegTitel: { fontFamily: RUBRIK, fontSize: 18, fontWeight: 700, color: F.djup },
+  stegSammanfattning: { fontSize: 10, color: F.text, marginTop: 2 },
+  piller: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: F.himmelLjus,
+    borderRadius: 5,
+    paddingVertical: 2.5,
+    paddingHorizontal: 7,
+    marginTop: 4,
+  },
+  pillerText: { fontSize: 8.5, fontWeight: 600, color: F.djup },
   pillerGra: { backgroundColor: F.ljus },
-  steg: { marginBottom: 18 },
+  /* Inget marginBottom på stegets block: då flyttar react-pdf hela steget till
+     nästa sida i stället för att dela det. Luften läggs som ett eget block efter. */
+  stegLuft: { height: 18 },
 
-  faltRad: { flexDirection: "row", borderBottom: `0.6pt solid ${F.linje}`, paddingVertical: 6 },
-  faltEtikett: { width: "26%", fontSize: 9.5, fontWeight: 600, color: F.djup, paddingRight: 8, lineHeight: 1.35 },
-  faltVarde: { width: "74%", fontSize: 9.5, lineHeight: 1.45 },
-  blockRubrik: { fontSize: 11.5, color: F.djup, marginTop: 10, marginBottom: 4 },
-  stycke: { fontSize: 9.5, lineHeight: 1.5, marginBottom: 5 },
+  faltRad: { flexDirection: "row", borderBottom: `0.6pt solid ${F.linje}`, paddingVertical: 7 },
+  faltEtikett: { width: "26%", fontSize: 10.5, fontWeight: 600, color: F.djup, paddingRight: 8, lineHeight: 1.35 },
+  faltVarde: { width: "74%", fontSize: 10.5, lineHeight: 1.45 },
+  blockRubrik: { fontSize: 13, color: F.djup, marginTop: 10, marginBottom: 4 },
+  stycke: { fontSize: 10.5, lineHeight: 1.5, marginBottom: 5 },
   nyckel: { fontWeight: 600, color: F.djup },
   milstolpe: { flexDirection: "row", backgroundColor: F.ljus, borderRadius: 6, paddingVertical: 7, paddingHorizontal: 10, marginBottom: 5 },
-  milstolpeKod: { fontFamily: RUBRIK, fontSize: 10.5, fontWeight: 700, color: F.bla, width: 28 },
-  milstolpeNamn: { fontSize: 9.5, fontWeight: 600, color: F.djup },
-  milstolpeText: { fontSize: 9.5, lineHeight: 1.4, marginTop: 1 },
+  milstolpeKod: { fontFamily: RUBRIK, fontSize: 12, fontWeight: 700, color: F.bla, width: 28 },
+  milstolpeNamn: { fontSize: 10.5, fontWeight: 600, color: F.djup },
+  milstolpeText: { fontSize: 10.5, lineHeight: 1.4, marginTop: 1 },
   tomma: { flexDirection: "row", border: `0.8pt dashed ${F.linje}`, borderRadius: 6, paddingVertical: 6, paddingHorizontal: 10, marginTop: 9 },
-  tommaEtikett: { fontSize: 9, fontWeight: 700, color: F.djup, marginRight: 5 },
-  tommaText: { fontSize: 9, flex: 1, lineHeight: 1.35 },
-  tabellTitel: { fontSize: 11.5, color: F.djup, marginTop: 10, marginBottom: 5 },
-  inget: { fontSize: 9, color: F.dov, backgroundColor: F.ljus, borderRadius: 6, paddingVertical: 7, paddingHorizontal: 10 },
+  tommaEtikett: { fontSize: 10, fontWeight: 700, color: F.djup, marginRight: 5 },
+  tommaText: { fontSize: 10, flex: 1, lineHeight: 1.35 },
+  tabellTitel: { fontSize: 13, color: F.djup, marginTop: 10, marginBottom: 5 },
+  inget: { fontSize: 10, color: F.dov, backgroundColor: F.ljus, borderRadius: 6, paddingVertical: 7, paddingHorizontal: 10 },
 
   /* Kontrollpunkter */
-  kpHuvud: { flexDirection: "row", alignItems: "center", backgroundColor: F.ljus, borderRadius: 7, paddingVertical: 7, paddingHorizontal: 11, marginTop: 12, marginBottom: 8 },
-  kpRubrik: { fontFamily: RUBRIK, fontSize: 11, fontWeight: 700, color: F.djup, marginRight: 10 },
-  kpAntal: { fontSize: 9, fontWeight: 600, color: F.text, marginLeft: 10 },
-  kritiskaKvar: { fontSize: 8, fontWeight: 700, color: "#fff", backgroundColor: F.rod, borderRadius: 4, paddingVertical: 2, paddingHorizontal: 6, marginLeft: 8 },
+  kpHuvud: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: F.ljus,
+    borderRadius: 7,
+    paddingVertical: 7,
+    paddingHorizontal: 11,
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  kpRubrik: { fontFamily: RUBRIK, fontSize: 12.5, fontWeight: 700, color: F.djup, marginRight: 10 },
+  kpAntal: { fontSize: 10, fontWeight: 600, color: F.text, marginLeft: 10 },
+  kritiskaKvar: {
+    fontSize: 9,
+    fontWeight: 700,
+    color: "#fff",
+    backgroundColor: F.rod,
+    borderRadius: 4,
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    marginLeft: 8,
+  },
   spalter: { flexDirection: "row" },
   spalt: { width: "50%" },
-  grupp: { fontSize: 8, fontWeight: 700, color: F.djup, letterSpacing: 0.8, borderBottom: `0.6pt solid ${F.himmel}`, paddingBottom: 3, marginTop: 6, marginBottom: 5 },
+  grupp: {
+    fontSize: 9,
+    fontWeight: 700,
+    color: F.djup,
+    letterSpacing: 0.8,
+    borderBottom: `0.6pt solid ${F.himmel}`,
+    paddingBottom: 3,
+    marginTop: 6,
+    marginBottom: 5,
+  },
   punkt: { flexDirection: "row", alignItems: "flex-start", marginBottom: 5 },
-  ruta: { width: 9.5, height: 9.5, borderRadius: 2.5, border: `0.9pt solid ${F.bla}`, marginRight: 7, marginTop: 1.5, alignItems: "center", justifyContent: "center" },
+  ruta: {
+    width: 9.5,
+    height: 9.5,
+    borderRadius: 2.5,
+    border: `0.9pt solid ${F.bla}`,
+    marginRight: 7,
+    marginTop: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   rutaKlar: { backgroundColor: F.bla },
-  punktText: { fontSize: 9, lineHeight: 1.4 },
-  kritiskOppen: { fontSize: 6.5, fontWeight: 700, color: "#fff", backgroundColor: F.rod, borderRadius: 2.5, paddingHorizontal: 3, letterSpacing: 0.5 },
-  kritiskKlar: { fontSize: 6.5, fontWeight: 700, color: F.djup, backgroundColor: F.himmelLjus, borderRadius: 2.5, paddingHorizontal: 3, letterSpacing: 0.5 },
+  punktText: { fontSize: 10, lineHeight: 1.4 },
+  kritiskOppen: { fontSize: 7.5, fontWeight: 700, color: "#fff", backgroundColor: F.rod, borderRadius: 2.5, paddingHorizontal: 3, letterSpacing: 0.5 },
+  kritiskKlar: { fontSize: 7.5, fontWeight: 700, color: F.djup, backgroundColor: F.himmelLjus, borderRadius: 2.5, paddingHorizontal: 3, letterSpacing: 0.5 },
 
   /* Sammanfattning */
-  summaFet: { fontSize: 10, fontWeight: 700, marginBottom: 4 },
-  summaText: { fontSize: 9.5, lineHeight: 1.5, color: F.text },
+  summaFet: { fontSize: 11, fontWeight: 700, marginBottom: 4 },
+  summaText: { fontSize: 10.5, lineHeight: 1.5, color: F.text },
   sign: { flexDirection: "row", marginTop: 18 },
   signBox: { flex: 1, border: `0.8pt solid ${F.linje}`, borderRadius: 8, paddingVertical: 12, paddingHorizontal: 14 },
-  signRubrik: { fontFamily: RUBRIK, fontSize: 11, fontWeight: 700, color: F.djup, marginBottom: 6 },
+  signRubrik: { fontFamily: RUBRIK, fontSize: 12.5, fontWeight: 700, color: F.djup, marginBottom: 6 },
   signRad: { height: 0.8, backgroundColor: F.text, marginTop: 26, marginBottom: 3 },
-  signEtikett: { fontSize: 7.5, color: F.text },
+  signEtikett: { fontSize: 8.5, color: F.text },
 });
 
 function Bock({ farg = "#fff", storlek = 7 }) {
@@ -176,8 +238,12 @@ function Sidfot({ d }) {
   return (
     <>
       <View fixed style={s.footLinje} />
-      <Text fixed style={s.footVanster}>{vanster}</Text>
-      <Text fixed style={s.footHoger}>ONE Nordic AB · one-nordic.se · Arbetsmaterial</Text>
+      <Text fixed style={s.footVanster}>
+        {vanster}
+      </Text>
+      <Text fixed style={s.footHoger}>
+        ONE Nordic AB · one-nordic.se · Arbetsmaterial
+      </Text>
       <Text fixed style={s.footSida} render={({ pageNumber, totalPages }) => `Sida ${pageNumber} av ${totalPages}`} />
     </>
   );
@@ -241,7 +307,7 @@ function Forsattsblad({ d }) {
         <Text style={s.lageText}>{ps.lage.nulage || "Inget nuläge skrivet."}</Text>
         {ps.lage.beslut ? (
           <View style={s.beslut}>
-            <Text style={[s.lageRubrik, { fontSize: 10.5 }]}>Beslut som behövs från ledningen</Text>
+            <Text style={[s.lageRubrik, { fontSize: 12 }]}>Beslut som behövs från ledningen</Text>
             <Text style={s.lageText}>{ps.lage.beslut}</Text>
           </View>
         ) : null}
@@ -249,7 +315,9 @@ function Forsattsblad({ d }) {
 
       <View style={s.tiles} wrap={false}>
         <View style={s.tile}>
-          <Text style={[s.tileTal, { color: F.bla }]}>{ps.klara} / {ps.totalt}</Text>
+          <Text style={[s.tileTal, { color: F.bla }]}>
+            {ps.klara} / {ps.totalt}
+          </Text>
           <Text style={s.tileEtikett}>Kontrollpunkter avbockade</Text>
         </View>
         <View style={[s.tile, { marginHorizontal: 10 }]}>
@@ -257,7 +325,9 @@ function Forsattsblad({ d }) {
           <Text style={s.tileEtikett}>Kritiska punkter kvar av {ps.kritiskaTotalt}</Text>
         </View>
         <View style={s.tile}>
-          <Text style={[s.tileTal, { color: F.djup }]}>{stegKlara} / {ps.sektioner.length}</Text>
+          <Text style={[s.tileTal, { color: F.djup }]}>
+            {stegKlara} / {ps.sektioner.length}
+          </Text>
           <Text style={s.tileEtikett}>Steg genomgångna</Text>
         </View>
       </View>
@@ -282,13 +352,13 @@ function Forsattsblad({ d }) {
               {kp ? (
                 <>
                   <Stapel varde={kp.klara} max={kp.totalt} />
-                  <Text style={{ fontSize: 8.5, marginLeft: 8 }}>
+                  <Text style={{ fontSize: 9.5, marginLeft: 8 }}>
                     {kp.klara}/{kp.totalt}
                     {kp.kritiskaOppna.length ? ` · ${kp.kritiskaOppna.length} kritiska kvar` : ""}
                   </Text>
                 </>
               ) : (
-                <Text style={{ fontSize: 8.5 }}>{stegLage(x) || (x.besokt ? "Genomgånget" : "Ej genomgånget")}</Text>
+                <Text style={{ fontSize: 9.5 }}>{stegLage(x) || (x.besokt ? "Genomgånget" : "Ej genomgånget")}</Text>
               )}
             </View>
           </View>
@@ -445,52 +515,57 @@ function Steg({ sek, fasBand }) {
   const forstaArRad = forstaFalt && !forstaFalt[2];
 
   return (
-    <View style={s.steg}>
-      {/* Fasband, rubrik och första innehållet hålls ihop på samma sida. */}
-      <View wrap={false}>
-        {fasBand}
-        <View style={s.stegHuvud}>
-          <View style={s.stegNr}>
-            <Text style={s.stegNrText}>{sek.nr}</Text>
+    <>
+      <View>
+        {/* Fasband, rubrik och första innehållet hålls ihop på samma sida. */}
+        <View wrap={false}>
+          {fasBand}
+          <View style={s.stegHuvud}>
+            <View style={s.stegNr}>
+              <Text style={s.stegNrText}>{sek.nr}</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={s.stegTitel}>{sek.titel}</Text>
+              {sek.sammanfattning ? <Text style={s.stegSammanfattning}>{sek.sammanfattning}</Text> : null}
+            </View>
+            <View style={[s.piller, sek.besokt ? null : s.pillerGra]}>
+              {sek.besokt ? <Bock farg={F.djup} storlek={6.5} /> : null}
+              <Text style={[s.pillerText, { marginLeft: sek.besokt ? 3 : 0 }]}>{sek.besokt ? "Genomgånget" : "Ej genomgånget"}</Text>
+            </View>
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={s.stegTitel}>{sek.titel}</Text>
-            {sek.sammanfattning ? <Text style={s.stegSammanfattning}>{sek.sammanfattning}</Text> : null}
-          </View>
-          <View style={[s.piller, sek.besokt ? null : s.pillerGra]}>
-            {sek.besokt ? <Bock farg={F.djup} storlek={6.5} /> : null}
-            <Text style={[s.pillerText, { marginLeft: sek.besokt ? 3 : 0 }]}>{sek.besokt ? "Genomgånget" : "Ej genomgånget"}</Text>
-          </View>
+          {forstaArRad ? (
+            <View style={{ borderTop: `0.6pt solid ${F.linje}` }}>
+              <Faltrad k={forstaFalt[0]} v={forstaFalt[1]} />
+            </View>
+          ) : null}
+          {!forstaFalt && sek.tabell ? tabellHuvud : null}
+          {tomt ? <Text style={s.inget}>Inget ifyllt i det här steget ännu.</Text> : null}
         </View>
-        {forstaArRad ? (
-          <View style={{ borderTop: `0.6pt solid ${F.linje}` }}>
-            <Faltrad k={forstaFalt[0]} v={forstaFalt[1]} />
+
+        {(forstaArRad ? ovrigaFalt : sek.falt).map(([k, v, stycken]) =>
+          stycken ? <Faltblock key={k} k={k} stycken={stycken} /> : <Faltrad key={k} k={k} v={v} />,
+        )}
+
+        {sek.tabell ? (
+          <View>
+            {sek.falt.length ? tabellHuvud : null}
+            {sek.tabell.rader.slice(1).map((r, ri) => (
+              <TabellRad key={ri} r={r} bredd={bredd} />
+            ))}
           </View>
         ) : null}
-        {!forstaFalt && sek.tabell ? tabellHuvud : null}
-        {tomt ? <Text style={s.inget}>Inget ifyllt i det här steget ännu.</Text> : null}
+
+        {!tomt && (sek.tomma.length || sek.tomTabell) ? (
+          <View style={s.tomma} wrap={false}>
+            <Text style={s.tommaEtikett}>Ej ifyllt:</Text>
+            <Text style={s.tommaText}>{[...sek.tomma, sek.tomTabell].filter(Boolean).join(", ")}</Text>
+          </View>
+        ) : null}
+
+        {sek.kontroll ? <Kontrollpunkter k={sek.kontroll} /> : null}
       </View>
-
-      {(forstaArRad ? ovrigaFalt : sek.falt).map(([k, v, stycken]) => (stycken ? <Faltblock key={k} k={k} stycken={stycken} /> : <Faltrad key={k} k={k} v={v} />))}
-
-      {sek.tabell ? (
-        <View>
-          {sek.falt.length ? tabellHuvud : null}
-          {sek.tabell.rader.slice(1).map((r, ri) => (
-            <TabellRad key={ri} r={r} bredd={bredd} />
-          ))}
-        </View>
-      ) : null}
-
-      {!tomt && (sek.tomma.length || sek.tomTabell) ? (
-        <View style={s.tomma} wrap={false}>
-          <Text style={s.tommaEtikett}>Ej ifyllt:</Text>
-          <Text style={s.tommaText}>{[...sek.tomma, sek.tomTabell].filter(Boolean).join(", ")}</Text>
-        </View>
-      ) : null}
-
-      {sek.kontroll ? <Kontrollpunkter k={sek.kontroll} /> : null}
-    </View>
+      <View style={s.stegLuft} />
+    </>
   );
 }
 
@@ -507,7 +582,7 @@ function Logg({ historik }) {
   if (!historik.length) return null;
   const B = ["15%", "17%", "12%", "20%", "36%"];
   return (
-    <View style={{ marginBottom: 18 }}>
+    <View>
       <View wrap={false}>
         <FasBand text="Logg och godkännande" />
         <Text style={s.h2}>Uppdateringar</Text>
@@ -548,13 +623,16 @@ export function ProjektstartPdf({ dokument: d }) {
         ))}
 
         <Logg historik={ps.historik} />
+        {ps.historik.length ? <View style={s.stegLuft} /> : null}
 
         <View wrap={false}>
           <Text style={[s.h2, { fontSize: 16 }]}>Sammanfattning och godkännande</Text>
           <Text style={s.summaFet}>
             {ps.klara} av {ps.totalt} kontrollpunkter är avbockade. {ps.kritiskaOppna} av {ps.kritiskaTotalt} kritiska punkter är inte avbockade.
           </Text>
-          <Text style={s.summaText}>Underlaget är ett arbetsmaterial. Kontrollera kontraktsvillkor, betalplan och priser mot originalhandlingarna före användning.</Text>
+          <Text style={s.summaText}>
+            Underlaget är ett arbetsmaterial. Kontrollera kontraktsvillkor, betalplan och priser mot originalhandlingarna före användning.
+          </Text>
           <View style={s.sign}>
             {["Projektledare", "Intern beställare / styrgrupp"].map((t, i) => (
               <View style={[s.signBox, i ? { marginLeft: 16 } : null]} key={t}>
