@@ -142,3 +142,21 @@ test("lägesrapport till ledningen: skede, nuläge och ny risk sparas och följe
   await expect(page.getByText("Projektstarten är sparad och projektkortet uppdaterat.", { exact: true })).toBeVisible();
   expect(fel).toEqual([]);
 });
+
+test("i skedet Anbud blir PDF:en ett ledningsunderlag och byggstegen fylls i senare", async ({ page }) => {
+  const { fel } = await oppna(page, "Projektstart");
+  await page.getByLabel("Projektnamn").fill("Anbudstest");
+  await page.getByLabel("Skede").selectOption("Anbud");
+  await expect(page.getByText(/Anbudsskede/).first()).toBeVisible();
+  await gaTillSteg(page, 2, "Avropsacceptans");
+  await page.getByLabel("Anbud lämnas").fill("2026-10-23");
+  await page.getByLabel("Prismål A (MSEK)").fill("40");
+  await gaTillSteg(page, 11, "HSEQ och etablering");
+  await expect(page.getByText("Fylls i efter vunnet anbud")).toBeVisible();
+  await gaTillSteg(page, 14, "Granska och skapa");
+  await expect(page.getByText("Kalkylerat TB saknas för scenario A.")).toBeVisible();
+  const nedladdning = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Ladda ned ledningsunderlag" }).last().click();
+  expect((await nedladdning).suggestedFilename()).toMatch(/^ledningsunderlag_.*\.pdf$/);
+  expect(fel).toEqual([]);
+});
