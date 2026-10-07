@@ -1,4 +1,9 @@
-/* Stegen i Projektstart. Varje steg är data: fält, en valfri tabell och vilka
+/* Stegen i Projektstart.
+
+   kpGrupp: när stegets kontrollpunkter blir aktuella — "anbud" (före anbud),
+   "kontrakt" (före kontrakt och byggstart) eller "bygg" (etablering till avslut).
+   fyllsI: "bygg" betyder att steget fylls i först efter vunnet anbud.
+   tabeller: ett steg kan ha flera tabeller; äldre steg har en "tabell". Varje steg är data: fält, en valfri tabell och vilka
    kontrollpunkter ur projektstartKatalog.js som hör till steget.
 
    falt: { id, etikett, typ: text | textarea | select | date, alternativ?, placeholder?, bred? }
@@ -30,22 +35,73 @@ export const STEG = [
       { id: "niva", etikett: "Projektnivå", typ: "select", alternativ: NIVA },
       { id: "startdatum", etikett: "Start", typ: "date" },
       { id: "fardigdatum", etikett: "Slut", typ: "date" },
-      { id: "skede", etikett: "Skede", typ: "select", alternativ: PROJEKTSTATUS, standard: "Planering", tips: "Styr projektets status i portföljen. Anbud betyder att projektet inte är tilldelat än." },
+      {
+        id: "skede",
+        etikett: "Skede",
+        typ: "select",
+        alternativ: PROJEKTSTATUS,
+        standard: "Planering",
+        tips: "Styr projektets status i portföljen. Anbud betyder att projektet inte är tilldelat än.",
+      },
       { id: "nulage", etikett: "Nuläge till ledningen", typ: "textarea", bred: true, tips: "Skriv om inför varje rapport. Det här står först i PDF:en." },
-      { id: "beslutLedning", etikett: "Beslut som behövs från ledningen", typ: "textarea", bred: true, tips: "Vad, och senast när. Lämna tomt om inget behövs." },
+      {
+        id: "beslutLedning",
+        etikett: "Beslut som behövs från ledningen",
+        typ: "textarea",
+        bred: true,
+        tips: "Vad, och senast när. Lämna tomt om inget behövs.",
+      },
     ],
   },
   {
     id: "avrop",
     fas: "Initiering",
     titel: "Avropsacceptans",
-    sammanfattning: "Ska vi ta uppdraget? Lönsamhet, risk och resurser innan start.",
+    sammanfattning: "Ska vi ta uppdraget? Lönsamhet, risk och resurser innan start. I anbudsskedet blir det här beslutsunderlaget till ledningen.",
     falt: [
       { id: "beslut", etikett: "Beslut", typ: "select", alternativ: BESLUT },
-      { id: "motivering", etikett: "Motivering", typ: "textarea", bred: true },
+      { id: "anbudsdatum", etikett: "Anbud lämnas", typ: "date" },
+      {
+        id: "forslag",
+        etikett: "Förslag till ledningen",
+        typ: "textarea",
+        bred: true,
+        tips: "En eller två meningar: vad ledningen ska säga ja till. Står överst i ledningsunderlaget.",
+      },
+      { id: "beslutSenast", etikett: "Beslut behövs senast", typ: "date" },
+      { id: "motivering", etikett: "Därför ska vi gå vidare", typ: "textarea", bred: true, tips: 'En punkt per rad, gärna "Rubrik: text".' },
+      { id: "scenarioA", etikett: "Scenario A", typ: "text", placeholder: "t.ex. 2h / 200 MWh" },
+      { id: "prisA", etikett: "Prismål A (MSEK)", typ: "number" },
+      { id: "tbA", etikett: "Kalkylerat TB A (%)", typ: "number" },
+      { id: "scenarioB", etikett: "Scenario B (valfritt)", typ: "text", placeholder: "t.ex. 4h / 400 MWh" },
+      { id: "prisB", etikett: "Prismål B (MSEK)", typ: "number" },
+      { id: "tbB", etikett: "Kalkylerat TB B (%)", typ: "number" },
       { id: "oppnaFragor", etikett: "Öppna frågor till intern beställare", typ: "textarea", bred: true },
     ],
+    tabeller: [
+      {
+        id: "beslutLista",
+        titel: "Beslut som behövs från ledningen",
+        anmarkning: "Ett beslut per rad med ert förslag. Visas som tabell på första sidan i ledningsunderlaget.",
+        kolumner: [
+          { id: "beslut", etikett: "Beslut", typ: "text" },
+          { id: "forslag", etikett: "Förslag", typ: "text", bredd: "wide" },
+        ],
+        start: [],
+      },
+      {
+        id: "atgarder",
+        titel: "Åtgärder före anbud",
+        kolumner: [
+          { id: "atgard", etikett: "Åtgärd", typ: "text", bredd: "wide" },
+          { id: "ansvar", etikett: "Ansvar", typ: "text" },
+          { id: "klart", etikett: "Klart", typ: "date" },
+        ],
+        start: [],
+      },
+    ],
     katalog: ["calloff"],
+    kpGrupp: "anbud",
   },
   {
     id: "direktiv",
@@ -92,6 +148,7 @@ export const STEG = [
       { id: "rapporteringIntern", etikett: "Intern rapportering", typ: "textarea", standard: "Månadsavstämning internt. Styrgrupp kallas vid avvikelse." },
     ],
     katalog: ["org"],
+    kpGrupp: "kontrakt",
   },
   {
     id: "kontrakt",
@@ -104,6 +161,9 @@ export const STEG = [
       { id: "index", etikett: "Indexregel", typ: "text" },
       { id: "betalvillkor", etikett: "Betalvillkor", typ: "text" },
       { id: "bankgaranti", etikett: "Bankgaranti", typ: "text" },
+      { id: "bankgarantiProcent", etikett: "Bankgaranti (% av kontraktspris)", typ: "number" },
+      { id: "garantiborgenProcent", etikett: "Garantiborgen (% av kontraktspris)", typ: "number" },
+      { id: "vitestakProcent", etikett: "Vitestak försening (% av kontraktspris)", typ: "number" },
       { id: "kassaflode", etikett: "Kassaflöde: längsta negativa period", typ: "text" },
       { id: "fakturarutin", etikett: "Fakturarutin", typ: "textarea", bred: true },
     ],
@@ -115,10 +175,12 @@ export const STEG = [
         { id: "namn", etikett: "Milstolpe", typ: "text" },
         { id: "utlosare", etikett: "Utlösare", typ: "text" },
         { id: "datum", etikett: "Datum", typ: "date" },
+        { id: "andel", etikett: "Andel %", typ: "number" },
       ],
       start: [{ namn: "M1 Uppstart" }, { namn: "Färdigställande" }],
     },
     katalog: ["contract"],
+    kpGrupp: "kontrakt",
   },
   {
     id: "risker",
@@ -176,6 +238,7 @@ export const STEG = [
       { id: "granssnitt", etikett: "Gränssnitt", typ: "textarea", bred: true },
     ],
     katalog: ["solution"],
+    kpGrupp: "kontrakt",
   },
   {
     id: "tillstand",
@@ -187,6 +250,7 @@ export const STEG = [
       { id: "tillstandAnm", etikett: "Anteckning", typ: "textarea", bred: true },
     ],
     katalog: ["permits"],
+    kpGrupp: "kontrakt",
   },
   {
     id: "hseq",
@@ -195,6 +259,8 @@ export const STEG = [
     sammanfattning: "APD, arbetsplatstavla och stopp som annars försenar allt.",
     falt: [{ id: "hseqAnm", etikett: "Anteckning", typ: "textarea", bred: true }],
     katalog: ["hseq"],
+    kpGrupp: "bygg",
+    fyllsI: "bygg",
   },
   {
     id: "produktion",
@@ -203,6 +269,8 @@ export const STEG = [
     sammanfattning: "Mark, betong, leveranser, lyft och elektrisk installation.",
     falt: [{ id: "produktionAnm", etikett: "Anteckning", typ: "textarea", bred: true }],
     katalog: ["cbop", "ebop"],
+    kpGrupp: "bygg",
+    fyllsI: "bygg",
   },
   {
     id: "avslut",
@@ -215,6 +283,8 @@ export const STEG = [
       { id: "garanti", etikett: "Garanti", typ: "textarea" },
     ],
     katalog: ["commission", "closeout"],
+    kpGrupp: "bygg",
+    fyllsI: "bygg",
   },
   {
     id: "sammanfattning",
@@ -235,4 +305,28 @@ export const KATALOG_RUBRIK = {
   ebop: "eBoP",
   commission: "Driftsättning",
   closeout: "Avslut",
+};
+
+/** Vägledning per skede: vad som ska fyllas i nu. */
+export const SKEDE_GUIDE = {
+  Anbud: {
+    rubrik: "Anbudsskede",
+    text: "Fyll i projektkortet, ledningsunderlaget i steg 2 (förslag, beslut, prismål och åtgärder), direktivet, kontraktsvillkoren med milstolpar och andelar, risker och tidplan. Exporten blir ett ledningsunderlag med projektstarten som bilaga. Steg 11–13 fylls i när anbudet är vunnet.",
+  },
+  Planering: {
+    rubrik: "Anbudet är vunnet",
+    text: "Lägg in projektnummer, namnge organisationen och bocka av kontrollpunkterna i steg 5, 6, 9 och 10 före kontrakt och byggstart. Uppdatera milstolpar och tidplan mot kontraktet.",
+  },
+  Produktion: {
+    rubrik: "Bygget pågår",
+    text: "Bocka av HSEQ och etablering (steg 11) och cBoP, eBoP och montage (steg 12) löpande. Skriv om nuläget inför varje rapport till ledningen.",
+  },
+  Slutbesiktning: {
+    rubrik: "Slutbesiktning",
+    text: "Gå igenom steg 13: provning, besiktning, slutdokumentation och ÄTA. Kontrollera att alla kritiska punkter är bockade.",
+  },
+  Avslutat: {
+    rubrik: "Avslutat",
+    text: "Skriv lärdomar och garanti i steg 13 och spara en sista gång. PDF:en blir projektets slutrapport.",
+  },
 };
