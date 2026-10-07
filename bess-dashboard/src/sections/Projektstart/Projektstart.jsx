@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { Callout, Card, CheckList, Meter, Overline, StatusBadge } from "../../components/ds/index.js";
@@ -17,6 +17,10 @@ import {
   nyTabellrad,
   projektFranUtkast,
   kortAndringar,
+  historikRad,
+  medHistorik,
+  milstolparUtanDatum,
+  nyaRaderForProjekt,
   projektstartDokument,
   projektstartPost,
   utkastAndrat,
@@ -137,13 +141,15 @@ function Kontrollpunkter({ steg, utkast, onToggle }) {
   );
 }
 
-function Sammanfattning({ utkast, fel, kanSkapa, skapar, redigerar, andrat, ejSparad, onSkapa, onSpara, onGaTill }) {
+function Sammanfattning({ utkast, fel, kanSkapa, skapar, redigerar, andrat, ejSparad, pdfDokument, onSkapa, onSpara, onGaTill }) {
   const l = luckor(utkast);
   const v = utkast.v;
   const risker = (utkast.rader.risker || []).filter((r) => r.titel?.trim()).length;
   const milstolpar = (utkast.rader.milstolpar || []).filter((m) => m.namn?.trim() && m.datum).length;
+  const utanDatum = milstolparUtanDatum(utkast);
   const rader = [
     ["Projekt", `${v.nr ? v.nr + " " : ""}${v.namn || "Namn saknas"}`],
+    ["Skede", v.skede || "—"],
     ["Beställare", v.bestallare || "—"],
     ["Plats", v.plats || "—"],
     ["Start", v.startdatum || "—"],
@@ -163,8 +169,9 @@ function Sammanfattning({ utkast, fel, kanSkapa, skapar, redigerar, andrat, ejSp
         </dl>
         <p className="m-0 text-[13.5px] text-ink">
           {redigerar
-            ? "Ändringarna sparas i projektstarten och projektkortet. Risker och milstolpar som redan finns i projektet ändras inte här."
+            ? "Ändringarna sparas i projektstarten och projektkortet, och en rad läggs i uppdateringsloggen. Nya risker och milstolpar läggs till i projektet. Befintliga ändrar du på sina egna sidor."
             : `Projektet skapas med ${risker} riskrader och ${milstolpar} milstolpar. Mallarna för handlingsplan, APD och slutdokumentation kommer med automatiskt.`}
+          {utanDatum ? ` ${utanDatum} ${utanDatum === 1 ? "milstolpe saknar" : "milstolpar saknar"} datum och tas inte med förrän datumet är ifyllt.` : ""}
         </p>
         <div className="flex flex-col gap-1">
           <div className="flex items-baseline justify-between gap-3 text-[13px]">
@@ -177,7 +184,7 @@ function Sammanfattning({ utkast, fel, kanSkapa, skapar, redigerar, andrat, ejSp
 
       {!redigerar && l.stegKvar.length ? (
         <Callout ton="warn">
-          <b>{l.stegKvar.length} steg är inte genomgångna</b>
+          <b className="block">{l.stegKvar.length} steg är inte genomgångna</b>
           <div className="mt-2 flex flex-wrap gap-2">
             {l.stegKvar.map((s) => (
               <button key={s.id} type="button" className="btn sec mini" onClick={() => onGaTill(s.id)}>{s.titel}</button>
@@ -188,12 +195,14 @@ function Sammanfattning({ utkast, fel, kanSkapa, skapar, redigerar, andrat, ejSp
 
       {l.kritiskaOppna.length ? (
         <Callout ton="info">
-          <b>{l.kritiskaOppna.length} av {l.kritiskaTotalt} kritiska punkter är inte bockade</b>
-          Det stoppar inte skapandet. Punkterna ligger kvar i den här guiden tills du skapar projektet.
+          <b className="block">{l.kritiskaOppna.length} av {l.kritiskaTotalt} kritiska punkter är inte bockade</b>
+          {redigerar
+            ? "De syns i PDF:en så att ledningen ser vad som återstår."
+            : "Det stoppar inte skapandet. Punkterna följer med till projektet och kan bockas av när du uppdaterar projektstarten."}
         </Callout>
       ) : null}
 
-      {fel ? <Callout ton="bad"><b>Projektet kan inte skapas ännu</b>{fel}</Callout> : null}
+      {fel ? <Callout ton="bad"><b className="block">{redigerar ? "Projektstarten kan inte sparas ännu" : "Projektet kan inte skapas ännu"}</b>{fel}</Callout> : null}
 
       <div className="flex flex-wrap items-center gap-3">
         {redigerar ? (
@@ -202,14 +211,14 @@ function Sammanfattning({ utkast, fel, kanSkapa, skapar, redigerar, andrat, ejSp
           <button type="button" className="btn" disabled={!kanSkapa || skapar} aria-busy={skapar} onClick={onSkapa}>{skapar ? "Skapar …" : "Skapa projekt"}</button>
         )}
         <PdfExporter
-          dokument={projektstartDokument(utkast, { datum: idag(), skapadAv: hamtaNamn() || "" })}
+          dokument={pdfDokument}
           typ="projektstart"
           label="Ladda ned PDF"
           className="btn sec"
           disabled={!v.namn?.trim()}
         />
       </div>
-      <p className="m-0 text-[12.5px] text-ink-soft">{redigerar ? "PDF:en innehåller det som står i guiden just nu, även osparade ändringar." : "PDF:en laddas ned automatiskt när du skapar projektet. Du kan också ladda ned den separat här."}</p>
+      <p className="m-0 text-[12.5px] text-ink-soft">{redigerar ? "PDF:en innehåller det som står i guiden just nu, även osparade ändringar. Spara först så kommer dagens rad med i uppdateringsloggen." : "PDF:en laddas ned automatiskt när du skapar projektet. Du kan också ladda ned den separat här."}</p>
     </div>
   );
 }
@@ -247,6 +256,22 @@ export function Projektstart() {
   const utanDetta = redigerar ? { ...state, projekt: state.projekt.filter((p) => p.id !== lage) } : state;
   const fel = sista ? projektstartFel(utanDetta, forhandsrad) || (!redigerar && luckor(utkast).stegKvar.length ? "Gå igenom alla steg först." : "") : "";
 
+  /* Nytt steg ska börja överst. Annars står man kvar längst ned efter en lång checklista. */
+  const forstaVisning = useRef(true);
+  useEffect(() => {
+    if (forstaVisning.current) {
+      forstaVisning.current = false;
+      return;
+    }
+    const el = document.getElementById("ps-steg");
+    if (!el) return;
+    /* Toppraden ligger fast över innehållet, så vi stannar en bit ovanför kortet. */
+    const topp = document.querySelector("header")?.getBoundingClientRect().height || 0;
+    window.scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + window.scrollY - topp - 16) });
+  }, [utkast.steg]);
+
+  const pdfDokument = projektstartDokument(utkast, { datum: idag(), skapadAv: hamtaNamn() || "", historik: post?.historik || [], sparad: post?.uppdaterad?.slice(0, 10) || "" });
+
   const sattFalt = (id, v) => setUtkast((u) => ({ ...u, v: { ...u.v, [id]: v } }));
   const sattRader = (id, rader) => setUtkast((u) => ({ ...u, rader: { ...u.rader, [id]: rader } }));
   const kryssa = (bucket, pid, v) => setUtkast((u) => ({ ...u, kryss: { ...u.kryss, [bucket]: { ...u.kryss[bucket], [pid]: v } } }));
@@ -271,11 +296,16 @@ export function Projektstart() {
       return;
     }
     const nu = new Date().toISOString();
-    if (post) sattLista("projektstart", state.projektstart.map((x) => (x.id === post.id ? { ...x, utkast: { v: utkast.v, rader: utkast.rader, kryss: utkast.kryss }, uppdaterad: nu } : x)));
-    else laggTill("projektstart", projektstartPost(projektet.id, utkast, nu));
+    const rad = historikRad(utkast, { datum: idag(), av: hamtaNamn() || "" });
+    if (post) sattLista("projektstart", state.projektstart.map((x) => (x.id === post.id ? { ...x, utkast: { v: utkast.v, rader: utkast.rader, kryss: utkast.kryss }, uppdaterad: nu, historik: medHistorik(x.historik, rad) } : x)));
+    else laggTill("projektstart", projektstartPost(projektet.id, utkast, nu, [rad]));
     setGrund(utkast);
     for (const [falt, varde] of kortAndringar(utkast, projektet)) uppd("projekt", projektet.id, falt, varde);
-    visaToast("Projektstarten är sparad. Projektkortet är uppdaterat. Risker och milstolpar ändrar du på sina egna sidor.");
+    const nya = nyaRaderForProjekt(utkast, projektet.id, state);
+    for (const r of nya.risker) laggTill("risker", r);
+    for (const m of nya.milstolpar) laggTill("milstolpar", m);
+    const tillagt = [nya.risker.length && `${nya.risker.length} ${nya.risker.length === 1 ? "risk" : "risker"}`, nya.milstolpar.length && `${nya.milstolpar.length} ${nya.milstolpar.length === 1 ? "milstolpe" : "milstolpar"}`].filter(Boolean);
+    visaToast(`Projektstarten är sparad och projektkortet uppdaterat.${tillagt.length ? ` ${tillagt.join(" och ")} lades till i projektet.` : ""}`);
   };
 
   const angra = () => grund && setUtkast({ ...grund, steg: utkast.steg });
@@ -300,7 +330,7 @@ export function Projektstart() {
     dispatch({ type: "SKAPA_PROJEKT", rad: projekt });
     for (const r of risker) laggTill("risker", r);
     for (const m of milstolpar) laggTill("milstolpar", m);
-    laggTill("projektstart", projektstartPost(id, utkast));
+    laggTill("projektstart", projektstartPost(id, utkast, undefined, [historikRad(utkast, { datum: idag(), av: hamtaNamn() || "" })]));
     const pdfKlar = await laddaNerPdf(pdfUnderlag, "projektstart", visaToast);
     try {
       window.localStorage.removeItem(UTKAST_NYCKEL);
@@ -322,28 +352,47 @@ export function Projektstart() {
 
   return (
     <div className="flex flex-col gap-4 lg:gap-6">
-      <section aria-label="Projektstart" className="relative overflow-hidden rounded-xl bg-one-djup px-4 py-5 text-white md:min-h-[210px] md:px-6 md:py-6">
+      <section aria-label="Projektstart" className="relative overflow-hidden rounded-xl bg-one-djup px-4 py-4 text-white md:px-6 md:py-5">
         <Kraftkurva />
         <div className="relative flex max-w-[34rem] flex-col gap-3">
           <span className="text-[11px] font-bold uppercase tracking-wider opacity-80">ONE-P · {redigerar ? `${projektet?.nr || ""} ${projektet?.namn || ""} · ` : ""}Steg {index + 1} av {STEG.length}</span>
           <h2 className="m-0 font-head text-[22px] leading-tight text-white">{steg.titel}</h2>
           <Meter value={index + 1} max={STEG.length} label="Steg i guiden" ton="pagar" />
-          <span className="text-[12px] opacity-80">one-nordic.se</span>
         </div>
       </section>
+      {state.projekt.length ? (
+        <Card
+          id="ps-befintliga"
+          title={redigerar ? `Du ändrar projektstarten för ${projektet?.nr ? projektet.nr + " " : ""}${projektet?.namn || ""}` : "Ändra ett befintligt projekt"}
+          subtitle={
+            redigerar
+              ? "Ändringarna sparas när du trycker Spara på sista steget. PDF:en kan laddas ned där när som helst."
+              : "Öppna projektstarten för ett projekt du redan har för att fylla i, ändra eller ta en ny PDF."
+          }
+        >
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Befintliga projekt">
+            {redigerar ? (
+              <button type="button" className="btn sec mini" onClick={() => bytLage("ny")}>
+                <ChevronLeft size={14} aria-hidden="true" /> Ny projektstart
+              </button>
+            ) : null}
+            {state.projekt.map((pr) => (
+              <button
+                key={pr.id}
+                type="button"
+                className={`btn mini ${pr.id === lage ? "" : "sec"}`}
+                aria-pressed={pr.id === lage}
+                onClick={() => bytLage(pr.id)}
+              >
+                {pr.nr ? `${pr.nr} ` : ""}{pr.namn}
+                {sparadeFor(pr.id) ? "" : <span className="ml-1 opacity-70">· ej ifylld</span>}
+              </button>
+            ))}
+          </div>
+        </Card>
+      ) : null}
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-6">
       <nav aria-label="Stegen i projektstarten" className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-4">
-        {state.projekt.length ? (
-          <label className="flex flex-col gap-1">
-            <Overline as="span">Arbeta med</Overline>
-            <select value={lage} onChange={(e) => bytLage(e.target.value)} aria-label="Arbeta med">
-              <option value="ny">Ny projektstart</option>
-              {state.projekt.map((pr) => (
-                <option key={pr.id} value={pr.id}>{pr.nr ? `${pr.nr} ` : ""}{pr.namn}{sparadeFor(pr.id) ? "" : " (ej sparad start)"}</option>
-              ))}
-            </select>
-          </label>
-        ) : null}
         <label className="flex flex-col gap-1 lg:hidden">
           <Overline as="span">Steg {index + 1} av {STEG.length}</Overline>
           <select value={steg.id} onChange={(e) => gaTill(e.target.value)} aria-label="Välj steg">
@@ -371,17 +420,23 @@ export function Projektstart() {
             );
           })}
         </ol>
-        {redigerar ? (
-          <button type="button" className="btn sec mini self-start" disabled={!andrat} onClick={angra}>Ångra ändringar</button>
-        ) : (
-          <button type="button" className="btn sec mini self-start" onClick={borjaOm}>Börja om</button>
-        )}
+        <div className="flex flex-wrap gap-2">
+          {sista ? null : (
+            <PdfExporter dokument={pdfDokument} typ="projektstart" label="Ladda ned PDF" className="btn sec mini" disabled={!utkast.v.namn?.trim()} />
+          )}
+          {redigerar ? (
+            <button type="button" className="btn sec mini" disabled={!andrat} onClick={angra}>Ångra ändringar</button>
+          ) : (
+            <button type="button" className="btn sec mini" onClick={borjaOm}>Börja om</button>
+          )}
+        </div>
+        {redigerar && post?.uppdaterad ? <span className="text-[12px] text-ink-soft">Senast sparad {post.uppdaterad.slice(0, 10)}</span> : null}
       </nav>
 
       <div className="flex min-w-0 flex-col gap-4 lg:gap-6">
         {redigerar && !post ? (
           <Callout ton="info">
-            <b>Projektet har ingen sparad projektstart</b>
+            <b className="block">Projektet har ingen sparad projektstart</b>
             Guiden är ifylld från projektkortet, riskregistret och milstolparna. Checklistor och direktiv är tomma. Gå igenom stegen och tryck Spara projektstart på sista steget.
           </Callout>
         ) : null}
@@ -406,7 +461,7 @@ export function Projektstart() {
 
         {steg.tabell ? <Tabell tabell={steg.tabell} rader={utkast.rader[steg.tabell.id] || []} onChange={(r) => sattRader(steg.tabell.id, r)} /> : null}
         {steg.katalog ? <Kontrollpunkter steg={steg} utkast={utkast} onToggle={kryssa} /> : null}
-        {sista ? <Sammanfattning utkast={utkast} fel={fel} kanSkapa={!fel} skapar={skapar} redigerar={redigerar} andrat={andrat} ejSparad={redigerar && !post} onSkapa={skapa} onSpara={sparaAndringar} onGaTill={gaTill} /> : null}
+        {sista ? <Sammanfattning utkast={utkast} fel={fel} kanSkapa={!fel} skapar={skapar} redigerar={redigerar} andrat={andrat} ejSparad={redigerar && !post} pdfDokument={pdfDokument} onSkapa={skapa} onSpara={sparaAndringar} onGaTill={gaTill} /> : null}
 
         <div className="flex items-center justify-between gap-3">
           <button type="button" className="btn sec" disabled={index === 0} onClick={() => gaTill(STEG[index - 1].id)}>

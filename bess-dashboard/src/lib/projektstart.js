@@ -1,17 +1,28 @@
-import { STEG } from "../data/projektstartSteg.js";
+import { KATALOG_RUBRIK, STEG } from "../data/projektstartSteg.js";
 import { KATALOG } from "../data/projektstartKatalog.js";
+
+/** Platshållare som "-" eller "—" räknas som tomt, så att ett bindestreck i
+ *  projektnumret varken sparas som nummer eller hamnar i sidhuvudet. */
+export const varde = (x) => {
+  const t = typeof x === "string" ? x.trim() : "";
+  return /^[-–—_.]+$/.test(t) ? "" : t;
+};
+
+const lika = (a, b) => varde(a).toLocaleLowerCase("sv") === varde(b).toLocaleLowerCase("sv");
 
 export function projektstartFel(state, v) {
   if (!v.namn?.trim()) return "Skriv ett projektnamn.";
-  if (v.nr?.trim() && state.projekt.some((p) => (p.nr || "").trim().toLocaleLowerCase("sv") === v.nr.trim().toLocaleLowerCase("sv"))) return "Projektnumret finns redan. Öppna det befintliga projektet.";
+  const nr = varde(v.nr);
+  if (nr && state.projekt.some((p) => lika(p.nr, nr))) return "Projektnumret finns redan. Öppna det befintliga projektet.";
+  if (!nr && state.projekt.some((p) => !varde(p.nr) && lika(p.namn, v.namn))) return "Det finns redan ett projekt med samma namn utan projektnummer. Öppna det i stället.";
   if (v.startdatum && v.fardigstallande && v.startdatum >= v.fardigstallande) return "Färdigdatum ska ligga efter startdatum.";
   return "";
 }
 
 export function nyttProjekt(v, id) {
-  return { id, nr: (v.nr || "").trim(), namn: v.namn.trim(), ort: (v.ort || "").trim(), bestallare: (v.bestallare || "").trim(),
+  return { id, nr: varde(v.nr), namn: v.namn.trim(), ort: (v.ort || "").trim(), bestallare: (v.bestallare || "").trim(),
     startdatum: v.startdatum || "", fardigstallande: v.fardigstallande || "", startdatumAntagande: false,
-    kontraktsvarde: null, mw: null, mwh: null, natagare: "", natkontakt: "", fiber: "", mapp: "", anteckning: "", status: "Planering",
+    kontraktsvarde: null, mw: null, mwh: null, natagare: "", natkontakt: "", fiber: "", mapp: "", anteckning: "", status: v.status || "Planering",
     underlag: { kalla: "", datum: "", infort: "", av: "" } };
 }
 
@@ -82,7 +93,7 @@ export function luckor(u) {
 /** Raderna som blir poster i portföljen. Tomma rader hoppas över. */
 export function projektFranUtkast(u, id) {
   const v = u.v;
-  const rad = nyttProjekt({ namn: v.namn, nr: v.nr, ort: v.plats, bestallare: v.bestallare, startdatum: v.startdatum, fardigstallande: v.fardigdatum }, id);
+  const rad = nyttProjekt({ namn: v.namn, nr: v.nr, ort: v.plats, bestallare: v.bestallare, startdatum: v.startdatum, fardigstallande: v.fardigdatum, status: v.skede }, id);
   const rader = [
     v.kontraktsform && `Kontraktsform: ${v.kontraktsform}${v.niva ? `, ${v.niva.toLowerCase()}` : ""}`,
     v.nulage && `Nuläge vid start: ${v.nulage.trim()}`,
@@ -99,40 +110,116 @@ export function projektFranUtkast(u, id) {
   return { projekt, risker, milstolpar };
 }
 
+/** Milstolpar med namn men utan datum. De kan inte läggas in och ska synas för användaren. */
+export const milstolparUtanDatum = (u) => (u.rader.milstolpar || []).filter((m) => m.namn?.trim() && !m.datum).length;
+
+/** Risker och milstolpar från guiden som projektet inte redan har (jämfört på titel).
+ *  Används när en sparad projektstart uppdateras: nya rader förs över, befintliga
+ *  poster i riskregistret och milstolparna ändras aldrig härifrån. */
+export function nyaRaderForProjekt(u, projektId, state, nu = Date.now()) {
+  const { risker, milstolpar } = projektFranUtkast(u, projektId);
+  const har = (lista, titel) => (lista || []).some((x) => x.projektId === projektId && lika(x.titel, titel));
+  return {
+    risker: risker.filter((r) => !har(state.risker, r.titel)).map((r, i) => ({ ...r, id: `r-${projektId}-${nu}-${i + 1}` })),
+    milstolpar: milstolpar.filter((m) => !har(state.milstolpar, m.titel)).map((m, i) => ({ ...m, id: `m-${projektId}-${nu}-${i + 1}` })),
+  };
+}
+
+/** En rad i projektstartens uppdateringslogg: vad ledningen såg vid varje sparning. */
+export function historikRad(u, { datum, av = "" }) {
+  const l = luckor(u);
+  return { datum, av, skede: varde(u.v.skede), nulage: (u.v.nulage || "").trim(), klara: l.klara, totalt: l.totalt, kritiskaOppna: l.kritiskaOppna.length };
+}
+
+/** Lägger till en loggrad. Samma dag ersätts den senaste raden i stället för att logga varje klick. */
+export function medHistorik(historik, rad, max = 30) {
+  const lista = Array.isArray(historik) ? [...historik] : [];
+  if (lista.length && lista.at(-1).datum === rad.datum) lista[lista.length - 1] = rad;
+  else lista.push(rad);
+  return lista.slice(-max);
+}
+
 /** Underlaget till PDF:en. Samma dokumentform som övriga PDF:er (projekt, datum,
  *  skapadAv) plus `projektstart` med sektioner per steg. Tomma fält och rader
  *  utelämnas, så PDF:en blir lika kort som utkastet är ifyllt. */
-export function projektstartDokument(u, { datum, skapadAv = "" }) {
+/** Relativ kolumnbredd i PDF:en: breda textkolumner får mer plats, val och datum mindre. */
+const kolumnVikt = (k) => (k.bredd === "wide" ? 3 : k.typ === "select" ? 1 : k.typ === "date" ? 1.2 : 2);
+
+export function projektstartDokument(u, { datum, skapadAv = "", historik = [], sparad = "" }) {
   const v = u.v;
-  const sektioner = STEG.filter((s) => s.id !== SISTA_STEG).map((s) => {
-    const falt = (s.falt || []).map((f) => [f.etikett, (v[f.id] || "").trim()]).filter(([, val]) => val);
+  const sektioner = STEG.filter((s) => s.id !== SISTA_STEG).map((s, i) => {
+    const falt = (s.falt || []).map((f) => [f.etikett, varde(v[f.id])]).filter(([, val]) => val);
+    const tomma = (s.falt || []).filter((f) => !varde(v[f.id])).map((f) => f.etikett);
     const tabell = s.tabell
       ? {
           titel: s.tabell.titel,
           kolumner: s.tabell.kolumner.map((k) => k.etikett),
+          vikter: s.tabell.kolumner.map(kolumnVikt),
           rader: (u.rader[s.tabell.id] || [])
             .filter((r) => s.tabell.kolumner.some((k) => (r[k.id] || "").trim() && (k.typ === "text" || k.typ === "date")))
             .map((r) => s.tabell.kolumner.map((k) => (r[k.id] || "").trim())),
         }
       : null;
     const punkter = stegPunkter(s);
+    /* Alla kontrollpunkter i stegets ordning, grupperade som i guiden, med avbockning. */
+    const grupper = [];
+    for (const p of punkter) {
+      const rubrik = s.katalog.length > 1 ? `${KATALOG_RUBRIK[p.bucket]}: ${p.grupp}` : p.grupp;
+      let g = grupper.at(-1);
+      if (!g || g.rubrik !== rubrik) grupper.push((g = { rubrik, punkter: [] }));
+      g.punkter.push({ text: p.text, kritisk: !!p.kritisk, klar: arAvbockad(u, p) });
+    }
     const kontroll = punkter.length
-      ? { klara: punkter.filter((p) => arAvbockad(u, p)).length, totalt: punkter.length, kritiskaOppna: punkter.filter((p) => p.kritisk && !arAvbockad(u, p)).map((p) => p.text) }
+      ? {
+          klara: punkter.filter((p) => arAvbockad(u, p)).length,
+          totalt: punkter.length,
+          kritiskaOppna: punkter.filter((p) => p.kritisk && !arAvbockad(u, p)).map((p) => p.text),
+          grupper,
+        }
       : null;
-    return { id: s.id, fas: s.fas, titel: s.titel, falt, tabell: tabell?.rader.length ? tabell : null, kontroll, besokt: u.besokta.includes(s.id) };
+    return {
+      id: s.id,
+      nr: i + 1,
+      fas: s.fas,
+      titel: s.titel,
+      sammanfattning: s.sammanfattning || "",
+      falt,
+      tomma,
+      tabell: tabell?.rader.length ? tabell : null,
+      tomTabell: tabell && !tabell.rader.length ? tabell.titel : "",
+      kontroll,
+      besokt: u.besokta.includes(s.id),
+    };
   });
   const l = luckor(u);
   return {
-    projekt: { id: (v.nr || "").trim() || "utkast", nr: (v.nr || "").trim(), namn: (v.namn || "").trim(), bestallare: (v.bestallare || "").trim() },
+    projekt: { id: varde(v.nr) || "utkast", nr: varde(v.nr), namn: (v.namn || "").trim(), bestallare: varde(v.bestallare) },
     datum,
     skapadAv,
-    projektstart: { sektioner, klara: l.klara, totalt: l.totalt, kritiskaOppna: l.kritiskaOppna.length, kritiskaTotalt: l.kritiskaTotalt },
+    projektstart: {
+      sektioner,
+      klara: l.klara,
+      totalt: l.totalt,
+      kritiskaOppna: l.kritiskaOppna.length,
+      kritiskaTotalt: l.kritiskaTotalt,
+      historik: Array.isArray(historik) ? historik : [],
+      sparad,
+      lage: { skede: varde(v.skede), nulage: (v.nulage || "").trim(), beslut: (v.beslutLedning || "").trim() },
+      kort: {
+        plats: varde(v.plats),
+        start: varde(v.startdatum),
+        slut: varde(v.fardigdatum),
+        kontraktsform: varde(v.kontraktsform),
+        niva: varde(v.niva),
+        beslut: varde(v.beslut),
+      },
+    },
   };
 }
 
 /** Sparad projektstart: guidens svar, knutna till projektet. */
-export function projektstartPost(projektId, u, nu = new Date().toISOString()) {
-  return { id: `ps-${projektId}`, projektId, utkast: { v: u.v, rader: u.rader, kryss: u.kryss }, skapad: nu, uppdaterad: nu };
+export function projektstartPost(projektId, u, nu = new Date().toISOString(), historik = []) {
+  return { id: `ps-${projektId}`, projektId, utkast: { v: u.v, rader: u.rader, kryss: u.kryss }, skapad: nu, uppdaterad: nu, historik };
 }
 
 /** Öppnar en sparad projektstart i guiden. Alla steg räknas som genomgångna. */
@@ -143,11 +230,13 @@ export function utkastFranPost(post) {
   return u;
 }
 
-const KORTFALT = [["namn", "namn"], ["nr", "nr"], ["plats", "ort"], ["bestallare", "bestallare"], ["startdatum", "startdatum"], ["fardigdatum", "fardigstallande"], ["natagare", "natagare"]];
+const KORTFALT = [["namn", "namn"], ["skede", "status"], ["nr", "nr"], ["plats", "ort"], ["bestallare", "bestallare"], ["startdatum", "startdatum"], ["fardigdatum", "fardigstallande"], ["natagare", "natagare"]];
 
 /** Ändringar i projektkortet som ska föras över till projektet: [fält, nytt värde]. */
 export function kortAndringar(u, projekt) {
-  return KORTFALT.map(([fran, till]) => [till, (u.v[fran] || "").trim()]).filter(([till, varde]) => varde !== (projekt[till] || "") && (till !== "namn" || varde));
+  return KORTFALT.map(([fran, till]) => [till, fran === "nr" ? varde(u.v[fran]) : (u.v[fran] || "").trim()]).filter(
+    ([till, nytt]) => nytt !== (projekt[till] || "") && (!["namn", "status"].includes(till) || nytt),
+  );
 }
 
 export const utkastAndrat = (a, b) => JSON.stringify([a.v, a.rader, a.kryss]) !== JSON.stringify([b.v, b.rader, b.kryss]);
@@ -164,6 +253,7 @@ export function utkastFranProjekt(projekt, state) {
     startdatum: projekt.startdatum || "",
     fardigdatum: projekt.fardigstallande || "",
     natagare: projekt.natagare || "",
+    skede: projekt.status || "Planering",
   });
   const risker = (state.risker || []).filter((r) => r.projektId === projekt.id);
   if (risker.length) {

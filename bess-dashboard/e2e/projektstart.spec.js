@@ -70,7 +70,7 @@ test("den sparade projektstarten kan öppnas, ändras och laddas ned igen", asyn
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Min projektmetod");
 
   await oppnaProjektstart(page);
-  await page.getByLabel("Arbeta med").selectOption({ label: "90088 Sparad start" });
+  await page.getByRole("group", { name: "Befintliga projekt" }).getByRole("button", { name: /^90088 Sparad start\s*(· ej ifylld)?$/ }).click();
   await expect(page.getByLabel("Projektnamn")).toHaveValue("Sparad start");
   await page.getByLabel("Projektnamn").fill("Sparad start 2");
   await gaTillSteg(page, 14, "Granska och skapa");
@@ -81,14 +81,14 @@ test("den sparade projektstarten kan öppnas, ändras och laddas ned igen", asyn
   expect((await nedladdning).suggestedFilename()).toMatch(/^projektstart_90088_.*\.pdf$/);
   await page.reload();
   await oppnaProjektstart(page);
-  await page.getByLabel("Arbeta med").selectOption({ label: "90088 Sparad start 2" });
+  await page.getByRole("group", { name: "Befintliga projekt" }).getByRole("button", { name: /^90088 Sparad start 2\s*(· ej ifylld)?$/ }).click();
   await expect(page.getByLabel("Projektnamn")).toHaveValue("Sparad start 2");
   expect(fel).toEqual([]);
 });
 
 test("ett befintligt projekt utan sparad start kan öppnas i guiden, fyllas på och sparas", async ({ page }) => {
   const { fel } = await oppna(page, "Projektstart");
-  await page.getByLabel("Arbeta med").selectOption({ label: "36037 Växjö Batteripark (ej sparad start)" });
+  await page.getByRole("group", { name: "Befintliga projekt" }).getByRole("button", { name: /^36037 Växjö Batteripark\s*(· ej ifylld)?$/ }).click();
   await expect(page.getByText("Projektet har ingen sparad projektstart")).toBeVisible();
   await expect(page.getByLabel("Projektnamn")).toHaveValue("Växjö Batteripark");
   await page.getByLabel("Beställare").fill("Ingrid Capacity");
@@ -97,7 +97,48 @@ test("ett befintligt projekt utan sparad start kan öppnas i guiden, fyllas på 
 
   await page.reload();
   await oppnaProjektstart(page);
-  await page.getByLabel("Arbeta med").selectOption({ label: "36037 Växjö Batteripark" });
+  await page.getByRole("group", { name: "Befintliga projekt" }).getByRole("button", { name: /^36037 Växjö Batteripark\s*(· ej ifylld)?$/ }).click();
   await expect(page.getByLabel("Beställare")).toHaveValue("Ingrid Capacity");
+  expect(fel).toEqual([]);
+});
+
+test("ett befintligt projekt öppnas direkt med sin knapp och man kan gå tillbaka till ny projektstart", async ({ page }) => {
+  const { fel } = await oppna(page, "Projektstart");
+  const befintliga = page.getByRole("group", { name: "Befintliga projekt" });
+  await befintliga.getByRole("button", { name: /36037 Växjö Batteripark/ }).click();
+  await expect(page.getByText("Du ändrar projektstarten för 36037 Växjö Batteripark")).toBeVisible();
+  await expect(page.getByLabel("Projektnamn")).toHaveValue("Växjö Batteripark");
+  await expect(befintliga.getByRole("button", { name: /36037 Växjö Batteripark/ })).toHaveAttribute("aria-pressed", "true");
+  if (process.env.SKARMBILD) await page.screenshot({ path: process.env.SKARMBILD });
+  await befintliga.getByRole("button", { name: "Ny projektstart" }).click();
+  await expect(page.getByText("Ändra ett befintligt projekt")).toBeVisible();
+  expect(fel).toEqual([]);
+});
+
+test("lägesrapport till ledningen: skede, nuläge och ny risk sparas och följer med till projektet", async ({ page }) => {
+  const { fel } = await oppna(page, "Projektstart");
+  await page.getByRole("group", { name: "Befintliga projekt" }).getByRole("button", { name: /^36038 Alvesta Batteripark\s*(· ej ifylld)?$/ }).click();
+  await page.getByLabel("Skede").selectOption("Slutbesiktning");
+  await page.getByLabel("Nuläge till ledningen").fill("Kallelse till slutbesiktning skickad.");
+  await page.getByLabel("Beslut som behövs från ledningen").fill("Godkänn extra resurs v. 48.");
+  await gaTillSteg(page, 7, "Riskregister");
+  await page.getByRole("button", { name: "Lägg till rad" }).click();
+  const rader = page.getByLabel(/^Risker, rad \d+: Risk$/);
+  await rader.last().fill("Ny risk från lägesrapporten");
+  await gaTillSteg(page, 14, "Granska och skapa");
+  await page.getByRole("button", { name: "Spara projektstart" }).click();
+  await expect(page.getByText(/1 risk lades till i projektet/)).toBeVisible();
+  await expect(page.getByText(/Senast sparad \d{4}-\d{2}-\d{2}/)).toBeVisible();
+
+  const nedladdning = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Ladda ned PDF" }).click();
+  expect((await nedladdning).suggestedFilename()).toMatch(/\.pdf$/);
+
+  // Sparar man igen läggs risken inte till en gång till.
+  await gaTillSteg(page, 1, "Projektkort");
+  await page.getByLabel("Nuläge till ledningen").fill("Slutbesiktning bokad.");
+  await gaTillSteg(page, 14, "Granska och skapa");
+  await page.getByRole("button", { name: "Spara ändringar" }).click();
+  await expect(page.getByText("Projektstarten är sparad och projektkortet uppdaterat.", { exact: true })).toBeVisible();
   expect(fel).toEqual([]);
 });

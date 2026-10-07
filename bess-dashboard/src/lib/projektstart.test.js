@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SEED } from "../data/seed.js";
-import { utkastFranProjekt, kortAndringar, lasUtkast, projektstartPost, utkastAndrat, utkastFranPost, luckor, nyttProjekt, projektFranUtkast, projektstartDokument, projektstartFel, tomtUtkast } from "./projektstart.js";
+import { historikRad, medHistorik, milstolparUtanDatum, nyaRaderForProjekt, utkastFranProjekt, kortAndringar, lasUtkast, projektstartPost, utkastAndrat, utkastFranPost, luckor, nyttProjekt, projektFranUtkast, projektstartDokument, projektstartFel, tomtUtkast } from "./projektstart.js";
 import { STEG } from "../data/projektstartSteg.js";
 import { efterInlasning, reducer } from "../state/portfolj-reducer.js";
 import { GILTIGA_VYER, VYER, ENKEL_MENY } from "../data/vyer.js";
@@ -71,13 +71,31 @@ describe("Återanvändbar projektmetod", () => {
     const d = projektstartDokument(u, { datum: "2026-10-06", skapadAv: "CK" });
     expect(d.projekt).toMatchObject({ nr: "90003", namn: "Kalmar" });
     const kort = d.projektstart.sektioner.find((x) => x.id === "projekt");
-    expect(kort.falt.map(([k]) => k)).toEqual(["Bolag", "Projektnamn", "Projektnummer", "Beställare", "Kontraktsform"]);
+    expect(kort.falt.map(([k]) => k)).toEqual(["Bolag", "Projektnamn", "Projektnummer", "Beställare", "Kontraktsform", "Skede"]);
     expect(d.projektstart.sektioner.find((x) => x.id === "risker").tabell.rader[0]).toContain("Leverans sen");
     expect(d.projektstart.sektioner.find((x) => x.id === "intressenter").tabell).toBeNull();
     const avrop = d.projektstart.sektioner.find((x) => x.id === "avrop");
     expect(avrop.kontroll.klara).toBe(1);
     expect(avrop.kontroll.kritiskaOppna.length).toBeGreaterThan(0);
     expect(d.projektstart.sektioner.some((x) => x.id === "sammanfattning")).toBe(false);
+  });
+  it("PDF-underlaget har alla steg numrerade och alla kontrollpunkter med avbockning", () => {
+    const u = tomtUtkast();
+    Object.assign(u.v, { namn: "Vaggeryd", nr: "-", plats: "Båramo" });
+    u.kryss.calloff = { signed: true };
+    const d = projektstartDokument(u, { datum: "2026-10-06" });
+    const ps = d.projektstart;
+    expect(ps.sektioner.map((x) => x.nr)).toEqual(ps.sektioner.map((_, i) => i + 1));
+    expect(d.projekt.nr).toBe("");
+    expect(ps.kort.plats).toBe("Båramo");
+    const avrop = ps.sektioner.find((x) => x.id === "avrop");
+    const punkter = avrop.kontroll.grupper.flatMap((g) => g.punkter);
+    expect(punkter).toHaveLength(avrop.kontroll.totalt);
+    expect(punkter.filter((p) => p.klar)).toHaveLength(1);
+    expect(avrop.tomma).toContain("Motivering");
+    const risker = ps.sektioner.find((x) => x.id === "risker");
+    expect(risker.tabell.vikter[0]).toBeGreaterThan(risker.tabell.vikter[1]);
+    expect(ps.sektioner.find((x) => x.id === "intressenter").tomTabell).toBe("Intressenter");
   });
   it("sparar guiden på projektet och öppnar den igen med alla steg genomgångna", () => {
     const u = tomtUtkast();
@@ -94,10 +112,50 @@ describe("Återanvändbar projektmetod", () => {
   it("för bara ändrade projektkortsfält över till projektet", () => {
     const u = tomtUtkast();
     Object.assign(u.v, { namn: "Nytt namn", nr: "90004", plats: "Kalmar", bestallare: "" });
-    const projekt = { namn: "Gammalt namn", nr: "90004", ort: "Kalmar", bestallare: "Kund" };
+    const projekt = { namn: "Gammalt namn", nr: "90004", ort: "Kalmar", bestallare: "Kund", status: "Planering" };
     expect(kortAndringar(u, projekt)).toEqual([["namn", "Nytt namn"], ["bestallare", ""]]);
     u.v.namn = "";
     expect(kortAndringar(u, projekt).some(([f]) => f === "namn")).toBe(false);
+  });
+  it("skede blir projektets status, och tomt skede eller bindestreck i numret skriver aldrig över", () => {
+    const u = tomtUtkast();
+    Object.assign(u.v, { namn: "Vaggeryd", nr: "-", skede: "Anbud" });
+    const { projekt } = projektFranUtkast(u, "p-v");
+    expect(projekt).toMatchObject({ nr: "", status: "Anbud" });
+    expect(kortAndringar(u, { namn: "Vaggeryd", nr: "", status: "Planering" })).toEqual([["status", "Anbud"]]);
+    u.v.skede = "";
+    expect(kortAndringar(u, { namn: "Vaggeryd", nr: "", status: "Planering" })).toEqual([]);
+  });
+  it("stoppar dubbletter på namn när projektnummer saknas", () => {
+    const state = { projekt: [{ id: "a", nr: "", namn: "Vaggeryd 100MW" }] };
+    expect(projektstartFel(state, { namn: "vaggeryd 100mw", nr: "-" })).toMatch(/samma namn/);
+    expect(projektstartFel(state, { namn: "Vaggeryd 100MW", nr: "90100" })).toBe("");
+  });
+  it("för bara över nya risker och milstolpar till ett befintligt projekt", () => {
+    const u = tomtUtkast();
+    u.rader.risker = [{ id: "1", titel: "Leveranstid för batteri och ställverk" }, { id: "2", titel: "Ny risk" }];
+    u.rader.milstolpar = [{ id: "m", namn: "M1", datum: "2027-01-01" }, { id: "n", namn: "M2", datum: "" }];
+    const state = { risker: [{ projektId: "p", titel: "leveranstid för batteri och ställverk" }], milstolpar: [] };
+    const nya = nyaRaderForProjekt(u, "p", state, 5);
+    expect(nya.risker.map((r) => r.titel)).toEqual(["Ny risk"]);
+    expect(nya.risker[0].id).toBe("r-p-5-1");
+    expect(nya.milstolpar.map((m) => m.titel)).toEqual(["M1"]);
+    expect(milstolparUtanDatum(u)).toBe(1);
+  });
+  it("loggar en rad per dag i uppdateringshistoriken", () => {
+    const u = tomtUtkast();
+    Object.assign(u.v, { skede: "Anbud", nulage: "Anbud in 23/10" });
+    const r1 = historikRad(u, { datum: "2026-10-06", av: "CK" });
+    expect(r1).toMatchObject({ skede: "Anbud", nulage: "Anbud in 23/10", klara: 0 });
+    let h = medHistorik([], r1);
+    h = medHistorik(h, { ...r1, nulage: "Ändrat samma dag" });
+    expect(h).toHaveLength(1);
+    expect(h[0].nulage).toBe("Ändrat samma dag");
+    h = medHistorik(h, { ...r1, datum: "2026-10-07" });
+    expect(h).toHaveLength(2);
+    const d = projektstartDokument(u, { datum: "2026-10-07", historik: h, sparad: "2026-10-07" });
+    expect(d.projektstart.historik).toHaveLength(2);
+    expect(d.projektstart.lage).toMatchObject({ skede: "Anbud", nulage: "Anbud in 23/10" });
   });
   it("fyller guiden för ett befintligt projekt ur projektkort, risker och milstolpar", () => {
     const state = efterInlasning(structuredClone(SEED));
