@@ -1,5 +1,6 @@
 import { Document, Font, Image, Page, Path, StyleSheet, Svg, Text, View } from "@react-pdf/renderer";
 import logotyp from "../../assets/one-nordic-logo.png";
+import { styckeblock } from "../../lib/projektstart.js";
 import dejavu from "../../assets/fonts/DejaVuSans.ttf?inline";
 import dejavuFet from "../../assets/fonts/DejaVuSans-Bold.ttf?inline";
 import openSans from "../../assets/fonts/open-sans-latin-400-normal.woff?inline";
@@ -377,24 +378,41 @@ function Faltrad({ k, v }) {
   );
 }
 
+function Milstolpe({ st }) {
+  return (
+    <View style={s.milstolpe} wrap={false}>
+      <Text style={s.milstolpeKod}>{st.kod}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={s.milstolpeNamn}>
+          {st.namn}
+          {st.andel ? <Text style={{ fontWeight: 700 }}> - {st.andel}</Text> : null}
+        </Text>
+        {st.text ? <Text style={s.milstolpeText}>{st.text}</Text> : null}
+      </View>
+    </View>
+  );
+}
+
+function Stycke({ st }) {
+  return (
+    <Text style={s.stycke} orphans={2} widows={2}>
+      {st.nyckel ? <Text style={s.nyckel}>{st.nyckel}: </Text> : null}
+      {st.text}
+    </Text>
+  );
+}
+
 function Stycken({ stycken }) {
-  return stycken.map((st, i) =>
-    st.typ === "milstolpe" ? (
-      <View key={i} style={s.milstolpe} wrap={false}>
-        <Text style={s.milstolpeKod}>{st.kod}</Text>
-        <View style={{ flex: 1 }}>
-          <Text style={s.milstolpeNamn}>
-            {st.namn}
-            {st.andel ? <Text style={{ fontWeight: 700 }}> - {st.andel}</Text> : null}
-          </Text>
-          {st.text ? <Text style={s.milstolpeText}>{st.text}</Text> : null}
-        </View>
+  return styckeblock(stycken).map((b, i) =>
+    b.typ === "milstolpar" ? (
+      <View key={i} wrap={false}>
+        {b.intro ? <Stycke st={b.intro} /> : null}
+        {b.kort.map((st, j) => (
+          <Milstolpe key={j} st={st} />
+        ))}
       </View>
     ) : (
-      <Text key={i} style={s.stycke} orphans={2} widows={2}>
-        {st.nyckel ? <Text style={s.nyckel}>{st.nyckel}: </Text> : null}
-        {st.text}
-      </Text>
+      <Stycke key={i} st={b.st} />
     ),
   );
 }
@@ -522,8 +540,9 @@ function Steg({ sek, fasBand }) {
   const [forstaFalt, ...ovrigaFalt] = sek.falt;
   const forstaArRad = forstaFalt && !forstaFalt[2];
 
+  /* Varje steg börjar på en ny sida. */
   return (
-    <>
+    <View break>
       <View>
         {/* Fasband, rubrik och första innehållet hålls ihop på samma sida. */}
         <View wrap={false}>
@@ -576,8 +595,7 @@ function Steg({ sek, fasBand }) {
 
         {sek.kontroll ? <Kontrollpunkter k={sek.kontroll} /> : null}
       </View>
-      <View style={s.stegLuft} />
-    </>
+    </View>
   );
 }
 
@@ -594,7 +612,7 @@ function Logg({ historik }) {
   if (!historik.length) return null;
   const B = ["15%", "17%", "12%", "20%", "36%"];
   return (
-    <View>
+    <View break>
       <View wrap={false}>
         <FasBand text="Logg och godkännande" />
         <Text style={s.h2}>Uppdateringar</Text>

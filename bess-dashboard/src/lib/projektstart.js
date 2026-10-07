@@ -446,6 +446,23 @@ export function kontrollLage(u) {
 
 const RISKVARDE = (r) => (Number(r.sannolikhet) || 0) * (Number(r.konsekvens) || 0);
 
+/* Delar stycken i block: följande milstolpekort hålls ihop som ett block, tillsammans
+   med ett inledande stycke som slutar med kolon ("Förslag på betalplan:"). Då
+   delas inte betalplanen över två sidor. */
+export function styckeblock(stycken) {
+  const ut = [];
+  for (const st of stycken) {
+    const sista = ut[ut.length - 1];
+    if (st.typ === "milstolpe") {
+      if (sista?.typ === "milstolpar") sista.kort.push(st);
+      else if (sista?.typ === "stycke" && /:\s*$/.test(sista.st.text) && !sista.st.nyckel)
+        ut[ut.length - 1] = { typ: "milstolpar", intro: sista.st, kort: [st] };
+      else ut.push({ typ: "milstolpar", intro: null, kort: [st] });
+    } else ut.push({ typ: "stycke", st });
+  }
+  return ut;
+}
+
 /** "Milstolpe 2 (Markarbeten & Fundament - 25–30 %)" blir "Markarbeten & Fundament". */
 export const kortMilstolpe = (namn) =>
   String(namn || "")

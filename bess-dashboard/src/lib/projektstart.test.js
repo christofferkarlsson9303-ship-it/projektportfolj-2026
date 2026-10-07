@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { SEED } from "../data/seed.js";
 import {
   arLangText,
+  styckeblock,
   kontrollLage,
   kontrolleraUnderlag,
   kortMilstolpe,
@@ -342,5 +343,14 @@ describe("Tidslinjen i ledningsunderlaget", () => {
     expect(t).toHaveLength(6);
     expect(t.at(-1)).toEqual({ datum: "2029-11-30", text: "Färdigställande" });
     expect(t.filter((x) => x.text.includes("kritisk"))).toHaveLength(3);
+  });
+});
+
+describe("Styckeblock i PDF:en", () => {
+  it("håller ihop milstolpekorten med inledningen som slutar med kolon", () => {
+    const b = styckeblock(textstycken("Fråga?\n\nFörslag på betalplan:\n\nMilstolpe 1 (A - 10 %): x\n\nMilstolpe 2 (B - 90 %): y\n\nSlutord."));
+    expect(b.map((x) => x.typ)).toEqual(["stycke", "milstolpar", "stycke"]);
+    expect(b[1].intro.text).toBe("Förslag på betalplan:");
+    expect(b[1].kort.map((k) => k.kod)).toEqual(["M1", "M2"]);
   });
 });
