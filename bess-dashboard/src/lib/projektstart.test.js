@@ -326,3 +326,21 @@ describe("Ledningsunderlag i anbudsskedet", () => {
     expect(stegTabeller(STEG.find((x) => x.tabell))).toHaveLength(1);
   });
 });
+
+describe("Tidslinjen i ledningsunderlaget", () => {
+  it("har alltid med färdigställandet även med många kritiska faser", () => {
+    const u = tomtUtkast();
+    Object.assign(u.v, { skede: "Anbud", anbudsdatum: "2026-10-23", startdatum: "2027-02-01", fardigdatum: "2029-11-30" });
+    u.rader.faser = Array.from({ length: 7 }, (_, i) => ({
+      id: `f${i}`,
+      namn: `Fas ${i + 1}`,
+      start: `202${7 + Math.floor(i / 3)}-0${(i % 3) + 1}-01`,
+      slut: "",
+      kritisk: "Ja",
+    }));
+    const t = ledningsunderlag(u).tidslinje;
+    expect(t).toHaveLength(6);
+    expect(t.at(-1)).toEqual({ datum: "2029-11-30", text: "Färdigställande" });
+    expect(t.filter((x) => x.text.includes("kritisk"))).toHaveLength(3);
+  });
+});

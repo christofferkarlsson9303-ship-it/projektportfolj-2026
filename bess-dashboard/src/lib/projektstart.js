@@ -488,17 +488,23 @@ export function ledningsunderlag(u) {
   const faser = (u.rader.faser || [])
     .filter((f) => f.namn?.trim())
     .map((f) => ({ namn: f.namn.trim(), start: f.start || "", slut: f.slut || "", kritisk: f.kritisk === "Ja" }));
-  const tidslinje = [
+  /* Högst sex punkter. Anbud, start och färdigställande är alltid med, de
+     kritiska faserna fyller resten i tidsordning. */
+  const fasta = [
     v.anbudsdatum && { datum: v.anbudsdatum, text: "Anbud lämnas" },
     v.startdatum && { datum: v.startdatum, text: "Start" },
-    ...faser
-      .filter((f) => f.kritisk && f.start)
-      .map((f) => ({ datum: f.slut ? `${f.start.slice(0, 7)} – ${f.slut.slice(0, 7)}` : f.start, sortering: f.start, text: `${f.namn} (kritisk)` })),
     v.fardigdatum && { datum: v.fardigdatum, text: "Färdigställande" },
-  ]
-    .filter(Boolean)
-    .sort((a, b) => (a.sortering || a.datum).localeCompare(b.sortering || b.datum))
-    .slice(0, 6);
+  ].filter(Boolean);
+  const kritiska = faser
+    .filter((f) => f.kritisk && f.start)
+    .sort((a, b) => a.start.localeCompare(b.start))
+    .slice(0, 6 - fasta.length)
+    .map((f) => ({
+      datum: f.slut && f.slut !== f.start ? `${f.start.slice(0, 7)} – ${f.slut.slice(0, 7)}` : f.start,
+      sortering: f.start,
+      text: `${f.namn} (kritisk)`,
+    }));
+  const tidslinje = [...fasta, ...kritiska].sort((a, b) => (a.sortering || a.datum).localeCompare(b.sortering || b.datum));
 
   const risker = (u.rader.risker || [])
     .filter((r) => r.titel?.trim())
