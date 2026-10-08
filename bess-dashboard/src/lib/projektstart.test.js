@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SEED } from "../data/seed.js";
-import { arLangText, textstycken, historikRad, medHistorik, milstolparUtanDatum, nyaRaderForProjekt, utkastFranProjekt, kortAndringar, lasUtkast, projektstartPost, utkastAndrat, utkastFranPost, luckor, nyttProjekt, projektFranUtkast, projektstartDokument, projektstartFel, tomtUtkast } from "./projektstart.js";
+import { arLangText, textstycken, historikRad, medHistorik, milstolparUtanDatum, nyaRaderForProjekt, utkastFranProjekt, kortAndringar, lasUtkast, projektstartPost, utkastAndrat, utkastFranPost, luckor, stegPunkter, stegTillstand, fasStatus, nyttProjekt, projektFranUtkast, projektstartDokument, projektstartFel, tomtUtkast } from "./projektstart.js";
 import { STEG } from "../data/projektstartSteg.js";
 import { efterInlasning, reducer } from "../state/portfolj-reducer.js";
 import { GILTIGA_VYER, VYER, ENKEL_MENY } from "../data/vyer.js";
@@ -186,5 +186,30 @@ describe("Återanvändbar projektmetod", () => {
     expect(luckor(u).stegKvar).toEqual([]);
     const tomt = utkastFranProjekt({ id: "x", namn: "Tomt" }, state);
     expect(tomt.rader.risker.length).toBeGreaterThan(0);
+  });
+});
+
+describe("Stegens tillstånd i guiden", () => {
+  const steg = (id) => STEG.find((s) => s.id === id);
+  it("räknar steg utan kontrollpunkter som klara först när de är genomgångna", () => {
+    const u = tomtUtkast();
+    expect(stegTillstand(u, steg("projekt"))).toBe("ny");
+    u.besokta.push("projekt");
+    expect(stegTillstand(u, steg("projekt"))).toBe("klar");
+  });
+  it("räknar steg med kontrollpunkter som pågående tills alla är bockade", () => {
+    const u = tomtUtkast();
+    const s = steg("avrop");
+    expect(stegTillstand(u, s)).toBe("ny");
+    u.besokta.push("avrop");
+    expect(stegTillstand(u, s)).toBe("pagar");
+    for (const p of STEG.flatMap((x) => (x.id === "avrop" ? stegPunkter(x) : []))) u.kryss[p.bucket] = { ...u.kryss[p.bucket], [p.id]: true };
+    expect(stegTillstand(u, s)).toBe("klar");
+  });
+  it("summerar per fas utan sista steget", () => {
+    const faser = fasStatus(tomtUtkast());
+    expect(faser.map((f) => f.fas)).toEqual(["Initiering", "Planering", "Etablering", "Genomförande", "Avslut"]);
+    expect(faser.reduce((n, f) => n + f.totalt, 0)).toBe(STEG.length - 1);
+    expect(faser.every((f) => f.klara === 0)).toBe(true);
   });
 });

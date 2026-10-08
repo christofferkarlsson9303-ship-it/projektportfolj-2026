@@ -142,3 +142,28 @@ test("lägesrapport till ledningen: skede, nuläge och ny risk sparas och följe
   await expect(page.getByText("Projektstarten är sparad och projektkortet uppdaterat.", { exact: true })).toBeVisible();
   expect(fel).toEqual([]);
 });
+
+test("interaktiv guide: riskvärde, bocka alla, filter och stegstatus uppdateras direkt", async ({ page }) => {
+  const { fel } = await oppna(page, "Projektstart");
+
+  // Riskvärdet räknas ut medan man skriver (3 × 3 = 9, medel).
+  await gaTillSteg(page, 7, "Riskregister");
+  await expect(page.getByText("9 riskvärde, medel").first()).toBeVisible();
+  await page.getByLabel("Risker, rad 1: Sannolikhet 1–5").selectOption("5");
+  await page.getByLabel("Risker, rad 1: Konsekvens 1–5").selectOption("4");
+  await expect(page.getByText("20 riskvärde, hög").first()).toBeVisible();
+
+  // Bocka alla i första gruppen och filtrera bort de klara.
+  await gaTillSteg(page, 2, "Avropsacceptans");
+  const oppnaText = page.getByText(/^\d+ öppna/);
+  await expect(oppnaText).toBeVisible();
+  const bocka = page.getByRole("button", { name: /^Bocka av alla i / }).first();
+  await bocka.click();
+  await expect(page.getByRole("button", { name: /^Rensa / }).first()).toBeVisible();
+  await page.getByLabel("Visa bara öppna").check();
+  await page.getByLabel("Visa bara öppna").uncheck();
+
+  // Stegstatus och framdrift per fas finns i navigeringen.
+  await expect(page.getByRole("group", { name: "Framdrift per fas" })).toBeVisible();
+  expect(fel).toEqual([]);
+});

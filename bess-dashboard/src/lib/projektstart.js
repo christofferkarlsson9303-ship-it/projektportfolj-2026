@@ -78,6 +78,32 @@ export function lasUtkast(raw) {
 export const stegPunkter = (steg) => (steg.katalog || []).flatMap((b) => KATALOG[b].map((p) => ({ ...p, bucket: b })));
 export const arAvbockad = (u, p) => !!u.kryss?.[p.bucket]?.[p.id];
 
+/** Hur långt ett steg har kommit: "klar", "pagar" eller "ny". Steg med
+ *  kontrollpunkter är klara först när alla är bockade. Övriga steg räknas som
+ *  klara när man har gått igenom dem. */
+export function stegTillstand(u, steg) {
+  const punkter = stegPunkter(steg);
+  const klara = punkter.filter((p) => arAvbockad(u, p)).length;
+  const besokt = u.besokta.includes(steg.id);
+  if (punkter.length) {
+    if (klara === punkter.length) return "klar";
+    return klara > 0 || besokt ? "pagar" : "ny";
+  }
+  return besokt ? "klar" : "ny";
+}
+
+/** Samma tillstånd samlat per fas, i stegens ordning. */
+export function fasStatus(u, steg = STEG.filter((s) => s.id !== SISTA_STEG)) {
+  const faser = [];
+  for (const s of steg) {
+    let f = faser.find((x) => x.fas === s.fas);
+    if (!f) faser.push((f = { fas: s.fas, klara: 0, totalt: 0 }));
+    f.totalt += 1;
+    if (stegTillstand(u, s) === "klar") f.klara += 1;
+  }
+  return faser;
+}
+
 export function luckor(u) {
   const alla = STEG.flatMap(stegPunkter);
   const kritiska = alla.filter((p) => p.kritisk);

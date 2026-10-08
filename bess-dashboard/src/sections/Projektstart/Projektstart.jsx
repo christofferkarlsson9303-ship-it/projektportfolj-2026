@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Circle, CircleDot, Plus, Trash2 } from "lucide-react";
 import { usePortfolj, useUi } from "../../state/hooks.js";
-import { Callout, Card, CheckList, Meter, Overline, StatusBadge } from "../../components/ds/index.js";
+import { Callout, Card, CheckList, Meter, Overline, RiskScore, StatusBadge } from "../../components/ds/index.js";
 import { PdfExporter } from "../../components/print/PdfExporter.jsx";
 import { laddaNerPdf } from "../../components/print/laddaNerPdf.jsx";
 import { hamtaNamn } from "../../state/portfolj-reducer.js";
@@ -28,6 +28,8 @@ import {
   utkastFranPost,
   projektstartFel,
   stegPunkter,
+  stegTillstand,
+  fasStatus,
   tomtUtkast,
 } from "../../lib/projektstart.js";
 
@@ -42,6 +44,17 @@ function laddaUtkast() {
   } catch {
     return tomtUtkast();
   }
+}
+
+function StegIkon({ tillstand }) {
+  const props = { size: 14, "aria-hidden": "true", className: "shrink-0" };
+  const text = tillstand === "klar" ? "klar" : tillstand === "pagar" ? "pågår" : "ej påbörjad";
+  return (
+    <span className="inline-flex" title={text}>
+      {tillstand === "klar" ? <Check {...props} /> : tillstand === "pagar" ? <CircleDot {...props} /> : <Circle {...props} className="shrink-0 opacity-40" />}
+      <span className="sr-only">{text}</span>
+    </span>
+  );
 }
 
 function Faltruta({ f, varde, onChange }) {
@@ -72,6 +85,7 @@ function Faltruta({ f, varde, onChange }) {
 }
 
 function Tabell({ tabell, rader, onChange }) {
+  const arRisker = tabell.id === "risker";
   const uppdatera = (rid, kol, v) => onChange(rader.map((r) => (r.id === rid ? { ...r, [kol]: v } : r)));
   return (
     <Card id={`ps-tabell-${tabell.id}`} title={tabell.titel} action={<button type="button" className="btn sec mini" onClick={() => onChange([...rader, nyTabellrad(tabell)])}><Plus size={14} aria-hidden="true" /> Lägg till rad</button>}>
@@ -83,6 +97,7 @@ function Tabell({ tabell, rader, onChange }) {
               {tabell.kolumner.map((k) => (
                 <th key={k.id} scope="col" className="px-1 pb-1 text-left"><Overline as="span">{k.etikett}</Overline></th>
               ))}
+              {arRisker ? <th scope="col" className="px-1 pb-1 text-left"><Overline as="span">Värde</Overline></th> : null}
               <th scope="col" className="w-10"><span className="sr-only">Ta bort</span></th>
             </tr>
           </thead>
@@ -103,6 +118,11 @@ function Tabell({ tabell, rader, onChange }) {
                     </td>
                   );
                 })}
+                {arRisker ? (
+                  <td className="p-1 align-middle">
+                    <RiskScore value={(Number(r.sannolikhet) || 0) * (Number(r.konsekvens) || 0)} />
+                  </td>
+                ) : null}
                 <td className="p-1 align-top">
                   <button type="button" className="btn sec mini" aria-label={`Ta bort rad ${i + 1} i ${tabell.titel}`} onClick={() => onChange(rader.filter((x) => x.id !== r.id))}>
                     <Trash2 size={14} aria-hidden="true" />
@@ -118,20 +138,52 @@ function Tabell({ tabell, rader, onChange }) {
 }
 
 function Kontrollpunkter({ steg, utkast, onToggle }) {
+  const [barOppna, setBarOppna] = useState(false);
   const grupper = (steg.katalog || []).flatMap((bucket) => {
     const punkter = stegPunkter({ katalog: [bucket] });
     const namn = [...new Set(punkter.map((p) => p.grupp))];
     return namn.map((g) => ({ rubrik: steg.katalog.length > 1 ? `${KATALOG_RUBRIK[bucket]}: ${g}` : g, bucket, punkter: punkter.filter((p) => p.grupp === g) }));
   });
+  const alla = grupper.flatMap((g) => g.punkter);
+  const oppna = alla.filter((p) => !arAvbockad(utkast, p));
+  const kritiskaOppna = oppna.filter((p) => p.kritisk).length;
   return (
     <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <span className="text-[13px] text-ink-soft" aria-live="polite">
+          {oppna.length ? `${oppna.length} öppna${kritiskaOppna ? `, varav ${kritiskaOppna} kritiska` : ""}` : "Alla kontrollpunkter i steget är bockade"}
+        </span>
+        <label className="flex cursor-pointer items-center gap-2 text-[13px] text-ink">
+          <input type="checkbox" className="m-0 h-[18px] w-[18px] cursor-pointer accent-one-bla" checked={barOppna} onChange={(e) => setBarOppna(e.target.checked)} />
+          Visa bara öppna
+        </label>
+      </div>
       {grupper.map((g) => {
         const klara = g.punkter.filter((p) => arAvbockad(utkast, p)).length;
+        const synliga = barOppna ? g.punkter.filter((p) => !arAvbockad(utkast, p)) : g.punkter;
+        const allaKlara = klara === g.punkter.length;
+        if (barOppna && !synliga.length) return null;
         return (
-          <Card key={g.rubrik} id={`ps-kp-${g.bucket}-${g.rubrik}`} title={g.rubrik} badge={<span className="text-xs text-ink-soft tabular-nums">{klara} av {g.punkter.length}</span>}>
+          <Card
+            key={g.rubrik}
+            id={`ps-kp-${g.bucket}-${g.rubrik}`}
+            title={g.rubrik}
+            badge={<span className="text-xs text-ink-soft tabular-nums">{klara} av {g.punkter.length}</span>}
+            action={
+              <button
+                type="button"
+                className="btn sec mini"
+                aria-label={`${allaKlara ? "Rensa" : "Bocka av alla i"} ${g.rubrik}`}
+                onClick={() => g.punkter.forEach((p) => onToggle(g.bucket, p.id, !allaKlara))}
+              >
+                {allaKlara ? "Rensa alla" : "Bocka alla"}
+              </button>
+            }
+          >
+            <Meter value={klara} max={g.punkter.length} size="sm" />
             <CheckList
               label={g.rubrik}
-              items={g.punkter.map((p) => ({ id: p.id, label: p.kritisk ? `${p.text} (kritisk)` : p.text, hint: p.tips, checked: arAvbockad(utkast, p) }))}
+              items={synliga.map((p) => ({ id: p.id, label: p.kritisk ? `${p.text} (kritisk)` : p.text, hint: p.tips, checked: arAvbockad(utkast, p) }))}
               onChange={(pid, v) => onToggle(g.bucket, pid, v)}
             />
           </Card>
@@ -344,6 +396,21 @@ export function Projektstart() {
     visaToast(`Projektet är skapat${pdfKlar ? " och PDF:en är nedladdad" : ", men PDF:en kunde inte skapas"}. Kontrollera kontrakt, betalplan, priser och kontrollkrav före användning.`);
   };
 
+  /* Alt + Skift + pil vänster/höger bläddrar mellan stegen utan att lämna tangentbordet. */
+  useEffect(() => {
+    const onKey = (e) => {
+      if (!e.altKey || !e.shiftKey || e.ctrlKey || e.metaKey) return;
+      const ny = e.key === "ArrowRight" ? STEG[index + 1] : e.key === "ArrowLeft" ? STEG[index - 1] : null;
+      if (!ny) return;
+      e.preventDefault();
+      gaTill(ny.id);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
+  const faser = useMemo(() => fasStatus(utkast), [utkast]);
+
   const stegStatus = (s) => {
     const p = stegPunkter(s);
     if (p.length) return `${p.filter((x) => arAvbockad(utkast, x)).length}/${p.length}`;
@@ -399,6 +466,15 @@ export function Projektstart() {
             {STEG.map((s, i) => <option key={s.id} value={s.id}>{i + 1}. {s.titel}</option>)}
           </select>
         </label>
+        <div className="flex flex-col gap-2" role="group" aria-label="Framdrift per fas">
+          {faser.map((f) => (
+            <div key={f.fas} className="flex items-center gap-2 text-[12px] text-ink-soft">
+              <span className="w-24 shrink-0">{f.fas}</span>
+              <Meter value={f.klara} max={f.totalt} size="sm" label={`${f.fas}: ${f.klara} av ${f.totalt} steg klara`} className="flex-1" />
+              <span className="w-8 text-right tabular-nums">{f.klara}/{f.totalt}</span>
+            </div>
+          ))}
+        </div>
         <ol className="m-0 hidden list-none flex-col gap-0.5 p-0 lg:flex">
           {STEG.map((s, i) => {
             const ny = STEG[i - 1]?.fas !== s.fas;
@@ -412,7 +488,8 @@ export function Projektstart() {
                   onClick={() => gaTill(s.id)}
                   className={`flex w-full items-center gap-2 rounded-lg border-0 px-2 py-2 text-left text-[13px] ${aktiv ? "bg-one-djup text-white" : "bg-transparent text-ink hover:bg-sunken"}`}
                 >
-                  <span className="w-5 shrink-0 text-right tabular-nums opacity-70">{i + 1}</span>
+                  <StegIkon tillstand={stegTillstand(utkast, s)} />
+                  <span className="w-4 shrink-0 text-right tabular-nums opacity-70">{i + 1}</span>
                   <span className="min-w-0 flex-1">{s.titel}</span>
                   <span className="text-[11px] tabular-nums opacity-70">{stegStatus(s)}</span>
                 </button>
