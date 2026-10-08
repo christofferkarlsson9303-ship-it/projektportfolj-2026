@@ -167,3 +167,34 @@ test("interaktiv guide: riskvärde, bocka alla, filter och stegstatus uppdateras
   await expect(page.getByRole("group", { name: "Framdrift per fas" })).toBeVisible();
   expect(fel).toEqual([]);
 });
+
+test("riskregistret: nivåer, donut och ny rad följer varandra", async ({ page }) => {
+  const { fel } = await oppna(page, "Projektstart");
+  await gaTillSteg(page, 7, "Riskregister");
+
+  const donut = page.getByRole("img", { name: /^Riskfördelning:/ });
+  // Tre startrader à 3 × 3 = 9 är alla medel.
+  await expect(donut).toHaveAttribute("aria-label", "Riskfördelning: 0 låg, 3 medel, 0 hög");
+
+  // 2 × 3 = 6 är låg och 5 × 3 = 15 är hög.
+  await page.getByLabel("Risker, rad 1: Sannolikhet 1–5").selectOption("2");
+  await expect(page.getByText("6 riskvärde, låg").first()).toBeVisible();
+  await page.getByLabel("Risker, rad 2: Sannolikhet 1–5").selectOption("5");
+  await expect(page.getByText("15 riskvärde, hög").first()).toBeVisible();
+  await expect(donut).toHaveAttribute("aria-label", "Riskfördelning: 1 låg, 1 medel, 1 hög");
+
+  // Ny rad: får fokus i risktexten och räknas först när den har text.
+  await page.getByRole("button", { name: "Lägg till rad" }).click();
+  const nyRad = page.getByLabel(/^Risker, rad 4: Risk$/);
+  await expect(nyRad).toBeFocused();
+  await expect(donut).toHaveAttribute("aria-label", "Riskfördelning: 1 låg, 1 medel, 1 hög");
+  await nyRad.fill("Ny risk");
+  await expect(donut).toHaveAttribute("aria-label", "Riskfördelning: 1 låg, 2 medel, 1 hög");
+
+  // Stegindikatorn i headern följer samma steg som navigeringen.
+  await expect(page.getByText("ONE-P · Steg 7 av 14")).toBeVisible();
+  await page.getByRole("button", { name: "Nästa" }).click();
+  await expect(page.getByText("ONE-P · Steg 8 av 14")).toBeVisible();
+  await expect(page.getByRole("progressbar", { name: "Steg i guiden" })).toHaveAttribute("aria-valuenow", "57");
+  expect(fel).toEqual([]);
+});

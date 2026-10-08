@@ -78,6 +78,29 @@ export function lasUtkast(raw) {
 export const stegPunkter = (steg) => (steg.katalog || []).flatMap((b) => KATALOG[b].map((p) => ({ ...p, bucket: b })));
 export const arAvbockad = (u, p) => !!u.kryss?.[p.bucket]?.[p.id];
 
+/** Riskvärdets nivåer i Projektstart: låg 1–6, medel 7–14, hög 15–25.
+ *  Gränserna är de första värdena i varje nivå. */
+export const RISKGRANSER = { medel: 7, hog: 15 };
+
+export const riskNivaForVarde = (v) => ((Number(v) || 0) >= RISKGRANSER.hog ? "hog" : (Number(v) || 0) >= RISKGRANSER.medel ? "medel" : "lag");
+
+/** Riskvärde = sannolikhet (1–5) × konsekvens (1–5). Värden utanför skalan hålls inom 1–5. */
+export const riskvardeForRad = (r) => {
+  const hall = (x) => Math.max(1, Math.min(5, Number(x) || 3));
+  return hall(r.sannolikhet) * hall(r.konsekvens);
+};
+
+/** Fördelning låg/medel/hög över de rader som har en risktext, alltså de som blir risker i projektet. */
+export function riskFordelning(rader) {
+  const f = { lag: 0, medel: 0, hog: 0, totalt: 0 };
+  for (const r of rader || []) {
+    if (!r.titel?.trim()) continue;
+    f[riskNivaForVarde(riskvardeForRad(r))] += 1;
+    f.totalt += 1;
+  }
+  return f;
+}
+
 /** Hur långt ett steg har kommit: "klar", "pagar" eller "ny". Steg med
  *  kontrollpunkter är klara först när alla är bockade. Övriga steg räknas som
  *  klara när man har gått igenom dem. */

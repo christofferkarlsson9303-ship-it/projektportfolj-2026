@@ -2080,3 +2080,13 @@ button.ov-gantt-rad:hover>:first-child,button.ov-gantt-rad:focus-visible>:first-
 .kl-fas:hover{text-decoration:underline}
 .kl-fas:focus-visible{outline:2px solid var(--one-bla);outline-offset:2px;border-radius:3px}
 .kl-nr{display:inline-flex;width:20px;justify-content:center;font-weight:700;color:var(--ink-soft)}
+
+/* Projektstart: små rörelser. Ny rad glider in och markeras en stund, ett
+   ändrat riskvärde pulsar till. Alla stängs av av prefers-reduced-motion-regeln högre upp. */
+@keyframes psRadIn{from{opacity:0;transform:translateY(-6px);background:var(--info-bg)}to{opacity:1;transform:none;background:transparent}}
+@keyframes psPuls{0%{transform:scale(1)}40%{transform:scale(1.28)}100%{transform:scale(1)}}
+@keyframes psByt{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.ps-rad-in{animation:psRadIn .7s var(--ease,ease) both}
+.ps-puls{animation:psPuls .35s ease-out}
+.ps-byt{animation:psByt .28s ease-out both}
+@media (prefers-reduced-motion:reduce){.ps-rad-in,.ps-puls,.ps-byt{animation:none}}

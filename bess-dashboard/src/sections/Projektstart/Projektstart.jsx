@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronLeft, ChevronRight, Circle, CircleDot, Plus, Trash2 } from "lucide-react";
 import { usePortfolj, useUi } from "../../state/hooks.js";
-import { Callout, Card, CheckList, Meter, Overline, RiskScore, StatusBadge } from "../../components/ds/index.js";
+import { Callout, Card, CheckList, Meter, Overline, StatusBadge } from "../../components/ds/index.js";
 import { PdfExporter } from "../../components/print/PdfExporter.jsx";
 import { laddaNerPdf } from "../../components/print/laddaNerPdf.jsx";
 import { hamtaNamn } from "../../state/portfolj-reducer.js";
 import { idag } from "../../lib/datum.js";
 import { Kraftkurva } from "../../components/oversikt/Hero.jsx";
+import { TON_KLASS } from "../../lib/status.js";
+import { RiskDonut } from "./RiskDonut.jsx";
 import { KATALOG_RUBRIK, STEG } from "../../data/projektstartSteg.js";
 import {
   SISTA_STEG,
@@ -27,6 +29,8 @@ import {
   utkastFranProjekt,
   utkastFranPost,
   projektstartFel,
+  riskNivaForVarde,
+  riskvardeForRad,
   stegPunkter,
   stegTillstand,
   fasStatus,
@@ -84,30 +88,66 @@ function Faltruta({ f, varde, onChange }) {
   );
 }
 
+const RISKTON = { lag: ["ok", "låg"], medel: ["warn", "medel"], hog: ["bad", "hög"] };
+
+/** Riskvärdet som märke. Pulsar till när värdet ändras, inte vid första visning. */
+function RiskBadge({ value }) {
+  const [forra, setForra] = useState(value);
+  const [andrat, setAndrat] = useState(false);
+  if (value !== forra) {
+    setForra(value);
+    setAndrat(true);
+  }
+  const [ton, text] = RISKTON[riskNivaForVarde(value)];
+  return (
+    <span
+      key={value}
+      title={`Riskvärde ${value}, ${text}`}
+      className={`inline-flex h-6 min-w-[34px] items-center justify-center rounded-md px-1.5 text-[13px] font-bold tabular-nums transition-colors duration-300 ${TON_KLASS[ton]} ${andrat ? "ps-puls" : ""}`}
+    >
+      {value}
+      <span className="sr-only"> riskvärde, {text}</span>
+    </span>
+  );
+}
+
 function Tabell({ tabell, rader, onChange }) {
   const arRisker = tabell.id === "risker";
+  const [nyId, setNyId] = useState(null);
+  const lagg = () => {
+    const ny = nyTabellrad(tabell);
+    setNyId(ny.id);
+    onChange([...rader, ny]);
+  };
+  /* Den nya raden får fokus i första fältet, så att man kan skriva direkt. */
+  useEffect(() => {
+    if (nyId) document.querySelector(`[data-rad-id="${nyId}"] input`)?.focus({ preventScroll: false });
+  }, [nyId]);
   const uppdatera = (rid, kol, v) => onChange(rader.map((r) => (r.id === rid ? { ...r, [kol]: v } : r)));
   return (
-    <Card id={`ps-tabell-${tabell.id}`} title={tabell.titel} action={<button type="button" className="btn sec mini" onClick={() => onChange([...rader, nyTabellrad(tabell)])}><Plus size={14} aria-hidden="true" /> Lägg till rad</button>}>
+    <Card id={`ps-tabell-${tabell.id}`} title={tabell.titel} action={<button type="button" className="btn sec mini" onClick={lagg}><Plus size={14} aria-hidden="true" /> Lägg till rad</button>}>
       {tabell.anmarkning ? <p className="m-0 text-[12.5px] text-ink-soft">{tabell.anmarkning}</p> : null}
       <div className="overflow-x-auto">
         <table className="w-full min-w-[640px] border-collapse text-[13px]">
           <thead>
             <tr>
               {tabell.kolumner.map((k) => (
-                <th key={k.id} scope="col" className="px-1 pb-1 text-left"><Overline as="span">{k.etikett}</Overline></th>
+                <Fragment key={k.id}>
+                  <th scope="col" className="px-1 pb-1 text-left"><Overline as="span">{k.etikett}</Overline></th>
+                  {arRisker && k.id === "konsekvens" ? <th scope="col" className="px-1 pb-1 text-left"><Overline as="span">Värde</Overline></th> : null}
+                </Fragment>
               ))}
-              {arRisker ? <th scope="col" className="px-1 pb-1 text-left"><Overline as="span">Värde</Overline></th> : null}
               <th scope="col" className="w-10"><span className="sr-only">Ta bort</span></th>
             </tr>
           </thead>
           <tbody>
             {rader.map((r, i) => (
-              <tr key={r.id}>
+              <tr key={r.id} data-rad-id={r.id} className={r.id === nyId ? "ps-rad-in" : undefined}>
                 {tabell.kolumner.map((k) => {
                   const namn = `${tabell.titel}, rad ${i + 1}: ${k.etikett}`;
                   return (
-                    <td key={k.id} className={`p-1 align-top ${k.bredd === "wide" ? "min-w-[220px]" : "min-w-[110px]"}`}>
+                    <Fragment key={k.id}>
+                    <td className={`p-1 align-top ${k.bredd === "wide" ? "min-w-[220px]" : "min-w-[110px]"}`}>
                       {k.typ === "select" ? (
                         <select aria-label={namn} value={r[k.id]} onChange={(e) => uppdatera(r.id, k.id, e.target.value)}>
                           {k.alternativ.map((a) => <option key={a} value={a}>{a}</option>)}
@@ -116,13 +156,14 @@ function Tabell({ tabell, rader, onChange }) {
                         <input aria-label={namn} type={k.typ} value={r[k.id]} onChange={(e) => uppdatera(r.id, k.id, e.target.value)} />
                       )}
                     </td>
+                    {arRisker && k.id === "konsekvens" ? (
+                      <td className="p-1 align-middle">
+                        <RiskBadge value={riskvardeForRad(r)} />
+                      </td>
+                    ) : null}
+                    </Fragment>
                   );
                 })}
-                {arRisker ? (
-                  <td className="p-1 align-middle">
-                    <RiskScore value={(Number(r.sannolikhet) || 0) * (Number(r.konsekvens) || 0)} />
-                  </td>
-                ) : null}
                 <td className="p-1 align-top">
                   <button type="button" className="btn sec mini" aria-label={`Ta bort rad ${i + 1} i ${tabell.titel}`} onClick={() => onChange(rader.filter((x) => x.id !== r.id))}>
                     <Trash2 size={14} aria-hidden="true" />
@@ -422,9 +463,9 @@ export function Projektstart() {
       <section aria-label="Projektstart" className="relative overflow-hidden rounded-xl bg-one-djup px-4 py-4 text-white md:px-6 md:py-5">
         <Kraftkurva />
         <div className="relative flex max-w-[34rem] flex-col gap-3">
-          <span className="text-[11px] font-bold uppercase tracking-wider opacity-80">ONE-P · {redigerar ? `${projektet?.nr || ""} ${projektet?.namn || ""} · ` : ""}Steg {index + 1} av {STEG.length}</span>
-          <h2 className="m-0 font-head text-[22px] leading-tight text-white">{steg.titel}</h2>
-          <Meter value={index + 1} max={STEG.length} label="Steg i guiden" ton="pagar" />
+          <span aria-live="polite" className="text-[11px] font-bold uppercase tracking-wider opacity-80">ONE-P · {redigerar ? `${projektet?.nr || ""} ${projektet?.namn || ""} · ` : ""}Steg {index + 1} av {STEG.length}</span>
+          <h2 key={steg.id} className="ps-byt m-0 font-head text-[22px] leading-tight text-white">{steg.titel}</h2>
+          <Meter value={index + 1} max={STEG.length} label="Steg i guiden" ton="pagar" className="[&>span]:transition-[width] [&>span]:duration-500 [&>span]:ease-out" />
         </div>
       </section>
       {state.projekt.length ? (
@@ -470,7 +511,7 @@ export function Projektstart() {
           {faser.map((f) => (
             <div key={f.fas} className="flex items-center gap-2 text-[12px] text-ink-soft">
               <span className="w-24 shrink-0">{f.fas}</span>
-              <Meter value={f.klara} max={f.totalt} size="sm" label={`${f.fas}: ${f.klara} av ${f.totalt} steg klara`} className="flex-1" />
+              <Meter value={f.klara} max={f.totalt} size="sm" label={`${f.fas}: ${f.klara} av ${f.totalt} steg klara`} className="flex-1 [&>span]:transition-[width] [&>span]:duration-500" />
               <span className="w-8 text-right tabular-nums">{f.klara}/{f.totalt}</span>
             </div>
           ))}
@@ -486,7 +527,7 @@ export function Projektstart() {
                   type="button"
                   aria-current={aktiv ? "step" : undefined}
                   onClick={() => gaTill(s.id)}
-                  className={`flex w-full items-center gap-2 rounded-lg border-0 px-2 py-2 text-left text-[13px] ${aktiv ? "bg-one-djup text-white" : "bg-transparent text-ink hover:bg-sunken"}`}
+                  className={`flex w-full items-center gap-2 rounded-lg border-0 px-2 py-2 text-left text-[13px] transition-[background-color,transform] duration-150 ${aktiv ? "bg-one-djup text-white" : "bg-transparent text-ink hover:translate-x-0.5 hover:bg-sunken"}`}
                 >
                   <StegIkon tillstand={stegTillstand(utkast, s)} />
                   <span className="w-4 shrink-0 text-right tabular-nums opacity-70">{i + 1}</span>
@@ -537,17 +578,18 @@ export function Projektstart() {
         </Card>
 
         {steg.tabell ? <Tabell tabell={steg.tabell} rader={utkast.rader[steg.tabell.id] || []} onChange={(r) => sattRader(steg.tabell.id, r)} /> : null}
+        {steg.id === "risker" ? <RiskDonut rader={utkast.rader.risker || []} /> : null}
         {steg.katalog ? <Kontrollpunkter steg={steg} utkast={utkast} onToggle={kryssa} /> : null}
         {sista ? <Sammanfattning utkast={utkast} fel={fel} kanSkapa={!fel} skapar={skapar} redigerar={redigerar} andrat={andrat} ejSparad={redigerar && !post} pdfDokument={pdfDokument} onSkapa={skapa} onSpara={sparaAndringar} onGaTill={gaTill} /> : null}
 
         <div className="flex items-center justify-between gap-3">
-          <button type="button" className="btn sec" disabled={index === 0} onClick={() => gaTill(STEG[index - 1].id)}>
-            <ChevronLeft size={16} aria-hidden="true" /> Föregående
+          <button type="button" className="btn sec group" disabled={index === 0} onClick={() => gaTill(STEG[index - 1].id)}>
+            <ChevronLeft size={16} aria-hidden="true" className="transition-transform duration-150 group-hover:-translate-x-0.5" /> Föregående
           </button>
           <span className="text-[12px] tabular-nums text-ink-soft">{index + 1} / {STEG.length}</span>
           {sista ? <span /> : (
-            <button type="button" className="btn" onClick={() => gaTill(STEG[index + 1].id)}>
-              Nästa <ChevronRight size={16} aria-hidden="true" />
+            <button type="button" className="btn group" onClick={() => gaTill(STEG[index + 1].id)}>
+              Nästa <ChevronRight size={16} aria-hidden="true" className="transition-transform duration-150 group-hover:translate-x-0.5" />
             </button>
           )}
         </div>

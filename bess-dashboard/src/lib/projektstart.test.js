@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SEED } from "../data/seed.js";
-import { arLangText, textstycken, historikRad, medHistorik, milstolparUtanDatum, nyaRaderForProjekt, utkastFranProjekt, kortAndringar, lasUtkast, projektstartPost, utkastAndrat, utkastFranPost, luckor, stegPunkter, stegTillstand, fasStatus, nyttProjekt, projektFranUtkast, projektstartDokument, projektstartFel, tomtUtkast } from "./projektstart.js";
+import { arLangText, textstycken, historikRad, medHistorik, milstolparUtanDatum, nyaRaderForProjekt, utkastFranProjekt, kortAndringar, lasUtkast, projektstartPost, utkastAndrat, utkastFranPost, luckor, riskFordelning, riskNivaForVarde, riskvardeForRad, stegPunkter, stegTillstand, fasStatus, nyttProjekt, projektFranUtkast, projektstartDokument, projektstartFel, tomtUtkast } from "./projektstart.js";
 import { STEG } from "../data/projektstartSteg.js";
 import { efterInlasning, reducer } from "../state/portfolj-reducer.js";
 import { GILTIGA_VYER, VYER, ENKEL_MENY } from "../data/vyer.js";
@@ -211,5 +211,26 @@ describe("Stegens tillstånd i guiden", () => {
     expect(faser.map((f) => f.fas)).toEqual(["Initiering", "Planering", "Etablering", "Genomförande", "Avslut"]);
     expect(faser.reduce((n, f) => n + f.totalt, 0)).toBe(STEG.length - 1);
     expect(faser.every((f) => f.klara === 0)).toBe(true);
+  });
+});
+
+describe("Riskvärde och fördelning i guiden", () => {
+  it("delar nivåerna vid 7 och 15", () => {
+    expect([1, 6, 7, 9, 14, 15, 20, 25].map(riskNivaForVarde)).toEqual(["lag", "lag", "medel", "medel", "medel", "hog", "hog", "hog"]);
+  });
+  it("räknar sannolikhet × konsekvens och håller värdena inom 1–5", () => {
+    expect(riskvardeForRad({ sannolikhet: "5", konsekvens: "4" })).toBe(20);
+    expect(riskvardeForRad({ sannolikhet: "9", konsekvens: "0" })).toBe(15);
+    expect(riskvardeForRad({})).toBe(9);
+  });
+  it("fördelar bara rader med risktext", () => {
+    const f = riskFordelning([
+      { titel: "A", sannolikhet: "1", konsekvens: "2" },
+      { titel: "B", sannolikhet: "3", konsekvens: "3" },
+      { titel: "C", sannolikhet: "5", konsekvens: "4" },
+      { titel: "  ", sannolikhet: "5", konsekvens: "5" },
+    ]);
+    expect(f).toEqual({ lag: 1, medel: 1, hog: 1, totalt: 3 });
+    expect(riskFordelning(undefined)).toEqual({ lag: 0, medel: 0, hog: 0, totalt: 0 });
   });
 });
