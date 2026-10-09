@@ -2,6 +2,8 @@
    Ren data: statuslistor, prislistor, mallar och navigationsträd.
    Logiken som använder dem ligger i src/lib och src/sections. */
 
+import { RISKKATEGORIER } from "./riskTyper.ts";
+
 /* ---------- Projekt och status ---------- */
 
 export const KANDA_MAPPAR = {
@@ -296,8 +298,8 @@ export const DOKSTATUS = [["ejpaborjad","Ej påbörjad"],["bestalld","Beställd 
 
 /* ---------- Riskregister ---------- */
 
-export const RISKKATEGORI = [["teknik","Teknik / BESS (POI, PCS, EMS)"],["mark","Entreprenad / mark"],
-  ["leverans","Leverans / long-lead"],["kontrakt","Kontrakt / ekonomi"],["hseq","HSEQ / arbetsmiljö"]];
+/* Kategorierna bor i riskTyper.ts, där de typkontrolleras. Samma [id, etikett]-form som förut. */
+export const RISKKATEGORI = RISKKATEGORIER.map(([id, namn]) => [id, namn]);
 
 export const RISKAGARE = [["one","ONE Nordic (entreprenörsrisk)"],["bestallare","Beställaren"],
   ["delad","Delad / tredje part"]];
