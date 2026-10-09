@@ -13,7 +13,7 @@ export const KANDA_MAPPAR = {
   "gotene": {mapp:"Götene", bestallare:"Ingrid Capacity AB"}
 };
 
-export const PROJEKTSTATUS=["Anbud","Planering","Produktion","Slutbesiktning","Avslutat"];
+export const PROJEKTSTATUS=["Anbud","Uppstart","Planering","Produktion","Slutbesiktning","Avslutat"];
 
 export const PILL={
   fakturerad:["p-ok","Fakturerad"], pagaende:["p-go","Pågår"], kvar:["p-wait","Kvar"],

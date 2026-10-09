@@ -103,8 +103,8 @@ test("fas 2 låses upp först när allt obligatoriskt i fas 1 är godkänt", asy
   await page.locator("#ps-beslut").selectOption("Gå vidare");
 
   await expect(page.getByText(/ONE-P · Fas 2 av 6/)).toBeVisible();
-  await expect(page.getByText("Fas 2 (Planering) är upplåst. Projektets status är nu Planering.")).toBeVisible();
-  await expect(page.getByText("Projektstatus:")).toContainText("Planering");
+  await expect(page.getByText("Fas 2 (Planering) är upplåst. Projektets status är nu Uppstart.")).toBeVisible();
+  await expect(page.getByText("Projektstatus:")).toContainText("Uppstart");
   await forvantaLast(page, 7, "Riskregister", false);
   await forvantaLast(page, 11, "HSEQ och etablering");
 

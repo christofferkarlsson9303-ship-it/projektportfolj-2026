@@ -43,7 +43,10 @@ describe("Faserna som data", () => {
     for (const f of FASER) expect(stegIFas(f.nr).length).toBeGreaterThan(0);
   });
   it("utgår från statusen för projekt som redan är igång", () => {
-    expect(["Anbud", "Planering", "Produktion", "Slutbesiktning", "Avslutat", "okänd"].map(fasFranStatus)).toEqual([1, 2, 4, 5, 6, 1]);
+    expect(["Anbud", "Uppstart", "Planering", "Produktion", "Slutbesiktning", "Avslutat", "okänd"].map(fasFranStatus)).toEqual([1, 2, 2, 4, 5, 6, 1]);
+    // Uppstart är andra statusen, direkt efter Anbud.
+    expect(PROJEKTSTATUS.slice(0, 3)).toEqual(["Anbud", "Uppstart", "Planering"]);
+    expect(FASER[1].status).toBe("Uppstart");
   });
   it("delar kontrollpunkterna i avslutskatalogen mellan fas 5 och fas 6 utan att tappa eller dubblera någon", () => {
     const fas5 = stegPunkter(STEG.find((s) => s.id === "avslut")).map((p) => p.id);

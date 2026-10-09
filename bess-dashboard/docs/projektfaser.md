@@ -9,7 +9,7 @@ Gäller fliken Projektstart (`src/sections/Projektstart/`). Skrivet 2026-10-09.
 | Fas | Namn | Status i portföljen | Guidesidor |
 |---|---|---|---|
 | 1 | Anbudsfasen | Anbud | Projektkort, Avropsacceptans, Projektdirektiv |
-| 2 | Projektering och planering | Planering | Intressenter, Organisation, Kontrakt, Riskregister, Tidplan, Godkänd lösning, Tillstånd |
+| 2 | Projektering och planering | Uppstart | Intressenter, Organisation, Kontrakt, Riskregister, Tidplan, Godkänd lösning, Tillstånd |
 | 3 | Etablering | Produktion | HSEQ och etablering |
 | 4 | Genomförande | Produktion | cBoP/eBoP/montage, Provning och driftsättning |
 | 5 | Avslut och överlämning | Slutbesiktning | Slutbesiktning och överlämning |
@@ -59,3 +59,5 @@ PDF för inlämning är spärrad (`pdfSparr`) bara när ingen fas är godkänd �
 - **Kick-out och slutrapport** (fas 5, sidan Slutbesiktning och överlämning): fälten `kickout*`, `lardomar` och `slutrapportResultat` enligt metoden 6.9.
 - **Trafikljus per fas**: projektledarens egen bedömning (grön, gul, röd) med kommentar, satt på sista sidan under Faserna och bara för upplåsta faser. Det sparas i utkastet (`trafikljus`) och visas i PDF-huvudet. Det räknas inte fram, eftersom metoden låter projektledaren bedöma.
 - **Projektkortet** i Översikt har knappen Öppna projektstart, som öppnar guiden för just det projektet (`oppnaProjektstart` i UiProvider).
+
+Projektstatusarna är Anbud, Uppstart, Planering, Produktion, Slutbesiktning och Avslutat. Uppstart är andra statusen och hör till fas 2. Planering finns kvar för äldre projekt och räknas också som fas 2.
