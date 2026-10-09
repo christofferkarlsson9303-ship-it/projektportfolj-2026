@@ -40,7 +40,7 @@ describe("ProjektstartPdf", () => {
     const u = tomtUtkast();
     Object.assign(u.v, { namn: "Tidig park", bestallare: "Kund" });
     const d = projektstartDokument(u, { datum: "2026-10-09", skapadAv: "CK" });
-    expect(d.projektstart.fas).toMatchObject({ nr: 1, antal: 6, status: "Anbud" });
+    expect(d.projektstart.fas).toMatchObject({ nr: 1, omfattar: 1, antal: 6, status: "Anbud" });
     expect(d.projektstart.sektioner.every((x) => x.fasNr === 1)).toBe(true);
     const buf = await renderToBuffer(createElement(ProjektstartPdf, { dokument: d }));
     expect(buf.subarray(0, 5).toString()).toBe("%PDF-");

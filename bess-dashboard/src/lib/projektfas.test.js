@@ -5,7 +5,7 @@ import { FASER, FAS_ANTAL, arFasNr, fasFranStatus } from "../data/projektfaser.t
 import { RISKKATEGORI_ID, arRiskKategori } from "../data/riskTyper.ts";
 import { PROJEKTSTATUS, RISKKATEGORI } from "../data/konstanter.js";
 import { efterInlasning } from "../state/portfolj-reducer.js";
-import { aktuellFas, alltGodkant, fasKrav, fasLage, godkandaFaser, pdfSparr, stegIFas, stegLast } from "./projektfas.js";
+import { aktuellFas, alltGodkant, fasKrav, fasLage, godkandaFaser, pdfSparr, rapportFas, stegIFas, stegLast } from "./projektfas.js";
 import { projektFranUtkast, projektstartDokument, tomtUtkast, utkastFranPost, utkastFranProjekt, kortAndringar } from "./projektstart.js";
 import { stegPunkter } from "./stegpunkter.js";
 
@@ -156,17 +156,18 @@ describe("Progressiv upplåsning", () => {
   });
 });
 
-describe("PDF för ledningen följer fasen", () => {
-  it("är ackumulerande: bara sidor och risker för upplåsta faser", () => {
-    const u = godkannFas(tomtUtkast(), 1);
+describe("PDF för ledningen följer de godkända faserna", () => {
+  it("är ackumulerande: bara sidor och risker för godkända faser, men huvudet visar aktuell fas", () => {
+    const u = godkannFas(godkannFas(tomtUtkast(), 1), 2);
     u.rader.risker = [
-      { id: "a", titel: "Tidig risk", fas: "2", kategori: "kma", sannolikhet: "2", konsekvens: "2", agare: "", atgard: "" },
-      { id: "b", titel: "Sen risk", fas: "4", kategori: "tid", sannolikhet: "5", konsekvens: "5", agare: "", atgard: "" },
+      { id: "a", titel: "Tidig risk", fas: "2", kategori: "kma", sannolikhet: "2", konsekvens: "2", agare: "PL", atgard: "" },
+      { id: "b", titel: "Sen risk", fas: "4", kategori: "tid", sannolikhet: "5", konsekvens: "5", agare: "PL", atgard: "" },
     ];
     const d = projektstartDokument(u, { datum: "2026-10-09" });
     const ps = d.projektstart;
-    expect(ps.fas).toMatchObject({ nr: 2, antal: 6, kort: "Planering", status: "Planering" });
-    expect(ps.lage.skede).toBe("Planering");
+    // Fas 1 och 2 är godkända, fas 3 är aktuell och ingår inte i rapporten.
+    expect(ps.fas).toMatchObject({ nr: 3, omfattar: 2, antal: 6, kort: "Etablering", status: "Produktion" });
+    expect(ps.lage.skede).toBe("Produktion");
     expect(new Set(ps.sektioner.map((x) => x.fasNr))).toEqual(new Set([1, 2]));
     expect(ps.sektioner.some((x) => x.id === "hseq")).toBe(false);
     const risker = ps.sektioner.find((x) => x.id === "risker").tabell;
@@ -176,29 +177,45 @@ describe("PDF för ledningen följer fasen", () => {
     expect(risker.rader[0]).toContain("Tidig risk");
     expect(risker.rader[0]).toContain("KMA");
     expect(risker.rader[0].at(-1)).toBe("4");
-    expect(ps.fas.faser.map((f) => f.status)).toEqual(["klar", "aktuell", "last", "last", "last", "last"]);
+    expect(ps.fas.faser.map((f) => f.status)).toEqual(["klar", "klar", "aktuell", "last", "last", "last"]);
   });
-  it("växer med projektet: fas 4 ger sidor för fas 1–4 och med fas 6 alla", () => {
+  it("växer med projektet: godkända faser 1–3 ger sidor för fas 1–3, alla sex ger alla sidor", () => {
     const u = tomtUtkast();
     for (let nr = 1; nr <= 3; nr++) godkannFas(u, nr);
-    expect(Math.max(...projektstartDokument(u, { datum: "x" }).projektstart.sektioner.map((x) => x.fasNr))).toBe(4);
-    for (let nr = 4; nr <= 5; nr++) godkannFas(u, nr);
+    expect(Math.max(...projektstartDokument(u, { datum: "x" }).projektstart.sektioner.map((x) => x.fasNr))).toBe(3);
+    for (let nr = 4; nr <= 6; nr++) godkannFas(u, nr);
     expect(projektstartDokument(u, { datum: "x" }).projektstart.sektioner).toHaveLength(STEG.length - 1);
   });
-  it("spärras tills obligatoriska fält i den aktuella fasen är ifyllda, men inte av kontrollpunkterna", () => {
+  it("omfattar faserna före golvet för ett projekt som redan är igång", () => {
+    const u = utkastFranProjekt({ id: "x", namn: "Växjö", nr: "36037", status: "Produktion" }, SEED);
+    expect(rapportFas(u)).toBe(3);
+    expect(pdfSparr(u)).toEqual([]);
+    expect(Math.max(...projektstartDokument(u, { datum: "x" }).projektstart.sektioner.map((x) => x.fasNr))).toBe(3);
+  });
+  it("spärras bara när ingen fas är godkänd, och listar då vad som återstår i fas 1", () => {
     const u = tomtUtkast();
-    expect(pdfSparr(u).map((x) => x.id)).toEqual(expect.arrayContaining(["namn", "beslut", "mal"]));
-    godkannFas(u, 1, { bara: ["falt"] });
-    expect(pdfSparr(u)).toEqual([]);
-    u.v.mal = "  ";
-    expect(pdfSparr(u).map((x) => x.id)).toEqual(["mal"]);
-    // När fas 1 godkänns blir fas 2 aktuell och dess obligatoriska fält spärrar.
-    godkannFas(u, 1);
+    expect(rapportFas(u)).toBe(0);
     const sparr = pdfSparr(u);
-    expect(aktuellFas(u)).toBe(2);
-    expect(sparr.map((x) => x.id)).toEqual(expect.arrayContaining(["roll_pl", "betalvillkor", "bankgaranti", "kritiskLinje", "natagare", "risker", "milstolpar"]));
-    expect(sparr.find((x) => x.id === "risker").etikett).toMatch(/minst en ifylld rad/);
-    godkannFas(u, 2, { bara: ["falt", "tabeller"] });
+    expect(sparr.map((x) => x.id)).toEqual(expect.arrayContaining(["namn", "beslut", "mal"]));
+    expect(sparr.some((x) => /kritiska kontrollpunkter/.test(x.etikett))).toBe(true);
+    // Bara fälten räcker inte. Fas 1 ska vara godkänd, kontrollpunkterna med.
+    godkannFas(u, 1, { bara: ["falt"] });
+    expect(pdfSparr(u).length).toBeGreaterThan(0);
+    expect(pdfSparr(u).every((x) => /kritisk/.test(x.etikett))).toBe(true);
+    godkannFas(u, 1);
+    expect(rapportFas(u)).toBe(1);
     expect(pdfSparr(u)).toEqual([]);
+  });
+  it("spärras inte av att nästa fas har tomma fält: att godkänna fas 1 låser inte PDF:en", () => {
+    const u = godkannFas(tomtUtkast(), 1);
+    expect(aktuellFas(u)).toBe(2);
+    expect(fasKrav(u, 2).falt.length).toBeGreaterThan(0);
+    expect(pdfSparr(u)).toEqual([]);
+  });
+  it("låses igen om en kritisk punkt i fas 1 avbockas", () => {
+    const u = godkannFas(tomtUtkast(), 1);
+    const p = stegPunkter(STEG.find((s) => s.id === "avrop")).find((x) => x.kritisk);
+    u.kryss[p.bucket][p.id] = false;
+    expect(pdfSparr(u).length).toBeGreaterThan(0);
   });
 });

@@ -39,10 +39,14 @@ Typen finns i `src/data/riskTyper.ts`: `fas` (1–6), `kategori`, `titel`, `sann
 
 `efterInlasning` ger äldre risker och projekt en fas: projektets fas, eller fas 4 för en risk som gäller flera projekt.
 
-Riskvärdet i guiden och donuten delar nivåerna vid 7 och 15 (`RISKGRANSER` i `projektstart.js`). Sidan Risker använder ONE Nordics matris (`riskMatrisFarg`) och `RiskScore` har gränserna 8 och 15. De tre är inte samma sak ännu.
+## Riskens nivåer
+
+En enda definition i `src/lib/risknivaer.js`: låg 1–6 (grön), medel 7–14 (gul), hög 15–25 (röd). Den används av riskmatrisen, `RiskScore`, `riskKlass`, larmen i `flaggor.js`, översiktens "röda risker", metodtabellen på Risker-sidan och Projektstart (märket och donuten).
+
+ONE Nordics extra regel finns kvar: ett extremvärde (5) på en axel är aldrig grönt, så S5 × K1 och S1 × K5 är gula. I övrigt avgör produkten. Det betyder att till exempel S3 × K4 = 12 och S2 × K5 = 10 är gula, inte röda som i den tidigare matrisen.
 
 ## PDF
 
-`projektstartDokument` är ackumulerande: sidor och risker för fas 1 till aktuell fas, och inget mer. Huvudet visar fas, status och de sex faserna. Risker med `fas` högre än aktuell fas utelämnas.
+`projektstartDokument` är ackumulerande och omfattar de godkända faserna: fas 1 till `rapportFas` (`projektfas.js`). För ett projekt som redan är igång räknas även faserna före golvet. Risker med `fas` högre än det som omfattas utelämnas. Huvudet visar projektets aktuella fas och status, och vilka faser rapporten omfattar.
 
-PDF för inlämning är spärrad (`pdfSparr`) tills obligatoriska fält och tabeller i den aktuella fasen är ifyllda. Kontrollpunkterna spärrar inte. Det gäller knappen i guiden, knappen på sista sidan och den PDF som laddas ned när projektet skapas.
+PDF för inlämning är spärrad (`pdfSparr`) bara när ingen fas är godkänd än. Då listas det som återstår i fas 1. Att nästa fas har tomma fält spärrar alltså inte PDF:en. Regeln gäller knappen i guiden, knappen på sista sidan och den PDF som laddas ned när projektet skapas.

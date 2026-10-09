@@ -440,10 +440,9 @@ export function Risker() {
                 </thead>
                 <tbody>
                   {[
-                    [15, "15–25", "Kritisk", "Omedelbar åtgärdsplan, eskalera till ledning"],
-                    [8, "8–14", "Hög", "Konkret åtgärdsplan inom en vecka"],
-                    [4, "4–7", "Medium", "Bevakas aktivt"],
-                    [1, "1–3", "Låg", "Registreras utan aktiv åtgärd"],
+                    [15, "15–25", "Hög", "Omedelbar åtgärdsplan, eskalera till ledning"],
+                    [7, "7–14", "Medel", "Konkret åtgärdsplan inom en vecka, bevakas aktivt"],
+                    [1, "1–6", "Låg", "Registreras utan aktiv åtgärd"],
                   ].map(([fran, spann, prio, atgard]) => (
                     <tr key={spann}>
                       <td data-label="Riskvärde">

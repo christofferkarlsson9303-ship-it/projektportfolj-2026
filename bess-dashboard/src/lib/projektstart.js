@@ -3,9 +3,10 @@ import { KATALOG } from "../data/projektstartKatalog.js";
 import { FAS_ANTAL, arFasNr, faseInfo, fasFranStatus } from "../data/projektfaser.ts";
 import { arRiskKategori } from "../data/riskTyper.ts";
 import { arAvbockad, stegPunkter } from "./stegpunkter.js";
-import { aktuellFas, fasLage } from "./projektfas.js";
+import { RISKGRANSER, riskNivaFranVarde } from "./risknivaer.js";
+import { aktuellFas, fasLage, rapportFas } from "./projektfas.js";
 
-export { arAvbockad, stegPunkter };
+export { arAvbockad, stegPunkter, RISKGRANSER };
 
 /** Platshållare som "-" eller "—" räknas som tomt, så att ett bindestreck i
  *  projektnumret varken sparas som nummer eller hamnar i sidhuvudet. */
@@ -82,11 +83,8 @@ export function lasUtkast(raw) {
 }
 
 
-/** Riskvärdets nivåer i Projektstart: låg 1–6, medel 7–14, hög 15–25.
- *  Gränserna är de första värdena i varje nivå. */
-export const RISKGRANSER = { medel: 7, hog: 15 };
-
-export const riskNivaForVarde = (v) => ((Number(v) || 0) >= RISKGRANSER.hog ? "hog" : (Number(v) || 0) >= RISKGRANSER.medel ? "medel" : "lag");
+/* Nivåerna räknas i risknivaer.js, samma definition som resten av appen. */
+export const riskNivaForVarde = riskNivaFranVarde;
 
 /** Riskvärde = sannolikhet (1–5) × konsekvens (1–5). Värden utanför skalan hålls inom 1–5. */
 export const riskvardeForRad = (r) => {
@@ -239,14 +237,17 @@ const altEtikett = (k, val) => {
 /** Riskvärde (S × K) som text, för kolumnen Värde i PDF:ens riskregister. */
 const riskvardeText = (r) => String((Math.max(1, Math.min(5, Number(r.sannolikhet) || 3))) * Math.max(1, Math.min(5, Number(r.konsekvens) || 3)));
 
-/** Underlaget till PDF:en. Rapporten är ackumulerande: den innehåller bara sidor och risker
- *  för faserna som är upplåsta, alltså fas 1 till projektets aktuella fas. */
+/** Underlaget till PDF:en. Rapporten är ackumulerande och omfattar de godkända faserna, alltså
+ *  fas 1 till `rapportFas`. Huvudet visar ändå projektets aktuella fas och status. */
 export function projektstartDokument(u, { datum, skapadAv = "", historik = [], sparad = "" }) {
   const v = u.v;
   const nuFas = aktuellFas(u);
   const fasInfo = faseInfo(nuFas);
   const lager = fasLage(u);
-  const sektioner = STEG.filter((s) => s.id !== SISTA_STEG && s.fas <= nuFas).map((s) => {
+  /* En rapport utan godkänd fas kan inte exporteras. Underlaget byggs ändå, med fas 1, så att
+     förhandsvisning och tester inte behöver specialfall. */
+  const omfattar = Math.max(1, rapportFas(u));
+  const sektioner = STEG.filter((s) => s.id !== SISTA_STEG && s.fas <= omfattar).map((s) => {
     /* Fält: [etikett, värde, stycken]. Långa fält får stycken och visas som
        rubrik med brödtext i PDF:en, korta som rad. Saknat projektnummer skrivs
        ut som "Ej skapat" så att ledningen ser att det saknas. */
@@ -265,8 +266,8 @@ export function projektstartDokument(u, { datum, skapadAv = "", historik = [], s
           vikter: [...s.tabell.kolumner.map(kolumnVikt), ...(arRisker ? [0.8] : [])],
           rader: (u.rader[s.tabell.id] || [])
             .filter((r) => s.tabell.kolumner.some((k) => (r[k.id] || "").trim() && (k.typ === "text" || k.typ === "date")))
-            /* Risker från senare faser hör inte hemma i en rapport för den här fasen. */
-            .filter((r) => !arRisker || radFas(r.fas, nuFas) <= nuFas)
+            /* Risker från faser som inte ingår hör inte hemma i rapporten. */
+            .filter((r) => !arRisker || radFas(r.fas, nuFas) <= omfattar)
             .sort((a, b) => (arRisker ? radFas(a.fas, nuFas) - radFas(b.fas, nuFas) : 0))
             .map((r) => [
               ...s.tabell.kolumner.map((k) => (k.typ === "select" ? altEtikett(k, (r[k.id] || "").trim()) : (r[k.id] || "").trim())),
@@ -307,7 +308,7 @@ export function projektstartDokument(u, { datum, skapadAv = "", historik = [], s
       besokt: u.besokta.includes(s.id),
     };
   });
-  const l = luckor(u, nuFas);
+  const l = luckor(u, omfattar);
   return {
     projekt: { id: varde(v.nr) || "utkast", nr: varde(v.nr), namn: (v.namn || "").trim(), bestallare: varde(v.bestallare) },
     datum,
@@ -323,6 +324,7 @@ export function projektstartDokument(u, { datum, skapadAv = "", historik = [], s
       /* Projektets nuvarande fas och status, överst i rapporten. */
       fas: {
         nr: nuFas,
+        omfattar,
         antal: FAS_ANTAL,
         kort: fasInfo.kort,
         titel: fasInfo.titel,

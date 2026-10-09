@@ -74,12 +74,27 @@ export function fasLage(u) {
   });
 }
 
-/** Det som spärrar PDF-export för inlämning: obligatoriska fält och tabeller i den
- *  aktuella fasen som inte är ifyllda. Tom lista betyder att PDF:en får exporteras.
- *  Kontrollpunkterna spärrar inte, de är det som låser upp nästa fas. */
+/** Hur många faser rapporten för ledningen omfattar: de godkända faserna, eller för ett
+ *  projekt som redan är igång faserna före golvet. Fas 1 till och med det här talet ingår. */
+export function rapportFas(u) {
+  const golv = arFasNr(u.fasGolv) ? u.fasGolv : 1;
+  return Math.max(godkandaFaser(u), golv - 1);
+}
+
+/** Det som spärrar PDF-export för inlämning. Rapporten omfattar godkända faser, så den
+ *  spärras bara när ingen fas är godkänd än. Listan är det som återstår i fas 1: obligatoriska
+ *  fält och tabeller, och de kritiska kontrollpunkterna samlade per sida. Tom lista betyder
+ *  att PDF:en får exporteras. */
 export function pdfSparr(u) {
-  const k = fasKrav(u, aktuellFas(u));
-  return [...k.falt, ...k.tabeller];
+  if (rapportFas(u) >= 1) return [];
+  const k = fasKrav(u, 1);
+  const perSida = new Map();
+  for (const p of k.punkter) perSida.set(p.stegId, { titel: p.stegTitel, antal: (perSida.get(p.stegId)?.antal ?? 0) + 1 });
+  return [
+    ...k.falt,
+    ...k.tabeller,
+    ...[...perSida].map(([stegId, s]) => ({ stegId, id: `kp-${stegId}`, etikett: `${s.titel}: ${s.antal} ${s.antal === 1 ? "kritisk kontrollpunkt" : "kritiska kontrollpunkter"}` })),
+  ];
 }
 
 export const fasTitel = (nr) => (nr === null || nr === undefined ? "Klart" : faseInfo(nr).kort);

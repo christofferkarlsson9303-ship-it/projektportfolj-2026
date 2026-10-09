@@ -13,7 +13,7 @@ import { FasIndikator } from "./FasIndikator.jsx";
 import { FasKrav } from "./FasKrav.jsx";
 import { FasNav } from "./FasNav.jsx";
 import { FAS_ANTAL, faseInfo } from "../../data/projektfaser.ts";
-import { aktuellFas, fasKrav, fasLage, pdfSparr, stegLast } from "../../lib/projektfas.js";
+import { aktuellFas, fasKrav, fasLage, pdfSparr, rapportFas, stegLast } from "../../lib/projektfas.js";
 import { KATALOG_RUBRIK, STEG } from "../../data/projektstartSteg.js";
 import {
   SISTA_STEG,
@@ -287,8 +287,8 @@ function Sammanfattning({ utkast, fel, kanSkapa, skapar, redigerar, andrat, ejSp
 
       {sparr.length ? (
         <Callout ton="warn">
-          <b className="block">PDF för inlämning är spärrad</b>
-          Obligatoriska fält i fas {nuFas} ({faseInfo(nuFas).kort}) saknas:
+          <b className="block">PDF för inlämning är spärrad: ingen fas är godkänd än</b>
+          PDF:en omfattar godkända faser. För att godkänna fas 1 ({faseInfo(1).kort}) återstår:
           <div className="mt-2 flex flex-wrap gap-2">
             {sparr.map((x) => (
               <button key={`${x.stegId}-${x.id}`} type="button" className="btn sec mini" onClick={() => onGaTill(x.stegId)}>{x.etikett}</button>
@@ -311,10 +311,10 @@ function Sammanfattning({ utkast, fel, kanSkapa, skapar, redigerar, andrat, ejSp
           label="Ladda ned PDF"
           className="btn sec"
           disabled={!v.namn?.trim() || sparr.length > 0}
-          title={sparr.length ? `Spärrad: ${sparr.length} obligatoriska fält saknas i fas ${nuFas}` : undefined}
+          title={sparr.length ? "Spärrad: ingen fas är godkänd än. Godkänn fas 1 först." : undefined}
         />
       </div>
-      <p className="m-0 text-[12.5px] text-ink-soft">{redigerar ? "PDF:en omfattar fas 1 till projektets aktuella fas och innehåller det som står i guiden just nu, även osparade ändringar. Spara först så kommer dagens rad med i uppdateringsloggen." : "PDF:en omfattar fas 1 till projektets aktuella fas. Den laddas ned automatiskt när du skapar projektet, om de obligatoriska fälten i fasen är ifyllda. Du kan också ladda ned den separat här."}</p>
+      <p className="m-0 text-[12.5px] text-ink-soft">{redigerar ? `PDF:en omfattar de godkända faserna (fas 1${rapportFas(utkast) > 1 ? `–${rapportFas(utkast)}` : ""}) och innehåller det som står i guiden just nu, även osparade ändringar. Spara först så kommer dagens rad med i uppdateringsloggen.` : "PDF:en omfattar de godkända faserna. Den laddas ned automatiskt när du skapar projektet, om minst en fas är godkänd. Du kan också ladda ned den separat här."}</p>
     </div>
   );
 }
@@ -350,7 +350,7 @@ export function Projektstart() {
   const faser = useMemo(() => fasLage(utkast), [utkast]);
   const krav = useMemo(() => fasKrav(utkast, nuFas), [utkast, nuFas]);
   const sparr = useMemo(() => pdfSparr(utkast), [utkast]);
-  const sparrText = sparr.length ? `Spärrad: ${sparr.map((x) => x.etikett).join(", ")}` : undefined;
+  const sparrText = sparr.length ? "Spärrad: ingen fas är godkänd än. Godkänn fas 1 först." : undefined;
   const sparadIndex = Math.max(0, STEG.findIndex((s) => s.id === utkast.steg));
   const index = stegLast(utkast, STEG[sparadIndex]) ? STEG.findIndex((s) => s.fas === nuFas) : sparadIndex;
   const steg = STEG[index];
@@ -453,7 +453,7 @@ export function Projektstart() {
     for (const r of risker) laggTill("risker", r);
     for (const m of milstolpar) laggTill("milstolpar", m);
     laggTill("projektstart", projektstartPost(id, utkast, undefined, [historikRad(utkast, { datum: idag(), av: hamtaNamn() || "" })]));
-    /* PDF:en för inlämning är spärrad tills obligatoriska fält i fasen är ifyllda. */
+    /* PDF:en för inlämning är spärrad tills minst en fas är godkänd. */
     const pdfKlar = pdfSparr(utkast).length ? null : await laddaNerPdf(pdfUnderlag, "projektstart", visaToast);
     try {
       window.localStorage.removeItem(UTKAST_NYCKEL);
@@ -464,7 +464,7 @@ export function Projektstart() {
     setValtProjekt(id);
     visa("metod");
     setSkapar(false);
-    visaToast(`Projektet är skapat i fas ${aktuellFas(utkast)} (${faseInfo(aktuellFas(utkast)).kort})${pdfKlar === null ? ". PDF:en är spärrad tills obligatoriska fält i fasen är ifyllda" : pdfKlar ? " och PDF:en är nedladdad" : ", men PDF:en kunde inte skapas"}. Kontrollera kontrakt, betalplan, priser och kontrollkrav före användning.`);
+    visaToast(`Projektet är skapat i fas ${aktuellFas(utkast)} (${faseInfo(aktuellFas(utkast)).kort})${pdfKlar === null ? ". PDF:en är spärrad tills fas 1 är godkänd" : pdfKlar ? " och PDF:en är nedladdad" : ", men PDF:en kunde inte skapas"}. Kontrollera kontrakt, betalplan, priser och kontrollkrav före användning.`);
   };
 
   /* Alt + Skift + pil vänster/höger bläddrar mellan stegen utan att lämna tangentbordet. */

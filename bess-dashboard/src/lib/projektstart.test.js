@@ -65,9 +65,9 @@ describe("Återanvändbar projektmetod", () => {
   });
   it("bygger PDF-underlag med bara ifyllda fält, tabellrader och öppna kritiska punkter", () => {
     const u = tomtUtkast();
-    u.fasGolv = 2;
+    u.fasGolv = 3; // rapporten omfattar fas 1–2
     Object.assign(u.v, { namn: "Kalmar", nr: "90003", bestallare: "Kund" });
-    u.rader.risker = [{ id: "a", titel: "Leverans sen", sannolikhet: "4", konsekvens: "5", agare: "PL", atgard: "" }];
+    u.rader.risker = [{ id: "a", titel: "Leverans sen", fas: "2", sannolikhet: "4", konsekvens: "5", agare: "PL", atgard: "" }];
     u.kryss.calloff = { signed: true };
     const d = projektstartDokument(u, { datum: "2026-10-06", skapadAv: "CK" });
     expect(d.projekt).toMatchObject({ nr: "90003", namn: "Kalmar" });

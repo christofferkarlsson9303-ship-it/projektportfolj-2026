@@ -122,7 +122,7 @@ test("projektet skapas utan att alla faser är genomgångna och startar i sin fa
   await page.getByRole("button", { name: "Skapa projekt" }).click();
 
   // Obligatoriska fält saknas i fas 1, så PDF:en för inlämning är spärrad och ingen laddas ned.
-  await expect(page.getByText(/Projektet är skapat i fas 1 \(Anbud\)\. PDF:en är spärrad/)).toBeVisible();
+  await expect(page.getByText(/Projektet är skapat i fas 1 \(Anbud\)\. PDF:en är spärrad tills fas 1 är godkänd/)).toBeVisible();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Min projektmetod");
 
   await oppnaProjektstart(page);
@@ -133,22 +133,29 @@ test("projektet skapas utan att alla faser är genomgångna och startar i sin fa
   expect(fel).toEqual([]);
 });
 
-test("PDF för inlämning är spärrad tills obligatoriska fält i fasen är ifyllda", async ({ page }) => {
+test("PDF för inlämning är spärrad tills en fas är godkänd och omfattar de godkända faserna", async ({ page }) => {
   const { fel } = await oppna(page, "Projektstart");
   await page.getByLabel(/^Projektnamn/).fill("PDF-test");
   await gaTillSteg(page, SISTA, "Granska och skapa");
 
   const pdf = page.getByRole("button", { name: "Ladda ned PDF" });
   await expect(pdf).toBeDisabled();
-  await expect(page.getByText("PDF för inlämning är spärrad")).toBeVisible();
-  // Varje saknat fält är en knapp till sidan där det fylls i.
+  await expect(page.getByText("PDF för inlämning är spärrad: ingen fas är godkänd än")).toBeVisible();
+  // Varje sak som återstår är en knapp till sidan där den görs.
   await page.getByRole("button", { name: "Beställare" }).click();
   await expect(page.getByLabel(/^Beställare/)).toBeVisible();
 
-  // Kontrollpunkterna spärrar inte. Bara de obligatoriska fälten i den aktuella fasen.
+  // Fälten räcker inte. De kritiska kontrollpunkterna i fasen ska också vara bockade.
   await fyllFas1(page, { checklista: false, namn: "PDF-test" });
   await gaTillSteg(page, SISTA, "Granska och skapa");
+  await expect(pdf).toBeDisabled();
+  await gaTillSteg(page, 2, "Avropsacceptans");
+  await bockaAlla(page);
+
+  // Fas 1 är godkänd. Fas 2 är nu aktuell och dess fält är tomma, men det spärrar inte PDF:en.
+  await gaTillSteg(page, SISTA, "Granska och skapa");
   await expect(pdf).toBeEnabled();
+  await expect(page.getByText(/PDF:en omfattar de godkända faserna\./)).toBeVisible();
   const nedladdning = page.waitForEvent("download");
   await pdf.click();
   expect((await nedladdning).suggestedFilename()).toMatch(/^projektstart_.*\.pdf$/);
@@ -157,7 +164,7 @@ test("PDF för inlämning är spärrad tills obligatoriska fält i fasen är ify
 
 test("den sparade projektstarten kan öppnas, ändras och laddas ned igen", async ({ page }) => {
   const { fel } = await oppna(page, "Projektstart");
-  await fyllFas1(page, { checklista: false, namn: "Sparad start", nr: "90088" });
+  await fyllFas1(page, { namn: "Sparad start", nr: "90088" });
   await gaTillSteg(page, SISTA, "Granska och skapa");
   const skapad = page.waitForEvent("download");
   await page.getByRole("button", { name: "Skapa projekt" }).click();
@@ -291,7 +298,7 @@ test("riskregistret: nivåer, donut och ny rad följer varandra", async ({ page 
   await expect(page.getByLabel("Risker, rad 1: Fas").locator("option")).toHaveCount(6);
   await expect(page.getByLabel("Risker, rad 1: Kategori").locator("option")).toHaveCount(10);
 
-  // 2 × 3 = 6 är låg och 5 × 3 = 15 är hög.
+  // 2 × 3 = 6 är låg, 5 × 3 = 15 är hög, och 7 är medel i hela appen.
   await page.getByLabel("Risker, rad 1: Sannolikhet 1–5").selectOption("2");
   await expect(page.getByText("6 riskvärde, låg").first()).toBeVisible();
   await page.getByLabel("Risker, rad 2: Sannolikhet 1–5").selectOption("5");
