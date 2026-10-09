@@ -69,6 +69,11 @@ export const STEG = [
       { id: "ingar", etikett: "Ingår", typ: "textarea" },
       { id: "ingarEj", etikett: "Ingår inte", typ: "textarea" },
       { id: "offra", etikett: "Vad får ge vika först?", typ: "select", alternativ: ["Kostnad", "Kvalitet", "Tid"], obligatoriskt: true },
+      /* Direktivet signeras av intern beställare och projektledare (metoden 6.1). Signeringen är en
+         grind: fas 2 låses inte upp förrän båda har signerat. */
+      { id: "signPL", etikett: "Signerat av projektledare", typ: "text", placeholder: "Namn", obligatoriskt: true },
+      { id: "signBestallare", etikett: "Signerat av intern beställare", typ: "text", placeholder: "Namn", obligatoriskt: true },
+      { id: "signDatum", etikett: "Signeringsdatum", typ: "date", obligatoriskt: true, tips: "Projektdirektivet signeras av båda innan fasen godkänns." },
     ],
   },
   {
@@ -101,7 +106,7 @@ export const STEG = [
       { id: "rapporteringKund", etikett: "Rapportering till kund", typ: "textarea", standard: "Skriftlig månadsrapport: progress och status till kund." },
       { id: "rapporteringIntern", etikett: "Intern rapportering", typ: "textarea", standard: "Månadsavstämning internt. Styrgrupp kallas vid avvikelse." },
     ],
-    katalog: ["org"],
+    katalog: ["org", "kickoff"],
   },
   {
     id: "kontrakt",
@@ -192,6 +197,25 @@ export const STEG = [
       { id: "leverantorer", etikett: "Leverantörer", typ: "text" },
       { id: "granssnitt", etikett: "Gränssnitt", typ: "textarea", bred: true },
     ],
+    tabell: {
+      id: "interface",
+      titel: "Interface-lista",
+      anmarkning: "Projektledaren äger listan och stämmer av den varje vecka. Ett oklart gränssnitt är en risk och en ÄTA-möjlighet.",
+      kolumner: [
+        { id: "granssnitt", etikett: "Gränssnitt", typ: "select", bredd: "mid", alternativ: ["Mark/betong ↔ el", "Leverantör ↔ site", "El/MV ↔ nätägare", "Kommunikation", "Brand ↔ drift"] },
+        { id: "innehall", etikett: "Innehåll och krav", typ: "text", bredd: "wide" },
+        { id: "agare", etikett: "Ägare", typ: "text" },
+        { id: "status", etikett: "Veckostatus", typ: "select", alternativ: ["Ej bedömd", "Klart", "Pågår", "Oklart"], standard: "Ej bedömd" },
+        { id: "avstamd", etikett: "Senast avstämd", typ: "date" },
+      ],
+      start: [
+        { granssnitt: "Mark/betong ↔ el", innehall: "Fundamentkrav, planhet, jordning, brandzoner, hålbild" },
+        { granssnitt: "Leverantör ↔ site", innehall: "Leveransfönster, lyftplan, montageordning, emballage och retur" },
+        { granssnitt: "El/MV ↔ nätägare", innehall: "Ställverk, reläskydd, provning, spänningssättning" },
+        { granssnitt: "Kommunikation", innehall: "Fiber/SCADA, driftsignal, larmkedjor, EMS" },
+        { granssnitt: "Brand ↔ drift", innehall: "Zoner, släcksystem, rutiner, myndighetskrav" },
+      ],
+    },
     katalog: ["solution"],
   },
   {
@@ -236,7 +260,14 @@ export const STEG = [
     sammanfattning: "Slutbesiktning, punchlista, slutdokumentation, slutreglering och erfarenhetsåterföring.",
     falt: [
       { id: "avslutAta", etikett: "ÄTA vid avslut", typ: "textarea", obligatoriskt: true },
-      { id: "lardomar", etikett: "Lärdomar", typ: "textarea" },
+      { id: "lardomar", etikett: "De tre viktigaste erfarenheterna och varför", typ: "textarea", bred: true, tips: "Går in i slutrapporten och i projektmetoden." },
+      /* Kick-out och slutrapport (metoden 6.9). */
+      { id: "kickoutDatum", etikett: "Kick-out genomförd", typ: "date" },
+      { id: "kickoutBra", etikett: "Vad gick bra?", typ: "textarea" },
+      { id: "kickoutKostade", etikett: "Vad kostade pengar?", typ: "textarea" },
+      { id: "kickoutAldrigIgen", etikett: "Vad ska aldrig göras igen?", typ: "textarea" },
+      { id: "kickoutOverraskade", etikett: "Vad överraskade?", typ: "textarea" },
+      { id: "slutrapportResultat", etikett: "Slutrapport: resultat mot mål och projekttriangel", typ: "textarea", bred: true, tips: "Avvikelseanalys, beslut som påverkade resultatet, bakgrund, konsekvens och förbättringsförslag." },
     ],
     katalog: ["closeout"],
     grupper: { closeout: ["Slutbesiktning", "Punchlista", "Slutdokumentation", "Ekonomi", "Internt avslut", "Erfarenhet"] },
@@ -269,4 +300,5 @@ export const KATALOG_RUBRIK = {
   ebop: "eBoP",
   commission: "Driftsättning",
   closeout: "Avslut",
+  kickoff: "Uppstartsavstämning",
 };

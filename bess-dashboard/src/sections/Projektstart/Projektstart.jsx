@@ -86,6 +86,42 @@ function Faltruta({ f, varde, onChange }) {
   );
 }
 
+const LJUSNAMN = { gron: ["ok", "Grön", "Enligt plan"], gul: ["warn", "Gul", "Avvikelse som hanteras inom projektet"], rod: ["bad", "Röd", "Allvarlig avvikelse, kräver hjälp eller beslut"] };
+
+/** Projektledarens trafikljus för en fas, med en kort kommentar. Samma val igen rensar det. */
+function Trafikljus({ nr, varde, onChange }) {
+  return (
+    <div className="flex w-full flex-col gap-2 pl-10">
+      <div className="flex flex-wrap items-center gap-2" role="group" aria-label={`Trafikljus för fas ${nr}`}>
+        <span className="text-[12px] text-ink-soft">Trafikljus</span>
+        {Object.entries(LJUSNAMN).map(([id, [ton, namn, hjalp]]) => (
+          <button
+            key={id}
+            type="button"
+            title={hjalp}
+            aria-pressed={varde?.ljus === id}
+            onClick={() => onChange(nr, id)}
+            className={`inline-flex items-center gap-1.5 rounded-full border border-solid px-3 py-1 text-[12px] font-bold transition-colors duration-150 ${varde?.ljus === id ? `${TON_KLASS[ton]} border-current` : "border-hairline-stark bg-transparent text-ink-soft hover:bg-sunken"}`}
+          >
+            <span aria-hidden="true" className="h-2 w-2 rounded-full bg-current" />
+            {namn}
+          </button>
+        ))}
+      </div>
+      {varde ? (
+        <input
+          type="text"
+          maxLength={300}
+          value={varde.kommentar}
+          placeholder={varde.ljus === "rod" ? "Vad behövs: hjälp eller beslut?" : "Kommentar (valfri)"}
+          aria-label={`Kommentar till trafikljuset för fas ${nr}`}
+          onChange={(e) => onChange(nr, varde.ljus, e.target.value)}
+        />
+      ) : null}
+    </div>
+  );
+}
+
 const FASSTATUS = { klar: ["ok", "Godkänd"], upplast: ["info", "Upplåst"], aktuell: ["warn", "Pågår"], last: ["neutral", "Låst"] };
 
 const RISKTON = { lag: ["ok", "låg"], medel: ["warn", "medel"], hog: ["bad", "hög"] };
@@ -208,7 +244,7 @@ function Kontrollpunkter({ steg, utkast, onToggle }) {
         return (
           <Card
             key={g.rubrik}
-            id={`ps-kp-${g.bucket}-${g.rubrik}`}
+            id={`ps-kp-${g.bucket}-${g.rubrik.replace(/[^\p{L}\p{N}]+/gu, "-")}`}
             title={g.rubrik}
             badge={<span className="text-xs text-ink-soft tabular-nums">{klara} av {g.punkter.length}</span>}
             action={
@@ -235,7 +271,7 @@ function Kontrollpunkter({ steg, utkast, onToggle }) {
   );
 }
 
-function Sammanfattning({ utkast, faser, fel, kanSkapa, skapar, redigerar, andrat, ejSparad, pdfDokument, sparr, onSkapa, onSpara, onGaTill }) {
+function Sammanfattning({ utkast, faser, onLjus, fel, kanSkapa, skapar, redigerar, andrat, ejSparad, pdfDokument, sparr, onSkapa, onSpara, onGaTill }) {
   const nuFas = aktuellFas(utkast);
   const l = luckor(utkast, nuFas);
   const v = utkast.v;
@@ -296,6 +332,7 @@ function Sammanfattning({ utkast, faser, fel, kanSkapa, skapar, redigerar, andra
                 </span>
                 <StatusBadge ton={ton} label={text} />
                 <button type="button" className="btn sec mini" disabled={last} onClick={() => onGaTill(forst.id)}>Öppna</button>
+                {last ? null : <Trafikljus nr={f.nr} varde={utkast.trafikljus?.[f.nr]} onChange={onLjus} />}
               </li>
             );
           })}
@@ -347,7 +384,7 @@ function Sammanfattning({ utkast, faser, fel, kanSkapa, skapar, redigerar, andra
 
 export function Projektstart() {
   const { state, dispatch, laggTill, sattLista, uppd } = usePortfolj();
-  const { visa, visaToast, setValtProjekt, bekrafta } = useUi();
+  const { visa, visaToast, setValtProjekt, bekrafta, projektstartMal, rensaProjektstartMal } = useUi();
   const [utkast, setUtkast] = useState(laddaUtkast);
   const [skapar, setSkapar] = useState(false);
   /* "ny" är den pågående nya projektstarten (utkast i webbläsaren). Ett projekt-id
@@ -416,6 +453,14 @@ export function Projektstart() {
 
   const sattFalt = (id, v) => setUtkast((u) => ({ ...u, v: { ...u.v, [id]: v } }));
   const sattRader = (id, rader) => setUtkast((u) => ({ ...u, rader: { ...u.rader, [id]: rader } }));
+  /** Sätter eller rensar projektledarens trafikljus för en fas. Samma ljus igen rensar det. */
+  const sattLjus = (nr, ljus, kommentar) =>
+    setUtkast((u) => {
+      const nu = { ...(u.trafikljus || {}) };
+      if (!ljus || (ljus === nu[nr]?.ljus && kommentar === undefined)) delete nu[nr];
+      else nu[nr] = { ljus, kommentar: kommentar ?? nu[nr]?.kommentar ?? "" };
+      return { ...u, trafikljus: nu };
+    });
   const kryssa = (bucket, pid, v) => setUtkast((u) => ({ ...u, kryss: { ...u.kryss, [bucket]: { ...u.kryss[bucket], [pid]: v } } }));
   /* Sidor i en låst fas går inte att öppna. */
   const gaTill = (id) =>
@@ -425,16 +470,29 @@ export function Projektstart() {
       return { ...u, steg: id, besokta: u.besokta.includes(u.steg) ? u.besokta : [...u.besokta, u.steg] };
     });
 
-  const bytLage = async (nytt) => {
-    if (nytt === lage) return;
-    if (andrat && !(await bekrafta("Dina ändringar i den sparade projektstarten är inte sparade och försvinner.", { titel: "Osparade ändringar", ok: "Byt ändå", fara: true }))) return;
-    const valt = nytt === "ny" ? null : state.projekt.find((p) => p.id === nytt);
+  /** Öppnar guiden för ett projekt (eller en ny projektstart när `valt` är null). */
+  const oppnaLage = (valt) => {
     const sparad = valt ? sparadeFor(valt.id) : null;
     const oppnat = !valt ? laddaUtkast() : sparad ? utkastFranPost(sparad, valt) : utkastFranProjekt(valt, state);
-    setLage(nytt);
+    setLage(valt ? valt.id : "ny");
     setUtkast(oppnat);
     setGrund(valt ? oppnat : null);
   };
+
+  const bytLage = async (nytt) => {
+    if (nytt === lage) return;
+    if (andrat && !(await bekrafta("Dina ändringar i den sparade projektstarten är inte sparade och försvinner.", { titel: "Osparade ändringar", ok: "Byt ändå", fara: true }))) return;
+    oppnaLage(nytt === "ny" ? null : state.projekt.find((p) => p.id === nytt));
+  };
+
+  /* Ett projektkort kan be om att få sitt projekts projektstart öppnad direkt. */
+  useEffect(() => {
+    if (!projektstartMal) return;
+    const valt = state.projekt.find((p) => p.id === projektstartMal);
+    if (valt) oppnaLage(valt);
+    rensaProjektstartMal();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projektstartMal]);
 
   const sparaAndringar = () => {
     if (!projektet) return;
@@ -445,7 +503,7 @@ export function Projektstart() {
     }
     const nu = new Date().toISOString();
     const rad = historikRad(utkast, { datum: idag(), av: hamtaNamn() || "" });
-    if (post) sattLista("projektstart", state.projektstart.map((x) => (x.id === post.id ? { ...x, utkast: { v: utkast.v, rader: utkast.rader, kryss: utkast.kryss, fasGolv: utkast.fasGolv }, uppdaterad: nu, historik: medHistorik(x.historik, rad) } : x)));
+    if (post) sattLista("projektstart", state.projektstart.map((x) => (x.id === post.id ? { ...x, utkast: { v: utkast.v, rader: utkast.rader, kryss: utkast.kryss, fasGolv: utkast.fasGolv, trafikljus: utkast.trafikljus || {} }, uppdaterad: nu, historik: medHistorik(x.historik, rad) } : x)));
     else laggTill("projektstart", projektstartPost(projektet.id, utkast, nu, [rad]));
     setGrund(utkast);
     for (const [falt, varde] of kortAndringar(utkast, projektet)) uppd("projekt", projektet.id, falt, varde);
@@ -604,7 +662,7 @@ export function Projektstart() {
         {steg.tabell ? <Tabell tabell={steg.tabell} rader={utkast.rader[steg.tabell.id] || []} onChange={(r) => sattRader(steg.tabell.id, r)} standardRad={steg.id === "risker" ? { fas: String(nuFas) } : undefined} /> : null}
         {steg.id === "risker" ? <RiskDonut rader={utkast.rader.risker || []} /> : null}
         {steg.katalog ? <Kontrollpunkter steg={steg} utkast={utkast} onToggle={kryssa} /> : null}
-        {sista ? <Sammanfattning utkast={utkast} faser={faser} fel={fel} kanSkapa={!fel} skapar={skapar} redigerar={redigerar} andrat={andrat} ejSparad={redigerar && !post} pdfDokument={pdfDokument} sparr={sparr} onSkapa={skapa} onSpara={sparaAndringar} onGaTill={gaTill} /> : null}
+        {sista ? <Sammanfattning utkast={utkast} faser={faser} fel={fel} kanSkapa={!fel} skapar={skapar} redigerar={redigerar} andrat={andrat} ejSparad={redigerar && !post} pdfDokument={pdfDokument} sparr={sparr} onLjus={sattLjus} onSkapa={skapa} onSpara={sparaAndringar} onGaTill={gaTill} /> : null}
 
         <div className="flex items-center justify-between gap-3">
           <button type="button" className="btn sec group" disabled={index === 0} onClick={() => gaTill(STEG[index - 1].id)}>

@@ -55,6 +55,10 @@ async function fyllFas1(page, { checklista = true, namn = "Fas-test", nr } = {})
   await gaTillSteg(page, 3, "Projektdirektiv");
   await page.getByLabel(/^Mål/).fill("Ett mätbart mål");
   await page.getByLabel(/^Vad får ge vika/).selectOption("Kostnad");
+  // Projektdirektivet ska vara signerat av projektledare och intern beställare.
+  await page.getByLabel(/^Signerat av projektledare/).fill("PL Test");
+  await page.getByLabel(/^Signerat av intern beställare/).fill("Beställare Test");
+  await page.getByLabel(/^Signeringsdatum/).fill("2026-10-12");
 }
 
 test("projektet startar i fas 1 och senare faser är låsta", async ({ page }) => {
@@ -142,7 +146,7 @@ test("PDF för inlämning är spärrad tills en fas är godkänd och omfattar de
   await expect(pdf).toBeDisabled();
   await expect(page.getByText("PDF för inlämning är spärrad: ingen fas är godkänd än")).toBeVisible();
   // Varje sak som återstår är en knapp till sidan där den görs.
-  await page.getByRole("button", { name: "Beställare" }).click();
+  await page.getByRole("button", { name: "Beställare", exact: true }).click();
   await expect(page.getByLabel(/^Beställare/)).toBeVisible();
 
   // Fälten räcker inte. De kritiska kontrollpunkterna i fasen ska också vara bockade.
@@ -349,5 +353,65 @@ test("projektkorten i översikten visar projektets fas", async ({ page }) => {
   const { fel } = await oppna(page, "Översikt");
   // Växjö och Alvesta är i produktion, alltså fas 4.
   await expect(page.getByText("Fas 4 av 6 · Genomförande").first()).toBeVisible();
+  expect(fel).toEqual([]);
+});
+
+test("projektkortet öppnar projektstarten för sitt projekt", async ({ page }) => {
+  const { fel } = await oppna(page, "Översikt");
+  await page.getByRole("button", { name: "Öppna projektstart för Växjö Batteripark" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Projektstart");
+  await expect(page.getByText("Du ändrar projektstarten för 36037 Växjö Batteripark")).toBeVisible();
+  await expect(page.getByText(/ONE-P · 36037 Växjö Batteripark · Fas 4 av 6/)).toBeVisible();
+
+  // Öppnar man fliken på vanligt sätt (via en annan vy) är det fortfarande en ny projektstart.
+  await gaTill(page, "Översikt");
+  await oppnaProjektstart(page);
+  await expect(page.getByText(/ONE-P · Fas 1 av 6/)).toBeVisible();
+  expect(fel).toEqual([]);
+});
+
+test("projektledarens trafikljus per fas sparas i utkastet och finns bara för upplåsta faser", async ({ page }) => {
+  const { fel } = await oppna(page, "Projektstart");
+  await gaTillSteg(page, SISTA, "Granska och skapa");
+  const faser = page.getByRole("region", { name: "Faserna" });
+  await expect(faser.getByRole("group", { name: "Trafikljus för fas 1" })).toBeVisible();
+  await expect(faser.getByRole("group", { name: "Trafikljus för fas 2" })).toHaveCount(0);
+
+  const ljus = faser.getByRole("group", { name: "Trafikljus för fas 1" });
+  await ljus.getByRole("button", { name: "Röd" }).click();
+  await expect(ljus.getByRole("button", { name: "Röd" })).toHaveAttribute("aria-pressed", "true");
+  await faser.getByLabel("Kommentar till trafikljuset för fas 1").fill("Behöver beslut om leverantör");
+
+  await page.reload();
+  await oppnaProjektstart(page);
+  await gaTillSteg(page, SISTA, "Granska och skapa");
+  await expect(faser.getByRole("group", { name: "Trafikljus för fas 1" }).getByRole("button", { name: "Röd" })).toHaveAttribute("aria-pressed", "true");
+  await expect(faser.getByLabel("Kommentar till trafikljuset för fas 1")).toHaveValue("Behöver beslut om leverantör");
+
+  // Samma val igen rensar trafikljuset.
+  await faser.getByRole("group", { name: "Trafikljus för fas 1" }).getByRole("button", { name: "Röd" }).click();
+  await expect(faser.getByLabel("Kommentar till trafikljuset för fas 1")).toHaveCount(0);
+  expect(fel).toEqual([]);
+});
+
+test("direktivet måste signeras, och uppstartsavstämning och interface-lista finns i fas 2", async ({ page }) => {
+  const { fel } = await oppna(page, "Projektstart");
+  await fyllFas1(page);
+  await expect(page.getByText(/ONE-P · Fas 2 av 6/)).toBeVisible();
+
+  // Tar man bort signeringen låses fas 2 igen.
+  await gaTillSteg(page, 3, "Projektdirektiv");
+  await page.getByLabel(/^Signerat av intern beställare/).fill("");
+  await expect(page.getByText(/ONE-P · Fas 1 av 6/)).toBeVisible();
+  await page.getByLabel(/^Signerat av intern beställare/).fill("Beställare Test");
+  await expect(page.getByText(/ONE-P · Fas 2 av 6/)).toBeVisible();
+
+  await gaTillSteg(page, 5, "Organisation och möten");
+  await expect(page.getByRole("region", { name: "Uppstartsavstämning: Före startmötet" })).toBeVisible();
+  await expect(page.getByLabel("Uppstartsavstämningen är genomförd med intern beställare före startmötet")).toBeVisible();
+
+  await gaTillSteg(page, 9, "Godkänd lösning");
+  await expect(page.getByRole("region", { name: "Interface-lista" })).toBeVisible();
+  await expect(page.getByLabel(/^Interface-lista, rad \d+: Gränssnitt$/)).toHaveCount(5);
   expect(fel).toEqual([]);
 });

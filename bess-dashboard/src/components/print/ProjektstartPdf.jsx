@@ -260,6 +260,8 @@ function Sidfot({ d }) {
   );
 }
 
+const LJUSFARG = { gron: "#3cb8ba", gul: F.orange, rod: F.rod };
+const LJUSTEXT = { gron: "Grön, enligt plan", gul: "Gul, avvikelse som hanteras i projektet", rod: "Röd, kräver hjälp eller beslut" };
 const FASFARG = { klar: F.bla, upplast: F.himmel, aktuell: "#fff", last: "#4f8d9d" };
 
 /** Projektets nuvarande fas och status, med de sex faserna som en rad. */
@@ -284,6 +286,18 @@ function FasRuta({ fas }) {
           </View>
         ))}
       </View>
+      {fas.faser.some((f) => f.ljus) ? (
+        <View style={{ marginTop: 8 }}>
+          {fas.faser.filter((f) => f.ljus).map((f) => (
+            <View key={f.nr} style={{ flexDirection: "row", alignItems: "center", marginTop: 3 }}>
+              <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: LJUSFARG[f.ljus], marginRight: 6 }} />
+              <Text style={{ fontSize: 8.5, color: "#fff" }}>
+                Fas {f.nr} · {f.kort}: {LJUSTEXT[f.ljus]}{f.kommentar ? `. ${f.kommentar}` : ""}
+              </Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 }

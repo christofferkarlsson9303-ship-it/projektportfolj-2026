@@ -51,6 +51,10 @@ function nyRad(tabell, grund = {}) {
 }
 export const nyTabellrad = nyRad;
 
+/** Trafikljus per fas (metoden 3.4): projektledarens bedömning. Grön enligt plan, gul avvikelse som
+ *  hanteras i projektet, röd allvarlig avvikelse som kräver hjälp eller beslut. */
+export const LJUS = ["gron", "gul", "rod"];
+
 export function tomtUtkast() {
   const v = {};
   for (const s of STEG) for (const f of s.falt || []) v[f.id] = f.standard ?? f.alternativ?.[0] ?? "";
@@ -58,7 +62,7 @@ export function tomtUtkast() {
   for (const id of ["beslut", "niva", "offra"]) v[id] = "";
   const rader = {};
   for (const s of STEG) if (s.tabell) rader[s.tabell.id] = (s.tabell.start?.length ? s.tabell.start : [{}]).map((g) => nyRad(s.tabell, g));
-  return { steg: STEG[0].id, besokta: [], v, rader, kryss: {}, fasGolv: 1 };
+  return { steg: STEG[0].id, besokta: [], v, rader, kryss: {}, fasGolv: 1, trafikljus: {} };
 }
 
 /** Läser ett sparat utkast och släpper bara in kända fält, så att en gammal eller
@@ -77,6 +81,9 @@ export function lasUtkast(raw) {
   for (const k of Object.keys(bas.rader)) if (Array.isArray(sparat.rader?.[k]) && sparat.rader[k].length) bas.rader[k] = sparat.rader[k].filter((r) => r && typeof r === "object" && typeof r.id === "string");
   for (const [bucket, poster] of Object.entries(sparat.kryss || {})) if (KATALOG[bucket] && poster && typeof poster === "object") bas.kryss[bucket] = { ...poster };
   if (arFasNr(sparat.fasGolv)) bas.fasGolv = sparat.fasGolv;
+  for (const [nr, t] of Object.entries(sparat.trafikljus || {})) {
+    if (arFasNr(Number(nr)) && t && LJUS.includes(t.ljus)) bas.trafikljus[nr] = { ljus: t.ljus, kommentar: typeof t.kommentar === "string" ? t.kommentar.slice(0, 300) : "" };
+  }
   if (ids.has(sparat.steg)) bas.steg = sparat.steg;
   if (Array.isArray(sparat.besokta)) bas.besokta = sparat.besokta.filter((id) => ids.has(id));
   return bas;
@@ -330,7 +337,7 @@ export function projektstartDokument(u, { datum, skapadAv = "", historik = [], s
         titel: fasInfo.titel,
         status: fasInfo.status,
         klarAllt: lager.every((f) => f.status === "klar"),
-        faser: lager.map((f) => ({ nr: f.nr, kort: f.kort, status: f.status, klara: f.klara, totalt: f.totalt })),
+        faser: lager.map((f) => ({ nr: f.nr, kort: f.kort, status: f.status, klara: f.klara, totalt: f.totalt, ljus: u.trafikljus?.[f.nr]?.ljus || "", kommentar: (u.trafikljus?.[f.nr]?.kommentar || "").trim() })),
       },
       lage: { skede: fasInfo.status, nulage: (v.nulage || "").trim(), beslut: (v.beslutLedning || "").trim() },
       kort: {
@@ -347,7 +354,7 @@ export function projektstartDokument(u, { datum, skapadAv = "", historik = [], s
 
 /** Sparad projektstart: guidens svar, knutna till projektet. */
 export function projektstartPost(projektId, u, nu = new Date().toISOString(), historik = []) {
-  return { id: `ps-${projektId}`, projektId, utkast: { v: u.v, rader: u.rader, kryss: u.kryss, fasGolv: u.fasGolv }, skapad: nu, uppdaterad: nu, historik };
+  return { id: `ps-${projektId}`, projektId, utkast: { v: u.v, rader: u.rader, kryss: u.kryss, fasGolv: u.fasGolv, trafikljus: u.trafikljus || {} }, skapad: nu, uppdaterad: nu, historik };
 }
 
 /** Öppnar en sparad projektstart i guiden. Alla steg räknas som genomgångna. */
@@ -374,7 +381,7 @@ export function kortAndringar(u, projekt) {
   return andringar;
 }
 
-export const utkastAndrat = (a, b) => JSON.stringify([a.v, a.rader, a.kryss]) !== JSON.stringify([b.v, b.rader, b.kryss]);
+export const utkastAndrat = (a, b) => JSON.stringify([a.v, a.rader, a.kryss, a.trafikljus]) !== JSON.stringify([b.v, b.rader, b.kryss, b.trafikljus]);
 
 /** Guiden för ett projekt som saknar sparad projektstart: ifylld från projektkortet,
  *  riskregistret och milstolparna. Checklistor och direktiv börjar tomma. */

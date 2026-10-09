@@ -50,3 +50,12 @@ ONE Nordics extra regel finns kvar: ett extremvärde (5) på en axel är aldrig 
 `projektstartDokument` är ackumulerande och omfattar de godkända faserna: fas 1 till `rapportFas` (`projektfas.js`). För ett projekt som redan är igång räknas även faserna före golvet. Risker med `fas` högre än det som omfattas utelämnas. Huvudet visar projektets aktuella fas och status, och vilka faser rapporten omfattar.
 
 PDF för inlämning är spärrad (`pdfSparr`) bara när ingen fas är godkänd än. Då listas det som återstår i fas 1. Att nästa fas har tomma fält spärrar alltså inte PDF:en. Regeln gäller knappen i guiden, knappen på sista sidan och den PDF som laddas ned när projektet skapas.
+
+## Metodens delar i guiden
+
+- **Signering av projektdirektivet** (fas 1): projektledare, intern beställare och datum är obligatoriska fält. Fas 2 låses inte upp utan dem.
+- **Uppstartsavstämning** (fas 2, sidan Organisation och möten): katalogen `kickoff` med punkterna ur metoden 6.3. Den genomförda avstämningen är kritisk, alltså en grind innan fasen godkänns.
+- **Interface-lista** (fas 2, sidan Godkänd lösning): tabellen `interface` med de fem gränssnitten som startrader, ägare, veckostatus och senast avstämd.
+- **Kick-out och slutrapport** (fas 5, sidan Slutbesiktning och överlämning): fälten `kickout*`, `lardomar` och `slutrapportResultat` enligt metoden 6.9.
+- **Trafikljus per fas**: projektledarens egen bedömning (grön, gul, röd) med kommentar, satt på sista sidan under Faserna och bara för upplåsta faser. Det sparas i utkastet (`trafikljus`) och visas i PDF-huvudet. Det räknas inte fram, eftersom metoden låter projektledaren bedöma.
+- **Projektkortet** i Översikt har knappen Öppna projektstart, som öppnar guiden för just det projektet (`oppnaProjektstart` i UiProvider).

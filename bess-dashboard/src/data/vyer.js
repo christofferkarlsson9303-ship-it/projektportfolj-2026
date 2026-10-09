@@ -7,7 +7,7 @@
 import { NAVIKON, VYER as VYER_ORIGINAL } from "./konstanter.js";
 
 const TILLAGDA = [
-  ["start", "Projektstart", "Gå igenom ONE-P-startens fjorton steg. När du är klar skapas projektet med risker och milstolpar."],
+  ["start", "Projektstart", "Gå igenom ONE-P-startens sex faser. Projektet startar i fas 1, och nästa fas låses upp när allt obligatoriskt är godkänt."],
   ["kontrakt", "Kontraktet", "Det viktigaste i projektets avtal: frister, betalningar, viten, säkerheter och priser."],
   ["metod", "Min projektmetod", "Så leder du projektet: vad du gör varje dag, varje vecka och inför nästa steg."],
   [

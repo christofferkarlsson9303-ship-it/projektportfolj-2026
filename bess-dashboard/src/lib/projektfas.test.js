@@ -6,7 +6,7 @@ import { RISKKATEGORI_ID, arRiskKategori } from "../data/riskTyper.ts";
 import { PROJEKTSTATUS, RISKKATEGORI } from "../data/konstanter.js";
 import { efterInlasning } from "../state/portfolj-reducer.js";
 import { aktuellFas, alltGodkant, fasKrav, fasLage, godkandaFaser, pdfSparr, rapportFas, stegIFas, stegLast } from "./projektfas.js";
-import { projektFranUtkast, projektstartDokument, tomtUtkast, utkastFranPost, utkastFranProjekt, kortAndringar } from "./projektstart.js";
+import { projektFranUtkast, projektstartDokument, projektstartPost, tomtUtkast, utkastAndrat, utkastFranPost, utkastFranProjekt, kortAndringar } from "./projektstart.js";
 import { stegPunkter } from "./stegpunkter.js";
 
 /** Fyller i allt obligatoriskt i en fas: fält, tabellrader och kritiska kontrollpunkter. */
@@ -217,5 +217,59 @@ describe("PDF för ledningen följer de godkända faserna", () => {
     const p = stegPunkter(STEG.find((s) => s.id === "avrop")).find((x) => x.kritisk);
     u.kryss[p.bucket][p.id] = false;
     expect(pdfSparr(u).length).toBeGreaterThan(0);
+  });
+});
+
+describe("Metodens delar i guiden", () => {
+  it("kräver att projektdirektivet är signerat av projektledare och intern beställare för att godkänna fas 1", () => {
+    const u = godkannFas(tomtUtkast(), 1);
+    expect(fasKrav(u, 1).klar).toBe(true);
+    for (const id of ["signPL", "signBestallare", "signDatum"]) {
+      const kopia = structuredClone(u);
+      kopia.v[id] = "";
+      expect(fasKrav(kopia, 1).falt.map((f) => f.id)).toEqual([id]);
+      expect(aktuellFas(kopia)).toBe(1);
+    }
+  });
+  it("har uppstartsavstämningen som kontrollpunkter i organisationssteget, med genomförd avstämning som kritisk", () => {
+    const org = STEG.find((s) => s.id === "organisation");
+    const punkter = stegPunkter(org).filter((p) => p.bucket === "kickoff");
+    expect(punkter.length).toBeGreaterThanOrEqual(8);
+    expect(punkter.find((p) => p.id === "kickoffHeld").kritisk).toBe(true);
+    // Fas 2 godkänns inte utan den.
+    const u = godkannFas(godkannFas(tomtUtkast(), 1), 2);
+    expect(aktuellFas(u)).toBe(3);
+    u.kryss.kickoff.kickoffHeld = false;
+    expect(aktuellFas(u)).toBe(2);
+  });
+  it("har en interface-lista med de fem gränssnitten i metoden som startrader", () => {
+    const t = STEG.find((s) => s.id === "losning").tabell;
+    expect(t.id).toBe("interface");
+    expect(t.start.map((r) => r.granssnitt)).toEqual(["Mark/betong ↔ el", "Leverantör ↔ site", "El/MV ↔ nätägare", "Kommunikation", "Brand ↔ drift"]);
+    const u = godkannFas(godkannFas(tomtUtkast(), 1), 2);
+    const d = projektstartDokument(u, { datum: "x" });
+    expect(d.projektstart.sektioner.find((x) => x.id === "losning").tabell.rader).toHaveLength(5);
+  });
+  it("har kick-out och slutrapport som fält i avslutet", () => {
+    const ids = STEG.find((s) => s.id === "avslut").falt.map((f) => f.id);
+    expect(ids).toEqual(expect.arrayContaining(["kickoutDatum", "kickoutBra", "kickoutKostade", "kickoutAldrigIgen", "kickoutOverraskade", "slutrapportResultat", "lardomar"]));
+  });
+  it("sparar projektledarens trafikljus per fas och släpper bara in giltiga värden", () => {
+    const u = tomtUtkast();
+    u.trafikljus = { 1: { ljus: "gron", kommentar: "Enligt plan" }, 2: { ljus: "rod", kommentar: "x".repeat(400) }, 3: { ljus: "lila", kommentar: "" }, 9: { ljus: "gul", kommentar: "" } };
+    const post = projektstartPost("p", u);
+    const igen = utkastFranPost(JSON.parse(JSON.stringify(post)));
+    expect(Object.keys(igen.trafikljus)).toEqual(["1", "2"]);
+    expect(igen.trafikljus[1]).toEqual({ ljus: "gron", kommentar: "Enligt plan" });
+    expect(igen.trafikljus[2].kommentar).toHaveLength(300);
+    expect(utkastAndrat(igen, tomtUtkast())).toBe(true);
+  });
+  it("tar med trafikljuset i rapportens fasrad", () => {
+    const u = godkannFas(tomtUtkast(), 1);
+    u.trafikljus = { 1: { ljus: "gron", kommentar: "" }, 2: { ljus: "rod", kommentar: "Behöver beslut om leverantör" } };
+    const faser = projektstartDokument(u, { datum: "x" }).projektstart.fas.faser;
+    expect(faser[0]).toMatchObject({ ljus: "gron", kommentar: "" });
+    expect(faser[1]).toMatchObject({ ljus: "rod", kommentar: "Behöver beslut om leverantör" });
+    expect(faser[2].ljus).toBe("");
   });
 });

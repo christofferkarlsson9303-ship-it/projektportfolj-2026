@@ -1149,6 +1149,63 @@ export const KATALOG = {
    "grupp": "Garanti",
    "text": "Garantibesiktning är planerad om kontraktet kräver det"
   }
+ ],
+ "kickoff": [
+  {
+   "id": "contractKnown",
+   "grupp": "Före startmötet",
+   "text": "Kontraktskännedom: vad som ingår och inte ingår, hur, när och vem",
+   "kritisk": true
+  },
+  {
+   "id": "flow",
+   "grupp": "Före startmötet",
+   "text": "Arbetsflödet är beskrivet i en flödesprocess"
+  },
+  {
+   "id": "critLine",
+   "grupp": "Före startmötet",
+   "text": "Kritiska linjen är känd och planen är realistisk mot riskerna",
+   "kritisk": true
+  },
+  {
+   "id": "risksKnown",
+   "grupp": "Före startmötet",
+   "text": "Riskerna är värderade (undvikna, minimerade, accepterade) och teamet känner till dem",
+   "kritisk": true
+  },
+  {
+   "id": "calcGone",
+   "grupp": "Före startmötet",
+   "text": "Kalkylen är genomgången: var vi går in med förlust och var vi tjänar pengar"
+  },
+  {
+   "id": "profitParts",
+   "grupp": "Före startmötet",
+   "text": "Lönsamma och olönsamma delar är listade, slöserier och synergier med andra avtal identifierade"
+  },
+  {
+   "id": "commsPlan",
+   "grupp": "Före startmötet",
+   "text": "Kommunikationsplan finns och byggmöten är bokade med periodicitet"
+  },
+  {
+   "id": "invoiceTemplate",
+   "grupp": "Före startmötet",
+   "text": "Mall för fakturaunderlag är klar"
+  },
+  {
+   "id": "nextSteps",
+   "grupp": "Före startmötet",
+   "text": "Nästa steg och inköp inför start är beslutade"
+  },
+  {
+   "id": "kickoffHeld",
+   "grupp": "Före startmötet",
+   "text": "Uppstartsavstämningen är genomförd med intern beställare före startmötet",
+   "tips": "Grind inför uppstarten (G1). Startmötet med kunden hålls efteråt.",
+   "kritisk": true
+  }
  ]
 };
 

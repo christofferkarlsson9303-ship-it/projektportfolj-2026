@@ -1,5 +1,5 @@
 import { usePortfolj, useUi } from "../../state/hooks.js";
-import { ArrowUpRight, BatteryCharging, MapPin, PlugZap, Zap } from "lucide-react";
+import { ArrowUpRight, BatteryCharging, Flag, MapPin, PlugZap, Zap } from "lucide-react";
 import { DatumFalt, Falt, NumFalt, SelStatus } from "../ui/Falt.jsx";
 import { PROJEKTSTATUS } from "../../data/konstanter.js";
 import { fmtSEK } from "../../lib/format.js";
@@ -20,7 +20,7 @@ const tonForDagar = (d) => (d === null ? "" : d < 0 ? "bad" : d < 60 ? "warn" : 
 
 export function Projektkort({ p }) {
   const { state, uppdStatus } = usePortfolj();
-  const { setValtProjekt, visa } = useUi();
+  const { setValtProjekt, visa, oppnaProjektstart } = useUi();
 
   const e = ekonomi(state, p.id);
   const d = dagarTill(p.fardigstallande);
@@ -122,6 +122,12 @@ export function Projektkort({ p }) {
       </div>
 
       {p.anteckning ? <p className="projkort-anteckning">{p.anteckning}</p> : null}
+
+      <footer>
+        <button type="button" className="btn sec mini" onClick={() => oppnaProjektstart(p.id)}>
+          <Flag size={14} aria-hidden="true" /> Öppna projektstart<span className="sr-only"> för {p.namn}</span>
+        </button>
+      </footer>
     </article>
   );
 }
