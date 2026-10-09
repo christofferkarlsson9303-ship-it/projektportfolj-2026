@@ -1,12 +1,23 @@
 /* Stegen i Projektstart. Varje steg är data: fält, en valfri tabell och vilka
    kontrollpunkter ur projektstartKatalog.js som hör till steget.
 
-   falt: { id, etikett, typ: text | textarea | select | date, alternativ?, placeholder?, bred? }
-   tabell: { id, titel, kolumner: [{ id, etikett, typ, alternativ?, bredd? }] }
+   fas: 1–6, vilken av de sex projektfaserna sidan hör till (se projektfaser.ts).
+        Sista sidan, Granska och skapa, hör inte till någon fas (null).
+   falt: { id, etikett, typ: text | textarea | select | date, alternativ?, placeholder?, bred?,
+           obligatoriskt?, kravVarde? }
+        obligatoriskt: fältet måste vara ifyllt för att fasen ska kunna godkännas.
+        kravVarde: det enda värdet som räknas som godkänt (till exempel "Gå vidare").
+   tabell: { id, titel, kolumner: [{ id, etikett, typ, alternativ?, bredd? }], obligatorisk? }
+        alternativ är strängar eller [värde, etikett]-par.
+        obligatorisk: lista med kolumn-id. Minst en rad där alla dessa är ifyllda krävs.
+   katalog / grupper: kontrollpunkter ur projektstartKatalog.js. `grupper` begränsar en
+        katalog till vissa grupper, så att en katalog kan delas mellan två sidor.
+        Kritiska punkter är obligatoriska för fasen.
    Fält-id:n är platta nycklar i utkastets `v`, tabellerna ligger i `rader`. */
 
 import { ROLLER } from "./projektstartKatalog.js";
-import { PROJEKTSTATUS } from "./konstanter.js";
+import { FASER } from "./projektfaser.ts";
+import { RISKKATEGORI_KORT, RISKKATEGORIER } from "./riskTyper.ts";
 
 const FORM = ["ABT 06", "ABT-U 07", "AB 04", "ABT 06 med särskilda villkor", "Annan"];
 const NIVA = ["Ej klassad", "Nivå 1", "Nivå 2", "Nivå 3", "Nivå 4"];
@@ -16,7 +27,7 @@ const TAL = ["1", "2", "3", "4", "5"];
 export const STEG = [
   {
     id: "projekt",
-    fas: "Initiering",
+    fas: 1,
     titel: "Projektkort",
     sammanfattning: "Identitet, klassning och nuläge. Det här blir projektet i portföljen.",
     grund: ["Tid som läggs tidigt är billig tid.", "Det som inte är skriftligt finns inte.", "Dagbok och underrättelser är det ekonomiska skyddet."],
@@ -24,24 +35,23 @@ export const STEG = [
       { id: "bolag", etikett: "Bolag", typ: "text" },
       { id: "namn", etikett: "Projektnamn", typ: "text", placeholder: "Batteripark …", obligatoriskt: true },
       { id: "nr", etikett: "Projektnummer", typ: "text" },
-      { id: "bestallare", etikett: "Beställare", typ: "text" },
+      { id: "bestallare", etikett: "Beställare", typ: "text", obligatoriskt: true },
       { id: "plats", etikett: "Plats / anläggning", typ: "text" },
-      { id: "kontraktsform", etikett: "Kontraktsform", typ: "select", alternativ: FORM },
-      { id: "niva", etikett: "Projektnivå", typ: "select", alternativ: NIVA },
+      { id: "kontraktsform", etikett: "Kontraktsform", typ: "select", alternativ: FORM, obligatoriskt: true },
+      { id: "niva", etikett: "Projektnivå", typ: "select", alternativ: NIVA, obligatoriskt: true },
       { id: "startdatum", etikett: "Start", typ: "date" },
       { id: "fardigdatum", etikett: "Slut", typ: "date" },
-      { id: "skede", etikett: "Skede", typ: "select", alternativ: PROJEKTSTATUS, standard: "Planering", tips: "Styr projektets status i portföljen. Anbud betyder att projektet inte är tilldelat än." },
       { id: "nulage", etikett: "Nuläge till ledningen", typ: "textarea", bred: true, tips: "Skriv om inför varje rapport. Det här står först i PDF:en." },
       { id: "beslutLedning", etikett: "Beslut som behövs från ledningen", typ: "textarea", bred: true, tips: "Vad, och senast när. Lämna tomt om inget behövs." },
     ],
   },
   {
     id: "avrop",
-    fas: "Initiering",
+    fas: 1,
     titel: "Avropsacceptans",
     sammanfattning: "Ska vi ta uppdraget? Lönsamhet, risk och resurser innan start.",
     falt: [
-      { id: "beslut", etikett: "Beslut", typ: "select", alternativ: BESLUT },
+      { id: "beslut", etikett: "Beslut", typ: "select", alternativ: BESLUT, obligatoriskt: true, kravVarde: "Gå vidare", tips: "Fasen godkänns bara vid Gå vidare." },
       { id: "motivering", etikett: "Motivering", typ: "textarea", bred: true },
       { id: "oppnaFragor", etikett: "Öppna frågor till intern beställare", typ: "textarea", bred: true },
     ],
@@ -49,21 +59,26 @@ export const STEG = [
   },
   {
     id: "direktiv",
-    fas: "Initiering",
+    fas: 1,
     titel: "Projektdirektiv",
     sammanfattning: "Bakgrund, mål, avgränsning och vad som får ge vika om det blir trångt.",
     falt: [
       { id: "bakgrund", etikett: "Bakgrund", typ: "textarea", bred: true },
       { id: "syfte", etikett: "Syfte", typ: "textarea", bred: true },
-      { id: "mal", etikett: "Mål", typ: "textarea", bred: true },
+      { id: "mal", etikett: "Mål", typ: "textarea", bred: true, obligatoriskt: true },
       { id: "ingar", etikett: "Ingår", typ: "textarea" },
       { id: "ingarEj", etikett: "Ingår inte", typ: "textarea" },
-      { id: "offra", etikett: "Vad får ge vika först?", typ: "select", alternativ: ["Kostnad", "Kvalitet", "Tid"] },
+      { id: "offra", etikett: "Vad får ge vika först?", typ: "select", alternativ: ["Kostnad", "Kvalitet", "Tid"], obligatoriskt: true },
+      /* Direktivet signeras av intern beställare och projektledare (metoden 6.1). Signeringen är en
+         grind: fas 2 låses inte upp förrän båda har signerat. */
+      { id: "signPL", etikett: "Signerat av projektledare", typ: "text", placeholder: "Namn", obligatoriskt: true },
+      { id: "signBestallare", etikett: "Signerat av intern beställare", typ: "text", placeholder: "Namn", obligatoriskt: true },
+      { id: "signDatum", etikett: "Signeringsdatum", typ: "date", obligatoriskt: true, tips: "Projektdirektivet signeras av båda innan fasen godkänns." },
     ],
   },
   {
     id: "intressenter",
-    fas: "Planering",
+    fas: 2,
     titel: "Intressenter",
     sammanfattning: "Vem påverkar projektet och hur ni kommunicerar.",
     tabell: {
@@ -80,30 +95,30 @@ export const STEG = [
   },
   {
     id: "organisation",
-    fas: "Planering",
+    fas: 2,
     titel: "Organisation och möten",
     sammanfattning: "Namngivna roller, behörighet och startmöte enligt ONE-P.",
     falt: [
-      ...ROLLER.map((r) => ({ id: `roll_${r.id}`, etikett: r.namn, typ: "text", tips: r.tips })),
+      ...ROLLER.map((r) => ({ id: `roll_${r.id}`, etikett: r.namn, typ: "text", tips: r.tips, obligatoriskt: r.id === "pl" })),
       { id: "ataBefogenhet", etikett: "Vem underrättar om ÄTA och hinder, och vem tar emot?", typ: "textarea", bred: true },
       { id: "motesdeltagare", etikett: "Vem deltar i byggmöten?", typ: "text" },
       { id: "motesKallare", etikett: "Vem kallar till byggmöten?", typ: "text" },
       { id: "rapporteringKund", etikett: "Rapportering till kund", typ: "textarea", standard: "Skriftlig månadsrapport: progress och status till kund." },
       { id: "rapporteringIntern", etikett: "Intern rapportering", typ: "textarea", standard: "Månadsavstämning internt. Styrgrupp kallas vid avvikelse." },
     ],
-    katalog: ["org"],
+    katalog: ["org", "kickoff"],
   },
   {
     id: "kontrakt",
-    fas: "Planering",
+    fas: 2,
     titel: "Kontrakt och kassaflöde",
     sammanfattning: "Viten, milstolpar, bankgaranti, ÄTA och fakturering.",
     falt: [
       { id: "viten", etikett: "Viten och deltidsmilstolpar", typ: "textarea" },
       { id: "havning", etikett: "Hävningsgrunder", typ: "textarea" },
       { id: "index", etikett: "Indexregel", typ: "text" },
-      { id: "betalvillkor", etikett: "Betalvillkor", typ: "text" },
-      { id: "bankgaranti", etikett: "Bankgaranti", typ: "text" },
+      { id: "betalvillkor", etikett: "Betalvillkor", typ: "text", obligatoriskt: true },
+      { id: "bankgaranti", etikett: "Bankgaranti", typ: "text", obligatoriskt: true },
       { id: "kassaflode", etikett: "Kassaflöde: längsta negativa period", typ: "text" },
       { id: "fakturarutin", etikett: "Fakturarutin", typ: "textarea", bred: true },
     ],
@@ -117,38 +132,45 @@ export const STEG = [
         { id: "datum", etikett: "Datum", typ: "date" },
       ],
       start: [{ namn: "M1 Uppstart" }, { namn: "Färdigställande" }],
+      obligatorisk: ["namn", "datum"],
     },
     katalog: ["contract"],
   },
   {
     id: "risker",
-    fas: "Planering",
+    fas: 2,
     titel: "Riskregister",
     sammanfattning: "Identifiera, värdera, äg och följ upp. Raderna läggs in på sidan Risker.",
     tabell: {
       id: "risker",
       titel: "Risker",
+      /* Mallens startrader räknas inte: minst en risk måste ha en ägare. */
+      obligatorisk: ["titel", "agare"],
       kolumner: [
         { id: "titel", etikett: "Risk", typ: "text", bredd: "wide" },
         { id: "sannolikhet", etikett: "Sannolikhet 1–5", typ: "select", alternativ: TAL, standard: "3" },
         { id: "konsekvens", etikett: "Konsekvens 1–5", typ: "select", alternativ: TAL, standard: "3" },
+        /* Värdet (S × K) ritas av guiden direkt efter Konsekvens. Fas och kategori ligger efter det
+           så att värdet syns utan att tabellen behöver rullas i sidled. */
+        { id: "fas", etikett: "Fas", typ: "select", alternativ: FASER.map((f) => [String(f.nr), `${f.nr}. ${f.kort}`]), standard: "2", bredd: "mid" },
+        { id: "kategori", etikett: "Kategori", typ: "select", alternativ: [["", "Välj …"], ...RISKKATEGORIER.map(([id]) => [id, RISKKATEGORI_KORT[id]])], bredd: "mid" },
         { id: "agare", etikett: "Ägare", typ: "text" },
-        { id: "atgard", etikett: "Åtgärd", typ: "text", bredd: "wide" },
+        { id: "atgard", etikett: "Åtgärdsplan", typ: "text", bredd: "wide" },
       ],
       start: [
-        { titel: "Fundament och härdning försenar kritisk linje" },
-        { titel: "Leveranstid för batteri och ställverk" },
-        { titel: "Geotekniskt avvikande förhållanden (ÄTA)" },
+        { titel: "Fundament och härdning försenar kritisk linje", fas: "4", kategori: "tid" },
+        { titel: "Leveranstid för batteri och ställverk", fas: "4", kategori: "leverans" },
+        { titel: "Geotekniskt avvikande förhållanden (ÄTA)", fas: "4", kategori: "mark" },
       ],
     },
   },
   {
     id: "tidplan",
-    fas: "Planering",
+    fas: 2,
     titel: "Tidplan och kritisk linje",
     sammanfattning: "Fundament och härdning styr batteriparken. Synka med betalning.",
     falt: [
-      { id: "kritiskLinje", etikett: "Kritisk linje", typ: "textarea", bred: true },
+      { id: "kritiskLinje", etikett: "Kritisk linje", typ: "textarea", bred: true, obligatoriskt: true },
       { id: "buffert", etikett: "Buffert", typ: "text" },
       { id: "betalsynk", etikett: "Synk mot betalning", typ: "text" },
     ],
@@ -166,7 +188,7 @@ export const STEG = [
   },
   {
     id: "losning",
-    fas: "Planering",
+    fas: 2,
     titel: "Godkänd lösning",
     sammanfattning: "Inga inköp innan tekniken, kassaflödet och riskerna är låsta.",
     falt: [
@@ -175,22 +197,41 @@ export const STEG = [
       { id: "leverantorer", etikett: "Leverantörer", typ: "text" },
       { id: "granssnitt", etikett: "Gränssnitt", typ: "textarea", bred: true },
     ],
+    tabell: {
+      id: "interface",
+      titel: "Interface-lista",
+      anmarkning: "Projektledaren äger listan och stämmer av den varje vecka. Ett oklart gränssnitt är en risk och en ÄTA-möjlighet.",
+      kolumner: [
+        { id: "granssnitt", etikett: "Gränssnitt", typ: "select", bredd: "mid", alternativ: ["Mark/betong ↔ el", "Leverantör ↔ site", "El/MV ↔ nätägare", "Kommunikation", "Brand ↔ drift"] },
+        { id: "innehall", etikett: "Innehåll och krav", typ: "text", bredd: "wide" },
+        { id: "agare", etikett: "Ägare", typ: "text" },
+        { id: "status", etikett: "Veckostatus", typ: "select", alternativ: ["Ej bedömd", "Klart", "Pågår", "Oklart"], standard: "Ej bedömd" },
+        { id: "avstamd", etikett: "Senast avstämd", typ: "date" },
+      ],
+      start: [
+        { granssnitt: "Mark/betong ↔ el", innehall: "Fundamentkrav, planhet, jordning, brandzoner, hålbild" },
+        { granssnitt: "Leverantör ↔ site", innehall: "Leveransfönster, lyftplan, montageordning, emballage och retur" },
+        { granssnitt: "El/MV ↔ nätägare", innehall: "Ställverk, reläskydd, provning, spänningssättning" },
+        { granssnitt: "Kommunikation", innehall: "Fiber/SCADA, driftsignal, larmkedjor, EMS" },
+        { granssnitt: "Brand ↔ drift", innehall: "Zoner, släcksystem, rutiner, myndighetskrav" },
+      ],
+    },
     katalog: ["solution"],
   },
   {
     id: "tillstand",
-    fas: "Planering",
+    fas: 2,
     titel: "Tillstånd och nätägare",
     sammanfattning: "Bygglov, arbetsmiljö, nätanslutning och provningsplan.",
     falt: [
-      { id: "natagare", etikett: "Nätägare", typ: "text" },
+      { id: "natagare", etikett: "Nätägare", typ: "text", obligatoriskt: true },
       { id: "tillstandAnm", etikett: "Anteckning", typ: "textarea", bred: true },
     ],
     katalog: ["permits"],
   },
   {
     id: "hseq",
-    fas: "Etablering",
+    fas: 3,
     titel: "HSEQ och etablering",
     sammanfattning: "APD, arbetsplatstavla och stopp som annars försenar allt.",
     falt: [{ id: "hseqAnm", etikett: "Anteckning", typ: "textarea", bred: true }],
@@ -198,27 +239,51 @@ export const STEG = [
   },
   {
     id: "produktion",
-    fas: "Genomförande",
+    fas: 4,
     titel: "cBoP, eBoP och montage",
     sammanfattning: "Mark, betong, leveranser, lyft och elektrisk installation.",
     falt: [{ id: "produktionAnm", etikett: "Anteckning", typ: "textarea", bred: true }],
     katalog: ["cbop", "ebop"],
   },
   {
+    id: "provning",
+    fas: 4,
+    titel: "Provning och driftsättning",
+    sammanfattning: "Anläggningsprov, elsäkerhet och driftsättning innan slutbesiktning.",
+    falt: [{ id: "provningAnm", etikett: "Anteckning", typ: "textarea", bred: true }],
+    katalog: ["commission"],
+  },
+  {
     id: "avslut",
-    fas: "Avslut",
-    titel: "Provning, besiktning och garanti",
-    sammanfattning: "Driftsättning, slutbetalning, ÄTA och erfarenhetsåterföring.",
+    fas: 5,
+    titel: "Slutbesiktning och överlämning",
+    sammanfattning: "Slutbesiktning, punchlista, slutdokumentation, slutreglering och erfarenhetsåterföring.",
     falt: [
-      { id: "avslutAta", etikett: "ÄTA vid avslut", typ: "textarea" },
-      { id: "lardomar", etikett: "Lärdomar", typ: "textarea" },
-      { id: "garanti", etikett: "Garanti", typ: "textarea" },
+      { id: "avslutAta", etikett: "ÄTA vid avslut", typ: "textarea", obligatoriskt: true },
+      { id: "lardomar", etikett: "De tre viktigaste erfarenheterna och varför", typ: "textarea", bred: true, tips: "Går in i slutrapporten och i projektmetoden." },
+      /* Kick-out och slutrapport (metoden 6.9). */
+      { id: "kickoutDatum", etikett: "Kick-out genomförd", typ: "date" },
+      { id: "kickoutBra", etikett: "Vad gick bra?", typ: "textarea" },
+      { id: "kickoutKostade", etikett: "Vad kostade pengar?", typ: "textarea" },
+      { id: "kickoutAldrigIgen", etikett: "Vad ska aldrig göras igen?", typ: "textarea" },
+      { id: "kickoutOverraskade", etikett: "Vad överraskade?", typ: "textarea" },
+      { id: "slutrapportResultat", etikett: "Slutrapport: resultat mot mål och projekttriangel", typ: "textarea", bred: true, tips: "Avvikelseanalys, beslut som påverkade resultatet, bakgrund, konsekvens och förbättringsförslag." },
     ],
-    katalog: ["commission", "closeout"],
+    katalog: ["closeout"],
+    grupper: { closeout: ["Slutbesiktning", "Punchlista", "Slutdokumentation", "Ekonomi", "Internt avslut", "Erfarenhet"] },
+  },
+  {
+    id: "garanti",
+    fas: 6,
+    titel: "Eftermarknad och garanti",
+    sammanfattning: "Garantivillkor, kontaktperson för garantiärenden och rutin under garantitiden.",
+    falt: [{ id: "garanti", etikett: "Garanti", typ: "textarea", bred: true, obligatoriskt: true }],
+    katalog: ["closeout"],
+    grupper: { closeout: ["Garanti"] },
   },
   {
     id: "sammanfattning",
-    fas: "Klart",
+    fas: null,
     titel: "Granska och skapa",
     sammanfattning: "Det här läggs in i portföljen när du skapar projektet.",
   },
@@ -235,4 +300,5 @@ export const KATALOG_RUBRIK = {
   ebop: "eBoP",
   commission: "Driftsättning",
   closeout: "Avslut",
+  kickoff: "Uppstartsavstämning",
 };

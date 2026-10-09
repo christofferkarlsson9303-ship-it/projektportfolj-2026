@@ -51,6 +51,8 @@ export function UiProvider({ children }) {
   const [fokus, setFokus] = useState(null);
   /* Post som en annan sektion bett oss öppna, t.ex. ÄTA → ny dagboksrad. */
   const [postFokus, setPostFokus] = useState(null);
+  /* Projekt vars projektstart ska öppnas när fliken Projektstart visas, t.ex. från projektkortet. */
+  const [projektstartMal, setProjektstartMal] = useState(null);
   /* Dokument som ska skrivas ut. */
   const [utskrift, setUtskrift] = useState(null);
   const [faltmaterial, setFaltmaterial] = useState(null);
@@ -169,6 +171,16 @@ export function UiProvider({ children }) {
     setPostFokus({ vy, id, tid: Date.now() });
   }, []);
 
+  /** Byt till Projektstart och be den öppna projektstarten för ett visst projekt. */
+  const oppnaProjektstart = useCallback((pid) => {
+    setProjektstartMal(pid);
+    setAktivVy("start");
+    setNavOppen(false);
+    setPostFokus(null);
+    setFokus(null);
+  }, []);
+  const rensaProjektstartMal = useCallback(() => setProjektstartMal(null), []);
+
   /** Rendera ett dokument i utskriftsytan och öppna utskriftsdialogen. */
   const skrivUt = useCallback((element) => setUtskrift(element), []);
 
@@ -209,8 +221,10 @@ export function UiProvider({ children }) {
       rensaUtskrift,
       faltmaterial, oppnaFaltmaterial, stangFaltmaterial,
       sokOppen, setSokOppen,
+      projektstartMal, oppnaProjektstart, rensaProjektstartMal,
     }),
     [
+      projektstartMal, oppnaProjektstart, rensaProjektstartMal,
       aktivVy, visa, valtProjekt, tema, vaxlaTema, tathet, setTathet, toast, visaToast,
       modal, fraga, bekrafta, stangModal, navOppen, fokus, oppnaFlagga,
       postFokus, oppnaPost, utskrift, skrivUt, rensaUtskrift, faltmaterial, oppnaFaltmaterial, stangFaltmaterial, sokOppen,

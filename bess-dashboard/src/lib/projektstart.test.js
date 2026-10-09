@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SEED } from "../data/seed.js";
-import { arLangText, textstycken, historikRad, medHistorik, milstolparUtanDatum, nyaRaderForProjekt, utkastFranProjekt, kortAndringar, lasUtkast, projektstartPost, utkastAndrat, utkastFranPost, luckor, nyttProjekt, projektFranUtkast, projektstartDokument, projektstartFel, tomtUtkast } from "./projektstart.js";
+import { arLangText, textstycken, historikRad, medHistorik, milstolparUtanDatum, nyaRaderForProjekt, utkastFranProjekt, kortAndringar, lasUtkast, projektstartPost, utkastAndrat, utkastFranPost, luckor, riskFordelning, riskNivaForVarde, riskvardeForRad, stegPunkter, stegTillstand, nyttProjekt, projektFranUtkast, projektstartDokument, projektstartFel, tomtUtkast } from "./projektstart.js";
 import { STEG } from "../data/projektstartSteg.js";
 import { efterInlasning, reducer } from "../state/portfolj-reducer.js";
 import { GILTIGA_VYER, VYER, ENKEL_MENY } from "../data/vyer.js";
@@ -44,9 +44,9 @@ describe("Återanvändbar projektmetod", () => {
     u.rader.risker = [{ id: "a", titel: "Leverans sen", sannolikhet: "4", konsekvens: "5", agare: "PL", atgard: "Bevaka" }, { id: "b", titel: "  ", sannolikhet: "3", konsekvens: "3", agare: "", atgard: "" }];
     u.rader.milstolpar = [{ id: "c", namn: "M1", utlosare: "", datum: "2027-01-15" }, { id: "d", namn: "Utan datum", utlosare: "", datum: "" }];
     const { projekt, risker, milstolpar } = projektFranUtkast(u, "p1");
-    expect(projekt).toMatchObject({ id: "p1", namn: "Kalmar batteripark", nr: "90002", ort: "Kalmar", natagare: "Kalmar Energi", kontraktsvarde: null, status: "Planering" });
+    expect(projekt).toMatchObject({ id: "p1", namn: "Kalmar batteripark", nr: "90002", ort: "Kalmar", natagare: "Kalmar Energi", kontraktsvarde: null, status: "Anbud", fas: 1 });
     expect(projekt.anteckning).toContain("Kritisk linje: Fundament");
-    expect(risker).toEqual([{ id: "r-p1-1", projektId: "p1", titel: "Leverans sen", sannolikhet: 4, konsekvens: 5, atgard: "Bevaka", agare: "PL", status: "oppen" }]);
+    expect(risker).toEqual([{ id: "r-p1-1", projektId: "p1", fas: 1, titel: "Leverans sen", sannolikhet: 4, konsekvens: 5, atgard: "Bevaka", agare: "PL", status: "oppen" }]);
     expect(milstolpar).toEqual([{ id: "m-p1-1", projektId: "p1", titel: "M1", datum: "2027-01-15", status: "planerad" }]);
     let next = reducer(efterInlasning(structuredClone(SEED)), { type: "SKAPA_PROJEKT", rad: projekt });
     expect(next.projekt.at(-1).id).toBe("p1");
@@ -65,13 +65,14 @@ describe("Återanvändbar projektmetod", () => {
   });
   it("bygger PDF-underlag med bara ifyllda fält, tabellrader och öppna kritiska punkter", () => {
     const u = tomtUtkast();
+    u.fasGolv = 3; // rapporten omfattar fas 1–2
     Object.assign(u.v, { namn: "Kalmar", nr: "90003", bestallare: "Kund" });
-    u.rader.risker = [{ id: "a", titel: "Leverans sen", sannolikhet: "4", konsekvens: "5", agare: "PL", atgard: "" }];
+    u.rader.risker = [{ id: "a", titel: "Leverans sen", fas: "2", sannolikhet: "4", konsekvens: "5", agare: "PL", atgard: "" }];
     u.kryss.calloff = { signed: true };
     const d = projektstartDokument(u, { datum: "2026-10-06", skapadAv: "CK" });
     expect(d.projekt).toMatchObject({ nr: "90003", namn: "Kalmar" });
     const kort = d.projektstart.sektioner.find((x) => x.id === "projekt");
-    expect(kort.falt.map(([k]) => k)).toEqual(["Bolag", "Projektnamn", "Projektnummer", "Beställare", "Kontraktsform", "Skede"]);
+    expect(kort.falt.map(([k]) => k)).toEqual(["Bolag", "Projektnamn", "Projektnummer", "Beställare", "Kontraktsform"]);
     expect(d.projektstart.sektioner.find((x) => x.id === "risker").tabell.rader[0]).toContain("Leverans sen");
     expect(d.projektstart.sektioner.find((x) => x.id === "intressenter").tabell).toBeNull();
     const avrop = d.projektstart.sektioner.find((x) => x.id === "avrop");
@@ -81,6 +82,7 @@ describe("Återanvändbar projektmetod", () => {
   });
   it("PDF-underlaget har alla steg numrerade och alla kontrollpunkter med avbockning", () => {
     const u = tomtUtkast();
+    u.fasGolv = 6;
     Object.assign(u.v, { namn: "Vaggeryd", nr: "-", plats: "Båramo" });
     u.kryss.calloff = { signed: true };
     const d = projektstartDokument(u, { datum: "2026-10-06" });
@@ -112,19 +114,19 @@ describe("Återanvändbar projektmetod", () => {
   it("för bara ändrade projektkortsfält över till projektet", () => {
     const u = tomtUtkast();
     Object.assign(u.v, { namn: "Nytt namn", nr: "90004", plats: "Kalmar", bestallare: "" });
-    const projekt = { namn: "Gammalt namn", nr: "90004", ort: "Kalmar", bestallare: "Kund", status: "Planering" };
+    const projekt = { namn: "Gammalt namn", nr: "90004", ort: "Kalmar", bestallare: "Kund", status: "Anbud", fas: 1 };
     expect(kortAndringar(u, projekt)).toEqual([["namn", "Nytt namn"], ["bestallare", ""]]);
     u.v.namn = "";
     expect(kortAndringar(u, projekt).some(([f]) => f === "namn")).toBe(false);
   });
-  it("skede blir projektets status, och tomt skede eller bindestreck i numret skriver aldrig över", () => {
+  it("status följer fasen och skrivs bara över när fasen ändras, och bindestreck i numret skriver aldrig över", () => {
     const u = tomtUtkast();
-    Object.assign(u.v, { namn: "Vaggeryd", nr: "-", skede: "Anbud" });
+    Object.assign(u.v, { namn: "Vaggeryd", nr: "-" });
     const { projekt } = projektFranUtkast(u, "p-v");
-    expect(projekt).toMatchObject({ nr: "", status: "Anbud" });
-    expect(kortAndringar(u, { namn: "Vaggeryd", nr: "", status: "Planering" })).toEqual([["status", "Anbud"]]);
-    u.v.skede = "";
-    expect(kortAndringar(u, { namn: "Vaggeryd", nr: "", status: "Planering" })).toEqual([]);
+    expect(projekt).toMatchObject({ nr: "", status: "Anbud", fas: 1 });
+    expect(kortAndringar(u, { namn: "Vaggeryd", nr: "", status: "Planering" })).toEqual([["fas", 1], ["status", "Anbud"]]);
+    // En status som någon satt för hand rörs inte så länge fasen är densamma.
+    expect(kortAndringar(u, { namn: "Vaggeryd", nr: "", status: "Planering", fas: 1 })).toEqual([]);
   });
   it("stoppar dubbletter på namn när projektnummer saknas", () => {
     const state = { projekt: [{ id: "a", nr: "", namn: "Vaggeryd 100MW" }] };
@@ -186,5 +188,45 @@ describe("Återanvändbar projektmetod", () => {
     expect(luckor(u).stegKvar).toEqual([]);
     const tomt = utkastFranProjekt({ id: "x", namn: "Tomt" }, state);
     expect(tomt.rader.risker.length).toBeGreaterThan(0);
+  });
+});
+
+describe("Stegens tillstånd i guiden", () => {
+  const steg = (id) => STEG.find((s) => s.id === id);
+  it("räknar steg utan kontrollpunkter som klara först när de är genomgångna", () => {
+    const u = tomtUtkast();
+    expect(stegTillstand(u, steg("projekt"))).toBe("ny");
+    u.besokta.push("projekt");
+    expect(stegTillstand(u, steg("projekt"))).toBe("klar");
+  });
+  it("räknar steg med kontrollpunkter som pågående tills alla är bockade", () => {
+    const u = tomtUtkast();
+    const s = steg("avrop");
+    expect(stegTillstand(u, s)).toBe("ny");
+    u.besokta.push("avrop");
+    expect(stegTillstand(u, s)).toBe("pagar");
+    for (const p of STEG.flatMap((x) => (x.id === "avrop" ? stegPunkter(x) : []))) u.kryss[p.bucket] = { ...u.kryss[p.bucket], [p.id]: true };
+    expect(stegTillstand(u, s)).toBe("klar");
+  });
+});
+
+describe("Riskvärde och fördelning i guiden", () => {
+  it("delar nivåerna vid 7 och 15", () => {
+    expect([1, 6, 7, 9, 14, 15, 20, 25].map(riskNivaForVarde)).toEqual(["lag", "lag", "medel", "medel", "medel", "hog", "hog", "hog"]);
+  });
+  it("räknar sannolikhet × konsekvens och håller värdena inom 1–5", () => {
+    expect(riskvardeForRad({ sannolikhet: "5", konsekvens: "4" })).toBe(20);
+    expect(riskvardeForRad({ sannolikhet: "9", konsekvens: "0" })).toBe(15);
+    expect(riskvardeForRad({})).toBe(9);
+  });
+  it("fördelar bara rader med risktext", () => {
+    const f = riskFordelning([
+      { titel: "A", sannolikhet: "1", konsekvens: "2" },
+      { titel: "B", sannolikhet: "3", konsekvens: "3" },
+      { titel: "C", sannolikhet: "5", konsekvens: "4" },
+      { titel: "  ", sannolikhet: "5", konsekvens: "5" },
+    ]);
+    expect(f).toEqual({ lag: 1, medel: 1, hog: 1, totalt: 3 });
+    expect(riskFordelning(undefined)).toEqual({ lag: 0, medel: 0, hog: 0, totalt: 0 });
   });
 });

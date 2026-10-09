@@ -1,11 +1,12 @@
 import { usePortfolj, useUi } from "../../state/hooks.js";
-import { ArrowUpRight, BatteryCharging, MapPin, PlugZap, Zap } from "lucide-react";
+import { ArrowUpRight, BatteryCharging, Flag, MapPin, PlugZap, Zap } from "lucide-react";
 import { DatumFalt, Falt, NumFalt, SelStatus } from "../ui/Falt.jsx";
 import { PROJEKTSTATUS } from "../../data/konstanter.js";
 import { fmtSEK } from "../../lib/format.js";
 import { dagarTill, idag } from "../../lib/datum.js";
 import { ekonomi, nastaHandelse, oppnaUR, projektKlass, projektUnderlag } from "../../lib/berakningar.js";
-import { Meter, TableRegion } from "../ds/index.js";
+import { Meter, StatusBadge, TableRegion } from "../ds/index.js";
+import { FAS_ANTAL, arFasNr, faseInfo } from "../../data/projektfaser.ts";
 
 /* ---------- Projektkort ---------- */
 
@@ -19,7 +20,7 @@ const tonForDagar = (d) => (d === null ? "" : d < 0 ? "bad" : d < 60 ? "warn" : 
 
 export function Projektkort({ p }) {
   const { state, uppdStatus } = usePortfolj();
-  const { setValtProjekt, visa } = useUi();
+  const { setValtProjekt, visa, oppnaProjektstart } = useUi();
 
   const e = ekonomi(state, p.id);
   const d = dagarTill(p.fardigstallande);
@@ -33,12 +34,15 @@ export function Projektkort({ p }) {
     <article className={`projkort ${projektKlass(state, p.id)}`.trim()}>
       <header className="projkort-topp">
         <span className={`projkort-nr${p.nr ? "" : " saknas"}`}>{p.nr || "AO-nr saknas"}</span>
-        <SelStatus
-          alternativ={PROJEKTSTATUS}
-          varde={p.status || "Planering"}
-          etikett={`Status för ${p.namn}`}
-          onChange={(v) => uppdStatus("projekt", p.id, "status", v)}
-        />
+        <span className="flex flex-wrap items-center justify-end gap-2">
+          {arFasNr(p.fas) ? <StatusBadge ton="neutral" label={`Fas ${p.fas} av ${FAS_ANTAL} · ${faseInfo(p.fas).kort}`} /> : null}
+          <SelStatus
+            alternativ={PROJEKTSTATUS}
+            varde={p.status || "Planering"}
+            etikett={`Status för ${p.namn}`}
+            onChange={(v) => uppdStatus("projekt", p.id, "status", v)}
+          />
+        </span>
       </header>
 
       <h3 className="projkort-namn">
@@ -118,6 +122,12 @@ export function Projektkort({ p }) {
       </div>
 
       {p.anteckning ? <p className="projkort-anteckning">{p.anteckning}</p> : null}
+
+      <footer>
+        <button type="button" className="btn sec mini" onClick={() => oppnaProjektstart(p.id)}>
+          <Flag size={14} aria-hidden="true" /> Öppna projektstart<span className="sr-only"> för {p.namn}</span>
+        </button>
+      </footer>
     </article>
   );
 }

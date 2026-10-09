@@ -5,6 +5,7 @@
 import { dagarTill, idag, timmarSedan } from "./datum.js";
 import { VECKOFRAGOR } from "../data/veckofragor.js";
 import { MILSTOLPE_MODELL, SLUTDOK_MALL, ATA_STATUS } from "../data/konstanter.js";
+import { riskMatrisFarg, riskNivaFranVarde } from "./risknivaer.js";
 
 /* ---------- Projekt ---------- */
 
@@ -49,25 +50,12 @@ export function betalRad(state, pid, kod) {
 
 /* ---------- Risk ---------- */
 
-/* ONE Nordics riskmatris är inte symmetrisk: S1×K5 är Gul (inte Röd) och
-   S5×K1 är Gul (inte Grön). Färgen slås därför upp i tabellen i stället för
-   att räknas fram ur produkten. */
-const RISKMATRIS_TABELL = [
-  ["gron", "gron", "gron", "gul", "gul"], // sannolikhet 1
-  ["gron", "gron", "gron", "gul", "rod"], // sannolikhet 2
-  ["gron", "gron", "gul", "rod", "rod"], // sannolikhet 3
-  ["gron", "gul", "gul", "rod", "rod"], // sannolikhet 4
-  ["gul", "gul", "rod", "rod", "rod"], // sannolikhet 5
-];
-
-export function riskMatrisFarg(s, k) {
-  const sa = Math.max(1, Math.min(5, Number(s) || 1));
-  const ko = Math.max(1, Math.min(5, Number(k) || 1));
-  return RISKMATRIS_TABELL[sa - 1][ko - 1];
-}
+/* Nivågränserna och matrisens färger bor i risknivaer.js, så att hela appen
+   använder samma definition. */
+export { riskMatrisFarg };
 
 export const riskvarde = (r) => r.sannolikhet * r.konsekvens;
-export const riskKlass = (v) => (v >= 15 ? "h" : v >= 8 ? "m" : "l");
+export const riskKlass = (v) => ({ hog: "h", medel: "m", lag: "l" })[riskNivaFranVarde(v)];
 export const riskNiva = (r) => riskMatrisFarg(r.sannolikhet, r.konsekvens);
 
 /** Exponentiellt riskvärde i kronor — (S × K) × estimerad finansiell påverkan. */

@@ -15,6 +15,7 @@ import {
   underlagsstampel,
   underrattelseLage,
 } from "./berakningar.js";
+import { riskNivaFranVarde } from "./risknivaer.js";
 
 const NU = "2026-09-21T10:00:00+02:00";
 beforeEach(() => {
@@ -165,6 +166,30 @@ describe("riskmatrisen", () => {
     expect(riskMatrisFarg(1, 1)).toBe("gron");
   });
 
+  it("följer en enda definition: låg 1–6, medel 7–14, hög 15–25, och extremvärden är aldrig gröna", () => {
+    expect(riskMatrisFarg(2, 3)).toBe("gron"); // 6
+    expect(riskMatrisFarg(2, 4)).toBe("gul"); // 8
+    expect(riskMatrisFarg(1, 4)).toBe("gron"); // 4
+    expect(riskMatrisFarg(3, 3)).toBe("gul"); // 9
+    expect(riskMatrisFarg(3, 5)).toBe("rod"); // 15
+    expect(riskMatrisFarg(1, 5)).toBe("gul"); // 5, men extremvärde
+    expect(riskMatrisFarg(5, 1)).toBe("gul");
+    expect(riskMatrisFarg(2, 5)).toBe("gul"); // 10
+    expect(riskMatrisFarg(3, 4)).toBe("gul"); // 12
+    expect(riskMatrisFarg(4, 4)).toBe("rod"); // 16
+  });
+
+  it("matrisens färg och märkets nivå är alltid överens, bortsett från extremregeln", () => {
+    const farg = { lag: "gron", medel: "gul", hog: "rod" };
+    for (let s = 1; s <= 5; s++) {
+      for (let k = 1; k <= 5; k++) {
+        const fran = farg[riskNivaFranVarde(s * k)];
+        const extrem = (s === 5 || k === 5) && fran === "gron";
+        expect(riskMatrisFarg(s, k)).toBe(extrem ? "gul" : fran);
+      }
+    }
+  });
+
   it("klamrar värden utanför skalan i stället för att krascha", () => {
     expect(riskMatrisFarg(99, 99)).toBe("rod");
     expect(riskMatrisFarg(0, 0)).toBe("gron");
@@ -174,8 +199,8 @@ describe("riskmatrisen", () => {
   it("klassar riskvärdet på rätt sida om gränserna", () => {
     expect(riskKlass(15)).toBe("h");
     expect(riskKlass(14)).toBe("m");
-    expect(riskKlass(8)).toBe("m");
-    expect(riskKlass(7)).toBe("l");
+    expect(riskKlass(7)).toBe("m");
+    expect(riskKlass(6)).toBe("l");
   });
 
   it("multiplicerar sannolikhet och konsekvens", () => {

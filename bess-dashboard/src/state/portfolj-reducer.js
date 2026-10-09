@@ -14,6 +14,7 @@ import { kalkylRader, kalkylSummor } from "../lib/atakalkyl.js";
 import { fmtSEK } from "../lib/format.js";
 import { MALLAR, arNal, objektFel, punkterForSite } from "../lib/site.js";
 import { projektstartFel } from "../lib/projektstart.js";
+import { arFasNr, fasFranStatus } from "../data/projektfaser.ts";
 import { granskaProfil, rensaProfil } from "../lib/kontraktsprofil.js";
 
 /** Namnet används i ändringsloggen och sparas per webbläsare, inte i delad data. */
@@ -72,12 +73,20 @@ export function efterInlasning(state) {
       nytt.startdatum = batchC ? "2026-02-02" : "";
       nytt.startdatumAntagande = batchC;
     }
+    /* Projektets fas (1–6). Äldre projekt saknar den, då gäller statusen. */
+    if (!arFasNr(nytt.fas)) nytt.fas = fasFranStatus(nytt.status);
     return nytt;
   });
+  /* Varje risk hör till en projektfas. Äldre risker saknar fas och får projektets. En risk
+     som gäller flera projekt (projekt-id som inte är ett enskilt projekt) hamnar i
+     genomförandefasen. */
+  const fasForProjekt = new Map(projekt.map((p) => [p.id, p.fas]));
+  const risker = (state.risker || []).map((r) => (arFasNr(r.fas) ? r : { ...r, fas: fasForProjekt.get(r.projektId) ?? 4 }));
   return {
     ...state,
     ur,
     projekt,
+    risker,
     slutdok: medSlutdokrader(state, projekt),
     handlingsplaner: medHandlingsplaner(state, projekt),
     hseqApd: medApdRader(state, projekt),

@@ -1,5 +1,12 @@
 import { KATALOG_RUBRIK, STEG } from "../data/projektstartSteg.js";
 import { KATALOG } from "../data/projektstartKatalog.js";
+import { FAS_ANTAL, arFasNr, faseInfo, fasFranStatus } from "../data/projektfaser.ts";
+import { arRiskKategori } from "../data/riskTyper.ts";
+import { arAvbockad, stegPunkter } from "./stegpunkter.js";
+import { RISKGRANSER, riskNivaFranVarde } from "./risknivaer.js";
+import { aktuellFas, fasLage, rapportFas } from "./projektfas.js";
+
+export { arAvbockad, stegPunkter, RISKGRANSER };
 
 /** Platshållare som "-" eller "—" räknas som tomt, så att ett bindestreck i
  *  projektnumret varken sparas som nummer eller hamnar i sidhuvudet. */
@@ -44,6 +51,10 @@ function nyRad(tabell, grund = {}) {
 }
 export const nyTabellrad = nyRad;
 
+/** Trafikljus per fas (metoden 3.4): projektledarens bedömning. Grön enligt plan, gul avvikelse som
+ *  hanteras i projektet, röd allvarlig avvikelse som kräver hjälp eller beslut. */
+export const LJUS = ["gron", "gul", "rod"];
+
 export function tomtUtkast() {
   const v = {};
   for (const s of STEG) for (const f of s.falt || []) v[f.id] = f.standard ?? f.alternativ?.[0] ?? "";
@@ -51,7 +62,7 @@ export function tomtUtkast() {
   for (const id of ["beslut", "niva", "offra"]) v[id] = "";
   const rader = {};
   for (const s of STEG) if (s.tabell) rader[s.tabell.id] = (s.tabell.start?.length ? s.tabell.start : [{}]).map((g) => nyRad(s.tabell, g));
-  return { steg: STEG[0].id, besokta: [], v, rader, kryss: {} };
+  return { steg: STEG[0].id, besokta: [], v, rader, kryss: {}, fasGolv: 1, trafikljus: {} };
 }
 
 /** Läser ett sparat utkast och släpper bara in kända fält, så att en gammal eller
@@ -69,31 +80,74 @@ export function lasUtkast(raw) {
   for (const k of Object.keys(bas.v)) if (typeof sparat.v?.[k] === "string") bas.v[k] = sparat.v[k];
   for (const k of Object.keys(bas.rader)) if (Array.isArray(sparat.rader?.[k]) && sparat.rader[k].length) bas.rader[k] = sparat.rader[k].filter((r) => r && typeof r === "object" && typeof r.id === "string");
   for (const [bucket, poster] of Object.entries(sparat.kryss || {})) if (KATALOG[bucket] && poster && typeof poster === "object") bas.kryss[bucket] = { ...poster };
+  if (arFasNr(sparat.fasGolv)) bas.fasGolv = sparat.fasGolv;
+  for (const [nr, t] of Object.entries(sparat.trafikljus || {})) {
+    if (arFasNr(Number(nr)) && t && LJUS.includes(t.ljus)) bas.trafikljus[nr] = { ljus: t.ljus, kommentar: typeof t.kommentar === "string" ? t.kommentar.slice(0, 300) : "" };
+  }
   if (ids.has(sparat.steg)) bas.steg = sparat.steg;
   if (Array.isArray(sparat.besokta)) bas.besokta = sparat.besokta.filter((id) => ids.has(id));
   return bas;
 }
 
-/** Kontrollpunkter för ett steg, med avbockning ur utkastet. */
-export const stegPunkter = (steg) => (steg.katalog || []).flatMap((b) => KATALOG[b].map((p) => ({ ...p, bucket: b })));
-export const arAvbockad = (u, p) => !!u.kryss?.[p.bucket]?.[p.id];
 
-export function luckor(u) {
-  const alla = STEG.flatMap(stegPunkter);
+/* Nivåerna räknas i risknivaer.js, samma definition som resten av appen. */
+export const riskNivaForVarde = riskNivaFranVarde;
+
+/** Riskvärde = sannolikhet (1–5) × konsekvens (1–5). Värden utanför skalan hålls inom 1–5. */
+export const riskvardeForRad = (r) => {
+  const hall = (x) => Math.max(1, Math.min(5, Number(x) || 3));
+  return hall(r.sannolikhet) * hall(r.konsekvens);
+};
+
+/** Fördelning låg/medel/hög över de rader som har en risktext, alltså de som blir risker i projektet. */
+export function riskFordelning(rader) {
+  const f = { lag: 0, medel: 0, hog: 0, totalt: 0 };
+  for (const r of rader || []) {
+    if (!r.titel?.trim()) continue;
+    f[riskNivaForVarde(riskvardeForRad(r))] += 1;
+    f.totalt += 1;
+  }
+  return f;
+}
+
+/** Hur långt ett steg har kommit: "klar", "pagar", "ny" eller "last". Steg med
+ *  kontrollpunkter är klara först när alla är bockade. Övriga steg räknas som
+ *  klara när man har gått igenom dem. Steg i en fas som inte är upplåst är "last". */
+export function stegTillstand(u, steg) {
+  if (steg.fas !== null && steg.fas > aktuellFas(u)) return "last";
+  const punkter = stegPunkter(steg);
+  const klara = punkter.filter((p) => arAvbockad(u, p)).length;
+  const besokt = u.besokta.includes(steg.id);
+  if (punkter.length) {
+    if (klara === punkter.length) return "klar";
+    return klara > 0 || besokt ? "pagar" : "ny";
+  }
+  return besokt ? "klar" : "ny";
+}
+
+/** Kontrollpunkter och steg som återstår. `tillFas` begränsar räkningen till de faser som är
+ *  upplåsta, så att en rapport inte räknar sidor man ännu inte kan öppna. */
+export function luckor(u, tillFas = FAS_ANTAL) {
+  const iOmfattning = (s) => s.fas === null || s.fas <= tillFas;
+  const alla = STEG.filter(iOmfattning).flatMap(stegPunkter);
   const kritiska = alla.filter((p) => p.kritisk);
   return {
     totalt: alla.length,
     klara: alla.filter((p) => arAvbockad(u, p)).length,
     kritiskaTotalt: kritiska.length,
     kritiskaOppna: kritiska.filter((p) => !arAvbockad(u, p)),
-    stegKvar: STEG.filter((s) => s.id !== SISTA_STEG && !u.besokta.includes(s.id)),
+    stegKvar: STEG.filter((s) => s.id !== SISTA_STEG && iOmfattning(s) && !u.besokta.includes(s.id)),
   };
 }
+
+/** Fasen en riskrad hör till. Ett ogiltigt eller saknat värde blir reservfasen. */
+const radFas = (x, reserv) => (arFasNr(Number(x)) ? Number(x) : reserv);
 
 /** Raderna som blir poster i portföljen. Tomma rader hoppas över. */
 export function projektFranUtkast(u, id) {
   const v = u.v;
-  const rad = nyttProjekt({ namn: v.namn, nr: v.nr, ort: v.plats, bestallare: v.bestallare, startdatum: v.startdatum, fardigstallande: v.fardigdatum, status: v.skede }, id);
+  const fas = aktuellFas(u);
+  const rad = { ...nyttProjekt({ namn: v.namn, nr: v.nr, ort: v.plats, bestallare: v.bestallare, startdatum: v.startdatum, fardigstallande: v.fardigdatum, status: faseInfo(fas).status }, id), fas };
   const rader = [
     v.kontraktsform && `Kontraktsform: ${v.kontraktsform}${v.niva ? `, ${v.niva.toLowerCase()}` : ""}`,
     v.nulage && `Nuläge vid start: ${v.nulage.trim()}`,
@@ -103,7 +157,10 @@ export function projektFranUtkast(u, id) {
   const projekt = { ...rad, natagare: (v.natagare || "").trim(), anteckning: rader.join("\n") };
   const risker = (u.rader.risker || [])
     .filter((r) => r.titel?.trim())
-    .map((r, i) => ({ id: `r-${id}-${i + 1}`, projektId: id, titel: r.titel.trim(), sannolikhet: Number(r.sannolikhet) || 3, konsekvens: Number(r.konsekvens) || 3, atgard: (r.atgard || "").trim(), agare: (r.agare || "").trim(), status: "oppen" }));
+    .map((r, i) => ({
+      id: `r-${id}-${i + 1}`, projektId: id, fas: radFas(r.fas, fas), ...(arRiskKategori(r.kategori) ? { kategori: r.kategori } : {}),
+      titel: r.titel.trim(), sannolikhet: Number(r.sannolikhet) || 3, konsekvens: Number(r.konsekvens) || 3, atgard: (r.atgard || "").trim(), agare: (r.agare || "").trim(), status: "oppen",
+    }));
   const milstolpar = (u.rader.milstolpar || [])
     .filter((m) => m.namn?.trim() && m.datum)
     .map((m, i) => ({ id: `m-${id}-${i + 1}`, projektId: id, titel: m.namn.trim(), datum: m.datum, status: "planerad" }));
@@ -128,7 +185,8 @@ export function nyaRaderForProjekt(u, projektId, state, nu = Date.now()) {
 /** En rad i projektstartens uppdateringslogg: vad ledningen såg vid varje sparning. */
 export function historikRad(u, { datum, av = "" }) {
   const l = luckor(u);
-  return { datum, av, skede: varde(u.v.skede), nulage: (u.v.nulage || "").trim(), klara: l.klara, totalt: l.totalt, kritiskaOppna: l.kritiskaOppna.length };
+  const fas = aktuellFas(u);
+  return { datum, av, fas, skede: faseInfo(fas).status, nulage: (u.v.nulage || "").trim(), klara: l.klara, totalt: l.totalt, kritiskaOppna: l.kritiskaOppna.length };
 }
 
 /** Lägger till en loggrad. Samma dag ersätts den senaste raden i stället för att logga varje klick. */
@@ -175,11 +233,28 @@ export function textstycken(text) {
 }
 
 /** Relativ kolumnbredd i PDF:en: breda textkolumner får mer plats, val och datum mindre. */
-const kolumnVikt = (k) => (k.bredd === "wide" ? 3 : k.typ === "select" ? 1 : k.typ === "date" ? 1.2 : 2);
+const kolumnVikt = (k) => (k.bredd === "wide" ? 3 : k.bredd === "mid" ? 1.5 : k.typ === "select" ? 1 : k.typ === "date" ? 1.2 : 2);
 
+/** Etiketten för ett valt värde i en select-kolumn. Alternativen är strängar eller [värde, etikett]-par. */
+const altEtikett = (k, val) => {
+  const par = (k.alternativ || []).map((a) => (Array.isArray(a) ? a : [a, a])).find(([x]) => x === val);
+  return par ? par[1] : val;
+};
+
+/** Riskvärde (S × K) som text, för kolumnen Värde i PDF:ens riskregister. */
+const riskvardeText = (r) => String((Math.max(1, Math.min(5, Number(r.sannolikhet) || 3))) * Math.max(1, Math.min(5, Number(r.konsekvens) || 3)));
+
+/** Underlaget till PDF:en. Rapporten är ackumulerande och omfattar de godkända faserna, alltså
+ *  fas 1 till `rapportFas`. Huvudet visar ändå projektets aktuella fas och status. */
 export function projektstartDokument(u, { datum, skapadAv = "", historik = [], sparad = "" }) {
   const v = u.v;
-  const sektioner = STEG.filter((s) => s.id !== SISTA_STEG).map((s, i) => {
+  const nuFas = aktuellFas(u);
+  const fasInfo = faseInfo(nuFas);
+  const lager = fasLage(u);
+  /* En rapport utan godkänd fas kan inte exporteras. Underlaget byggs ändå, med fas 1, så att
+     förhandsvisning och tester inte behöver specialfall. */
+  const omfattar = Math.max(1, rapportFas(u));
+  const sektioner = STEG.filter((s) => s.id !== SISTA_STEG && s.fas <= omfattar).map((s) => {
     /* Fält: [etikett, värde, stycken]. Långa fält får stycken och visas som
        rubrik med brödtext i PDF:en, korta som rad. Saknat projektnummer skrivs
        ut som "Ej skapat" så att ledningen ser att det saknas. */
@@ -190,14 +265,21 @@ export function projektstartDokument(u, { datum, skapadAv = "", historik = [], s
       })
       .filter(([, val]) => val);
     const tomma = (s.falt || []).filter((f) => f.id !== "nr" && !varde(v[f.id])).map((f) => f.etikett);
+    const arRisker = s.tabell?.id === "risker";
     const tabell = s.tabell
       ? {
           titel: s.tabell.titel,
-          kolumner: s.tabell.kolumner.map((k) => k.etikett),
-          vikter: s.tabell.kolumner.map(kolumnVikt),
+          kolumner: [...s.tabell.kolumner.map((k) => k.etikett), ...(arRisker ? ["Värde"] : [])],
+          vikter: [...s.tabell.kolumner.map(kolumnVikt), ...(arRisker ? [0.8] : [])],
           rader: (u.rader[s.tabell.id] || [])
             .filter((r) => s.tabell.kolumner.some((k) => (r[k.id] || "").trim() && (k.typ === "text" || k.typ === "date")))
-            .map((r) => s.tabell.kolumner.map((k) => (r[k.id] || "").trim())),
+            /* Risker från faser som inte ingår hör inte hemma i rapporten. */
+            .filter((r) => !arRisker || radFas(r.fas, nuFas) <= omfattar)
+            .sort((a, b) => (arRisker ? radFas(a.fas, nuFas) - radFas(b.fas, nuFas) : 0))
+            .map((r) => [
+              ...s.tabell.kolumner.map((k) => (k.typ === "select" ? altEtikett(k, (r[k.id] || "").trim()) : (r[k.id] || "").trim())),
+              ...(arRisker ? [riskvardeText(r)] : []),
+            ]),
         }
       : null;
     const punkter = stegPunkter(s);
@@ -219,8 +301,10 @@ export function projektstartDokument(u, { datum, skapadAv = "", historik = [], s
       : null;
     return {
       id: s.id,
-      nr: i + 1,
-      fas: s.fas,
+      nr: STEG.indexOf(s) + 1,
+      fasNr: s.fas,
+      fas: `Fas ${s.fas} · ${faseInfo(s.fas).kort}`,
+      fasTitel: faseInfo(s.fas).titel,
       titel: s.titel,
       sammanfattning: s.sammanfattning || "",
       falt,
@@ -231,7 +315,7 @@ export function projektstartDokument(u, { datum, skapadAv = "", historik = [], s
       besokt: u.besokta.includes(s.id),
     };
   });
-  const l = luckor(u);
+  const l = luckor(u, omfattar);
   return {
     projekt: { id: varde(v.nr) || "utkast", nr: varde(v.nr), namn: (v.namn || "").trim(), bestallare: varde(v.bestallare) },
     datum,
@@ -244,7 +328,18 @@ export function projektstartDokument(u, { datum, skapadAv = "", historik = [], s
       kritiskaTotalt: l.kritiskaTotalt,
       historik: Array.isArray(historik) ? historik : [],
       sparad,
-      lage: { skede: varde(v.skede), nulage: (v.nulage || "").trim(), beslut: (v.beslutLedning || "").trim() },
+      /* Projektets nuvarande fas och status, överst i rapporten. */
+      fas: {
+        nr: nuFas,
+        omfattar,
+        antal: FAS_ANTAL,
+        kort: fasInfo.kort,
+        titel: fasInfo.titel,
+        status: fasInfo.status,
+        klarAllt: lager.every((f) => f.status === "klar"),
+        faser: lager.map((f) => ({ nr: f.nr, kort: f.kort, status: f.status, klara: f.klara, totalt: f.totalt, ljus: u.trafikljus?.[f.nr]?.ljus || "", kommentar: (u.trafikljus?.[f.nr]?.kommentar || "").trim() })),
+      },
+      lage: { skede: fasInfo.status, nulage: (v.nulage || "").trim(), beslut: (v.beslutLedning || "").trim() },
       kort: {
         plats: varde(v.plats),
         start: varde(v.startdatum),
@@ -259,27 +354,34 @@ export function projektstartDokument(u, { datum, skapadAv = "", historik = [], s
 
 /** Sparad projektstart: guidens svar, knutna till projektet. */
 export function projektstartPost(projektId, u, nu = new Date().toISOString(), historik = []) {
-  return { id: `ps-${projektId}`, projektId, utkast: { v: u.v, rader: u.rader, kryss: u.kryss }, skapad: nu, uppdaterad: nu, historik };
+  return { id: `ps-${projektId}`, projektId, utkast: { v: u.v, rader: u.rader, kryss: u.kryss, fasGolv: u.fasGolv, trafikljus: u.trafikljus || {} }, skapad: nu, uppdaterad: nu, historik };
 }
 
 /** Öppnar en sparad projektstart i guiden. Alla steg räknas som genomgångna. */
-export function utkastFranPost(post) {
+export function utkastFranPost(post, projekt) {
   const u = lasUtkast(post?.utkast);
+  /* En projektstart som sparades innan faserna fanns saknar golv. Då gäller projektets status. */
+  if (projekt && !arFasNr(post?.utkast?.fasGolv)) u.fasGolv = fasFranStatus(projekt.status);
   u.besokta = STEG.filter((s) => s.id !== SISTA_STEG).map((s) => s.id);
   u.steg = STEG[0].id;
   return u;
 }
 
-const KORTFALT = [["namn", "namn"], ["skede", "status"], ["nr", "nr"], ["plats", "ort"], ["bestallare", "bestallare"], ["startdatum", "startdatum"], ["fardigdatum", "fardigstallande"], ["natagare", "natagare"]];
+const KORTFALT = [["namn", "namn"], ["nr", "nr"], ["plats", "ort"], ["bestallare", "bestallare"], ["startdatum", "startdatum"], ["fardigdatum", "fardigstallande"], ["natagare", "natagare"]];
 
 /** Ändringar i projektkortet som ska föras över till projektet: [fält, nytt värde]. */
 export function kortAndringar(u, projekt) {
-  return KORTFALT.map(([fran, till]) => [till, fran === "nr" ? varde(u.v[fran]) : (u.v[fran] || "").trim()]).filter(
+  const andringar = KORTFALT.map(([fran, till]) => [till, fran === "nr" ? varde(u.v[fran]) : (u.v[fran] || "").trim()]).filter(
     ([till, nytt]) => nytt !== (projekt[till] || "") && (!["namn", "status"].includes(till) || nytt),
   );
+  /* Status följer fasen, men bara när fasen har ändrats. En status som någon satt för hand
+     på projektkortet skrivs alltså inte över av en vanlig sparning. */
+  const fas = aktuellFas(u);
+  if (fas !== projekt.fas) andringar.push(["fas", fas], ["status", faseInfo(fas).status]);
+  return andringar;
 }
 
-export const utkastAndrat = (a, b) => JSON.stringify([a.v, a.rader, a.kryss]) !== JSON.stringify([b.v, b.rader, b.kryss]);
+export const utkastAndrat = (a, b) => JSON.stringify([a.v, a.rader, a.kryss, a.trafikljus]) !== JSON.stringify([b.v, b.rader, b.kryss, b.trafikljus]);
 
 /** Guiden för ett projekt som saknar sparad projektstart: ifylld från projektkortet,
  *  riskregistret och milstolparna. Checklistor och direktiv börjar tomma. */
@@ -293,12 +395,16 @@ export function utkastFranProjekt(projekt, state) {
     startdatum: projekt.startdatum || "",
     fardigdatum: projekt.fardigstallande || "",
     natagare: projekt.natagare || "",
-    skede: projekt.status || "Planering",
   });
+  /* Projekt som redan är igång börjar i den fas deras status motsvarar. */
+  u.fasGolv = arFasNr(projekt.fas) ? projekt.fas : fasFranStatus(projekt.status);
   const risker = (state.risker || []).filter((r) => r.projektId === projekt.id);
   if (risker.length) {
     const t = STEG.find((x) => x.id === "risker").tabell;
-    u.rader.risker = risker.map((r) => nyRad(t, { titel: r.titel, sannolikhet: String(r.sannolikhet ?? 3), konsekvens: String(r.konsekvens ?? 3), agare: r.agare, atgard: r.atgard }));
+    u.rader.risker = risker.map((r) => nyRad(t, {
+      titel: r.titel, fas: String(radFas(r.fas, u.fasGolv)), kategori: arRiskKategori(r.kategori) ? r.kategori : "",
+      sannolikhet: String(r.sannolikhet ?? 3), konsekvens: String(r.konsekvens ?? 3), agare: r.agare, atgard: r.atgard,
+    }));
   }
   const milstolpar = (state.milstolpar || []).filter((m) => m.projektId === projekt.id);
   if (milstolpar.length) {

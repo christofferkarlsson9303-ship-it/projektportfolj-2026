@@ -8,6 +8,7 @@ import { DataTable } from "../components/ui/DataTable.jsx";
 import { PTag } from "../components/ui/PTag.jsx";
 import { Falt, NumFalt } from "../components/ui/Falt.jsx";
 import { RISKAGARE, RISKKATEGORI, RISKSTATUS_NY } from "../data/konstanter.js";
+import { FASER, faseInfo, fasFranStatus } from "../data/projektfaser.ts";
 import { fmtSEK } from "../lib/format.js";
 import { idag } from "../lib/datum.js";
 import {
@@ -134,6 +135,17 @@ function Riskkort({ r }) {
 
       <div>
         <div className="frow c5">
+          <div className="f">
+            <label htmlFor={`fas-${r.id}`}>Fas</label>
+            <select id={`fas-${r.id}`} value={r.fas ?? ""} onChange={(e) => satt("fas", Number(e.target.value))}>
+              {FASER.map((f) => (
+                <option value={f.nr} key={f.nr}>
+                  {f.nr}. {f.kort}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="f">
             <label htmlFor={`kat-${r.id}`}>Kategori</label>
             <select id={`kat-${r.id}`} value={r.kategori || ""} onChange={(e) => satt("kategori", e.target.value)}>
@@ -345,6 +357,7 @@ export function Risker() {
       id: "r" + Date.now(),
       projektId: pid,
       titel: sv.titel,
+      fas: p.fas ?? fasFranStatus(p.status),
       sannolikhet: 3,
       konsekvens: 3,
       atgard: "",
@@ -427,10 +440,9 @@ export function Risker() {
                 </thead>
                 <tbody>
                   {[
-                    [15, "15–25", "Kritisk", "Omedelbar åtgärdsplan, eskalera till ledning"],
-                    [8, "8–14", "Hög", "Konkret åtgärdsplan inom en vecka"],
-                    [4, "4–7", "Medium", "Bevakas aktivt"],
-                    [1, "1–3", "Låg", "Registreras utan aktiv åtgärd"],
+                    [15, "15–25", "Hög", "Omedelbar åtgärdsplan, eskalera till ledning"],
+                    [7, "7–14", "Medel", "Konkret åtgärdsplan inom en vecka, bevakas aktivt"],
+                    [1, "1–6", "Låg", "Registreras utan aktiv åtgärd"],
                   ].map(([fran, spann, prio, atgard]) => (
                     <tr key={spann}>
                       <td data-label="Riskvärde">
@@ -506,6 +518,16 @@ export function Risker() {
                   render: (r) => (
                     <StatusBadge ton={PILL_TILL_TON[NIVA_PILL[riskNiva(r)]]} label={NIVA_TEXT[riskNiva(r)]} />
                   ),
+                },
+                {
+                  nyckel: "fas",
+                  rubrik: "Fas",
+                  bredd: 130,
+                  filter: true,
+                  sortVarde: (r) => r.fas ?? 0,
+                  filterEtikett: (v) => `${v}. ${faseInfo(Number(v)).kort}`,
+                  textVarde: (r) => `${r.fas}. ${faseInfo(r.fas).kort}`,
+                  render: (r) => `${r.fas}. ${faseInfo(r.fas).kort}`,
                 },
                 {
                   nyckel: "kategori",
