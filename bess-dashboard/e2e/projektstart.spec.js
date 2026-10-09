@@ -321,3 +321,33 @@ test("riskregistret: nivåer, donut och ny rad följer varandra", async ({ page 
   await expect(page.getByRole("progressbar", { name: "Steg i guiden" })).toHaveAttribute("aria-valuenow", "50");
   expect(fel).toEqual([]);
 });
+
+test("sista sidan visar alla sex faser med status, och Öppna är låst för låsta faser", async ({ page }) => {
+  const { fel } = await oppna(page, "Projektstart");
+  await gaTillSteg(page, SISTA, "Granska och skapa");
+  const faser = page.getByRole("region", { name: "Faserna" });
+  await expect(faser.getByRole("listitem")).toHaveCount(6);
+  await expect(faser.getByRole("listitem").nth(0)).toContainText("Pågår");
+  await expect(faser.getByRole("listitem").nth(1)).toContainText("Låst");
+  await expect(faser.getByRole("listitem").nth(1).getByRole("button", { name: "Öppna" })).toBeDisabled();
+
+  // Öppna går till fasens första sida.
+  await faser.getByRole("listitem").nth(0).getByRole("button", { name: "Öppna" }).click();
+  await expect(page.getByRole("heading", { name: "1. Projektkort" })).toBeVisible();
+
+  // Efter att fas 1 är godkänd är fas 2 upplåst och går att öppna härifrån.
+  await fyllFas1(page);
+  await gaTillSteg(page, SISTA, "Granska och skapa");
+  await expect(faser.getByRole("listitem").nth(0)).toContainText("Godkänd");
+  await expect(faser.getByRole("listitem").nth(1)).toContainText("Pågår");
+  await faser.getByRole("listitem").nth(1).getByRole("button", { name: "Öppna" }).click();
+  await expect(page.getByRole("heading", { name: "4. Intressenter" })).toBeVisible();
+  expect(fel).toEqual([]);
+});
+
+test("projektkorten i översikten visar projektets fas", async ({ page }) => {
+  const { fel } = await oppna(page, "Översikt");
+  // Växjö och Alvesta är i produktion, alltså fas 4.
+  await expect(page.getByText("Fas 4 av 6 · Genomförande").first()).toBeVisible();
+  expect(fel).toEqual([]);
+});

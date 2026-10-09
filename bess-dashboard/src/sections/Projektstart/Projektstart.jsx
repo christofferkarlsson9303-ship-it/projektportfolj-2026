@@ -86,6 +86,8 @@ function Faltruta({ f, varde, onChange }) {
   );
 }
 
+const FASSTATUS = { klar: ["ok", "Godkänd"], upplast: ["info", "Upplåst"], aktuell: ["warn", "Pågår"], last: ["neutral", "Låst"] };
+
 const RISKTON = { lag: ["ok", "låg"], medel: ["warn", "medel"], hog: ["bad", "hög"] };
 
 /** Riskvärdet som märke. Pulsar till när värdet ändras, inte vid första visning. */
@@ -233,7 +235,7 @@ function Kontrollpunkter({ steg, utkast, onToggle }) {
   );
 }
 
-function Sammanfattning({ utkast, fel, kanSkapa, skapar, redigerar, andrat, ejSparad, pdfDokument, sparr, onSkapa, onSpara, onGaTill }) {
+function Sammanfattning({ utkast, faser, fel, kanSkapa, skapar, redigerar, andrat, ejSparad, pdfDokument, sparr, onSkapa, onSpara, onGaTill }) {
   const nuFas = aktuellFas(utkast);
   const l = luckor(utkast, nuFas);
   const v = utkast.v;
@@ -274,6 +276,30 @@ function Sammanfattning({ utkast, fel, kanSkapa, skapar, redigerar, andrat, ejSp
           </div>
           <Meter value={l.klara} max={l.totalt} label="Avbockade kontrollpunkter" />
         </div>
+      </Card>
+
+      <Card id="ps-faser" title="Faserna" subtitle="Status och obligatoriska punkter per fas. Nästa fas låses upp när allt obligatoriskt i den förra är godkänt.">
+        <ul className="m-0 flex list-none flex-col p-0">
+          {faser.map((f) => {
+            const forst = STEG.find((s) => s.fas === f.nr);
+            const last = f.status === "last";
+            const [ton, text] = FASSTATUS[f.status];
+            return (
+              <li key={f.nr} className="flex flex-wrap items-center gap-x-4 gap-y-2 border-0 border-t border-solid border-hairline py-3 first:border-t-0">
+                <span className="w-6 shrink-0 text-right font-head text-[15px] text-ink-soft">{f.nr}</span>
+                <span className="min-w-[10rem] flex-1">
+                  <b className="block text-[14px] text-ink">{f.titel}</b>
+                  <span className="mt-1 flex items-center gap-2 text-[12px] text-ink-soft">
+                    <Meter value={f.klara} max={f.totalt} size="sm" label={`Fas ${f.nr}: ${f.klara} av ${f.totalt} obligatoriska punkter`} className="w-28 [&>span]:transition-[width] [&>span]:duration-500" />
+                    <span className="tabular-nums">{f.klara} av {f.totalt} obligatoriska</span>
+                  </span>
+                </span>
+                <StatusBadge ton={ton} label={text} />
+                <button type="button" className="btn sec mini" disabled={last} onClick={() => onGaTill(forst.id)}>Öppna</button>
+              </li>
+            );
+          })}
+        </ul>
       </Card>
 
       {l.kritiskaOppna.length ? (
@@ -578,7 +604,7 @@ export function Projektstart() {
         {steg.tabell ? <Tabell tabell={steg.tabell} rader={utkast.rader[steg.tabell.id] || []} onChange={(r) => sattRader(steg.tabell.id, r)} standardRad={steg.id === "risker" ? { fas: String(nuFas) } : undefined} /> : null}
         {steg.id === "risker" ? <RiskDonut rader={utkast.rader.risker || []} /> : null}
         {steg.katalog ? <Kontrollpunkter steg={steg} utkast={utkast} onToggle={kryssa} /> : null}
-        {sista ? <Sammanfattning utkast={utkast} fel={fel} kanSkapa={!fel} skapar={skapar} redigerar={redigerar} andrat={andrat} ejSparad={redigerar && !post} pdfDokument={pdfDokument} sparr={sparr} onSkapa={skapa} onSpara={sparaAndringar} onGaTill={gaTill} /> : null}
+        {sista ? <Sammanfattning utkast={utkast} faser={faser} fel={fel} kanSkapa={!fel} skapar={skapar} redigerar={redigerar} andrat={andrat} ejSparad={redigerar && !post} pdfDokument={pdfDokument} sparr={sparr} onSkapa={skapa} onSpara={sparaAndringar} onGaTill={gaTill} /> : null}
 
         <div className="flex items-center justify-between gap-3">
           <button type="button" className="btn sec group" disabled={index === 0} onClick={() => gaTill(STEG[index - 1].id)}>
