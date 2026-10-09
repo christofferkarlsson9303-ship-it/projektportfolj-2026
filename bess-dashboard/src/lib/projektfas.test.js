@@ -34,7 +34,7 @@ describe("Faserna som data", () => {
   it("är sex, i ordning, och varje status finns i PROJEKTSTATUS", () => {
     expect(FAS_ANTAL).toBe(6);
     expect(FASER.map((f) => f.nr)).toEqual([1, 2, 3, 4, 5, 6]);
-    for (const f of FASER) expect(PROJEKTSTATUS).toContain(f.status);
+    for (const f of FASER) expect(PROJEKTSTATUS.map(([id]) => id)).toContain(f.status);
     expect(FASER.map((f) => f.kort)).toEqual(["Anbud", "Planering", "Etablering", "Genomförande", "Avslut", "Garanti"]);
   });
   it("ger varje guidesida en fas utom den sista, och varje fas minst en sida", () => {
@@ -43,10 +43,10 @@ describe("Faserna som data", () => {
     for (const f of FASER) expect(stegIFas(f.nr).length).toBeGreaterThan(0);
   });
   it("utgår från statusen för projekt som redan är igång", () => {
-    expect(["Anbud", "Uppstart", "Planering", "Produktion", "Slutbesiktning", "Avslutat", "okänd"].map(fasFranStatus)).toEqual([1, 2, 2, 4, 5, 6, 1]);
-    // Uppstart är andra statusen, direkt efter Anbud.
-    expect(PROJEKTSTATUS.slice(0, 3)).toEqual(["Anbud", "Uppstart", "Planering"]);
-    expect(FASER[1].status).toBe("Uppstart");
+    expect(["Anbud", "Uppstart", "Planering", "Produktion", "Slutbesiktning", "Avslutat", "PLANERING_OCH_UPPSTART", "PRODUKTION", "okänd"].map(fasFranStatus)).toEqual([1, 2, 2, 4, 5, 6, 1, 4, 1]);
+    // Fyra aktiva statusar; fas 1–2 hör till Planering och uppstart.
+    expect(PROJEKTSTATUS.map(([id]) => id)).toEqual(["PLANERING_OCH_UPPSTART", "PRODUKTION", "SLUTBESIKTNING", "AVSLUTAT_OCH_GARANTI"]);
+    expect(FASER[1].status).toBe("PLANERING_OCH_UPPSTART");
   });
   it("delar kontrollpunkterna i avslutskatalogen mellan fas 5 och fas 6 utan att tappa eller dubblera någon", () => {
     const fas5 = stegPunkter(STEG.find((s) => s.id === "avslut")).map((p) => p.id);
@@ -149,11 +149,11 @@ describe("Progressiv upplåsning", () => {
     expect(fasLage(u).every((f) => f.status === "klar")).toBe(true);
   });
   it("låter ett projekt som redan är igång börja i sin fas, och för status vidare först när fasen ändras", () => {
-    const u = utkastFranProjekt({ id: "x", namn: "Växjö", nr: "36037", status: "Produktion" }, SEED);
+    const u = utkastFranProjekt({ id: "x", namn: "Växjö", nr: "36037", status: "PRODUKTION" }, SEED);
     expect(u.fasGolv).toBe(4);
     expect(aktuellFas(u)).toBe(4);
     expect(stegLast(u, STEG.find((s) => s.id === "avslut"))).toBe(true);
-    expect(kortAndringar(u, { namn: "Växjö", nr: "36037", status: "Produktion", fas: 4 })).toEqual([]);
+    expect(kortAndringar(u, { namn: "Växjö", nr: "36037", status: "PRODUKTION", fas: 4 })).toEqual([]);
     const gammal = utkastFranPost({ utkast: { v: { namn: "A" }, rader: {}, kryss: {} } }, { status: "Slutbesiktning" });
     expect(aktuellFas(gammal)).toBe(5);
   });
@@ -169,7 +169,7 @@ describe("PDF för ledningen följer de godkända faserna", () => {
     const d = projektstartDokument(u, { datum: "2026-10-09" });
     const ps = d.projektstart;
     // Fas 1 och 2 är godkända, fas 3 är aktuell och ingår inte i rapporten.
-    expect(ps.fas).toMatchObject({ nr: 3, omfattar: 2, antal: 6, kort: "Etablering", status: "Produktion" });
+    expect(ps.fas).toMatchObject({ nr: 3, omfattar: 2, antal: 6, kort: "Etablering", status: "Produktion", statusId: "PRODUKTION" });
     expect(ps.lage.skede).toBe("Produktion");
     expect(new Set(ps.sektioner.map((x) => x.fasNr))).toEqual(new Set([1, 2]));
     expect(ps.sektioner.some((x) => x.id === "hseq")).toBe(false);
@@ -190,7 +190,7 @@ describe("PDF för ledningen följer de godkända faserna", () => {
     expect(projektstartDokument(u, { datum: "x" }).projektstart.sektioner).toHaveLength(STEG.length - 1);
   });
   it("omfattar faserna före golvet för ett projekt som redan är igång", () => {
-    const u = utkastFranProjekt({ id: "x", namn: "Växjö", nr: "36037", status: "Produktion" }, SEED);
+    const u = utkastFranProjekt({ id: "x", namn: "Växjö", nr: "36037", status: "PRODUKTION" }, SEED);
     expect(rapportFas(u)).toBe(3);
     expect(pdfSparr(u)).toEqual([]);
     expect(Math.max(...projektstartDokument(u, { datum: "x" }).projektstart.sektioner.map((x) => x.fasNr))).toBe(3);

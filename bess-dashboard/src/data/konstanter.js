@@ -3,6 +3,7 @@
    Logiken som använder dem ligger i src/lib och src/sections. */
 
 import { RISKKATEGORIER } from "./riskTyper.ts";
+import { AKTIVA_STATUSAR, PROJEKTSTATUS_ETIKETT } from "./projektfaser.ts";
 
 /* ---------- Projekt och status ---------- */
 
@@ -13,7 +14,9 @@ export const KANDA_MAPPAR = {
   "gotene": {mapp:"Götene", bestallare:"Ingrid Capacity AB"}
 };
 
-export const PROJEKTSTATUS=["Anbud","Uppstart","Planering","Produktion","Slutbesiktning","Avslutat"];
+/* De fyra aktiva statusarna som [id, etikett]-par. ANBUD_EJ_VUNNET är arkivstatus och sätts via
+   Markera som ej vunnet, inte i den här listan. Typer och etiketter bor i projektfaser.ts. */
+export const PROJEKTSTATUS = AKTIVA_STATUSAR.map((id) => [id, PROJEKTSTATUS_ETIKETT[id]]);
 
 export const PILL={
   fakturerad:["p-ok","Fakturerad"], pagaende:["p-go","Pågår"], kvar:["p-wait","Kvar"],

@@ -60,7 +60,7 @@ export function Hero({ akuta, bevaka, onVisaFlaggor }) {
   const fornamn = (hamtaNamn() || "").trim().split(/\s+/)[0];
   const datum = nu.toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "long" });
   const vecka = Number(veckaNu().split("-v")[1]);
-  const iProduktion = state.projekt.filter((x) => x.status === "Produktion").length;
+  const iProduktion = state.projekt.filter((x) => x.status === "PRODUKTION").length;
 
   const utanProjekt = () => {
     visaToast("Välj vilket projekt åtgärden gäller först.", "warn");

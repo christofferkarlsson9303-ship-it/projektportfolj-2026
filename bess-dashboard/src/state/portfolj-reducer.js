@@ -14,7 +14,7 @@ import { kalkylRader, kalkylSummor } from "../lib/atakalkyl.js";
 import { fmtSEK } from "../lib/format.js";
 import { MALLAR, arNal, objektFel, punkterForSite } from "../lib/site.js";
 import { projektstartFel } from "../lib/projektstart.js";
-import { arFasNr, fasFranStatus } from "../data/projektfaser.ts";
+import { arFasNr, fasFranStatus, faseInfo, forstaFasForStatus, normaliseraStatus, statusEtikett } from "../data/projektfaser.ts";
 import { granskaProfil, rensaProfil } from "../lib/kontraktsprofil.js";
 
 /** Namnet används i ändringsloggen och sparas per webbläsare, inte i delad data. */
@@ -73,8 +73,11 @@ export function efterInlasning(state) {
       nytt.startdatum = batchC ? "2026-02-02" : "";
       nytt.startdatumAntagande = batchC;
     }
-    /* Projektets fas (1–6). Äldre projekt saknar den, då gäller statusen. */
+    /* Projektets fas. Äldre projekt saknar den, då gäller deras (gamla) status. Fasen räknas
+       före statusen normaliseras, eftersom Anbud och Planering annars inte går att skilja åt. */
     if (!arFasNr(nytt.fas)) nytt.fas = fasFranStatus(nytt.status);
+    /* Statusen är en av fem id:n. Gamla värden (Anbud, Planering, Produktion …) mappas om. */
+    nytt.status = normaliseraStatus(nytt.status);
     return nytt;
   });
   /* Varje risk hör till en projektfas. Äldre risker saknar fas och får projektets. En risk
@@ -199,8 +202,9 @@ const etikettFor = (state, lista, id) => {
 function medLogg(state, lista, id, gammalt, nytt) {
   const info = etikettFor(state, lista, id);
   if (!info) return state.andringslogg || [];
-  const g = (PILL[gammalt] || [undefined, gammalt || "—"])[1];
-  const n = (PILL[nytt] || [undefined, nytt])[1];
+  const etikett = (x) => (lista === "projekt" ? statusEtikett(x) : (PILL[x] || [undefined, x || "—"])[1]);
+  const g = etikett(gammalt);
+  const n = etikett(nytt);
   const post = {
     ts: new Date().toISOString(),
     anvandare: hamtaNamn() || "Okänd",
@@ -323,7 +327,10 @@ export function reducer(state, action) {
       const rad = state[lista].find((r) => r.id === id);
       if (!rad) return state;
       const gammalt = rad[falt];
-      const nytt = { ...state, [lista]: byt(state[lista], id, (r) => ({ ...r, [falt]: varde })) };
+      /* Byter man projektets status för hand sätts fasen till statusens första, om projektet inte
+         redan ligger i en fas som hör till den. Annars styr fasen statusen. */
+      const flyttaFas = lista === "projekt" && falt === "status" && faseInfo(rad.fas).status !== varde;
+      const nytt = { ...state, [lista]: byt(state[lista], id, (r) => ({ ...r, [falt]: varde, ...(flyttaFas ? { fas: forstaFasForStatus(varde) } : {}) })) };
       if (gammalt === varde) return nytt;
       return { ...nytt, andringslogg: medLogg(state, lista, id, gammalt, varde) };
     }

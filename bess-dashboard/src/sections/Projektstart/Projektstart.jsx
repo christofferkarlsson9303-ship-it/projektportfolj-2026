@@ -12,7 +12,7 @@ import { RiskDonut } from "./RiskDonut.jsx";
 import { FasIndikator } from "./FasIndikator.jsx";
 import { FasKrav } from "./FasKrav.jsx";
 import { FasNav } from "./FasNav.jsx";
-import { FAS_ANTAL, faseInfo } from "../../data/projektfaser.ts";
+import { FAS_ANTAL, faseInfo, statusEtikett } from "../../data/projektfaser.ts";
 import { aktuellFas, fasKrav, fasLage, pdfSparr, rapportFas, stegLast } from "../../lib/projektfas.js";
 import { KATALOG_RUBRIK, STEG } from "../../data/projektstartSteg.js";
 import {
@@ -281,7 +281,7 @@ function Sammanfattning({ utkast, faser, onLjus, fel, kanSkapa, skapar, redigera
   const rader = [
     ["Projekt", `${v.nr ? v.nr + " " : ""}${v.namn || "Namn saknas"}`],
     ["Fas", `${nuFas} av ${FAS_ANTAL} · ${faseInfo(nuFas).kort}`],
-    ["Projektstatus", faseInfo(nuFas).status],
+    ["Projektstatus", statusEtikett(faseInfo(nuFas).status)],
     ["Beställare", v.bestallare || "—"],
     ["Plats", v.plats || "—"],
     ["Start", v.startdatum || "—"],
@@ -430,7 +430,7 @@ export function Projektstart() {
   useEffect(() => {
     const f = forraFas.current;
     if (f.lage === lage && nuFas > f.fas) {
-      visaToast(`Fas ${nuFas} (${faseInfo(nuFas).kort}) är upplåst. Projektets status är nu ${faseInfo(nuFas).status}.`);
+      visaToast(`Fas ${nuFas} (${faseInfo(nuFas).kort}) är upplåst. Projektets status är nu ${statusEtikett(faseInfo(nuFas).status)}.`);
     }
     forraFas.current = { lage, fas: nuFas };
   }, [lage, nuFas, visaToast]);
@@ -571,7 +571,7 @@ export function Projektstart() {
         <div className="relative flex max-w-[44rem] flex-col gap-3">
           <span aria-live="polite" className="text-[11px] font-bold uppercase tracking-wider opacity-80">ONE-P · {redigerar ? `${projektet?.nr || ""} ${projektet?.namn || ""} · ` : ""}Fas {nuFas} av {FAS_ANTAL} · Steg {index + 1} av {STEG.length}</span>
           <h2 key={steg.id} className="ps-byt m-0 font-head text-[22px] leading-tight text-white">{steg.titel}</h2>
-          <p className="m-0 text-[12.5px] opacity-90">Projektstatus: <b>{faseInfo(nuFas).status}</b> · {faseInfo(nuFas).titel}</p>
+          <p className="m-0 text-[12.5px] opacity-90">Projektstatus: <b>{statusEtikett(faseInfo(nuFas).status)}</b> · {faseInfo(nuFas).titel}</p>
           <Meter value={index + 1} max={STEG.length} label="Steg i guiden" ton="pagar" className="[&>span]:transition-[width] [&>span]:duration-500 [&>span]:ease-out" />
           <FasIndikator faser={faser} visadFas={steg.fas} />
         </div>

@@ -1,6 +1,6 @@
 import { KATALOG_RUBRIK, STEG } from "../data/projektstartSteg.js";
 import { KATALOG } from "../data/projektstartKatalog.js";
-import { FAS_ANTAL, arFasNr, faseInfo, fasFranStatus } from "../data/projektfaser.ts";
+import { FAS_ANTAL, arFasNr, faseInfo, fasFranStatus, statusEtikett } from "../data/projektfaser.ts";
 import { arRiskKategori } from "../data/riskTyper.ts";
 import { arAvbockad, stegPunkter } from "./stegpunkter.js";
 import { RISKGRANSER, riskNivaFranVarde } from "./risknivaer.js";
@@ -29,7 +29,7 @@ export function projektstartFel(state, v) {
 export function nyttProjekt(v, id) {
   return { id, nr: varde(v.nr), namn: v.namn.trim(), ort: (v.ort || "").trim(), bestallare: (v.bestallare || "").trim(),
     startdatum: v.startdatum || "", fardigstallande: v.fardigstallande || "", startdatumAntagande: false,
-    kontraktsvarde: null, mw: null, mwh: null, natagare: "", natkontakt: "", fiber: "", mapp: "", anteckning: "", status: v.status || "Planering",
+    kontraktsvarde: null, mw: null, mwh: null, natagare: "", natkontakt: "", fiber: "", mapp: "", anteckning: "", status: v.status || "PLANERING_OCH_UPPSTART",
     underlag: { kalla: "", datum: "", infort: "", av: "" } };
 }
 
@@ -186,7 +186,7 @@ export function nyaRaderForProjekt(u, projektId, state, nu = Date.now()) {
 export function historikRad(u, { datum, av = "" }) {
   const l = luckor(u);
   const fas = aktuellFas(u);
-  return { datum, av, fas, skede: faseInfo(fas).status, nulage: (u.v.nulage || "").trim(), klara: l.klara, totalt: l.totalt, kritiskaOppna: l.kritiskaOppna.length };
+  return { datum, av, fas, skede: statusEtikett(faseInfo(fas).status), nulage: (u.v.nulage || "").trim(), klara: l.klara, totalt: l.totalt, kritiskaOppna: l.kritiskaOppna.length };
 }
 
 /** Lägger till en loggrad. Samma dag ersätts den senaste raden i stället för att logga varje klick. */
@@ -335,11 +335,12 @@ export function projektstartDokument(u, { datum, skapadAv = "", historik = [], s
         antal: FAS_ANTAL,
         kort: fasInfo.kort,
         titel: fasInfo.titel,
-        status: fasInfo.status,
+        status: statusEtikett(fasInfo.status),
+        statusId: fasInfo.status,
         klarAllt: lager.every((f) => f.status === "klar"),
         faser: lager.map((f) => ({ nr: f.nr, kort: f.kort, status: f.status, klara: f.klara, totalt: f.totalt, ljus: u.trafikljus?.[f.nr]?.ljus || "", kommentar: (u.trafikljus?.[f.nr]?.kommentar || "").trim() })),
       },
-      lage: { skede: fasInfo.status, nulage: (v.nulage || "").trim(), beslut: (v.beslutLedning || "").trim() },
+      lage: { skede: statusEtikett(fasInfo.status), nulage: (v.nulage || "").trim(), beslut: (v.beslutLedning || "").trim() },
       kort: {
         plats: varde(v.plats),
         start: varde(v.startdatum),
@@ -360,8 +361,12 @@ export function projektstartPost(projektId, u, nu = new Date().toISOString(), hi
 /** Öppnar en sparad projektstart i guiden. Alla steg räknas som genomgångna. */
 export function utkastFranPost(post, projekt) {
   const u = lasUtkast(post?.utkast);
-  /* En projektstart som sparades innan faserna fanns saknar golv. Då gäller projektets status. */
-  if (projekt && !arFasNr(post?.utkast?.fasGolv)) u.fasGolv = fasFranStatus(projekt.status);
+  /* Golvet är det högsta av det som sparades och projektets egen fas. En projektstart som sparades
+     innan faserna fanns saknar golv, och då gäller projektets fas eller status. */
+  if (projekt) {
+    const franProjekt = arFasNr(projekt.fas) ? projekt.fas : fasFranStatus(projekt.status);
+    u.fasGolv = Math.max(arFasNr(post?.utkast?.fasGolv) ? post.utkast.fasGolv : 1, franProjekt);
+  }
   u.besokta = STEG.filter((s) => s.id !== SISTA_STEG).map((s) => s.id);
   u.steg = STEG[0].id;
   return u;

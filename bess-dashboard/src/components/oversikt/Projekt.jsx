@@ -38,7 +38,7 @@ export function Projektkort({ p }) {
           {arFasNr(p.fas) ? <StatusBadge ton="neutral" label={`Fas ${p.fas} av ${FAS_ANTAL} · ${faseInfo(p.fas).kort}`} /> : null}
           <SelStatus
             alternativ={PROJEKTSTATUS}
-            varde={p.status || "Planering"}
+            varde={p.status || "PLANERING_OCH_UPPSTART"}
             etikett={`Status för ${p.namn}`}
             onChange={(v) => uppdStatus("projekt", p.id, "status", v)}
           />
@@ -237,7 +237,7 @@ export function Projektredigering() {
                 <td data-label="Status">
                   <SelStatus
                     alternativ={PROJEKTSTATUS}
-                    varde={p.status || "Planering"}
+                    varde={p.status || "PLANERING_OCH_UPPSTART"}
                     etikett={`Status för ${p.namn}`}
                     onChange={(v) => uppdStatus("projekt", p.id, "status", v)}
                   />
