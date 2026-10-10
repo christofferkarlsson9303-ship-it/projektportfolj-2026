@@ -13,8 +13,8 @@ async function gaTillSteg(page, nummer, titel) {
 test("Markera som ej vunnet flyttar anbudet till arkivet med orsak och räknas inte i aktiva vyer", async ({ page }) => {
   const { fel } = await oppna(page, "Översikt");
   await expect(page.getByText(/Göteborg Skogome/).first()).toBeVisible();
-  // Bara projekt i planering och uppstart kan markeras, inte projekt i produktion.
-  await expect(page.getByRole("button", { name: /^Markera som ej vunnet för Växjö Batteripark/ })).toHaveCount(0);
+  // Alla aktiva projekt kan markeras, också projekt i produktion.
+  await expect(page.getByRole("button", { name: /^Markera som ej vunnet för Växjö Batteripark/ })).toBeVisible();
   await expect(page.getByText("Förlorade anbud", { exact: true })).toHaveCount(0);
 
   await page.getByRole("button", { name: /^Markera som ej vunnet för Göteborg Skogome/ }).click();
@@ -77,5 +77,20 @@ test("det valda projektet byts när det flyttas till arkivet", async ({ page }) 
   await gaTill(page, "Tidplan");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Tidplan");
   await expect(page.getByText(/Göteborg Skogome/)).toHaveCount(0);
+  expect(fel).toEqual([]);
+});
+
+test("ett förlorat anbud kan återaktiveras och kommer då tillbaka i fas 1", async ({ page }) => {
+  const { fel } = await oppna(page, "Översikt");
+  await page.getByRole("button", { name: /^Markera som ej vunnet för Göteborg Skogome/ }).click();
+  await page.getByRole("dialog").getByLabel("Orsak till ej vunnet anbud").selectOption("annat");
+  await page.getByRole("dialog").getByRole("button", { name: "Markera som ej vunnet" }).click();
+  const lista = page.getByRole("region", { name: "Förlorade anbud" });
+  await lista.getByRole("button", { name: /^Återaktivera/ }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Återaktivera" }).click();
+
+  await expect(page.getByRole("region", { name: "Förlorade anbud" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /^Markera som ej vunnet för Göteborg Skogome/ })).toBeVisible();
+  await expect(page.getByText("Fas 1 av 8 · Anbud").first()).toBeVisible();
   expect(fel).toEqual([]);
 });

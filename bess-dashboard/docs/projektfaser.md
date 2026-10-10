@@ -62,7 +62,9 @@ Ett anbud som inte vanns får status `ANBUD_EJ_VUNNET`, fas 1, en orsak och ett 
 
 Skrivningar går mot hela datan. `SATT_LISTA` bevarar arkivets rader (`arDold`), så en vy som sorterar eller ersätter en lista kan inte ta bort dem av misstag.
 
-Förlorade anbud visas i en skrivskyddad lista, Förlorade anbud, i Översikt. Det finns ingen knapp för att ta tillbaka ett anbud i appen.
+Förlorade anbud visas i listan Förlorade anbud i Översikt. Uppgifterna går inte att ändra där, men knappen Återaktivera tar tillbaka anbudet (`ATERAKTIVERA_ANBUD`): fas 1, status Planering och uppstart, orsaken rensas från projektet och står kvar i ändringsloggen. Knappen Markera som ej vunnet finns på alla aktiva projekt, också de i produktion.
+
+**Äldre appversioner:** en klient som kör koden före åttafasmodellen känner inte igen de nya status-id:na och fasnumren, och kan skriva tillbaka projekt utan `fasModell`. Det går inte att lösa i den nya koden. Uppdatera alla som delar portföljen samtidigt. Den nya koden är tolerant åt andra hållet: gamla status och fasnummer räknas om vid inläsning (`normaliseraStatus`, `fasModell`).
 
 ## Omräkning från sex faser
 

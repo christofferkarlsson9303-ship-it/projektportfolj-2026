@@ -373,6 +373,21 @@ export function reducer(state, action) {
       return { ...state, [action.lista]: dolda.length ? [...action.rader, ...dolda] : action.rader };
     }
 
+    /* Tar tillbaka ett förlorat anbud från arkivet. Det börjar om i fas 1 med status Planering och uppstart.
+       Orsaken rensas från projektet men står kvar i ändringsloggen. */
+    case "ATERAKTIVERA_ANBUD": {
+      const rad = state.projekt.find((p) => p.id === action.id);
+      if (!rad || rad.status !== "ANBUD_EJ_VUNNET") return state;
+      const nytt = {
+        ...state,
+        projekt: byt(state.projekt, action.id, (p) => {
+          const { orsakEjVunnet: _o, orsakEjVunnetText: _t, ejVunnetDatum: _d, ...rest } = p;
+          return { ...rest, status: "PLANERING_OCH_UPPSTART", fas: 1 };
+        }),
+      };
+      return loggat(nytt, action.id, "Förlorat anbud återaktiverat: tillbaka i fas 1, Planering och uppstart.");
+    }
+
     /* Flyttar ett anbud till arkivet för förlorade anbud: fas 1, orsak och datum. Fas 2–8 döljs
        eftersom statusen bara hör till fas 1. */
     case "MARKERA_EJ_VUNNET": {

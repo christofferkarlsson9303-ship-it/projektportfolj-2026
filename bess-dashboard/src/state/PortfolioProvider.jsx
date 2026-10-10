@@ -528,6 +528,7 @@ export function PortfolioProvider({ children }) {
       laggTill: (lista, rad) => dispatch({ type: "LAGG_TILL", lista, rad }),
       taBort: (lista, id) => dispatch({ type: "TA_BORT", lista, id }),
       sattLista: (lista, rader) => dispatch({ type: "SATT_LISTA", lista, rader }),
+      ateraktiveraAnbud: (id) => dispatch({ type: "ATERAKTIVERA_ANBUD", id }),
       markeraEjVunnet: (id, orsak, text) => dispatch({ type: "MARKERA_EJ_VUNNET", id, orsak, text }),
     }),
     [state, vy, ejVunna, dispatch, conn, ekonomiFel, visaToast]

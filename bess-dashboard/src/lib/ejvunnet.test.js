@@ -37,6 +37,19 @@ describe("Förlorade anbud i portföljen", () => {
     expect(aktivVy(s)).toBe(s);
   });
 
+  it("återaktiverar ett förlorat anbud: fas 1, aktiv status och rensad orsak, loggat", () => {
+    const ut = markera(grund(), "goteborg");
+    const ny = reducer(ut, { type: "ATERAKTIVERA_ANBUD", id: "goteborg" });
+    const p = ny.projekt.find((x) => x.id === "goteborg");
+    expect(p).toMatchObject({ status: "PLANERING_OCH_UPPSTART", fas: 1 });
+    expect(p).not.toHaveProperty("orsakEjVunnet");
+    expect(p).not.toHaveProperty("ejVunnetDatum");
+    expect(aktivaProjekt(ny).some((x) => x.id === "goteborg")).toBe(true);
+    expect(ny.andringslogg[0].text).toMatch(/återaktiverat/);
+    // Ett aktivt projekt påverkas inte.
+    expect(reducer(ny, { type: "ATERAKTIVERA_ANBUD", id: "goteborg" })).toBe(ny);
+  });
+
   it("tappar inte arkivet när en vy ersätter en lista", () => {
     const ut = markera(grund(), "goteborg");
     const vy = aktivVy(ut);

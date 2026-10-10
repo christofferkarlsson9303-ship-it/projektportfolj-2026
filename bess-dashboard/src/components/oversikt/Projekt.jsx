@@ -148,7 +148,7 @@ export function Projektkort({ p }) {
         <button type="button" className="btn sec mini" onClick={() => oppnaProjektstart(p.id)}>
           <Flag size={14} aria-hidden="true" /> Öppna projektstart<span className="sr-only"> för {p.namn}</span>
         </button>
-        {p.status === "PLANERING_OCH_UPPSTART" ? (
+        {p.status !== "ANBUD_EJ_VUNNET" ? (
           <button type="button" className="btn sec mini" onClick={markeraEjVunnetMedOrsak}>
             Markera som ej vunnet<span className="sr-only"> för {p.namn}</span>
           </button>
