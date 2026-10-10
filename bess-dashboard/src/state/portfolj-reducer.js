@@ -385,7 +385,13 @@ export function reducer(state, action) {
           return { ...rest, status: "PLANERING_OCH_UPPSTART", fas: 1 };
         }),
       };
-      return loggat(nytt, action.id, "Förlorat anbud återaktiverat: tillbaka i fas 1, Planering och uppstart.");
+      /* En sparad projektstart bär avropsbeslutet Tacka nej. Det återställs, annars skulle guiden fortfarande
+         behandla projektet som förlorat och arkivera det igen vid nästa sparning. */
+      const projektstart = (state.projektstart || []).map((ps) => {
+        if (ps.projektId !== action.id || ps.utkast?.v?.beslut !== "Tacka nej") return ps;
+        return { ...ps, utkast: { ...ps.utkast, v: { ...ps.utkast.v, beslut: "", orsakEjVunnet: "", orsakEjVunnetText: "" } } };
+      });
+      return loggat({ ...nytt, projektstart }, action.id, "Förlorat anbud återaktiverat: tillbaka i fas 1, Planering och uppstart.");
     }
 
     /* Flyttar ett anbud till arkivet för förlorade anbud: fas 1, orsak och datum. Fas 2–8 döljs

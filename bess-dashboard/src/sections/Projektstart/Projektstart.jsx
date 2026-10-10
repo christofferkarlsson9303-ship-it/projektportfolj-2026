@@ -384,7 +384,8 @@ function Sammanfattning({ utkast, faser, onLjus, fel, kanSkapa, skapar, redigera
 }
 
 export function Projektstart() {
-  const { state, dispatch, laggTill, sattLista, uppd } = usePortfolj();
+  /* Validering av nytt projekt (nummer, namn) gäller hela portföljen, också förlorade anbud. */
+  const { state, heltState, dispatch, laggTill, sattLista, uppd } = usePortfolj();
   const { visa, visaToast, setValtProjekt, bekrafta, projektstartMal, rensaProjektstartMal } = useUi();
   const [utkast, setUtkast] = useState(laddaUtkast);
   const [skapar, setSkapar] = useState(false);
@@ -425,8 +426,10 @@ export function Projektstart() {
   const nasta = stegLista[index + 1];
 
   const forhandsrad = useMemo(() => projektFranUtkast(utkast, "forhandsgranskning").projekt, [utkast]);
-  const utanDetta = redigerar ? { ...state, projekt: state.projekt.filter((p) => p.id !== lage) } : state;
-  const fel = sista ? projektstartFel(utanDetta, forhandsrad) : "";
+  const utanDetta = redigerar ? { ...heltState, projekt: heltState.projekt.filter((p) => p.id !== lage) } : heltState;
+  /* Ett förlorat anbud kräver en orsak innan det kan skapas eller sparas. */
+  const orsakFel = ejVunnet && !krav.klar ? "Välj orsak till ej vunnet anbud." : "";
+  const fel = sista ? projektstartFel(utanDetta, forhandsrad) || orsakFel : "";
 
   /* När en fas godkänns låses nästa upp och projektets status följer med. Meddelandet visas
      bara när fasen ändras av arbetet i guiden, inte när man byter projekt. */
@@ -500,7 +503,7 @@ export function Projektstart() {
 
   const sparaAndringar = () => {
     if (!projektet) return;
-    const f = projektstartFel(utanDetta, forhandsrad);
+    const f = projektstartFel(utanDetta, forhandsrad) || orsakFel;
     if (f) {
       visaToast(f, "warn");
       return;
@@ -534,7 +537,7 @@ export function Projektstart() {
   const skapa = async () => {
     const id = `projekt-${crypto.randomUUID()}`;
     const { projekt, risker, milstolpar } = projektFranUtkast(utkast, id);
-    const f = projektstartFel(state, projekt);
+    const f = projektstartFel(heltState, projekt) || orsakFel;
     if (f) {
       visaToast(f, "warn");
       return;

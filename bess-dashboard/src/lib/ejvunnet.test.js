@@ -50,6 +50,13 @@ describe("Förlorade anbud i portföljen", () => {
     expect(reducer(ny, { type: "ATERAKTIVERA_ANBUD", id: "goteborg" })).toBe(ny);
   });
 
+  it("återställer avropsbeslutet i en sparad projektstart vid återaktivering", () => {
+    const s = grund();
+    s.projektstart = [{ id: "ps-goteborg", projektId: "goteborg", utkast: { v: { beslut: "Tacka nej", orsakEjVunnet: "pris", namn: "x" }, rader: {}, kryss: {} } }];
+    const ny = reducer(markera(s, "goteborg"), { type: "ATERAKTIVERA_ANBUD", id: "goteborg" });
+    expect(ny.projektstart[0].utkast.v).toMatchObject({ beslut: "", orsakEjVunnet: "", namn: "x" });
+  });
+
   it("tappar inte arkivet när en vy ersätter en lista", () => {
     const ut = markera(grund(), "goteborg");
     const vy = aktivVy(ut);

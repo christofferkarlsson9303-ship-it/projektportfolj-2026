@@ -52,6 +52,10 @@ test("avropsbeslutet Tacka nej kräver en orsak, döljer fas 2–8 och arkiverar
   await expect(page.getByText(/ONE-P · Fas 1 av 8 · Steg 2 av 7/)).toBeVisible();
   await expect(page.getByText(/obligatorisk punkt kvar för att flytta anbudet till arkivet/)).toBeVisible();
 
+  // Utan orsak går anbudet inte att skapa.
+  await gaTillSteg(page, 7, "Granska och skapa");
+  await expect(page.getByRole("button", { name: "Skapa projekt" })).toBeDisabled();
+  await gaTillSteg(page, 2, "Avropsacceptans");
   await page.getByLabel(/^Orsak till ej vunnet anbud/).selectOption("kvalitet");
   await page.getByLabel(/^Kommentar till orsaken/).fill("Sämre referenser");
   await expect(page.getByText("Förlorat anbud: flyttas till arkivet")).toBeVisible();
