@@ -597,8 +597,8 @@ export function Projektstart() {
       </section>
       {!redigerar && !ejVunnet && !krav.klar ? (
         <p className="m-0 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-ink-soft" role="note">
-          <span>Utkastet sparas automatiskt i den här webbläsaren. Du behöver inte fylla i allt nu.</span>
-          <button type="button" className="btn sec mini" onClick={() => gaTill(SISTA_STEG)}>Skapa projektet nu och fyll i resten senare</button>
+          <span>Utkastet sparas automatiskt i den här webbläsaren. Du behöver inte fylla i allt nu: du kan skapa projektet redan på sista sidan och fylla i resten senare.</span>
+          <button type="button" className="btn sec mini" onClick={() => gaTill(SISTA_STEG)}>Gå till Granska och skapa</button>
         </p>
       ) : null}
       {state.projekt.length ? (

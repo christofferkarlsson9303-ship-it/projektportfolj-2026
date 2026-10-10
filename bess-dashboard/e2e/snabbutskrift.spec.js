@@ -24,7 +24,7 @@ test("fasens blankett och Ctrl+K skriver ut utan fältmaterialpanelen", async ({
   await page.evaluate(() => { window.print = () => {}; });
   const fas = page.locator("#fas-0");
   await fas.locator("summary").first().click();
-  await fas.getByRole("button", { name: "Skriv ut fasens blankett", exact: true }).click();
+  await fas.getByRole("button", { name: "Skriv ut momentets blankett", exact: true }).click();
   await expect(page.locator("#utskrift")).toContainText("Förstudie och krav");
 
   await gaTill(page, "Idag");
