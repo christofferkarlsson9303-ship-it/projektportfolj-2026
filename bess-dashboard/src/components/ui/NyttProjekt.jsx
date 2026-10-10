@@ -2,7 +2,7 @@ import { usePortfolj, useUi } from "../../state/hooks.js";
 import { nyttProjekt, projektstartFel } from "../../lib/projektstart.js";
 
 export function NyttProjekt() {
-  const { state, dispatch } = usePortfolj();
+  const { heltState: state, dispatch } = usePortfolj();
   const { fraga, visaToast, setValtProjekt, visa } = useUi();
   const skapa = async () => {
     const v = await fraga({ titel: "Skapa nytt projekt", lead: "Ett tomt projekt med projektmetodens mallar. Inga gamla resultat, belopp, datum eller ärenden kopieras. Mallkraven behöver anpassas till ditt kontrakt.", ok: "Skapa projekt", validera: (varden) => projektstartFel(state, varden), falt: [

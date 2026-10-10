@@ -4,7 +4,7 @@ import { FASER } from "../../data/projektfaser.ts";
 import { STEG } from "../../data/projektstartSteg.js";
 import { arAvbockad, stegPunkter, stegTillstand } from "../../lib/projektstart.js";
 
-/* Navigeringen i guiden, grupperad efter de sex faserna. Sidor i en fas som
+/* Navigeringen i guiden, grupperad efter de åtta faserna. Sidor i en fas som
    inte är upplåst är låsta och går inte att öppna. Den sista sidan, Granska och
    skapa, hör inte till någon fas och är alltid öppen. */
 
@@ -19,13 +19,14 @@ function StegIkon({ tillstand }) {
   );
 }
 
-export function FasNav({ utkast, faser, aktivtId, onGaTill }) {
+export function FasNav({ utkast, faser, steg: stegLista = STEG, aktivtId, onGaTill }) {
   const raknare = (s) => {
     const p = stegPunkter(s);
     if (p.length) return `${p.filter((x) => arAvbockad(utkast, x)).length}/${p.length}`;
     return utkast.besokta.includes(s.id) ? "klar" : "";
   };
-  const grupper = [...FASER.map((f) => ({ fas: f, steg: STEG.filter((s) => s.fas === f.nr) })), { fas: null, steg: STEG.filter((s) => s.fas === null) }];
+  /* Faser som inte finns i listan (ett förlorat anbud har bara fas 1) visas inte. */
+  const grupper = [...FASER.filter((f) => faser.some((x) => x.nr === f.nr)).map((f) => ({ fas: f, steg: stegLista.filter((s) => s.fas === f.nr) })), { fas: null, steg: stegLista.filter((s) => s.fas === null) }];
   return (
     <ol className="m-0 hidden list-none flex-col gap-0.5 p-0 lg:flex">
       {grupper.map(({ fas, steg }) => {
@@ -54,7 +55,7 @@ export function FasNav({ utkast, faser, aktivtId, onGaTill }) {
                       className={`flex w-full items-center gap-2 rounded-lg border-0 px-2 py-2 text-left text-[13px] transition-[background-color,transform] duration-150 ${aktiv ? "bg-one-djup text-white" : laast ? "cursor-not-allowed bg-transparent text-ink-faint" : "bg-transparent text-ink hover:translate-x-0.5 hover:bg-sunken"}`}
                     >
                       <StegIkon tillstand={tillstand} />
-                      <span className="w-4 shrink-0 text-right tabular-nums opacity-70">{STEG.indexOf(s) + 1}</span>
+                      <span className="w-4 shrink-0 text-right tabular-nums opacity-70">{stegLista.indexOf(s) + 1}</span>
                       <span className="min-w-0 flex-1">{s.titel}</span>
                       <span className="text-[11px] tabular-nums opacity-70">{laast ? "" : raknare(s)}</span>
                     </button>

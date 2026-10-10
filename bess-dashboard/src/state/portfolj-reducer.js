@@ -13,8 +13,10 @@ import { angraFakturaunderlag, skapaFakturaunderlag } from "../lib/planering.js"
 import { kalkylRader, kalkylSummor } from "../lib/atakalkyl.js";
 import { fmtSEK } from "../lib/format.js";
 import { MALLAR, arNal, objektFel, punkterForSite } from "../lib/site.js";
+import { projektFasFranEpc } from "../lib/projektfasEpc.js";
+import { arDold } from "../lib/arkiv.js";
 import { projektstartFel } from "../lib/projektstart.js";
-import { arFasNr, fasFranStatus } from "../data/projektfaser.ts";
+import { EJ_VUNNET_ORSAKER, FAS_MODELL, arFasNr, faseFranGammal, fasFranStatus, faseInfo, riskFasFranGammal, forstaFasForStatus, normaliseraStatus, statusEtikett } from "../data/projektfaser.ts";
 import { granskaProfil, rensaProfil } from "../lib/kontraktsprofil.js";
 
 /** Namnet används i ändringsloggen och sparas per webbläsare, inte i delad data. */
@@ -73,15 +75,36 @@ export function efterInlasning(state) {
       nytt.startdatum = batchC ? "2026-02-02" : "";
       nytt.startdatumAntagande = batchC;
     }
-    /* Projektets fas (1–6). Äldre projekt saknar den, då gäller statusen. */
-    if (!arFasNr(nytt.fas)) nytt.fas = fasFranStatus(nytt.status);
+    /* Projektets fas. Äldre projekt saknar den, då gäller deras (gamla) status. Fasen räknas
+       före statusen normaliseras, eftersom Anbud och Planering annars inte går att skilja åt. */
+    if (nytt.fasModell !== FAS_MODELL) {
+      /* Sexfasmodellen räknas om en gång (gammal 5 → 7, gammal 6 → 8). Växjö och Alvesta saknade
+         fas och får den ur EPC-checklistan (antagande, reserv fas 4). */
+      const omr = faseFranGammal(nytt.fas);
+      if (omr) nytt.fas = omr;
+      else if (p.id === "36037" || p.id === "36038") nytt.fas = projektFasFranEpc(state, p.id);
+      else nytt.fas = fasFranStatus(nytt.status);
+      nytt.fasModell = FAS_MODELL;
+    } else if (!arFasNr(nytt.fas)) nytt.fas = fasFranStatus(nytt.status);
+    /* Statusen är en av fem id:n. Gamla värden (Anbud, Planering, Produktion …) mappas om. */
+    nytt.status = normaliseraStatus(nytt.status);
     return nytt;
   });
   /* Varje risk hör till en projektfas. Äldre risker saknar fas och får projektets. En risk
      som gäller flera projekt (projekt-id som inte är ett enskilt projekt) hamnar i
      genomförandefasen. */
   const fasForProjekt = new Map(projekt.map((p) => [p.id, p.fas]));
-  const risker = (state.risker || []).map((r) => (arFasNr(r.fas) ? r : { ...r, fas: fasForProjekt.get(r.projektId) ?? 4 }));
+  /* Riskerna räknas om tillsammans med sitt projekt: bara risker i projekt som ännu inte var
+     omräknade. Risker som läggs till efteråt hör till ett omräknat projekt och rörs inte. */
+  const alla = new Set((state.projekt || []).map((p) => p.id));
+  const omraknade = new Set((state.projekt || []).filter((p) => p.fasModell === FAS_MODELL).map((p) => p.id));
+  const risker = (state.risker || []).map((r) => {
+    /* En risk utan eget projekt (gemensam) bär själv markeringen. */
+    const klar = alla.has(r.projektId) ? omraknade.has(r.projektId) : r.fasModell === FAS_MODELL;
+    if (klar) return arFasNr(r.fas) ? r : { ...r, fas: fasForProjekt.get(r.projektId) ?? 4 };
+    const omr = riskFasFranGammal(r.fas, r.kategori);
+    return { ...r, fas: omr ?? fasForProjekt.get(r.projektId) ?? 4, ...(alla.has(r.projektId) ? {} : { fasModell: FAS_MODELL }) };
+  });
   return {
     ...state,
     ur,
@@ -199,8 +222,9 @@ const etikettFor = (state, lista, id) => {
 function medLogg(state, lista, id, gammalt, nytt) {
   const info = etikettFor(state, lista, id);
   if (!info) return state.andringslogg || [];
-  const g = (PILL[gammalt] || [undefined, gammalt || "—"])[1];
-  const n = (PILL[nytt] || [undefined, nytt])[1];
+  const etikett = (x) => (lista === "projekt" ? statusEtikett(x) : (PILL[x] || [undefined, x || "—"])[1]);
+  const g = etikett(gammalt);
+  const n = etikett(nytt);
   const post = {
     ts: new Date().toISOString(),
     anvandare: hamtaNamn() || "Okänd",
@@ -323,7 +347,10 @@ export function reducer(state, action) {
       const rad = state[lista].find((r) => r.id === id);
       if (!rad) return state;
       const gammalt = rad[falt];
-      const nytt = { ...state, [lista]: byt(state[lista], id, (r) => ({ ...r, [falt]: varde })) };
+      /* Byter man projektets status för hand sätts fasen till statusens första, om projektet inte
+         redan ligger i en fas som hör till den. Annars styr fasen statusen. */
+      const flyttaFas = lista === "projekt" && falt === "status" && faseInfo(rad.fas).status !== varde;
+      const nytt = { ...state, [lista]: byt(state[lista], id, (r) => ({ ...r, [falt]: varde, ...(flyttaFas ? { fas: forstaFasForStatus(varde) } : {}) })) };
       if (gammalt === varde) return nytt;
       return { ...nytt, andringslogg: medLogg(state, lista, id, gammalt, varde) };
     }
@@ -339,8 +366,47 @@ export function reducer(state, action) {
     }
 
     /* Ersätter en hel kollektion — för sorteringar och massuppdateringar. */
-    case "SATT_LISTA":
-      return { ...state, [action.lista]: action.rader };
+    case "SATT_LISTA": {
+      /* Vyerna ser portföljen utan förlorade anbud (lib/arkiv.js). Deras rader hålls kvar här, så att
+         en sortering eller massuppdatering aldrig tar bort arkivet. */
+      const dolda = (state[action.lista] || []).filter((r) => arDold(state, action.lista, r));
+      return { ...state, [action.lista]: dolda.length ? [...action.rader, ...dolda] : action.rader };
+    }
+
+    /* Tar tillbaka ett förlorat anbud från arkivet. Det börjar om i fas 1 med status Planering och uppstart.
+       Orsaken rensas från projektet men står kvar i ändringsloggen. */
+    case "ATERAKTIVERA_ANBUD": {
+      const rad = state.projekt.find((p) => p.id === action.id);
+      if (!rad || rad.status !== "ANBUD_EJ_VUNNET") return state;
+      const nytt = {
+        ...state,
+        projekt: byt(state.projekt, action.id, (p) => {
+          const { orsakEjVunnet: _o, orsakEjVunnetText: _t, ejVunnetDatum: _d, ...rest } = p;
+          return { ...rest, status: "PLANERING_OCH_UPPSTART", fas: 1 };
+        }),
+      };
+      /* En sparad projektstart bär avropsbeslutet Tacka nej. Det återställs, annars skulle guiden fortfarande
+         behandla projektet som förlorat och arkivera det igen vid nästa sparning. */
+      const projektstart = (state.projektstart || []).map((ps) => {
+        if (ps.projektId !== action.id || ps.utkast?.v?.beslut !== "Tacka nej") return ps;
+        return { ...ps, utkast: { ...ps.utkast, v: { ...ps.utkast.v, beslut: "", orsakEjVunnet: "", orsakEjVunnetText: "" } } };
+      });
+      return loggat({ ...nytt, projektstart }, action.id, "Förlorat anbud återaktiverat: tillbaka i fas 1, Planering och uppstart.");
+    }
+
+    /* Flyttar ett anbud till arkivet för förlorade anbud: fas 1, orsak och datum. Fas 2–8 döljs
+       eftersom statusen bara hör till fas 1. */
+    case "MARKERA_EJ_VUNNET": {
+      const { id, orsak, text } = action;
+      const rad = state.projekt.find((p) => p.id === id);
+      if (!rad || !EJ_VUNNET_ORSAKER.some(([k]) => k === orsak)) return state;
+      const nytt = {
+        ...state,
+        projekt: byt(state.projekt, id, (p) => ({ ...p, status: "ANBUD_EJ_VUNNET", fas: 1, orsakEjVunnet: orsak, orsakEjVunnetText: String(text || "").trim(), ejVunnetDatum: idag() })),
+      };
+      const namn = EJ_VUNNET_ORSAKER.find(([k]) => k === orsak)[1];
+      return loggat(nytt, id, `Anbud markerat som ej vunnet (${namn})${text ? `: ${String(text).trim().slice(0, 100)}` : ""}. Flyttat till arkivet.`);
+    }
 
     /* Tillämpar ett granskat importförslag (lib/importera.js). En
        säkerhetskopia körs genom samma normalisering och migrering som en

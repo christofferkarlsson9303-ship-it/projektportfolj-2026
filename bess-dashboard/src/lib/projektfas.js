@@ -12,6 +12,12 @@ import { arAvbockad, stegPunkter } from "./stegpunkter.js";
 
 export const stegIFas = (nr) => STEG.filter((s) => s.fas === nr);
 
+/** Avropsbeslutet "Tacka nej" gör anbudet till ett förlorat anbud: bara fas 1 gäller, med en orsak. */
+export const arEjVunnetUtkast = (u) => u.v?.beslut === "Tacka nej";
+
+/** Fält som bara visas vid ett visst värde i ett annat fält (`visaNar`) räknas bara då. */
+export const faltSynligt = (f, u) => !f.visaNar || u.v?.[f.visaNar.id] === f.visaNar.varde;
+
 const ifylld = (v, f) => {
   const t = typeof v === "string" ? v.trim() : "";
   return f.kravVarde ? t === f.kravVarde : t !== "";
@@ -20,12 +26,13 @@ const ifylld = (v, f) => {
 /** Vad som återstår i en fas. `falt` och `tabeller` är obligatoriska inmatningar,
  *  `punkter` är kritiska kontrollpunkter som inte är bockade. */
 export function fasKrav(u, nr) {
+  if (arEjVunnetUtkast(u)) return ejVunnetKrav(u, nr);
   const falt = [];
   const tabeller = [];
   let totalt = 0;
   for (const s of stegIFas(nr)) {
     for (const f of s.falt || []) {
-      if (!f.obligatoriskt) continue;
+      if (!f.obligatoriskt || !faltSynligt(f, u)) continue;
       totalt += 1;
       if (!ifylld(u.v?.[f.id], f)) falt.push({ stegId: s.id, stegTitel: s.titel, id: f.id, etikett: f.etikett });
     }
@@ -44,6 +51,20 @@ export function fasKrav(u, nr) {
   return { nr, falt, tabeller, punkter, totalt, klara: totalt - oppna, faltKlart: !falt.length && !tabeller.length, klar: oppna === 0 };
 }
 
+/** Ett förlorat anbud kräver bara ett projektnamn och en orsak. Fas 2–8 finns inte för det. */
+function ejVunnetKrav(u, nr) {
+  const falt = [];
+  if (nr === 1) {
+    for (const s of stegIFas(1)) {
+      for (const f of s.falt || []) {
+        if ((f.id === "namn" || f.id === "orsakEjVunnet") && !ifylld(u.v?.[f.id], f)) falt.push({ stegId: s.id, stegTitel: s.titel, id: f.id, etikett: f.etikett });
+      }
+    }
+  }
+  const totalt = nr === 1 ? 2 : 0;
+  return { nr, falt, tabeller: [], punkter: [], totalt, klara: totalt - falt.length, faltKlart: !falt.length, klar: nr === 1 && !falt.length };
+}
+
 /** Antal faser i följd, från fas 1, som är godkända. */
 export function godkandaFaser(u) {
   let n = 0;
@@ -53,6 +74,7 @@ export function godkandaFaser(u) {
 
 /** Projektets aktuella fas: den första som inte är godkänd, aldrig lägre än golvet. */
 export function aktuellFas(u) {
+  if (arEjVunnetUtkast(u)) return 1;
   const golv = arFasNr(u.fasGolv) ? u.fasGolv : 1;
   return Math.min(FAS_ANTAL, Math.max(golv, godkandaFaser(u) + 1));
 }

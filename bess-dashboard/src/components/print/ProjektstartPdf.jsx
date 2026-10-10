@@ -264,7 +264,7 @@ const LJUSFARG = { gron: "#3cb8ba", gul: F.orange, rod: F.rod };
 const LJUSTEXT = { gron: "Grön, enligt plan", gul: "Gul, avvikelse som hanteras i projektet", rod: "Röd, kräver hjälp eller beslut" };
 const FASFARG = { klar: F.bla, upplast: F.himmel, aktuell: "#fff", last: "#4f8d9d" };
 
-/** Projektets nuvarande fas och status, med de sex faserna som en rad. */
+/** Projektets nuvarande fas och status, med de åtta faserna som en rad. */
 function FasRuta({ fas }) {
   return (
     <View style={s.fasBox} wrap={false}>

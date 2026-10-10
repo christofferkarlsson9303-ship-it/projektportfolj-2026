@@ -1,10 +1,11 @@
 /* Stegen i Projektstart. Varje steg är data: fält, en valfri tabell och vilka
    kontrollpunkter ur projektstartKatalog.js som hör till steget.
 
-   fas: 1–6, vilken av de sex projektfaserna sidan hör till (se projektfaser.ts).
+   fas: 1–8, vilken av de åtta projektfaserna sidan hör till (se projektfaser.ts).
         Sista sidan, Granska och skapa, hör inte till någon fas (null).
    falt: { id, etikett, typ: text | textarea | select | date, alternativ?, placeholder?, bred?,
-           obligatoriskt?, kravVarde? }
+           obligatoriskt?, kravVarde?, visaNar? }
+        visaNar: { id, varde }. Fältet visas, och räknas som obligatoriskt, bara när fältet `id` har `varde`.
         obligatoriskt: fältet måste vara ifyllt för att fasen ska kunna godkännas.
         kravVarde: det enda värdet som räknas som godkänt (till exempel "Gå vidare").
    tabell: { id, titel, kolumner: [{ id, etikett, typ, alternativ?, bredd? }], obligatorisk? }
@@ -16,7 +17,7 @@
    Fält-id:n är platta nycklar i utkastets `v`, tabellerna ligger i `rader`. */
 
 import { ROLLER } from "./projektstartKatalog.js";
-import { FASER } from "./projektfaser.ts";
+import { EJ_VUNNET_ORSAKER, FASER } from "./projektfaser.ts";
 import { RISKKATEGORI_KORT, RISKKATEGORIER } from "./riskTyper.ts";
 
 const FORM = ["ABT 06", "ABT-U 07", "AB 04", "ABT 06 med särskilda villkor", "Annan"];
@@ -54,6 +55,9 @@ export const STEG = [
       { id: "beslut", etikett: "Beslut", typ: "select", alternativ: BESLUT, obligatoriskt: true, kravVarde: "Gå vidare", tips: "Fasen godkänns bara vid Gå vidare." },
       { id: "motivering", etikett: "Motivering", typ: "textarea", bred: true },
       { id: "oppnaFragor", etikett: "Öppna frågor till intern beställare", typ: "textarea", bred: true },
+      /* Tacka nej gör anbudet till ett förlorat anbud: bara fas 1 gäller, och orsaken sparas i arkivet. */
+      { id: "orsakEjVunnet", etikett: "Orsak till ej vunnet anbud", typ: "select", alternativ: EJ_VUNNET_ORSAKER, obligatoriskt: true, visaNar: { id: "beslut", varde: "Tacka nej" }, tips: "Anbudet flyttas till arkivet och döljs i planering, resurser och kassaflöde." },
+      { id: "orsakEjVunnetText", etikett: "Kommentar till orsaken", typ: "textarea", bred: true, visaNar: { id: "beslut", varde: "Tacka nej" } },
     ],
     katalog: ["calloff"],
   },
@@ -78,7 +82,7 @@ export const STEG = [
   },
   {
     id: "intressenter",
-    fas: 2,
+    fas: 1,
     titel: "Intressenter",
     sammanfattning: "Vem påverkar projektet och hur ni kommunicerar.",
     tabell: {
@@ -94,23 +98,8 @@ export const STEG = [
     },
   },
   {
-    id: "organisation",
-    fas: 2,
-    titel: "Organisation och möten",
-    sammanfattning: "Namngivna roller, behörighet och startmöte enligt ONE-P.",
-    falt: [
-      ...ROLLER.map((r) => ({ id: `roll_${r.id}`, etikett: r.namn, typ: "text", tips: r.tips, obligatoriskt: r.id === "pl" })),
-      { id: "ataBefogenhet", etikett: "Vem underrättar om ÄTA och hinder, och vem tar emot?", typ: "textarea", bred: true },
-      { id: "motesdeltagare", etikett: "Vem deltar i byggmöten?", typ: "text" },
-      { id: "motesKallare", etikett: "Vem kallar till byggmöten?", typ: "text" },
-      { id: "rapporteringKund", etikett: "Rapportering till kund", typ: "textarea", standard: "Skriftlig månadsrapport: progress och status till kund." },
-      { id: "rapporteringIntern", etikett: "Intern rapportering", typ: "textarea", standard: "Månadsavstämning internt. Styrgrupp kallas vid avvikelse." },
-    ],
-    katalog: ["org", "kickoff"],
-  },
-  {
     id: "kontrakt",
-    fas: 2,
+    fas: 1,
     titel: "Kontrakt och kassaflöde",
     sammanfattning: "Viten, milstolpar, bankgaranti, ÄTA och fakturering.",
     falt: [
@@ -137,6 +126,21 @@ export const STEG = [
     katalog: ["contract"],
   },
   {
+    id: "organisation",
+    fas: 1,
+    titel: "Organisation och uppstart",
+    sammanfattning: "Namngivna roller, behörighet och startmöte enligt ONE-P.",
+    falt: [
+      ...ROLLER.map((r) => ({ id: `roll_${r.id}`, etikett: r.namn, typ: "text", tips: r.tips, obligatoriskt: r.id === "pl" })),
+      { id: "ataBefogenhet", etikett: "Vem underrättar om ÄTA och hinder, och vem tar emot?", typ: "textarea", bred: true },
+      { id: "motesdeltagare", etikett: "Vem deltar i byggmöten?", typ: "text" },
+      { id: "motesKallare", etikett: "Vem kallar till byggmöten?", typ: "text" },
+      { id: "rapporteringKund", etikett: "Rapportering till kund", typ: "textarea", standard: "Skriftlig månadsrapport: progress och status till kund." },
+      { id: "rapporteringIntern", etikett: "Intern rapportering", typ: "textarea", standard: "Månadsavstämning internt. Styrgrupp kallas vid avvikelse." },
+    ],
+    katalog: ["org", "kickoff"],
+  },
+  {
     id: "risker",
     fas: 2,
     titel: "Riskregister",
@@ -159,7 +163,7 @@ export const STEG = [
       ],
       start: [
         { titel: "Fundament och härdning försenar kritisk linje", fas: "4", kategori: "tid" },
-        { titel: "Leveranstid för batteri och ställverk", fas: "4", kategori: "leverans" },
+        { titel: "Leveranstid för batteri och ställverk", fas: "5", kategori: "leverans" },
         { titel: "Geotekniskt avvikande förhållanden (ÄTA)", fas: "4", kategori: "mark" },
       ],
     },
@@ -238,16 +242,24 @@ export const STEG = [
     katalog: ["hseq"],
   },
   {
-    id: "produktion",
+    id: "cbop",
     fas: 4,
-    titel: "cBoP, eBoP och montage",
-    sammanfattning: "Mark, betong, leveranser, lyft och elektrisk installation.",
-    falt: [{ id: "produktionAnm", etikett: "Anteckning", typ: "textarea", bred: true }],
-    katalog: ["cbop", "ebop"],
+    titel: "Mark och betong (cBoP)",
+    sammanfattning: "Markarbeten, fundament, kabelkanalisation och jordning.",
+    falt: [{ id: "cbopAnm", etikett: "Anteckning", typ: "textarea", bred: true }],
+    katalog: ["cbop"],
+  },
+  {
+    id: "ebop",
+    fas: 5,
+    titel: "Leveranser, lyft och montage (eBoP)",
+    sammanfattning: "Leveranser, lyft, montage och elektrisk installation.",
+    falt: [{ id: "ebopAnm", etikett: "Anteckning", typ: "textarea", bred: true }],
+    katalog: ["ebop"],
   },
   {
     id: "provning",
-    fas: 4,
+    fas: 6,
     titel: "Provning och driftsättning",
     sammanfattning: "Anläggningsprov, elsäkerhet och driftsättning innan slutbesiktning.",
     falt: [{ id: "provningAnm", etikett: "Anteckning", typ: "textarea", bred: true }],
@@ -255,9 +267,18 @@ export const STEG = [
   },
   {
     id: "avslut",
-    fas: 5,
+    fas: 7,
     titel: "Slutbesiktning och överlämning",
-    sammanfattning: "Slutbesiktning, punchlista, slutdokumentation, slutreglering och erfarenhetsåterföring.",
+    sammanfattning: "Slutbesiktning, punchlista och slutdokumentation.",
+    falt: [{ id: "avslutAnm", etikett: "Anteckning", typ: "textarea", bred: true }],
+    katalog: ["closeout"],
+    grupper: { closeout: ["Slutbesiktning", "Punchlista", "Slutdokumentation"] },
+  },
+  {
+    id: "ekonomi",
+    fas: 8,
+    titel: "Ekonomiskt avslut och lärdomar",
+    sammanfattning: "Slutreglering, internt avslut, erfarenhetsåterföring, kick-out och slutrapport.",
     falt: [
       { id: "avslutAta", etikett: "ÄTA vid avslut", typ: "textarea", obligatoriskt: true },
       { id: "lardomar", etikett: "De tre viktigaste erfarenheterna och varför", typ: "textarea", bred: true, tips: "Går in i slutrapporten och i projektmetoden." },
@@ -270,11 +291,11 @@ export const STEG = [
       { id: "slutrapportResultat", etikett: "Slutrapport: resultat mot mål och projekttriangel", typ: "textarea", bred: true, tips: "Avvikelseanalys, beslut som påverkade resultatet, bakgrund, konsekvens och förbättringsförslag." },
     ],
     katalog: ["closeout"],
-    grupper: { closeout: ["Slutbesiktning", "Punchlista", "Slutdokumentation", "Ekonomi", "Internt avslut", "Erfarenhet"] },
+    grupper: { closeout: ["Ekonomi", "Internt avslut", "Erfarenhet"] },
   },
   {
     id: "garanti",
-    fas: 6,
+    fas: 8,
     titel: "Eftermarknad och garanti",
     sammanfattning: "Garantivillkor, kontaktperson för garantiärenden och rutin under garantitiden.",
     falt: [{ id: "garanti", etikett: "Garanti", typ: "textarea", bred: true, obligatoriskt: true }],

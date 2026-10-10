@@ -10,17 +10,17 @@ export const SEED = {
   projekt: [
     { id:"36037", nr:"36037", namn:"Växjö Batteripark", ort:"Växjö", mw:16, mwh:36,
       kontraktsvarde:11446000, natagare:"Växjö Energi", natkontakt:"Tina Strömberg",
-      fiber:"Vexnet", fardigstallande:"2026-12-02", status:"Produktion", anteckning:"" },
+      fiber:"Vexnet", fardigstallande:"2026-12-02", status:"PRODUKTION", anteckning:"" },
     { id:"36038", nr:"36038", namn:"Alvesta Batteripark", ort:"Alvesta", mw:8, mwh:16,
       kontraktsvarde:6614187, natagare:"Alvesta Energi AB", natkontakt:"Robin Carlsson",
-      fiber:"Vexnet", fardigstallande:"2026-12-04", status:"Produktion", anteckning:"" },
+      fiber:"Vexnet", fardigstallande:"2026-12-04", status:"PRODUKTION", anteckning:"" },
     { id:"goteborg", nr:"", namn:"Göteborg Skogome", ort:"Göteborg", mw:null, mwh:null,
       kontraktsvarde:null, natagare:"", natkontakt:"",
-      fiber:"", fardigstallande:"", status:"Planering",
+      fiber:"", fardigstallande:"", status:"PLANERING_OCH_UPPSTART", fas:2,
       anteckning:"Ställverk: VEO (avviker från Harju på övriga siter)" },
     { id:"gotene", nr:"", namn:"Götene", ort:"Götene", mw:null, mwh:null,
       kontraktsvarde:null, natagare:"", natkontakt:"",
-      fiber:"", fardigstallande:"", status:"Planering", anteckning:"" }
+      fiber:"", fardigstallande:"", status:"PLANERING_OCH_UPPSTART", fas:2, anteckning:"" }
   ],
 
   betalplan: [

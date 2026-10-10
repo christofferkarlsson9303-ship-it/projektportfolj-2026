@@ -1,10 +1,11 @@
 import { KATALOG_RUBRIK, STEG } from "../data/projektstartSteg.js";
 import { KATALOG } from "../data/projektstartKatalog.js";
-import { FAS_ANTAL, arFasNr, faseInfo, fasFranStatus } from "../data/projektfaser.ts";
+import { FAS_ANTAL, FAS_MODELL, arFasNr, faseFranGammal, faseInfo, fasFranStatus, riskFasFranGammal, statusEtikett } from "../data/projektfaser.ts";
 import { arRiskKategori } from "../data/riskTyper.ts";
 import { arAvbockad, stegPunkter } from "./stegpunkter.js";
 import { RISKGRANSER, riskNivaFranVarde } from "./risknivaer.js";
-import { aktuellFas, fasLage, rapportFas } from "./projektfas.js";
+import { aktuellFas, arEjVunnetUtkast, faltSynligt, fasLage, rapportFas } from "./projektfas.js";
+import { idag } from "./datum.js";
 
 export { arAvbockad, stegPunkter, RISKGRANSER };
 
@@ -29,7 +30,7 @@ export function projektstartFel(state, v) {
 export function nyttProjekt(v, id) {
   return { id, nr: varde(v.nr), namn: v.namn.trim(), ort: (v.ort || "").trim(), bestallare: (v.bestallare || "").trim(),
     startdatum: v.startdatum || "", fardigstallande: v.fardigstallande || "", startdatumAntagande: false,
-    kontraktsvarde: null, mw: null, mwh: null, natagare: "", natkontakt: "", fiber: "", mapp: "", anteckning: "", status: v.status || "Planering",
+    fasModell: FAS_MODELL, kontraktsvarde: null, mw: null, mwh: null, natagare: "", natkontakt: "", fiber: "", mapp: "", anteckning: "", status: v.status || "PLANERING_OCH_UPPSTART",
     underlag: { kalla: "", datum: "", infort: "", av: "" } };
 }
 
@@ -59,10 +60,10 @@ export function tomtUtkast() {
   const v = {};
   for (const s of STEG) for (const f of s.falt || []) v[f.id] = f.standard ?? f.alternativ?.[0] ?? "";
   v.bolag = "ONE Nordic AB";
-  for (const id of ["beslut", "niva", "offra"]) v[id] = "";
+  for (const id of ["beslut", "niva", "offra", "orsakEjVunnet"]) v[id] = "";
   const rader = {};
   for (const s of STEG) if (s.tabell) rader[s.tabell.id] = (s.tabell.start?.length ? s.tabell.start : [{}]).map((g) => nyRad(s.tabell, g));
-  return { steg: STEG[0].id, besokta: [], v, rader, kryss: {}, fasGolv: 1, trafikljus: {} };
+  return { steg: STEG[0].id, besokta: [], v, rader, kryss: {}, fasGolv: 1, trafikljus: {}, fm: FAS_MODELL };
 }
 
 /** Läser ett sparat utkast och släpper bara in kända fält, så att en gammal eller
@@ -80,12 +81,25 @@ export function lasUtkast(raw) {
   for (const k of Object.keys(bas.v)) if (typeof sparat.v?.[k] === "string") bas.v[k] = sparat.v[k];
   for (const k of Object.keys(bas.rader)) if (Array.isArray(sparat.rader?.[k]) && sparat.rader[k].length) bas.rader[k] = sparat.rader[k].filter((r) => r && typeof r === "object" && typeof r.id === "string");
   for (const [bucket, poster] of Object.entries(sparat.kryss || {})) if (KATALOG[bucket] && poster && typeof poster === "object") bas.kryss[bucket] = { ...poster };
-  if (arFasNr(sparat.fasGolv)) bas.fasGolv = sparat.fasGolv;
+  /* Utkast från sexfasmodellen (utan `fm`) räknas om en gång: golv, trafikljus, risker och besökta sidor. */
+  const gammal = sparat.fm !== FAS_MODELL;
+  const nyFas = (nr) => (gammal ? faseFranGammal(Number(nr)) : arFasNr(Number(nr)) ? Number(nr) : null);
+  if (nyFas(sparat.fasGolv)) bas.fasGolv = nyFas(sparat.fasGolv);
+  if (gammal && Array.isArray(bas.rader.risker)) {
+    bas.rader.risker = bas.rader.risker.map((r) => {
+      const f = riskFasFranGammal(Number(r.fas), r.kategori);
+      return f ? { ...r, fas: String(f) } : r;
+    });
+  }
   for (const [nr, t] of Object.entries(sparat.trafikljus || {})) {
-    if (arFasNr(Number(nr)) && t && LJUS.includes(t.ljus)) bas.trafikljus[nr] = { ljus: t.ljus, kommentar: typeof t.kommentar === "string" ? t.kommentar.slice(0, 300) : "" };
+    if (nyFas(nr) && t && LJUS.includes(t.ljus)) bas.trafikljus[nyFas(nr)] = { ljus: t.ljus, kommentar: typeof t.kommentar === "string" ? t.kommentar.slice(0, 300) : "" };
   }
   if (ids.has(sparat.steg)) bas.steg = sparat.steg;
-  if (Array.isArray(sparat.besokta)) bas.besokta = sparat.besokta.filter((id) => ids.has(id));
+  if (Array.isArray(sparat.besokta)) {
+    /* Sidorna som delades: cBoP och eBoP låg i "produktion", ekonomiskt avslut i "avslut". */
+    const besokta = sparat.besokta.flatMap((id) => (!gammal ? [id] : id === "produktion" ? ["cbop", "ebop"] : id === "avslut" ? ["avslut", "ekonomi"] : [id]));
+    bas.besokta = besokta.filter((id) => ids.has(id));
+  }
   return bas;
 }
 
@@ -109,6 +123,9 @@ export function riskFordelning(rader) {
   }
   return f;
 }
+
+/** Guidens sidor för utkastet. Ett förlorat anbud (avropsbeslut Tacka nej) har bara fas 1 och sista sidan. */
+export const synligaSteg = (u) => (arEjVunnetUtkast(u) ? STEG.filter((s) => s.fas === null || s.fas === 1) : STEG);
 
 /** Hur långt ett steg har kommit: "klar", "pagar", "ny" eller "last". Steg med
  *  kontrollpunkter är klara först när alla är bockade. Övriga steg räknas som
@@ -147,7 +164,12 @@ const radFas = (x, reserv) => (arFasNr(Number(x)) ? Number(x) : reserv);
 export function projektFranUtkast(u, id) {
   const v = u.v;
   const fas = aktuellFas(u);
-  const rad = { ...nyttProjekt({ namn: v.namn, nr: v.nr, ort: v.plats, bestallare: v.bestallare, startdatum: v.startdatum, fardigstallande: v.fardigdatum, status: faseInfo(fas).status }, id), fas };
+  const ejVunnet = arEjVunnetUtkast(u);
+  const rad = {
+    ...nyttProjekt({ namn: v.namn, nr: v.nr, ort: v.plats, bestallare: v.bestallare, startdatum: v.startdatum, fardigstallande: v.fardigdatum, status: ejVunnet ? "ANBUD_EJ_VUNNET" : faseInfo(fas).status }, id),
+    fas,
+    ...(ejVunnet ? { orsakEjVunnet: v.orsakEjVunnet, orsakEjVunnetText: (v.orsakEjVunnetText || "").trim(), ejVunnetDatum: idag() } : {}),
+  };
   const rader = [
     v.kontraktsform && `Kontraktsform: ${v.kontraktsform}${v.niva ? `, ${v.niva.toLowerCase()}` : ""}`,
     v.nulage && `Nuläge vid start: ${v.nulage.trim()}`,
@@ -155,13 +177,14 @@ export function projektFranUtkast(u, id) {
     v.beslut && `Avropsbeslut: ${v.beslut}`,
   ].filter(Boolean);
   const projekt = { ...rad, natagare: (v.natagare || "").trim(), anteckning: rader.join("\n") };
-  const risker = (u.rader.risker || [])
+  /* Ett förlorat anbud får inga risker eller milstolpar: det ska inte räknas i aktiva vyer. */
+  const risker = (ejVunnet ? [] : u.rader.risker || [])
     .filter((r) => r.titel?.trim())
     .map((r, i) => ({
       id: `r-${id}-${i + 1}`, projektId: id, fas: radFas(r.fas, fas), ...(arRiskKategori(r.kategori) ? { kategori: r.kategori } : {}),
       titel: r.titel.trim(), sannolikhet: Number(r.sannolikhet) || 3, konsekvens: Number(r.konsekvens) || 3, atgard: (r.atgard || "").trim(), agare: (r.agare || "").trim(), status: "oppen",
     }));
-  const milstolpar = (u.rader.milstolpar || [])
+  const milstolpar = (ejVunnet ? [] : u.rader.milstolpar || [])
     .filter((m) => m.namn?.trim() && m.datum)
     .map((m, i) => ({ id: `m-${id}-${i + 1}`, projektId: id, titel: m.namn.trim(), datum: m.datum, status: "planerad" }));
   return { projekt, risker, milstolpar };
@@ -186,7 +209,7 @@ export function nyaRaderForProjekt(u, projektId, state, nu = Date.now()) {
 export function historikRad(u, { datum, av = "" }) {
   const l = luckor(u);
   const fas = aktuellFas(u);
-  return { datum, av, fas, skede: faseInfo(fas).status, nulage: (u.v.nulage || "").trim(), klara: l.klara, totalt: l.totalt, kritiskaOppna: l.kritiskaOppna.length };
+  return { datum, av, fas, skede: statusEtikett(faseInfo(fas).status), nulage: (u.v.nulage || "").trim(), klara: l.klara, totalt: l.totalt, kritiskaOppna: l.kritiskaOppna.length };
 }
 
 /** Lägger till en loggrad. Samma dag ersätts den senaste raden i stället för att logga varje klick. */
@@ -258,13 +281,14 @@ export function projektstartDokument(u, { datum, skapadAv = "", historik = [], s
     /* Fält: [etikett, värde, stycken]. Långa fält får stycken och visas som
        rubrik med brödtext i PDF:en, korta som rad. Saknat projektnummer skrivs
        ut som "Ej skapat" så att ledningen ser att det saknas. */
-    const falt = (s.falt || [])
+    const synliga = (s.falt || []).filter((f) => faltSynligt(f, u));
+    const falt = synliga
       .map((f) => {
         const val = f.id === "nr" ? varde(v[f.id]) || "Ej skapat" : varde(v[f.id]);
         return [f.etikett, val, arLangText(val) ? textstycken(val) : null];
       })
       .filter(([, val]) => val);
-    const tomma = (s.falt || []).filter((f) => f.id !== "nr" && !varde(v[f.id])).map((f) => f.etikett);
+    const tomma = synliga.filter((f) => f.id !== "nr" && !varde(v[f.id])).map((f) => f.etikett);
     const arRisker = s.tabell?.id === "risker";
     const tabell = s.tabell
       ? {
@@ -335,11 +359,12 @@ export function projektstartDokument(u, { datum, skapadAv = "", historik = [], s
         antal: FAS_ANTAL,
         kort: fasInfo.kort,
         titel: fasInfo.titel,
-        status: fasInfo.status,
+        status: statusEtikett(fasInfo.status),
+        statusId: fasInfo.status,
         klarAllt: lager.every((f) => f.status === "klar"),
         faser: lager.map((f) => ({ nr: f.nr, kort: f.kort, status: f.status, klara: f.klara, totalt: f.totalt, ljus: u.trafikljus?.[f.nr]?.ljus || "", kommentar: (u.trafikljus?.[f.nr]?.kommentar || "").trim() })),
       },
-      lage: { skede: fasInfo.status, nulage: (v.nulage || "").trim(), beslut: (v.beslutLedning || "").trim() },
+      lage: { skede: statusEtikett(fasInfo.status), nulage: (v.nulage || "").trim(), beslut: (v.beslutLedning || "").trim() },
       kort: {
         plats: varde(v.plats),
         start: varde(v.startdatum),
@@ -354,14 +379,18 @@ export function projektstartDokument(u, { datum, skapadAv = "", historik = [], s
 
 /** Sparad projektstart: guidens svar, knutna till projektet. */
 export function projektstartPost(projektId, u, nu = new Date().toISOString(), historik = []) {
-  return { id: `ps-${projektId}`, projektId, utkast: { v: u.v, rader: u.rader, kryss: u.kryss, fasGolv: u.fasGolv, trafikljus: u.trafikljus || {} }, skapad: nu, uppdaterad: nu, historik };
+  return { id: `ps-${projektId}`, projektId, utkast: { v: u.v, rader: u.rader, kryss: u.kryss, fasGolv: u.fasGolv, trafikljus: u.trafikljus || {}, fm: FAS_MODELL }, skapad: nu, uppdaterad: nu, historik };
 }
 
 /** Öppnar en sparad projektstart i guiden. Alla steg räknas som genomgångna. */
 export function utkastFranPost(post, projekt) {
   const u = lasUtkast(post?.utkast);
-  /* En projektstart som sparades innan faserna fanns saknar golv. Då gäller projektets status. */
-  if (projekt && !arFasNr(post?.utkast?.fasGolv)) u.fasGolv = fasFranStatus(projekt.status);
+  /* Golvet är det högsta av det som sparades och projektets egen fas. En projektstart som sparades
+     innan faserna fanns saknar golv, och då gäller projektets fas eller status. */
+  if (projekt) {
+    const franProjekt = arFasNr(projekt.fas) ? projekt.fas : fasFranStatus(projekt.status);
+    u.fasGolv = Math.max(u.fasGolv, franProjekt);
+  }
   u.besokta = STEG.filter((s) => s.id !== SISTA_STEG).map((s) => s.id);
   u.steg = STEG[0].id;
   return u;
@@ -377,7 +406,14 @@ export function kortAndringar(u, projekt) {
   /* Status följer fasen, men bara när fasen har ändrats. En status som någon satt för hand
      på projektkortet skrivs alltså inte över av en vanlig sparning. */
   const fas = aktuellFas(u);
-  if (fas !== projekt.fas) andringar.push(["fas", fas], ["status", faseInfo(fas).status]);
+  const ejVunnet = arEjVunnetUtkast(u);
+  const status = ejVunnet ? "ANBUD_EJ_VUNNET" : faseInfo(fas).status;
+  if (fas !== projekt.fas || ejVunnet !== (projekt.status === "ANBUD_EJ_VUNNET")) andringar.push(["fas", fas], ["status", status]);
+  if (ejVunnet) {
+    const orsak = [["orsakEjVunnet", u.v.orsakEjVunnet || ""], ["orsakEjVunnetText", (u.v.orsakEjVunnetText || "").trim()]];
+    for (const [falt, nytt] of orsak) if (nytt !== (projekt[falt] || "")) andringar.push([falt, nytt]);
+    if (!projekt.ejVunnetDatum) andringar.push(["ejVunnetDatum", idag()]);
+  }
   return andringar;
 }
 

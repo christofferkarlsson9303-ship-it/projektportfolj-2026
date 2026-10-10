@@ -380,7 +380,8 @@ function Protokollarkiv({ rader, projekt, status, onOppna }) {
 /* ---------- Vyn ---------- */
 
 export function Data() {
-  const { state, dispatch, conn } = usePortfolj();
+  /* Arkiv, export och import gäller hela datan, också förlorade anbud. */
+  const { heltState: state, dispatch, conn } = usePortfolj();
   const { bekrafta, visaToast } = useUi();
   const [forslag, setForslag] = useState([]); // [{...forslag, nyckel, fil}]
   const [arbetar, setArbetar] = useState(null);

@@ -44,7 +44,7 @@ describe("Återanvändbar projektmetod", () => {
     u.rader.risker = [{ id: "a", titel: "Leverans sen", sannolikhet: "4", konsekvens: "5", agare: "PL", atgard: "Bevaka" }, { id: "b", titel: "  ", sannolikhet: "3", konsekvens: "3", agare: "", atgard: "" }];
     u.rader.milstolpar = [{ id: "c", namn: "M1", utlosare: "", datum: "2027-01-15" }, { id: "d", namn: "Utan datum", utlosare: "", datum: "" }];
     const { projekt, risker, milstolpar } = projektFranUtkast(u, "p1");
-    expect(projekt).toMatchObject({ id: "p1", namn: "Kalmar batteripark", nr: "90002", ort: "Kalmar", natagare: "Kalmar Energi", kontraktsvarde: null, status: "Anbud", fas: 1 });
+    expect(projekt).toMatchObject({ id: "p1", namn: "Kalmar batteripark", nr: "90002", ort: "Kalmar", natagare: "Kalmar Energi", kontraktsvarde: null, status: "PLANERING_OCH_UPPSTART", fas: 1 });
     expect(projekt.anteckning).toContain("Kritisk linje: Fundament");
     expect(risker).toEqual([{ id: "r-p1-1", projektId: "p1", fas: 1, titel: "Leverans sen", sannolikhet: 4, konsekvens: 5, atgard: "Bevaka", agare: "PL", status: "oppen" }]);
     expect(milstolpar).toEqual([{ id: "m-p1-1", projektId: "p1", titel: "M1", datum: "2027-01-15", status: "planerad" }]);
@@ -114,7 +114,7 @@ describe("Återanvändbar projektmetod", () => {
   it("för bara ändrade projektkortsfält över till projektet", () => {
     const u = tomtUtkast();
     Object.assign(u.v, { namn: "Nytt namn", nr: "90004", plats: "Kalmar", bestallare: "" });
-    const projekt = { namn: "Gammalt namn", nr: "90004", ort: "Kalmar", bestallare: "Kund", status: "Anbud", fas: 1 };
+    const projekt = { namn: "Gammalt namn", nr: "90004", ort: "Kalmar", bestallare: "Kund", status: "PLANERING_OCH_UPPSTART", fas: 1 };
     expect(kortAndringar(u, projekt)).toEqual([["namn", "Nytt namn"], ["bestallare", ""]]);
     u.v.namn = "";
     expect(kortAndringar(u, projekt).some(([f]) => f === "namn")).toBe(false);
@@ -123,10 +123,10 @@ describe("Återanvändbar projektmetod", () => {
     const u = tomtUtkast();
     Object.assign(u.v, { namn: "Vaggeryd", nr: "-" });
     const { projekt } = projektFranUtkast(u, "p-v");
-    expect(projekt).toMatchObject({ nr: "", status: "Anbud", fas: 1 });
-    expect(kortAndringar(u, { namn: "Vaggeryd", nr: "", status: "Planering" })).toEqual([["fas", 1], ["status", "Anbud"]]);
+    expect(projekt).toMatchObject({ nr: "", status: "PLANERING_OCH_UPPSTART", fas: 1 });
+    expect(kortAndringar(u, { namn: "Vaggeryd", nr: "", status: "PRODUKTION" })).toEqual([["fas", 1], ["status", "PLANERING_OCH_UPPSTART"]]);
     // En status som någon satt för hand rörs inte så länge fasen är densamma.
-    expect(kortAndringar(u, { namn: "Vaggeryd", nr: "", status: "Planering", fas: 1 })).toEqual([]);
+    expect(kortAndringar(u, { namn: "Vaggeryd", nr: "", status: "PRODUKTION", fas: 1 })).toEqual([]);
   });
   it("stoppar dubbletter på namn när projektnummer saknas", () => {
     const state = { projekt: [{ id: "a", nr: "", namn: "Vaggeryd 100MW" }] };
@@ -148,7 +148,7 @@ describe("Återanvändbar projektmetod", () => {
     const u = tomtUtkast();
     Object.assign(u.v, { skede: "Anbud", nulage: "Anbud in 23/10" });
     const r1 = historikRad(u, { datum: "2026-10-06", av: "CK" });
-    expect(r1).toMatchObject({ skede: "Anbud", nulage: "Anbud in 23/10", klara: 0 });
+    expect(r1).toMatchObject({ skede: "Planering och uppstart", nulage: "Anbud in 23/10", klara: 0 });
     let h = medHistorik([], r1);
     h = medHistorik(h, { ...r1, nulage: "Ändrat samma dag" });
     expect(h).toHaveLength(1);
@@ -157,7 +157,7 @@ describe("Återanvändbar projektmetod", () => {
     expect(h).toHaveLength(2);
     const d = projektstartDokument(u, { datum: "2026-10-07", historik: h, sparad: "2026-10-07" });
     expect(d.projektstart.historik).toHaveLength(2);
-    expect(d.projektstart.lage).toMatchObject({ skede: "Anbud", nulage: "Anbud in 23/10" });
+    expect(d.projektstart.lage).toMatchObject({ skede: "Planering och uppstart", nulage: "Anbud in 23/10" });
   });
   it("delar långa texter i stycken, milstolpskort och fetstilta nycklar", () => {
     const t = "Förslag:\n\nMilstolpe 3 (Kablering, Förläggning & Station - 20–25 %):\nBetalas när kablarna är förlagda.\n\nAvtalsform: Totalentreprenad.\nKvalitet & Säkerhet: Enligt ESA.";

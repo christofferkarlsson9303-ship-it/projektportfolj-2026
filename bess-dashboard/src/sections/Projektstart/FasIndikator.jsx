@@ -1,6 +1,6 @@
 import { Check, Lock } from "lucide-react";
 
-/* De sex faserna som en rad i guidens huvud: godkända, aktuell och låsta.
+/* De åtta faserna som en rad i guidens huvud: godkända, aktuell och låsta.
    Visas på mörk bakgrund. Status står också i text för skärmläsare. */
 
 const TEXT = { klar: "godkänd", upplast: "upplåst", aktuell: "pågår", last: "låst" };
@@ -13,7 +13,7 @@ const STAPEL = {
 
 export function FasIndikator({ faser, visadFas }) {
   return (
-    <ol aria-label="Faser i projektet" className="m-0 grid list-none grid-cols-3 gap-x-2 gap-y-2 p-0 sm:grid-cols-6">
+    <ol aria-label="Faser i projektet" className="m-0 grid list-none grid-cols-4 gap-x-2 gap-y-2 p-0 sm:grid-cols-8">
       {faser.map((f) => (
         <li key={f.nr} aria-current={f.status === "aktuell" ? "step" : undefined} className="min-w-0">
           <span aria-hidden="true" className={`block h-1.5 rounded-full transition-colors duration-500 ${STAPEL[f.status]}`} />
