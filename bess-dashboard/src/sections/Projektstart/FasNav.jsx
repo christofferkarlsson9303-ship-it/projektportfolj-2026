@@ -4,7 +4,7 @@ import { FASER } from "../../data/projektfaser.ts";
 import { STEG } from "../../data/projektstartSteg.js";
 import { arAvbockad, stegPunkter, stegTillstand } from "../../lib/projektstart.js";
 
-/* Navigeringen i guiden, grupperad efter de sex faserna. Sidor i en fas som
+/* Navigeringen i guiden, grupperad efter de åtta faserna. Sidor i en fas som
    inte är upplåst är låsta och går inte att öppna. Den sista sidan, Granska och
    skapa, hör inte till någon fas och är alltid öppen. */
 

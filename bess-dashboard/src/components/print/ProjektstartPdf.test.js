@@ -19,8 +19,8 @@ function fulltUtkast(langd) {
   for (const s of STEG) for (const f of s.falt || []) if (f.typ === "textarea") u.v[f.id] = `${text(langd)}\n\n${text(2)}`;
   else if (f.typ === "text") u.v[f.id] = text(1);
   Object.assign(u.v, { namn: "Testpark 100MW", nr: "-", startdatum: "2027-02-01", fardigdatum: "2029-11-30" });
-  // Fas 6 så att hela dokumentet renderas, med alla sex faserna.
-  u.fasGolv = 6;
+  // Fas 8 så att hela dokumentet renderas, med alla åtta faserna.
+  u.fasGolv = 8;
   for (const s of STEG) if (s.tabell) u.rader[s.tabell.id] = Array.from({ length: 7 }, () => nyTabellrad(s.tabell, Object.fromEntries(s.tabell.kolumner.map((k) => [k.id, k.typ === "date" ? "2028-01-01" : k.typ === "select" ? (Array.isArray(k.alternativ[1]) ? k.alternativ[1][0] : k.alternativ[0]) : text(2)]))));
   for (const s of STEG) for (const p of stegPunkter(s).filter((_, i) => i % 3 === 0)) (u.kryss[p.bucket] ||= {})[p.id] = true;
   u.besokta = STEG.map((s) => s.id);
@@ -40,7 +40,7 @@ describe("ProjektstartPdf", () => {
     const u = tomtUtkast();
     Object.assign(u.v, { namn: "Tidig park", bestallare: "Kund" });
     const d = projektstartDokument(u, { datum: "2026-10-09", skapadAv: "CK" });
-    expect(d.projektstart.fas).toMatchObject({ nr: 1, omfattar: 1, antal: 6, status: "Planering och uppstart" });
+    expect(d.projektstart.fas).toMatchObject({ nr: 1, omfattar: 1, antal: 8, status: "Planering och uppstart" });
     expect(d.projektstart.sektioner.every((x) => x.fasNr === 1)).toBe(true);
     const buf = await renderToBuffer(createElement(ProjektstartPdf, { dokument: d }));
     expect(buf.subarray(0, 5).toString()).toBe("%PDF-");

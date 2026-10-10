@@ -1,6 +1,6 @@
 import { KATALOG_RUBRIK, STEG } from "../data/projektstartSteg.js";
 import { KATALOG } from "../data/projektstartKatalog.js";
-import { FAS_ANTAL, arFasNr, faseInfo, fasFranStatus, statusEtikett } from "../data/projektfaser.ts";
+import { FAS_ANTAL, FAS_MODELL, arFasNr, faseFranGammal, faseInfo, fasFranStatus, riskFasFranGammal, statusEtikett } from "../data/projektfaser.ts";
 import { arRiskKategori } from "../data/riskTyper.ts";
 import { arAvbockad, stegPunkter } from "./stegpunkter.js";
 import { RISKGRANSER, riskNivaFranVarde } from "./risknivaer.js";
@@ -29,7 +29,7 @@ export function projektstartFel(state, v) {
 export function nyttProjekt(v, id) {
   return { id, nr: varde(v.nr), namn: v.namn.trim(), ort: (v.ort || "").trim(), bestallare: (v.bestallare || "").trim(),
     startdatum: v.startdatum || "", fardigstallande: v.fardigstallande || "", startdatumAntagande: false,
-    kontraktsvarde: null, mw: null, mwh: null, natagare: "", natkontakt: "", fiber: "", mapp: "", anteckning: "", status: v.status || "PLANERING_OCH_UPPSTART",
+    fasModell: FAS_MODELL, kontraktsvarde: null, mw: null, mwh: null, natagare: "", natkontakt: "", fiber: "", mapp: "", anteckning: "", status: v.status || "PLANERING_OCH_UPPSTART",
     underlag: { kalla: "", datum: "", infort: "", av: "" } };
 }
 
@@ -62,7 +62,7 @@ export function tomtUtkast() {
   for (const id of ["beslut", "niva", "offra"]) v[id] = "";
   const rader = {};
   for (const s of STEG) if (s.tabell) rader[s.tabell.id] = (s.tabell.start?.length ? s.tabell.start : [{}]).map((g) => nyRad(s.tabell, g));
-  return { steg: STEG[0].id, besokta: [], v, rader, kryss: {}, fasGolv: 1, trafikljus: {} };
+  return { steg: STEG[0].id, besokta: [], v, rader, kryss: {}, fasGolv: 1, trafikljus: {}, fm: FAS_MODELL };
 }
 
 /** Läser ett sparat utkast och släpper bara in kända fält, så att en gammal eller
@@ -80,12 +80,25 @@ export function lasUtkast(raw) {
   for (const k of Object.keys(bas.v)) if (typeof sparat.v?.[k] === "string") bas.v[k] = sparat.v[k];
   for (const k of Object.keys(bas.rader)) if (Array.isArray(sparat.rader?.[k]) && sparat.rader[k].length) bas.rader[k] = sparat.rader[k].filter((r) => r && typeof r === "object" && typeof r.id === "string");
   for (const [bucket, poster] of Object.entries(sparat.kryss || {})) if (KATALOG[bucket] && poster && typeof poster === "object") bas.kryss[bucket] = { ...poster };
-  if (arFasNr(sparat.fasGolv)) bas.fasGolv = sparat.fasGolv;
+  /* Utkast från sexfasmodellen (utan `fm`) räknas om en gång: golv, trafikljus, risker och besökta sidor. */
+  const gammal = sparat.fm !== FAS_MODELL;
+  const nyFas = (nr) => (gammal ? faseFranGammal(Number(nr)) : arFasNr(Number(nr)) ? Number(nr) : null);
+  if (nyFas(sparat.fasGolv)) bas.fasGolv = nyFas(sparat.fasGolv);
+  if (gammal && Array.isArray(bas.rader.risker)) {
+    bas.rader.risker = bas.rader.risker.map((r) => {
+      const f = riskFasFranGammal(Number(r.fas), r.kategori);
+      return f ? { ...r, fas: String(f) } : r;
+    });
+  }
   for (const [nr, t] of Object.entries(sparat.trafikljus || {})) {
-    if (arFasNr(Number(nr)) && t && LJUS.includes(t.ljus)) bas.trafikljus[nr] = { ljus: t.ljus, kommentar: typeof t.kommentar === "string" ? t.kommentar.slice(0, 300) : "" };
+    if (nyFas(nr) && t && LJUS.includes(t.ljus)) bas.trafikljus[nyFas(nr)] = { ljus: t.ljus, kommentar: typeof t.kommentar === "string" ? t.kommentar.slice(0, 300) : "" };
   }
   if (ids.has(sparat.steg)) bas.steg = sparat.steg;
-  if (Array.isArray(sparat.besokta)) bas.besokta = sparat.besokta.filter((id) => ids.has(id));
+  if (Array.isArray(sparat.besokta)) {
+    /* Sidorna som delades: cBoP och eBoP låg i "produktion", ekonomiskt avslut i "avslut". */
+    const besokta = sparat.besokta.flatMap((id) => (!gammal ? [id] : id === "produktion" ? ["cbop", "ebop"] : id === "avslut" ? ["avslut", "ekonomi"] : [id]));
+    bas.besokta = besokta.filter((id) => ids.has(id));
+  }
   return bas;
 }
 
@@ -355,7 +368,7 @@ export function projektstartDokument(u, { datum, skapadAv = "", historik = [], s
 
 /** Sparad projektstart: guidens svar, knutna till projektet. */
 export function projektstartPost(projektId, u, nu = new Date().toISOString(), historik = []) {
-  return { id: `ps-${projektId}`, projektId, utkast: { v: u.v, rader: u.rader, kryss: u.kryss, fasGolv: u.fasGolv, trafikljus: u.trafikljus || {} }, skapad: nu, uppdaterad: nu, historik };
+  return { id: `ps-${projektId}`, projektId, utkast: { v: u.v, rader: u.rader, kryss: u.kryss, fasGolv: u.fasGolv, trafikljus: u.trafikljus || {}, fm: FAS_MODELL }, skapad: nu, uppdaterad: nu, historik };
 }
 
 /** Öppnar en sparad projektstart i guiden. Alla steg räknas som genomgångna. */
@@ -365,7 +378,7 @@ export function utkastFranPost(post, projekt) {
      innan faserna fanns saknar golv, och då gäller projektets fas eller status. */
   if (projekt) {
     const franProjekt = arFasNr(projekt.fas) ? projekt.fas : fasFranStatus(projekt.status);
-    u.fasGolv = Math.max(arFasNr(post?.utkast?.fasGolv) ? post.utkast.fasGolv : 1, franProjekt);
+    u.fasGolv = Math.max(u.fasGolv, franProjekt);
   }
   u.besokta = STEG.filter((s) => s.id !== SISTA_STEG).map((s) => s.id);
   u.steg = STEG[0].id;

@@ -1,4 +1,4 @@
-/* Riskmodellen. Varje risk hör till en projektfas (1–6) och en kategori.
+/* Riskmodellen. Varje risk hör till en projektfas (1–8) och en kategori.
    Samma form används i portföljens riskregister (state.risker) och i raderna
    i Projektstart-guiden, så att en risk kan följa med från guiden till
    registret utan omräkning. */

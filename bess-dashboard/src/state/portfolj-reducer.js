@@ -13,8 +13,9 @@ import { angraFakturaunderlag, skapaFakturaunderlag } from "../lib/planering.js"
 import { kalkylRader, kalkylSummor } from "../lib/atakalkyl.js";
 import { fmtSEK } from "../lib/format.js";
 import { MALLAR, arNal, objektFel, punkterForSite } from "../lib/site.js";
+import { projektFasFranEpc } from "../lib/projektfasEpc.js";
 import { projektstartFel } from "../lib/projektstart.js";
-import { arFasNr, fasFranStatus, faseInfo, forstaFasForStatus, normaliseraStatus, statusEtikett } from "../data/projektfaser.ts";
+import { FAS_MODELL, arFasNr, faseFranGammal, fasFranStatus, faseInfo, riskFasFranGammal, forstaFasForStatus, normaliseraStatus, statusEtikett } from "../data/projektfaser.ts";
 import { granskaProfil, rensaProfil } from "../lib/kontraktsprofil.js";
 
 /** Namnet används i ändringsloggen och sparas per webbläsare, inte i delad data. */
@@ -75,7 +76,15 @@ export function efterInlasning(state) {
     }
     /* Projektets fas. Äldre projekt saknar den, då gäller deras (gamla) status. Fasen räknas
        före statusen normaliseras, eftersom Anbud och Planering annars inte går att skilja åt. */
-    if (!arFasNr(nytt.fas)) nytt.fas = fasFranStatus(nytt.status);
+    if (nytt.fasModell !== FAS_MODELL) {
+      /* Sexfasmodellen räknas om en gång (gammal 5 → 7, gammal 6 → 8). Växjö och Alvesta saknade
+         fas och får den ur EPC-checklistan (antagande, reserv fas 4). */
+      const omr = faseFranGammal(nytt.fas);
+      if (omr) nytt.fas = omr;
+      else if (p.id === "36037" || p.id === "36038") nytt.fas = projektFasFranEpc(state, p.id);
+      else nytt.fas = fasFranStatus(nytt.status);
+      nytt.fasModell = FAS_MODELL;
+    } else if (!arFasNr(nytt.fas)) nytt.fas = fasFranStatus(nytt.status);
     /* Statusen är en av fem id:n. Gamla värden (Anbud, Planering, Produktion …) mappas om. */
     nytt.status = normaliseraStatus(nytt.status);
     return nytt;
@@ -84,7 +93,17 @@ export function efterInlasning(state) {
      som gäller flera projekt (projekt-id som inte är ett enskilt projekt) hamnar i
      genomförandefasen. */
   const fasForProjekt = new Map(projekt.map((p) => [p.id, p.fas]));
-  const risker = (state.risker || []).map((r) => (arFasNr(r.fas) ? r : { ...r, fas: fasForProjekt.get(r.projektId) ?? 4 }));
+  /* Riskerna räknas om tillsammans med sitt projekt: bara risker i projekt som ännu inte var
+     omräknade. Risker som läggs till efteråt hör till ett omräknat projekt och rörs inte. */
+  const alla = new Set((state.projekt || []).map((p) => p.id));
+  const omraknade = new Set((state.projekt || []).filter((p) => p.fasModell === FAS_MODELL).map((p) => p.id));
+  const risker = (state.risker || []).map((r) => {
+    /* En risk utan eget projekt (gemensam) bär själv markeringen. */
+    const klar = alla.has(r.projektId) ? omraknade.has(r.projektId) : r.fasModell === FAS_MODELL;
+    if (klar) return arFasNr(r.fas) ? r : { ...r, fas: fasForProjekt.get(r.projektId) ?? 4 };
+    const omr = riskFasFranGammal(r.fas, r.kategori);
+    return { ...r, fas: omr ?? fasForProjekt.get(r.projektId) ?? 4, ...(alla.has(r.projektId) ? {} : { fasModell: FAS_MODELL }) };
+  });
   return {
     ...state,
     ur,

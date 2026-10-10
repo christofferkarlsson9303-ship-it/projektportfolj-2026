@@ -1,11 +1,11 @@
-/* De sex faserna i ONE-P-flödet. Projektet startar i fas 1, och nästa fas
+/* De åtta faserna i ONE-P-flödet. Projektet startar i fas 1, och nästa fas
    låses upp först när allt obligatoriskt i den förra är godkänt (se
    lib/projektfas.js). Fasen styr också projektets status i portföljen.
 
    Datan är TypeScript så att tsc kontrollerar att varje fas pekar på riktiga
    guidesidor och att varje status finns i PROJEKTSTATUS. */
 
-export type FasNr = 1 | 2 | 3 | 4 | 5 | 6;
+export type FasNr = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 /** Projektets övergripande status i portföljen. Fyra aktiva statusar och arkivstatusen för förlorade anbud. */
 export type Projektstatus = "PLANERING_OCH_UPPSTART" | "PRODUKTION" | "SLUTBESIKTNING" | "AVSLUTAT_OCH_GARANTI" | "ANBUD_EJ_VUNNET";
@@ -52,12 +52,14 @@ export interface Fas {
 }
 
 export const FASER: readonly Fas[] = [
-  { nr: 1, kort: "Anbud", titel: "Anbudsfasen (Anbud och försäljning)", status: "PLANERING_OCH_UPPSTART", sammanfattning: "Avropsbeslut, projektkort och projektdirektiv." },
-  { nr: 2, kort: "Planering", titel: "Projekterings- och planeringsfasen (Förberedelse)", status: "PLANERING_OCH_UPPSTART", sammanfattning: "Organisation, kontrakt, risker, tidplan, godkänd lösning och tillstånd." },
+  { nr: 1, kort: "Anbud", titel: "Anbud, kontrakt och uppstart", status: "PLANERING_OCH_UPPSTART", sammanfattning: "Projektkort, avropsbeslut, direktiv, intressenter, kontrakt och organisation." },
+  { nr: 2, kort: "Planering", titel: "Projekterings- och planeringsfasen", status: "PLANERING_OCH_UPPSTART", sammanfattning: "Risker, tidplan, godkänd lösning, tillstånd och nätägare." },
   { nr: 3, kort: "Etablering", titel: "Etableringsfasen", status: "PRODUKTION", sammanfattning: "APD, arbetsplatstavla, HSEQ och fysisk etablering." },
-  { nr: 4, kort: "Genomförande", titel: "Genomförandefasen (Produktion)", status: "PRODUKTION", sammanfattning: "Mark, betong, leveranser, montage, provning och driftsättning." },
-  { nr: 5, kort: "Avslut", titel: "Avslutnings- och överlämningsfasen", status: "SLUTBESIKTNING", sammanfattning: "Slutbesiktning, punchlista, slutdokumentation och slutreglering." },
-  { nr: 6, kort: "Garanti", titel: "Eftermarknad och garanti (Garantitid)", status: "AVSLUTAT_OCH_GARANTI", sammanfattning: "Garantiärenden, serviceavtal och garantibesiktning." },
+  { nr: 4, kort: "Mark och betong", titel: "Mark och betong (cBoP)", status: "PRODUKTION", sammanfattning: "Markarbeten, fundament och kabelkanalisation." },
+  { nr: 5, kort: "Montage", titel: "Leveranser, lyft och montage (eBoP)", status: "PRODUKTION", sammanfattning: "Leveranser, lyft, montage och elektrisk installation." },
+  { nr: 6, kort: "Provning", titel: "Provning och driftsättning", status: "PRODUKTION", sammanfattning: "Anläggningsprov, elsäkerhet och driftsättning." },
+  { nr: 7, kort: "Slutbesiktning", titel: "Slutbesiktning och överlämning", status: "SLUTBESIKTNING", sammanfattning: "Slutbesiktning, punchlista och slutdokumentation." },
+  { nr: 8, kort: "Avslut och garanti", titel: "Ekonomiskt avslut, lärdomar och garanti", status: "AVSLUTAT_OCH_GARANTI", sammanfattning: "Slutreglering, internt avslut, erfarenheter och garantitid." },
 ];
 
 export const FAS_ANTAL = FASER.length;
@@ -67,8 +69,8 @@ export const arFasNr = (x: unknown): x is FasNr => typeof x === "number" && Numb
 /** Fasen ett projekt räknas ligga i när bara statusen är känd. Gamla statusar finns med så att
  *  lagrade projekt kan migreras. Produktion omfattar flera faser och ger den mittersta som reserv. */
 const FAS_FRAN_STATUS: Readonly<Record<string, FasNr>> = {
-  Anbud: 1, Uppstart: 2, Planering: 2, Produktion: 4, Slutbesiktning: 5, Avslutat: 6,
-  PLANERING_OCH_UPPSTART: 1, PRODUKTION: 4, SLUTBESIKTNING: 5, AVSLUTAT_OCH_GARANTI: 6, ANBUD_EJ_VUNNET: 1,
+  Anbud: 1, Uppstart: 2, Planering: 2, Produktion: 4, Slutbesiktning: 7, Avslutat: 8,
+  PLANERING_OCH_UPPSTART: 1, PRODUKTION: 4, SLUTBESIKTNING: 7, AVSLUTAT_OCH_GARANTI: 8, ANBUD_EJ_VUNNET: 1,
 };
 
 export function fasFranStatus(status: unknown): FasNr {
@@ -79,3 +81,15 @@ export function fasFranStatus(status: unknown): FasNr {
 export const forstaFasForStatus = (status: Projektstatus): FasNr => (FASER.find((f) => f.status === status)?.nr ?? 1) as FasNr;
 
 export const faseInfo = (nr: unknown): Fas => FASER[(arFasNr(nr) ? nr : 1) - 1];
+
+/** Faserna före åttafasmodellen var sex. Lagrade projekt, risker och utkast kan ha dem; `fasModell: 8`
+ *  på posten markerar att den redan är omräknad, så att omräkningen aldrig körs två gånger. */
+export const FAS_MODELL = 8;
+const GAMLA_FASER: Readonly<Record<number, FasNr>> = { 1: 1, 2: 2, 3: 3, 4: 4, 5: 7, 6: 8 };
+/** Gammal risk-fas till ny. Genomförandefasen (4) delades i Mark och betong (4) och Montage (5):
+ *  kategori Mark stannar i 4, övriga risker flyttas till 5. */
+export function riskFasFranGammal(fas: unknown, kategori?: unknown): FasNr | null {
+  if (fas === 4) return kategori === "mark" ? 4 : 5;
+  return faseFranGammal(fas);
+}
+export const faseFranGammal = (nr: unknown): FasNr | null => (typeof nr === "number" && nr in GAMLA_FASER ? GAMLA_FASER[nr] : null);

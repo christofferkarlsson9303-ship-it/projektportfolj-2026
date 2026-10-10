@@ -12,7 +12,7 @@ import { RiskDonut } from "./RiskDonut.jsx";
 import { FasIndikator } from "./FasIndikator.jsx";
 import { FasKrav } from "./FasKrav.jsx";
 import { FasNav } from "./FasNav.jsx";
-import { FAS_ANTAL, faseInfo, statusEtikett } from "../../data/projektfaser.ts";
+import { FAS_ANTAL, FAS_MODELL, faseInfo, statusEtikett } from "../../data/projektfaser.ts";
 import { aktuellFas, fasKrav, fasLage, pdfSparr, rapportFas, stegLast } from "../../lib/projektfas.js";
 import { KATALOG_RUBRIK, STEG } from "../../data/projektstartSteg.js";
 import {
@@ -40,7 +40,7 @@ import {
   tomtUtkast,
 } from "../../lib/projektstart.js";
 
-/* Fliken Projektstart — ONE-P-guiden. Guidens sidor är grupperade i sex faser
+/* Fliken Projektstart — ONE-P-guiden. Guidens sidor är grupperade i åtta faser
    (se data/projektfaser.ts). Projektet startar i fas 1 och nästa fas låses upp
    först när allt obligatoriskt i den förra är godkänt (lib/projektfas.js).
    Utkastet bor i webbläsaren tills man trycker Skapa projekt på sista sidan. Då skapas
@@ -503,7 +503,7 @@ export function Projektstart() {
     }
     const nu = new Date().toISOString();
     const rad = historikRad(utkast, { datum: idag(), av: hamtaNamn() || "" });
-    if (post) sattLista("projektstart", state.projektstart.map((x) => (x.id === post.id ? { ...x, utkast: { v: utkast.v, rader: utkast.rader, kryss: utkast.kryss, fasGolv: utkast.fasGolv, trafikljus: utkast.trafikljus || {} }, uppdaterad: nu, historik: medHistorik(x.historik, rad) } : x)));
+    if (post) sattLista("projektstart", state.projektstart.map((x) => (x.id === post.id ? { ...x, utkast: { v: utkast.v, rader: utkast.rader, kryss: utkast.kryss, fasGolv: utkast.fasGolv, trafikljus: utkast.trafikljus || {}, fm: FAS_MODELL }, uppdaterad: nu, historik: medHistorik(x.historik, rad) } : x)));
     else laggTill("projektstart", projektstartPost(projektet.id, utkast, nu, [rad]));
     setGrund(utkast);
     for (const [falt, varde] of kortAndringar(utkast, projektet)) uppd("projekt", projektet.id, falt, varde);
