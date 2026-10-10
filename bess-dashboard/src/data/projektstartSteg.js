@@ -4,7 +4,8 @@
    fas: 1–8, vilken av de åtta projektfaserna sidan hör till (se projektfaser.ts).
         Sista sidan, Granska och skapa, hör inte till någon fas (null).
    falt: { id, etikett, typ: text | textarea | select | date, alternativ?, placeholder?, bred?,
-           obligatoriskt?, kravVarde? }
+           obligatoriskt?, kravVarde?, visaNar? }
+        visaNar: { id, varde }. Fältet visas, och räknas som obligatoriskt, bara när fältet `id` har `varde`.
         obligatoriskt: fältet måste vara ifyllt för att fasen ska kunna godkännas.
         kravVarde: det enda värdet som räknas som godkänt (till exempel "Gå vidare").
    tabell: { id, titel, kolumner: [{ id, etikett, typ, alternativ?, bredd? }], obligatorisk? }
@@ -16,7 +17,7 @@
    Fält-id:n är platta nycklar i utkastets `v`, tabellerna ligger i `rader`. */
 
 import { ROLLER } from "./projektstartKatalog.js";
-import { FASER } from "./projektfaser.ts";
+import { EJ_VUNNET_ORSAKER, FASER } from "./projektfaser.ts";
 import { RISKKATEGORI_KORT, RISKKATEGORIER } from "./riskTyper.ts";
 
 const FORM = ["ABT 06", "ABT-U 07", "AB 04", "ABT 06 med särskilda villkor", "Annan"];
@@ -54,6 +55,9 @@ export const STEG = [
       { id: "beslut", etikett: "Beslut", typ: "select", alternativ: BESLUT, obligatoriskt: true, kravVarde: "Gå vidare", tips: "Fasen godkänns bara vid Gå vidare." },
       { id: "motivering", etikett: "Motivering", typ: "textarea", bred: true },
       { id: "oppnaFragor", etikett: "Öppna frågor till intern beställare", typ: "textarea", bred: true },
+      /* Tacka nej gör anbudet till ett förlorat anbud: bara fas 1 gäller, och orsaken sparas i arkivet. */
+      { id: "orsakEjVunnet", etikett: "Orsak till ej vunnet anbud", typ: "select", alternativ: EJ_VUNNET_ORSAKER, obligatoriskt: true, visaNar: { id: "beslut", varde: "Tacka nej" }, tips: "Anbudet flyttas till arkivet och döljs i planering, resurser och kassaflöde." },
+      { id: "orsakEjVunnetText", etikett: "Kommentar till orsaken", typ: "textarea", bred: true, visaNar: { id: "beslut", varde: "Tacka nej" } },
     ],
     katalog: ["calloff"],
   },

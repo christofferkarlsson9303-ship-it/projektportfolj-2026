@@ -5,11 +5,19 @@ import { Meter } from "../../components/ds/index.js";
 /* Vad som återstår för att låsa upp nästa fas. Varje punkt är en knapp som går
    till sidan där den hör hemma. */
 
-export function FasKrav({ krav, onGaTill }) {
+export function FasKrav({ krav, onGaTill, ejVunnet = false }) {
   const nasta = FASER[krav.nr] ?? null;
   const fas = FASER[krav.nr - 1];
   const oppna = krav.falt.length + krav.tabeller.length + krav.punkter.length;
 
+  if (ejVunnet && !oppna) {
+    return (
+      <Callout ton="info">
+        <b className="block">Förlorat anbud: flyttas till arkivet</b>
+        Fas 2–8 gäller inte. När du {"skapar eller sparar"} flyttas anbudet till arkivet med den angivna orsaken och räknas inte med i planering, resurser eller kassaflöde.
+      </Callout>
+    );
+  }
   if (!oppna) {
     return nasta ? null : (
       <Callout ton="ok">
@@ -28,7 +36,7 @@ export function FasKrav({ krav, onGaTill }) {
     <Callout ton="info">
       <b className="block">
         Fas {krav.nr} · {fas.kort}: {oppna} {oppna === 1 ? "obligatorisk punkt" : "obligatoriska punkter"} kvar
-        {nasta ? ` för att låsa upp Fas ${nasta.nr} (${nasta.kort})` : " för att godkänna sista fasen"}
+        {ejVunnet ? " för att flytta anbudet till arkivet" : nasta ? ` för att låsa upp Fas ${nasta.nr} (${nasta.kort})` : " för att godkänna sista fasen"}
       </b>
       <div className="mt-2 flex items-center gap-3 text-[12.5px]">
         <Meter value={krav.klara} max={krav.totalt} size="sm" label={`Obligatoriskt i fas ${krav.nr}: ${krav.klara} av ${krav.totalt}`} className="max-w-[240px] flex-1 [&>span]:transition-[width] [&>span]:duration-500" />

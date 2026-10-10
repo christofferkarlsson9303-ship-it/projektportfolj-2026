@@ -12,11 +12,12 @@ import { RiskDonut } from "./RiskDonut.jsx";
 import { FasIndikator } from "./FasIndikator.jsx";
 import { FasKrav } from "./FasKrav.jsx";
 import { FasNav } from "./FasNav.jsx";
-import { FAS_ANTAL, FAS_MODELL, faseInfo, statusEtikett } from "../../data/projektfaser.ts";
-import { aktuellFas, fasKrav, fasLage, pdfSparr, rapportFas, stegLast } from "../../lib/projektfas.js";
+import { EJ_VUNNET_ORSAKER, FAS_ANTAL, FAS_MODELL, faseInfo, statusEtikett } from "../../data/projektfaser.ts";
+import { aktuellFas, arEjVunnetUtkast, faltSynligt, fasKrav, fasLage, pdfSparr, rapportFas, stegLast } from "../../lib/projektfas.js";
 import { KATALOG_RUBRIK, STEG } from "../../data/projektstartSteg.js";
 import {
   SISTA_STEG,
+  synligaSteg,
   UTKAST_NYCKEL,
   arAvbockad,
   stegPunkter,
@@ -71,7 +72,7 @@ function Faltruta({ f, varde, onChange }) {
         <textarea id={id} rows={3} value={varde} aria-required={f.obligatoriskt || undefined} onChange={(e) => onChange(e.target.value)} />
       ) : f.typ === "select" ? (
         <select id={id} value={varde} aria-required={f.obligatoriskt || undefined} onChange={(e) => onChange(e.target.value)}>
-          {["beslut", "niva", "offra"].includes(f.id) ? <option value="">Välj …</option> : null}
+          {["beslut", "niva", "offra", "orsakEjVunnet"].includes(f.id) ? <option value="">Välj …</option> : null}
           {f.alternativ.map(altPar).map(([v, n]) => (
             <option key={v} value={v}>
               {n}
@@ -410,15 +411,18 @@ export function Projektstart() {
   /* Projektets fas räknas ur utkastet. Ett steg i en låst fas kan inte vara det som visas,
      till exempel efter att man har avbockat något i en tidigare fas. Då visas fasens första sida. */
   const nuFas = aktuellFas(utkast);
-  const faser = useMemo(() => fasLage(utkast), [utkast]);
+  const ejVunnet = arEjVunnetUtkast(utkast);
+  const stegLista = useMemo(() => synligaSteg(utkast), [utkast]);
+  /* Ett förlorat anbud har bara fas 1: fas 2–8 döljs. */
+  const faser = useMemo(() => fasLage(utkast).filter((f) => !ejVunnet || f.nr === 1), [utkast, ejVunnet]);
   const krav = useMemo(() => fasKrav(utkast, nuFas), [utkast, nuFas]);
   const sparr = useMemo(() => pdfSparr(utkast), [utkast]);
   const sparrText = sparr.length ? "Spärrad: ingen fas är godkänd än. Godkänn fas 1 först." : undefined;
-  const sparadIndex = Math.max(0, STEG.findIndex((s) => s.id === utkast.steg));
-  const index = stegLast(utkast, STEG[sparadIndex]) ? STEG.findIndex((s) => s.fas === nuFas) : sparadIndex;
-  const steg = STEG[index];
+  const sparadIndex = Math.max(0, stegLista.findIndex((s) => s.id === utkast.steg));
+  const index = stegLast(utkast, stegLista[sparadIndex]) ? stegLista.findIndex((s) => s.fas === nuFas) : sparadIndex;
+  const steg = stegLista[index];
   const sista = steg.id === SISTA_STEG;
-  const nasta = STEG[index + 1];
+  const nasta = stegLista[index + 1];
 
   const forhandsrad = useMemo(() => projektFranUtkast(utkast, "forhandsgranskning").projekt, [utkast]);
   const utanDetta = redigerar ? { ...state, projekt: state.projekt.filter((p) => p.id !== lage) } : state;
@@ -465,7 +469,7 @@ export function Projektstart() {
   /* Sidor i en låst fas går inte att öppna. */
   const gaTill = (id) =>
     setUtkast((u) => {
-      const mal = STEG.find((x) => x.id === id);
+      const mal = stegLista.find((x) => x.id === id);
       if (!mal || stegLast(u, mal)) return u;
       return { ...u, steg: id, besokta: u.besokta.includes(u.steg) ? u.besokta : [...u.besokta, u.steg] };
     });
@@ -511,6 +515,12 @@ export function Projektstart() {
     for (const r of nya.risker) laggTill("risker", r);
     for (const m of nya.milstolpar) laggTill("milstolpar", m);
     const tillagt = [nya.risker.length && `${nya.risker.length} ${nya.risker.length === 1 ? "risk" : "risker"}`, nya.milstolpar.length && `${nya.milstolpar.length} ${nya.milstolpar.length === 1 ? "milstolpe" : "milstolpar"}`].filter(Boolean);
+    if (ejVunnet) {
+      oppnaLage(null);
+      visa("oversikt");
+      visaToast("Projektstarten är sparad och anbudet är flyttat till arkivet som ej vunnet.");
+      return;
+    }
     visaToast(`Projektstarten är sparad och projektkortet uppdaterat.${tillagt.length ? ` ${tillagt.join(" och ")} lades till i projektet.` : ""}`);
   };
 
@@ -545,9 +555,15 @@ export function Projektstart() {
       /* Inget att städa om lagringen är avstängd. */
     }
     setUtkast(tomtUtkast());
+    setSkapar(false);
+    /* Ett förlorat anbud ligger i arkivet och väljs inte som aktivt projekt. */
+    if (ejVunnet) {
+      visa("oversikt");
+      visaToast(`Anbudet är flyttat till arkivet som ej vunnet (${(EJ_VUNNET_ORSAKER.find(([k]) => k === utkast.v.orsakEjVunnet) || [null, "orsak saknas"])[1]})${pdfKlar ? " och PDF:en är nedladdad" : ""}.`);
+      return;
+    }
     setValtProjekt(id);
     visa("metod");
-    setSkapar(false);
     visaToast(`Projektet är skapat i fas ${aktuellFas(utkast)} (${faseInfo(aktuellFas(utkast)).kort})${pdfKlar === null ? ". PDF:en är spärrad tills fas 1 är godkänd" : pdfKlar ? " och PDF:en är nedladdad" : ", men PDF:en kunde inte skapas"}. Kontrollera kontrakt, betalplan, priser och kontrollkrav före användning.`);
   };
 
@@ -555,7 +571,7 @@ export function Projektstart() {
   useEffect(() => {
     const onKey = (e) => {
       if (!e.altKey || !e.shiftKey || e.ctrlKey || e.metaKey) return;
-      const ny = e.key === "ArrowRight" ? STEG[index + 1] : e.key === "ArrowLeft" ? STEG[index - 1] : null;
+      const ny = e.key === "ArrowRight" ? stegLista[index + 1] : e.key === "ArrowLeft" ? stegLista[index - 1] : null;
       if (!ny) return;
       e.preventDefault();
       gaTill(ny.id);
@@ -569,10 +585,10 @@ export function Projektstart() {
       <section aria-label="Projektstart" className="relative overflow-hidden rounded-xl bg-one-djup px-4 py-4 text-white md:px-6 md:py-5">
         <Kraftkurva />
         <div className="relative flex max-w-[44rem] flex-col gap-3">
-          <span aria-live="polite" className="text-[11px] font-bold uppercase tracking-wider opacity-80">ONE-P · {redigerar ? `${projektet?.nr || ""} ${projektet?.namn || ""} · ` : ""}Fas {nuFas} av {FAS_ANTAL} · Steg {index + 1} av {STEG.length}</span>
+          <span aria-live="polite" className="text-[11px] font-bold uppercase tracking-wider opacity-80">ONE-P · {redigerar ? `${projektet?.nr || ""} ${projektet?.namn || ""} · ` : ""}Fas {nuFas} av {FAS_ANTAL} · Steg {index + 1} av {stegLista.length}</span>
           <h2 key={steg.id} className="ps-byt m-0 font-head text-[22px] leading-tight text-white">{steg.titel}</h2>
           <p className="m-0 text-[12.5px] opacity-90">Projektstatus: <b>{statusEtikett(faseInfo(nuFas).status)}</b> · {faseInfo(nuFas).titel}</p>
-          <Meter value={index + 1} max={STEG.length} label="Steg i guiden" ton="pagar" className="[&>span]:transition-[width] [&>span]:duration-500 [&>span]:ease-out" />
+          <Meter value={index + 1} max={stegLista.length} label="Steg i guiden" ton="pagar" className="[&>span]:transition-[width] [&>span]:duration-500 [&>span]:ease-out" />
           <FasIndikator faser={faser} visadFas={steg.fas} />
         </div>
       </section>
@@ -610,15 +626,15 @@ export function Projektstart() {
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-6">
       <nav aria-label="Stegen i projektstarten" className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-4">
         <label className="flex flex-col gap-1 lg:hidden">
-          <Overline as="span">Steg {index + 1} av {STEG.length}</Overline>
+          <Overline as="span">Steg {index + 1} av {stegLista.length}</Overline>
           <select value={steg.id} onChange={(e) => gaTill(e.target.value)} aria-label="Välj steg">
-            {STEG.map((s, i) => {
+            {stegLista.map((s, i) => {
               const last = stegLast(utkast, s);
               return <option key={s.id} value={s.id} disabled={last}>{i + 1}. {s.titel}{last ? " (låst)" : ""}</option>;
             })}
           </select>
         </label>
-        <FasNav utkast={utkast} faser={faser} aktivtId={steg.id} onGaTill={gaTill} />
+        <FasNav utkast={utkast} faser={faser} steg={stegLista} aktivtId={steg.id} onGaTill={gaTill} />
         <div className="flex flex-wrap gap-2">
           {sista ? null : (
             <PdfExporter dokument={pdfDokument} typ="projektstart" label="Ladda ned PDF" className="btn sec mini" disabled={!utkast.v.namn?.trim() || sparr.length > 0} title={sparrText} />
@@ -639,7 +655,7 @@ export function Projektstart() {
             Guiden är ifylld från projektkortet, riskregistret och milstolparna. Checklistor och direktiv är tomma. Gå igenom stegen och tryck Spara projektstart på sista steget.
           </Callout>
         ) : null}
-        <FasKrav krav={krav} onGaTill={gaTill} />
+        <FasKrav krav={krav} onGaTill={gaTill} ejVunnet={ejVunnet} />
         <Card
           id="ps-steg"
           title={`${index + 1}. ${steg.titel}`}
@@ -654,7 +670,7 @@ export function Projektstart() {
           ) : null}
           {steg.falt ? (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {steg.falt.map((f) => <Faltruta key={f.id} f={f} varde={utkast.v[f.id] ?? ""} onChange={(v) => sattFalt(f.id, v)} />)}
+              {steg.falt.filter((f) => faltSynligt(f, utkast)).map((f) => <Faltruta key={f.id} f={f} varde={utkast.v[f.id] ?? ""} onChange={(v) => sattFalt(f.id, v)} />)}
             </div>
           ) : null}
         </Card>
@@ -665,10 +681,10 @@ export function Projektstart() {
         {sista ? <Sammanfattning utkast={utkast} faser={faser} fel={fel} kanSkapa={!fel} skapar={skapar} redigerar={redigerar} andrat={andrat} ejSparad={redigerar && !post} pdfDokument={pdfDokument} sparr={sparr} onLjus={sattLjus} onSkapa={skapa} onSpara={sparaAndringar} onGaTill={gaTill} /> : null}
 
         <div className="flex items-center justify-between gap-3">
-          <button type="button" className="btn sec group" disabled={index === 0} onClick={() => gaTill(STEG[index - 1].id)}>
+          <button type="button" className="btn sec group" disabled={index === 0} onClick={() => gaTill(stegLista[index - 1].id)}>
             <ChevronLeft size={16} aria-hidden="true" className="transition-transform duration-150 group-hover:-translate-x-0.5" /> Föregående
           </button>
-          <span className="text-[12px] tabular-nums text-ink-soft">{index + 1} / {STEG.length}</span>
+          <span className="text-[12px] tabular-nums text-ink-soft">{index + 1} / {stegLista.length}</span>
           {sista ? <span /> : (
             <button type="button" className="btn group" disabled={!nasta || stegLast(utkast, nasta)} title={nasta && stegLast(utkast, nasta) ? `Fas ${nasta.fas} låses upp när fas ${nuFas} är godkänd` : undefined} onClick={() => gaTill(nasta.id)}>
               Nästa <ChevronRight size={16} aria-hidden="true" className="transition-transform duration-150 group-hover:translate-x-0.5" />

@@ -102,6 +102,19 @@ export function Dialog() {
                     placeholder={f.placeholder}
                     onChange={(e) => setVarden((v) => ({ ...v, [f.namn]: e.target.value }))}
                   />
+                ) : f.typ === "select" ? (
+                  <select
+                    id={`mdl-${f.namn}`}
+                    value={varden[f.namn] ?? ""}
+                    onChange={(e) => setVarden((v) => ({ ...v, [f.namn]: e.target.value }))}
+                  >
+                    <option value="">Välj …</option>
+                    {f.alternativ.map(([v, n]) => (
+                      <option key={v} value={v}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
                 ) : (
                   <input
                     id={`mdl-${f.namn}`}

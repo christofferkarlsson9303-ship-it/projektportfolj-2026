@@ -5,6 +5,7 @@ import { PortfolioContext } from "./kontexter.js";
 import { skapaDb } from "./db-supabase.js";
 import { useUi } from "./hooks.js";
 import { arEkonomiAtgard, efterInlasning, normalisera, reducer } from "./portfolj-reducer.js";
+import { aktivVy, forlorade } from "../lib/arkiv.js";
 import { sammanfoga } from "../lib/sammanfoga.js";
 import { feltyp, loggNyckel, nyaLoggposter, sammanslagningsText } from "./synk.js";
 
@@ -499,9 +500,16 @@ export function PortfolioProvider({ children }) {
 
   /* ---------- Bekvämlighetsmetoder ---------- */
 
+  /* Vyerna ser portföljen utan förlorade anbud. Hela datan finns kvar som `heltState` för arkiv,
+     export och import. Skrivningar går alltid mot hela datan. */
+  const vy = useMemo(() => aktivVy(state), [state]);
+  const ejVunna = useMemo(() => forlorade(state), [state]);
+
   const api = useMemo(
     () => ({
-      state,
+      state: vy,
+      heltState: state,
+      ejVunna,
       dispatch,
       conn,
       ekonomiFel,
@@ -520,8 +528,9 @@ export function PortfolioProvider({ children }) {
       laggTill: (lista, rad) => dispatch({ type: "LAGG_TILL", lista, rad }),
       taBort: (lista, id) => dispatch({ type: "TA_BORT", lista, id }),
       sattLista: (lista, rader) => dispatch({ type: "SATT_LISTA", lista, rader }),
+      markeraEjVunnet: (id, orsak, text) => dispatch({ type: "MARKERA_EJ_VUNNET", id, orsak, text }),
     }),
-    [state, dispatch, conn, ekonomiFel, visaToast]
+    [state, vy, ejVunna, dispatch, conn, ekonomiFel, visaToast]
   );
 
   return <PortfolioContext.Provider value={api}>{children}</PortfolioContext.Provider>;

@@ -6,7 +6,7 @@ import { fmtSEK } from "../../lib/format.js";
 import { dagarTill, idag } from "../../lib/datum.js";
 import { ekonomi, nastaHandelse, oppnaUR, projektKlass, projektUnderlag } from "../../lib/berakningar.js";
 import { Meter, StatusBadge, TableRegion } from "../ds/index.js";
-import { FAS_ANTAL, arFasNr, faseInfo } from "../../data/projektfaser.ts";
+import { EJ_VUNNET_ORSAKER, FAS_ANTAL, arFasNr, faseInfo } from "../../data/projektfaser.ts";
 
 /* ---------- Projektkort ---------- */
 
@@ -19,8 +19,29 @@ import { FAS_ANTAL, arFasNr, faseInfo } from "../../data/projektfaser.ts";
 const tonForDagar = (d) => (d === null ? "" : d < 0 ? "bad" : d < 60 ? "warn" : "");
 
 export function Projektkort({ p }) {
-  const { state, uppdStatus } = usePortfolj();
-  const { setValtProjekt, visa, oppnaProjektstart } = useUi();
+  const { state, uppdStatus, markeraEjVunnet } = usePortfolj();
+  const { setValtProjekt, valtProjekt, visa, oppnaProjektstart, fraga, visaToast } = useUi();
+
+  /* Ett förlorat anbud flyttas till arkivet: fas 2–8 döljs och projektet räknas inte i aktiva vyer. */
+  const markeraEjVunnetMedOrsak = async () => {
+    const v = await fraga({
+      titel: `Markera ${p.namn} som ej vunnet`,
+      lead: "Anbudet flyttas till arkivet och döljs i planering, resurser, kassaflöde och prognoser. Orsaken sparas.",
+      ok: "Markera som ej vunnet",
+      validera: (x) => (EJ_VUNNET_ORSAKER.some(([k]) => k === x.orsak) ? "" : "Välj en orsak."),
+      falt: [
+        { namn: "orsak", etikett: "Orsak till ej vunnet anbud", typ: "select", alternativ: EJ_VUNNET_ORSAKER },
+        { namn: "text", etikett: "Kommentar (valfritt)", typ: "textarea" },
+      ],
+    });
+    if (!v) return;
+    markeraEjVunnet(p.id, v.orsak, v.text);
+    if (valtProjekt === p.id) {
+      const annat = state.projekt.find((x) => x.id !== p.id);
+      if (annat) setValtProjekt(annat.id);
+    }
+    visaToast("Anbudet är flyttat till arkivet som ej vunnet.");
+  };
 
   const e = ekonomi(state, p.id);
   const d = dagarTill(p.fardigstallande);
@@ -127,6 +148,11 @@ export function Projektkort({ p }) {
         <button type="button" className="btn sec mini" onClick={() => oppnaProjektstart(p.id)}>
           <Flag size={14} aria-hidden="true" /> Öppna projektstart<span className="sr-only"> för {p.namn}</span>
         </button>
+        {p.status === "PLANERING_OCH_UPPSTART" ? (
+          <button type="button" className="btn sec mini" onClick={markeraEjVunnetMedOrsak}>
+            Markera som ej vunnet<span className="sr-only"> för {p.namn}</span>
+          </button>
+        ) : null}
       </footer>
     </article>
   );

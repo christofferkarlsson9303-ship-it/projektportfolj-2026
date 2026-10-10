@@ -20,6 +20,12 @@ export const PROJEKTSTATUS_ETIKETT: Readonly<Record<Projektstatus, string>> = {
   ANBUD_EJ_VUNNET: "Ej vunnet",
 };
 
+/** Orsaker till ett förlorat anbud. */
+export const EJ_VUNNET_ORSAKER: readonly (readonly [string, string])[] = [["pris", "Pris"], ["tid", "Tid"], ["kvalitet", "Kvalitet"], ["annat", "Annat"]];
+
+/** Är statusen arkivstatusen för förlorade anbud? */
+export const arEjVunnet = (x: unknown): boolean => x === "ANBUD_EJ_VUNNET";
+
 export const arProjektstatus = (x: unknown): x is Projektstatus => typeof x === "string" && x in PROJEKTSTATUS_ETIKETT;
 
 /** Statusarna som fanns innan de fyra nya. Lagrade projekt kan fortfarande ha dem. */

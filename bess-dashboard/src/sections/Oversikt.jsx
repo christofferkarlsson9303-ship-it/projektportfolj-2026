@@ -9,6 +9,7 @@ import { Tidslinje } from "../components/oversikt/Tidslinje.jsx";
 import { Gantt } from "../components/oversikt/Gantt.jsx";
 import { Ledtider } from "../components/oversikt/Ledtider.jsx";
 import { NastaUppgift } from "../components/oversikt/NastaUppgift.jsx";
+import { ForloradeAnbud } from "../components/oversikt/ForloradeAnbud.jsx";
 import { Projektkort, Projektredigering } from "../components/oversikt/Projekt.jsx";
 import { uppmarksamhet } from "../lib/oversikt.js";
 import { projektUnderlag } from "../lib/berakningar.js";
@@ -118,6 +119,8 @@ export function DashboardView() {
           ))}
         </div>
       </section>
+
+      <ForloradeAnbud />
 
       <Callout ton="info">
         <b>Underlag och antaganden.</b> Datum, UR-serier, leverantörer och kontakter för 36037/36038 kommer

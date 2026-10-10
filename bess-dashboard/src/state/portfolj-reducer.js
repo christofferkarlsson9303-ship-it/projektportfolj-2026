@@ -14,8 +14,9 @@ import { kalkylRader, kalkylSummor } from "../lib/atakalkyl.js";
 import { fmtSEK } from "../lib/format.js";
 import { MALLAR, arNal, objektFel, punkterForSite } from "../lib/site.js";
 import { projektFasFranEpc } from "../lib/projektfasEpc.js";
+import { arDold } from "../lib/arkiv.js";
 import { projektstartFel } from "../lib/projektstart.js";
-import { FAS_MODELL, arFasNr, faseFranGammal, fasFranStatus, faseInfo, riskFasFranGammal, forstaFasForStatus, normaliseraStatus, statusEtikett } from "../data/projektfaser.ts";
+import { EJ_VUNNET_ORSAKER, FAS_MODELL, arFasNr, faseFranGammal, fasFranStatus, faseInfo, riskFasFranGammal, forstaFasForStatus, normaliseraStatus, statusEtikett } from "../data/projektfaser.ts";
 import { granskaProfil, rensaProfil } from "../lib/kontraktsprofil.js";
 
 /** Namnet används i ändringsloggen och sparas per webbläsare, inte i delad data. */
@@ -365,8 +366,26 @@ export function reducer(state, action) {
     }
 
     /* Ersätter en hel kollektion — för sorteringar och massuppdateringar. */
-    case "SATT_LISTA":
-      return { ...state, [action.lista]: action.rader };
+    case "SATT_LISTA": {
+      /* Vyerna ser portföljen utan förlorade anbud (lib/arkiv.js). Deras rader hålls kvar här, så att
+         en sortering eller massuppdatering aldrig tar bort arkivet. */
+      const dolda = (state[action.lista] || []).filter((r) => arDold(state, action.lista, r));
+      return { ...state, [action.lista]: dolda.length ? [...action.rader, ...dolda] : action.rader };
+    }
+
+    /* Flyttar ett anbud till arkivet för förlorade anbud: fas 1, orsak och datum. Fas 2–8 döljs
+       eftersom statusen bara hör till fas 1. */
+    case "MARKERA_EJ_VUNNET": {
+      const { id, orsak, text } = action;
+      const rad = state.projekt.find((p) => p.id === id);
+      if (!rad || !EJ_VUNNET_ORSAKER.some(([k]) => k === orsak)) return state;
+      const nytt = {
+        ...state,
+        projekt: byt(state.projekt, id, (p) => ({ ...p, status: "ANBUD_EJ_VUNNET", fas: 1, orsakEjVunnet: orsak, orsakEjVunnetText: String(text || "").trim(), ejVunnetDatum: idag() })),
+      };
+      const namn = EJ_VUNNET_ORSAKER.find(([k]) => k === orsak)[1];
+      return loggat(nytt, id, `Anbud markerat som ej vunnet (${namn})${text ? `: ${String(text).trim().slice(0, 100)}` : ""}. Flyttat till arkivet.`);
+    }
 
     /* Tillämpar ett granskat importförslag (lib/importera.js). En
        säkerhetskopia körs genom samma normalisering och migrering som en
