@@ -15,6 +15,12 @@ export function AppShell({ children }) {
   const { aktivVy, fokus, utskrift, rensaUtskrift, valtProjekt, setValtProjekt, faltmaterial, stangFaltmaterial } = useUi();
   const mainRef = useRef(null);
 
+  /* Det valda projektet kan ha flyttats till arkivet (ej vunnet), här eller av någon annan. Då väljs
+     det första aktiva projektet, så att ingen vy står med ett projekt som inte längre finns i vyn. */
+  useEffect(() => {
+    if (state.projekt.length && !state.projekt.some((p) => p.id === valtProjekt)) setValtProjekt(state.projekt[0].id);
+  }, [state.projekt, valtProjekt, setValtProjekt]);
+
   /* Rulla till toppen vid vybyte — annars landar man mitt i den nya vyn.
      Flaggöppning hanterar sin egen markering och rullning nedan. */
   useEffect(() => {

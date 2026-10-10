@@ -64,3 +64,18 @@ test("avropsbeslutet Tacka nej kräver en orsak, döljer fas 2–8 och arkiverar
   await expect(rad).toContainText("Sämre referenser");
   expect(fel).toEqual([]);
 });
+
+test("det valda projektet byts när det flyttas till arkivet", async ({ page }) => {
+  const { fel } = await oppna(page, "Översikt");
+  // Välj Göteborg som aktivt projekt via tidplanen och arkivera det därifrån.
+  await page.getByRole("button", { name: /Göteborg Skogome — öppna tidplanen/ }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Tidplan");
+  await gaTill(page, "Översikt");
+  await page.getByRole("button", { name: /^Markera som ej vunnet för Göteborg Skogome/ }).click();
+  await page.getByRole("dialog").getByLabel("Orsak till ej vunnet anbud").selectOption("tid");
+  await page.getByRole("dialog").getByRole("button", { name: "Markera som ej vunnet" }).click();
+  await gaTill(page, "Tidplan");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Tidplan");
+  await expect(page.getByText(/Göteborg Skogome/)).toHaveCount(0);
+  expect(fel).toEqual([]);
+});

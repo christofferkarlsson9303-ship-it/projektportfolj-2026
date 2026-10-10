@@ -30,7 +30,7 @@ describe("Förlorade anbud i portföljen", () => {
     expect(forlorade(ut).map((p) => p.id)).toEqual([id]);
     const vy = aktivVy(ut);
     expect(vy.projekt.some((p) => p.id === id)).toBe(false);
-    for (const [k, v] of Object.entries(vy)) if (Array.isArray(v)) expect(v.some((r) => r?.projektId === id)).toBe(false);
+    for (const v of Object.values(vy)) if (Array.isArray(v)) expect(v.some((r) => r?.projektId === id)).toBe(false);
     // Hela datan är orörd.
     expect(ut.projekt.some((p) => p.id === id)).toBe(true);
     // Utan förlorade anbud är vyn samma objekt.
