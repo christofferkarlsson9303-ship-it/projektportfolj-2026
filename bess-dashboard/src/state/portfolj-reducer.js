@@ -88,6 +88,10 @@ export function efterInlasning(state) {
     } else if (!arFasNr(nytt.fas)) nytt.fas = fasFranStatus(nytt.status);
     /* Statusen är en av fem id:n. Gamla värden (Anbud, Planering, Produktion …) mappas om. */
     nytt.status = normaliseraStatus(nytt.status);
+    /* En äldre klient kan ha skrivit tillbaka projektet efter att ha nollställt en fas den inte känner igen
+       (7 och 8 fanns inte i sexfasmodellen). Statusen är då det som gäller: fasen flyttas till första fasen som
+       hör till statusen. Förlorade anbud har bara fas 1 och rörs inte. */
+    if (nytt.status !== "ANBUD_EJ_VUNNET" && faseInfo(nytt.fas).status !== nytt.status) nytt.fas = forstaFasForStatus(nytt.status);
     return nytt;
   });
   /* Varje risk hör till en projektfas. Äldre risker saknar fas och får projektets. En risk

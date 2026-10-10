@@ -3,6 +3,7 @@ import { Meter, Overline } from "../../components/ds/index.js";
 import { FASER } from "../../data/projektfaser.ts";
 import { STEG } from "../../data/projektstartSteg.js";
 import { arAvbockad, stegPunkter, stegTillstand } from "../../lib/projektstart.js";
+import { stegKrav } from "../../lib/projektfas.js";
 
 /* Navigeringen i guiden, grupperad efter de åtta faserna. Sidor i en fas som
    inte är upplåst är låsta och går inte att öppna. Den sista sidan, Granska och
@@ -40,12 +41,21 @@ export function FasNav({ utkast, faser, steg: stegLista = STEG, aktivtId, onGaTi
             </div>
             {lage && !last ? <Meter value={lage.klara} max={lage.totalt} size="sm" label={`Fas ${fas.nr}: ${lage.klara} av ${lage.totalt} obligatoriska punkter klara`} className="mx-2 mb-1 [&>span]:transition-[width] [&>span]:duration-500" /> : null}
             <ol className="m-0 flex list-none flex-col gap-0.5 p-0">
-              {steg.map((s) => {
+              {steg.map((s, i) => {
                 const aktiv = s.id === aktivtId;
+                /* Stora faser delas i delar. Rubriken visas där en ny del börjar och visar hur långt den delen har kommit. */
+                const delStart = s.del && s.del !== steg[i - 1]?.del;
+                const del = delStart && !last ? steg.filter((x) => x.del === s.del).map((x) => stegKrav(utkast, x)).reduce((a, k) => ({ totalt: a.totalt + k.totalt, klara: a.klara + k.klara }), { totalt: 0, klara: 0 }) : null;
                 const tillstand = stegTillstand(utkast, s);
                 const laast = tillstand === "last";
                 return (
                   <li key={s.id}>
+                    {delStart && !last ? (
+                      <div className="flex items-center gap-2 px-2 pb-0.5 pt-2 text-[11px] font-semibold text-ink-soft">
+                        <span>{s.del}</span>
+                        <span className="ml-auto tabular-nums">{del.klara}/{del.totalt}</span>
+                      </div>
+                    ) : null}
                     <button
                       type="button"
                       aria-current={aktiv ? "step" : undefined}

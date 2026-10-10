@@ -2,6 +2,7 @@
    kontrollpunkter ur projektstartKatalog.js som hör till steget.
 
    fas: 1–8, vilken av de åtta projektfaserna sidan hör till (se projektfaser.ts).
+   del: valfri undergrupp inom en fas. Fas 1 är stor och delas i Anbud och beslut, och Kontrakt och uppstart.
         Sista sidan, Granska och skapa, hör inte till någon fas (null).
    falt: { id, etikett, typ: text | textarea | select | date, alternativ?, placeholder?, bred?,
            obligatoriskt?, kravVarde?, visaNar? }
@@ -29,6 +30,7 @@ export const STEG = [
   {
     id: "projekt",
     fas: 1,
+    del: "Anbud och beslut",
     titel: "Projektkort",
     sammanfattning: "Identitet, klassning och nuläge. Det här blir projektet i portföljen.",
     grund: ["Tid som läggs tidigt är billig tid.", "Det som inte är skriftligt finns inte.", "Dagbok och underrättelser är det ekonomiska skyddet."],
@@ -49,6 +51,7 @@ export const STEG = [
   {
     id: "avrop",
     fas: 1,
+    del: "Anbud och beslut",
     titel: "Avropsacceptans",
     sammanfattning: "Ska vi ta uppdraget? Lönsamhet, risk och resurser innan start.",
     falt: [
@@ -64,6 +67,7 @@ export const STEG = [
   {
     id: "direktiv",
     fas: 1,
+    del: "Anbud och beslut",
     titel: "Projektdirektiv",
     sammanfattning: "Bakgrund, mål, avgränsning och vad som får ge vika om det blir trångt.",
     falt: [
@@ -83,6 +87,7 @@ export const STEG = [
   {
     id: "intressenter",
     fas: 1,
+    del: "Kontrakt och uppstart",
     titel: "Intressenter",
     sammanfattning: "Vem påverkar projektet och hur ni kommunicerar.",
     tabell: {
@@ -100,6 +105,7 @@ export const STEG = [
   {
     id: "kontrakt",
     fas: 1,
+    del: "Kontrakt och uppstart",
     titel: "Kontrakt och kassaflöde",
     sammanfattning: "Viten, milstolpar, bankgaranti, ÄTA och fakturering.",
     falt: [
@@ -128,6 +134,7 @@ export const STEG = [
   {
     id: "organisation",
     fas: 1,
+    del: "Kontrakt och uppstart",
     titel: "Organisation och uppstart",
     sammanfattning: "Namngivna roller, behörighet och startmöte enligt ONE-P.",
     falt: [
