@@ -52,7 +52,7 @@ const ZOOM = {
   kvartal: { px: 1.8, namn: "Kvartal" },
 };
 
-const TYPIKON = { Byggfas: Layers, Milstolpe: Flag, Leverans: Truck };
+const TYPIKON = { Byggmoment: Layers, Milstolpe: Flag, Leverans: Truck };
 
 const HUVUD_OVRE = 24;
 const HUVUD_NEDRE = 24;

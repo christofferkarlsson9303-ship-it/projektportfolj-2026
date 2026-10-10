@@ -595,7 +595,7 @@ export const FASER: Fas[] = [
         punkter: [
           { id: "10.6", text: "Kabeldon rätt för area/ledarmaterial", badges: [], ansvar: "Elinstallatör", nar: "Montage" },
           { id: "10.7", text: "Skärmåterföring genom nollföljds-CT innan jordplint – annars falska/missade jordfel", badges: ["HP", "L"], ansvar: "Elinstallatör", nar: "Montage" },
-          { id: "10.8", text: "CT-omsättning och sekundärsteg samma på alla faser; reläparametrar enligt selektivplan", badges: ["HP", "L"], ansvar: "Reläprovare", nar: "Före provning" },
+          { id: "10.8", text: "CT-omsättning och sekundärsteg samma på alla moment; reläparametrar enligt selektivplan", badges: ["HP", "L"], ansvar: "Reläprovare", nar: "Före provning" },
           { id: "10.9", text: "Sekundärprovning reläskydd (riktat jordfel kräver U0 + I0), trippprov, ljusbågsvakt", badges: ["HP"], ansvar: "Reläprovare", nar: "Före spänningssättning" },
           { id: "10.10", text: "RTU/SCADA: indikeringar, manövrar, larm verifierade", badges: [], ansvar: "Leverantör", nar: "Före spänningssättning" },
           { id: "10.11", text: "Provresurser (Omicron/Megger) bokade i god tid", badges: ["L"], ansvar: "PL", nar: "≥ 6 v före provning" },
@@ -830,7 +830,7 @@ export const FASER: Fas[] = [
 /** Löpande genom hela projektet — ÄTA-disciplin, styrning och ekonomi varje vecka. */
 export const LOPANDE: Lopande = {
   titel: "Löpande genom hela projektet",
-  syfte: "ÄTA-disciplin, styrning och ekonomi – varje vecka, i varje fas.",
+  syfte: "ÄTA-disciplin, styrning och ekonomi – varje vecka, i varje moment.",
   sektioner: [
     {
       namn: "ÄTA / UR-disciplin (ABT 06)",

@@ -6,10 +6,10 @@ test("tidplanen visar prognos per fas och kritisk linje, och baslinjen kan spara
   const kort = page.getByRole("region", { name: /^Blir vi klara i tid/ });
   await expect(kort).toBeVisible();
 
-  const faser = kort.getByRole("table", { name: "Fas för fas" });
-  const visaKlara = kort.getByRole("button", { name: /^Visa klara faser/ });
+  const faser = kort.getByRole("table", { name: "Moment för moment" });
+  const visaKlara = kort.getByRole("button", { name: /^Visa klara moment/ });
   if (await visaKlara.count()) await visaKlara.click();
-  await expect(faser.getByRole("row")).toHaveCount(17); // rubrik + 16 faser
+  await expect(faser.getByRole("row")).toHaveCount(17); // rubrik + 16 moment
   await expect(kort.getByRole("table", { name: "Betalningar mot beräknat slut" }).getByRole("row")).toHaveCount(8);
   await expect(kort.getByText(/Spara dagens plan som ursprunglig plan/)).toBeVisible();
 

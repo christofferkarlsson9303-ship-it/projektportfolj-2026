@@ -31,7 +31,7 @@ export function Kommandopalett() {
       );
       ut.push({ t: "Skriv ut", label: "Arbetslista för alla", sub: `Öppna uppgifter · ${pn}`, kor: () => snabb.arbetslista(vp.id) });
       FASBLANKETTER.forEach((f) =>
-        ut.push({ t: "Skriv ut", label: `Egenkontroll fas ${f.fas} – ${f.titel}`, sub: `Blank blankett · ${pn}`, kor: () => snabb.fasblankett(vp.id, f.fas) })
+        ut.push({ t: "Skriv ut", label: `Egenkontroll moment ${f.fas} – ${f.titel}`, sub: `Blank blankett · ${pn}`, kor: () => snabb.fasblankett(vp.id, f.fas) })
       );
     }
     VYER.filter((v) => v[0] !== "_sek").forEach(([id, namn, lead]) =>

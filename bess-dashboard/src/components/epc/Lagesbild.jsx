@@ -70,7 +70,7 @@ export function Portfoljlage({ valt, onValj }) {
                   {l.sena.length ? <span className="epc-lage-sen"> · försenad</span> : null}
                 </>
               ) : l.nastaGrind ? (
-                `Nästa: fas ${l.nastaGrind.fas.nr} ${l.nastaGrind.fas.kort}`
+                `Nästa: moment ${l.nastaGrind.fas.nr} ${l.nastaGrind.fas.kort}`
               ) : (
                 "Alla grindar passerade"
               )}
@@ -138,7 +138,7 @@ export function NuLage({ pid, onVisaFas }) {
               ))}
             </ul>
           ) : (
-            tom(l.harPlan ? "Ingen fas pågår enligt planen." : "Ange projektets datum nedan.")
+            tom(l.harPlan ? "Inget moment pågår enligt planen." : "Ange projektets datum nedan.")
           )}
         </Card>
 
@@ -218,7 +218,7 @@ export function NuLage({ pid, onVisaFas }) {
                 {a.startAntagande ? " Startdatumet är antaget ur kontraktets milstolpar (feb–sep 2026) — ange det rätta." : ""}
               </>
             ) : (
-              "Ange startdatum och färdigställande så räknas faserna, Gantt-schemat och ledtiderna fram."
+              "Ange startdatum och färdigställande så räknas momenten, Gantt-schemat och ledtiderna fram."
             )}
           </p>
         </div>

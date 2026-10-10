@@ -55,7 +55,7 @@ export function NastaUppgift({ i }) {
   if (!p) return null;
 
   const f = forsta?.fas;
-  const fasText = f ? `Fas ${f.fas.nr} ${f.fas.kort}: ${f.klara} av ${f.punkter - f.ejAktuella} klara` : "";
+  const fasText = f ? `Moment ${f.fas.nr} ${f.fas.kort}: ${f.klara} av ${f.punkter - f.ejAktuella} klara` : "";
 
   const sattPunkt = (status) => {
     dispatch({ type: "EPC_PUNKT", pid, punkt: forsta.punkt.id, status });

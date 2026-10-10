@@ -29,7 +29,7 @@ test("enkel meny, synlig sökknapp och ordlista hjälper utan att dölja funktio
   if (await ham.isVisible()) await page.getByRole("button", { name: "Stäng sidomenyn", exact: true }).click();
   await page.screenshot({ path: info.outputPath("projektmetod.png"), fullPage: true });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.getByRole("button", { name: "Visa stegets byggfaser", exact: true }).last().click();
+  await page.getByRole("button", { name: "Visa stegets byggmoment", exact: true }).last().click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Bygga batteripark");
   await expect(page.locator("#fas-14")).toHaveAttribute("open", "");
   await expect(page.locator("#fas-14").locator("summary").first()).toBeInViewport();
@@ -64,9 +64,9 @@ test("byggfasens egenkontroller delar resultat och sparar sista texten vid Escap
   await oppna(page, "Bygga batteripark");
   const fas = page.locator("#fas-0");
   await fas.locator("summary").first().click();
-  const lage = fas.getByRole("region", { name: "Egenkontroller i fas 0" });
+  const lage = fas.getByRole("region", { name: "Egenkontroller i moment 0" });
   await expect(lage).toContainText("0 av 4 kompletta");
-  await lage.getByRole("button", { name: "Registrera egenkontroller – fas 0", exact: true }).click();
+  await lage.getByRole("button", { name: "Registrera egenkontroller – moment 0", exact: true }).click();
   const d = page.getByRole("dialog", { name: /Fältmaterial/ });
   await expect(d.getByRole("status")).toContainText("4 kontrollpunkter");
   await d.locator("details").first().locator("summary").click();

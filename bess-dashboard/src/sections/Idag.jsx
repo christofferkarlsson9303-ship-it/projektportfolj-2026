@@ -125,7 +125,7 @@ export function Idag() {
   const domMening = !k
     ? "Ange start och slut på projektet under Översikt, så räknas planen fram."
     : sent
-      ? `Beräknat ${k.forsening} ${k.forsening === 1 ? "dag" : "dagar"} efter kontraktets färdigdatum. ${kritiska.length === 1 ? "Den kritiska fasen flyttar" : "De kritiska faserna flyttar"} slutbesiktningen.`
+      ? `Beräknat ${k.forsening} ${k.forsening === 1 ? "dag" : "dagar"} efter kontraktets färdigdatum. ${kritiska.length === 1 ? "Det kritiska momentet flyttar" : "De kritiska momenten flyttar"} slutbesiktningen.`
       : k.kontrakt
         ? `Kontraktet säger ${datumKort(k.kontrakt)}.`
         : "Kontraktets färdigdatum saknas.";
@@ -210,7 +210,7 @@ export function Idag() {
 
         {sent && kritiska.length ? (
           <p className="m-0 border-0 border-t border-solid border-white/15 pt-3 text-[13px] text-white">
-            <span className="text-white/70">Faser som styr: </span>
+            <span className="text-white/70">Moment som styr: </span>
             {kritiska.map((f, i) => (
               <span key={f.nr}>
                 {i ? <span aria-hidden="true" className="text-white/50"> · </span> : null}

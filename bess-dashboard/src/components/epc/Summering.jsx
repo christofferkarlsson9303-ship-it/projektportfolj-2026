@@ -45,11 +45,11 @@ export function Summering({ pid, onVisaFas }) {
         {t.ejAktuella ? ` · ${t.ejAktuella} ej aktuella` : ""}
       </p>
 
-      <TableRegion label="Status per fas">
+      <TableRegion label="Status per moment">
         <table className="epc-sumtabell">
           <thead>
             <tr>
-              <th scope="col">Fas</th>
+              <th scope="col">Moment</th>
               <th scope="col">Klara</th>
               <th scope="col">HP</th>
               <th scope="col">Kvar</th>
@@ -59,7 +59,7 @@ export function Summering({ pid, onVisaFas }) {
           <tbody>
             {faser.map((f) => (
               <tr key={f.fas.nr} className={f.status}>
-                <th scope="row" data-label="Fas">
+                <th scope="row" data-label="Moment">
                   <button type="button" className="epc-textknapp" onClick={() => onVisaFas(f.fas.nr)}>
                     {f.fas.nr} · {f.fas.kort}
                   </button>
@@ -81,7 +81,7 @@ export function Summering({ pid, onVisaFas }) {
               </tr>
             ))}
             <tr>
-              <th scope="row" data-label="Fas">
+              <th scope="row" data-label="Moment">
                 <button type="button" className="epc-textknapp" onClick={() => onVisaFas("lop")}>
                   ∞ · Löpande
                 </button>

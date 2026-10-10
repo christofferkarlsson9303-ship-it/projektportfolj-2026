@@ -30,7 +30,7 @@ test("fasens blankett och Ctrl+K skriver ut utan fältmaterialpanelen", async ({
   await gaTill(page, "Idag");
   await page.getByRole("button", { name: "Sök", exact: true }).click();
   const sok = page.getByRole("combobox", { name: "Sök och hoppa" });
-  await sok.fill("Egenkontroll fas 1 –");
+  await sok.fill("Egenkontroll moment 1 –");
   await sok.press("Enter");
   await expect(page.locator("#utskrift")).toContainText("Kontrakt och ansvar");
   await expect(page.getByRole("dialog", { name: /Fältmaterial/ })).toHaveCount(0);

@@ -289,7 +289,7 @@ describe("nastaUppgifter", () => {
     expect(k[0]).toMatchObject({ typ: "punkt", ton: "bad" });
     expect(k[0].orsak).toBe("Ledtid försenad — skulle ha startat 11 sep");
     expect(k[2].orsak).toBe("Ledtid — starta senast 28 sep");
-    expect(k[3].orsak).toBe("Fas 10 pågår");
+    expect(k[3].orsak).toBe("Moment 10 pågår");
   });
 
   it("vaskar fram nästa punkt när den första bockas av", () => {
@@ -307,7 +307,7 @@ describe("nastaUppgifter", () => {
 
   it("börjar från fas 0 i ett projekt utan datum", () => {
     const k = nastaUppgifter(seed(), "goteborg", NU);
-    expect(k[0]).toMatchObject({ typ: "punkt", orsak: "Nästa fas: 0" });
+    expect(k[0]).toMatchObject({ typ: "punkt", orsak: "Nästa moment: 0" });
     expect(k[0].punkt.id).toBe("0.1");
   });
 });
