@@ -5,6 +5,8 @@ import { CSS2DObject, CSS2DRenderer } from "three/addons/renderers/CSS2DRenderer
 import {
   INGANG,
   KORYTOR,
+  MALLAR,
+  RUTNAT,
   TANGENTER,
   TOMT,
   TYPFARG,
@@ -13,6 +15,7 @@ import {
   forflyttning,
   innanforTomt,
   planMatt,
+  provaPlacering,
   steg,
   titta,
 } from "../../lib/site.js";
@@ -25,6 +28,11 @@ import {
    objekt kan dras. Gå: kameran står på ögonhöjd, WASD/pilar går (A strafe:ar
    vänster), Shift springer, Q/E upp och ner, musen tittar. Matematiken ligger
    i lib/site.js och är testad där.
+
+   Placering: ett rutnät (1 m) ritas på marken. Medan en mall är vald följer
+   ett spökobjekt musen, snappat till rutnätet (och till grannars kanter) och
+   färgat efter om platsen är fri. Samma regler (lib/site.js, provaPlacering)
+   gäller vid klick, dragning och R — scenen ritar bara resultatet.
 
    Färgerna läses ur designsystemets CSS-variabler när scenen byggs — inga
    egna hex-värden. */
@@ -114,7 +122,7 @@ function Joystick({ onAxel }) {
   );
 }
 
-export default function SiteScen({ objekt, punkter, plan, valtId, laddad, lage, onPlacera, onValj, onFlytta, onFel }) {
+export default function SiteScen({ objekt, punkter, plan, valtId, laddad, lage, rutnat = true, spokRot = 0, onPlacera, onValj, onFlytta, onFel }) {
   const holder = useRef(null);
   const s = useRef({});
   const senaste = useRef({});
@@ -122,7 +130,7 @@ export default function SiteScen({ objekt, punkter, plan, valtId, laddad, lage, 
 
   // Senaste props för händelser som registreras en gång.
   useEffect(() => {
-    senaste.current = { objekt, valtId, laddad, lage, onPlacera, onValj, onFlytta, onFel };
+    senaste.current = { objekt, valtId, laddad, lage, rutnat, spokRot, onPlacera, onValj, onFlytta, onFel };
   });
 
   /* ---------- Bygg scenen en gång ---------- */
@@ -160,6 +168,10 @@ export default function SiteScen({ objekt, punkter, plan, valtId, laddad, lage, 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.target.set(0, 0, 0);
     controls.enableDamping = true;
+    // Mjuk tröghet: kameran glider ut i stället för att stanna på stället.
+    controls.dampingFactor = 0.08;
+    controls.rotateSpeed = 0.8;
+    controls.zoomSpeed = 0.9;
     controls.maxPolarAngle = rad(84);
     controls.minDistance = 8;
     controls.maxDistance = 220;
@@ -224,8 +236,24 @@ export default function SiteScen({ objekt, punkter, plan, valtId, laddad, lage, 
     );
     scene.add(grans);
 
+    /* Rutnätet: en linje per meter över tomten. Ligger för sig (inte i
+       `tomt`) så att det syns även när en situationsplan ersätter gruset. */
+    const rutPunkter = [];
+    for (let x = -TOMT.bredd / 2; x <= TOMT.bredd / 2 + 1e-6; x += RUTNAT) rutPunkter.push(x, 0.06, -TOMT.djup / 2, x, 0.06, TOMT.djup / 2);
+    for (let z = -TOMT.djup / 2; z <= TOMT.djup / 2 + 1e-6; z += RUTNAT) rutPunkter.push(-TOMT.bredd / 2, 0.06, z, TOMT.bredd / 2, 0.06, z);
+    const rutGeo = new THREE.BufferGeometry();
+    rutGeo.setAttribute("position", new THREE.Float32BufferAttribute(rutPunkter, 3));
+    const rutnatLinjer = new THREE.LineSegments(rutGeo, new THREE.LineBasicMaterial({ color: farg("--himmel"), transparent: true, opacity: 0.35 }));
+    rutnatLinjer.visible = senaste.current.rutnat !== false;
+    scene.add(rutnatLinjer);
+
     const objektGrupp = new THREE.Group();
     scene.add(objektGrupp);
+    // Spökobjektet visas medan en mall är vald; färgen säger om platsen är fri.
+    const spok = new THREE.Group();
+    spok.visible = false;
+    spok.renderOrder = 5;
+    scene.add(spok);
     const planGrupp = new THREE.Group();
     scene.add(planGrupp);
 
@@ -248,7 +276,7 @@ export default function SiteScen({ objekt, punkter, plan, valtId, laddad, lage, 
     io.observe(el);
 
     const ga = { pos: { x: INGANG.x, y: INGANG.y, z: INGANG.z }, yaw: INGANG.yaw, pitch: INGANG.pitch, avsikt: {}, joy: { fram: 0, sid: 0 } };
-    s.current = { renderer, etiketter, scene, camera, controls, objektGrupp, planGrupp, tomt, ga, meshar: new Map(), markera };
+    s.current = { renderer, etiketter, scene, camera, controls, objektGrupp, planGrupp, tomt, ga, meshar: new Map(), markera, rutnatLinjer, spok, spokPunkt: null };
 
     /* ---------- Pekare: välja, placera, dra, titta ---------- */
     const ray = new THREE.Raycaster();
@@ -271,6 +299,46 @@ export default function SiteScen({ objekt, punkter, plan, valtId, laddad, lage, 
       const p = new THREE.Vector3();
       return ray.ray.intersectPlane(markplan, p) ? p : null;
     };
+
+    /* Spöket: räkna ut var det hamnar för senaste musposition och rita det.
+       Anropas vid musrörelse och när mall, rotation eller objekt ändras. */
+    const matGod = new THREE.MeshStandardMaterial({ color: farg("--turkos"), transparent: true, opacity: 0.6, depthWrite: false });
+    const matFel = new THREE.MeshStandardMaterial({ color: farg("--rod"), transparent: true, opacity: 0.6, depthWrite: false });
+    let spokTyp = null;
+    let spokDim = "";
+    const uppdateraSpok = () => {
+      const p = senaste.current;
+      const q = s.current.spokPunkt;
+      const mall = p.laddad && p.laddad !== "nal" ? MALLAR[p.laddad] : null;
+      if (!mall || !q || p.lage === "ga") {
+        if (spok.visible) {
+          spok.visible = false;
+          smutsig = true;
+        }
+        return;
+      }
+      const rot = p.spokRot || 0;
+      const ob = { typ: p.laddad, bredd: mall.bredd, djup: mall.djup, hojd: mall.hojd, rotation: rot };
+      const res = provaPlacering(ob, q, p.objekt || [], { rutnat: p.rutnat === false ? 0 : RUTNAT });
+      const dim = `${p.laddad}`;
+      if (spokTyp !== p.laddad || spokDim !== dim) {
+        for (const barn of [...spok.children]) {
+          spok.remove(barn);
+          barn.geometry?.dispose?.();
+        }
+        const m = new THREE.Mesh(new THREE.BoxGeometry(mall.bredd, mall.hojd, mall.djup), matGod);
+        m.position.y = mall.hojd / 2;
+        spok.add(m);
+        spokTyp = p.laddad;
+        spokDim = dim;
+      }
+      spok.children[0].material = res.ok ? matGod : matFel;
+      spok.position.set(res.x, 0, res.z);
+      spok.rotation.y = rad(rot);
+      spok.visible = true;
+      smutsig = true;
+    };
+    s.current.uppdateraSpok = uppdateraSpok;
 
     let start = null;
     let drag = null;
@@ -317,16 +385,37 @@ export default function SiteScen({ objekt, punkter, plan, valtId, laddad, lage, 
         titt.y = e.clientY;
         return;
       }
-      if (!drag) return;
+      if (!drag) {
+        if (senaste.current.laddad) {
+          straale(e);
+          const q = markpunkt();
+          s.current.spokPunkt = q ? { x: q.x, z: q.z } : null;
+          uppdateraSpok();
+        }
+        return;
+      }
       straale(e);
       const q = markpunkt();
       const m = s.current.meshar.get(drag.id);
       if (!q || !m) return;
-      const pos = innanforTomt(q.x - drag.dx, q.z - drag.dz);
-      m.position.x = pos.x;
-      m.position.z = pos.z;
-      drag.pos = pos;
+      /* Dragningen följer samma regler som placeringen: snappad till rutnätet
+         och kant mot kant, och den stannar på senaste lediga plats i stället
+         för att hamna inuti ett annat objekt. */
+      const o = (senaste.current.objekt || []).find((x) => x.id === drag.id);
+      const mal = { x: q.x - drag.dx, z: q.z - drag.dz };
+      const res = o
+        ? provaPlacering(o, mal, senaste.current.objekt || [], { ignorera: o.id, rutnat: senaste.current.rutnat === false ? 0 : RUTNAT })
+        : { ...innanforTomt(mal.x, mal.z), ok: true };
+      if (!res.ok) return;
+      m.position.x = res.x;
+      m.position.z = res.z;
+      drag.pos = { x: res.x, z: res.z };
       smutsig = true;
+    };
+
+    const lamna = () => {
+      s.current.spokPunkt = null;
+      uppdateraSpok();
     };
 
     const upp = (e) => {
@@ -386,6 +475,7 @@ export default function SiteScen({ objekt, punkter, plan, valtId, laddad, lage, 
     c.addEventListener("pointermove", rorelse);
     c.addEventListener("pointerup", upp);
     c.addEventListener("pointercancel", upp);
+    c.addEventListener("pointerleave", lamna);
     document.addEventListener("mousemove", mus);
     window.addEventListener("keydown", tangentNed);
     window.addEventListener("keyup", tangentUpp);
@@ -424,12 +514,15 @@ export default function SiteScen({ objekt, punkter, plan, valtId, laddad, lage, 
       c.removeEventListener("pointermove", rorelse);
       c.removeEventListener("pointerup", upp);
       c.removeEventListener("pointercancel", upp);
+      c.removeEventListener("pointerleave", lamna);
       document.removeEventListener("mousemove", mus);
       window.removeEventListener("keydown", tangentNed);
       window.removeEventListener("keyup", tangentUpp);
       window.removeEventListener("blur", tappa);
       if (document.pointerLockElement === c) document.exitPointerLock?.();
       controls.dispose();
+      matGod.dispose();
+      matFel.dispose();
       frigor(scene);
       renderer.dispose();
       c.remove();
@@ -480,7 +573,7 @@ export default function SiteScen({ objekt, punkter, plan, valtId, laddad, lage, 
         linjer.position.y = o.hojd / 2;
         g.add(lada, linjer);
         if (o.id === valtId) {
-          const l = etikett(o.namn);
+          const l = etikett(o.soc !== undefined && o.soc !== null && o.soc !== "" ? `${o.namn} · ${Math.round(Number(o.soc))} %` : o.namn);
           l.position.y = o.hojd + 0.8;
           g.add(l);
         }
@@ -490,6 +583,15 @@ export default function SiteScen({ objekt, punkter, plan, valtId, laddad, lage, 
     }
     s.current.markera?.();
   }, [objekt, valtId, punkter]);
+
+  /* ---------- Rutnät och spöke följer props ---------- */
+  useEffect(() => {
+    const { rutnatLinjer, uppdateraSpok, markera } = s.current;
+    if (!rutnatLinjer) return;
+    rutnatLinjer.visible = rutnat;
+    uppdateraSpok?.();
+    markera?.();
+  }, [rutnat, laddad, spokRot, objekt, lage]);
 
   /* ---------- Situationsplanen som marktextur ---------- */
   useEffect(() => {

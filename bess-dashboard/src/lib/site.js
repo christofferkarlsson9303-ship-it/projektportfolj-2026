@@ -38,10 +38,20 @@ export const MALLAR = {
   ehouse: { namn: "E-House", bredd: 12, djup: 3.2, hojd: 3.4 },
   trafo: { namn: "Trafo", bredd: 3.2, djup: 2.6, hojd: 2.6 },
   lada: { namn: "Låda", bredd: 2, djup: 2, hojd: 2 },
+  hagnad: { namn: "Hägnad", bredd: 5, djup: 0.2, hojd: 2.2 },
   nal: { namn: "Nål", bredd: 0, djup: 0, hojd: 0 },
 };
 
-export const MALLORDNING = ["skid", "container", "ehouse", "trafo", "lada", "nal"];
+export const MALLORDNING = ["skid", "container", "ehouse", "trafo", "hagnad", "lada", "nal"];
+
+/** Komponentmenyn: vilka mallar som hör ihop. Varje typ finns i exakt en grupp. */
+export const KOMPONENTGRUPPER = [
+  { id: "containers", namn: "Containers", typer: ["container"] },
+  { id: "inverters", namn: "Inverters / MV-skids", typer: ["skid", "ehouse"] },
+  { id: "transformatorer", namn: "Transformatorer", typer: ["trafo"] },
+  { id: "hagnad", namn: "Hägnad", typer: ["hagnad"] },
+  { id: "ovrigt", namn: "Övrigt", typer: ["lada", "nal"] },
+];
 
 /** Färg per typ som CSS-variabel ur designsystemet. 3D-scenen läser värdet
  *  vid körning och toppvyn använder variabeln direkt — inga egna hex-värden. */
@@ -51,6 +61,7 @@ export const TYPFARG = {
   ehouse: "--one-djup",
   trafo: "--duvbla",
   lada: "--morkgra",
+  hagnad: "--ink-soft",
   nal: "--orange",
 };
 
@@ -153,6 +164,229 @@ export function steg(pos, delta, objekt, marginal = MARGINAL) {
 /** Startpunkt när användaren går in: söder om tomten, blicken mot norr. */
 export const INGANG = { x: 0, y: OGONHOJD, z: TOMT.djup / 2 + 6, yaw: 0, pitch: 0 };
 
+
+/* ---------- Rutnät, snap och placering ---------- */
+
+/** Rutnätets steg i meter. Tomtens kanter (±40, ±26) ligger på rutnätet. */
+export const RUTNAT = 1;
+/** Rotation sker i steg om 90° — så att moduler ligger kant mot kant. */
+export const ROTATIONSSTEG = 90;
+const EPS = 1e-4;
+
+const r3 = (n) => Math.round(n * 1000) / 1000;
+
+/** Rotation i grader till närmaste steg, 0–359. */
+export function snappaRotation(grader, steg = ROTATIONSSTEG) {
+  const n = Math.round((Number(grader) || 0) / steg) * steg;
+  return ((n % 360) + 360) % 360;
+}
+
+/** Nästa rotation när användaren trycker R. */
+export const roteraSteg = (grader) => snappaRotation((Number(grader) || 0) + ROTATIONSSTEG);
+
+/** Måtten längs världens X och Z efter rotation (omslutande rektangel). */
+export function yttermatt(o) {
+  const t = ((o.rotation || 0) * Math.PI) / 180;
+  const c = Math.abs(Math.cos(t));
+  const s = Math.abs(Math.sin(t));
+  const b = o.bredd || 0;
+  const d = o.djup || 0;
+  return { bredd: b * c + d * s, djup: b * s + d * c };
+}
+
+function snappaAxel(v, langd, tomt, rutnat) {
+  const min = -tomt / 2 + langd / 2;
+  const max = tomt / 2 - langd / 2;
+  if (min > max) return 0; // större än tomten: mitt på
+  const centrum = rutnat > 0 ? Math.round((v - langd / 2) / rutnat) * rutnat + langd / 2 : v;
+  return r3(Math.max(min, Math.min(max, centrum)));
+}
+
+/**
+ * Snappar ett objekts centrum så att dess hörn hamnar på rutnätet efter
+ * rotation, och håller hela fotavtrycket inom tomten. rutnat = 0 stänger av
+ * snappen men behåller tomtgränsen.
+ */
+export function snappa(x, z, o, rutnat = RUTNAT) {
+  const m = yttermatt(o);
+  return { x: snappaAxel(x, m.bredd, TOMT.bredd, rutnat), z: snappaAxel(z, m.djup, TOMT.djup, rutnat) };
+}
+
+/** Rektangel i planet: centrum, halva sidor och lokala axlar (samma som tillLokal). */
+function rekt(o) {
+  const t = ((o.rotation || 0) * Math.PI) / 180;
+  const c = Math.cos(t);
+  const s = Math.sin(t);
+  return { x: o.x || 0, z: o.z || 0, hb: (o.bredd || 0) / 2, hd: (o.djup || 0) / 2, u: [c, -s], v: [s, c] };
+}
+
+/**
+ * Överlappar två vridna rektanglar? Separerande axel-test. Att bara röra
+ * vid varandra räknas inte som överlapp — moduler får stå kant mot kant.
+ * `luft` kräver ett fritt avstånd i meter mellan dem.
+ */
+export function rektanglarOverlappar(a, b, luft = 0) {
+  const A = rekt(a);
+  const B = rekt(b);
+  const d = [B.x - A.x, B.z - A.z];
+  const dot = (p, q) => p[0] * q[0] + p[1] * q[1];
+  for (const n of [A.u, A.v, B.u, B.v]) {
+    const ra = A.hb * Math.abs(dot(n, A.u)) + A.hd * Math.abs(dot(n, A.v));
+    const rb = B.hb * Math.abs(dot(n, B.u)) + B.hd * Math.abs(dot(n, B.v));
+    if (Math.abs(dot(d, n)) >= ra + rb + luft - EPS) return false;
+  }
+  return true;
+}
+
+/**
+ * Får kandidaten stå här? Hela fotavtrycket inom tomten och inget annat
+ * objekt i vägen. Nålar har ingen yta och kontrolleras inte.
+ * @returns {{ok:true}|{ok:false,orsak:"utanfor"|"krock",med?:object}}
+ */
+export function kanPlaceras(kandidat, objekt, { ignorera = null, luft = 0 } = {}) {
+  if (!arVolym(kandidat)) return { ok: true };
+  const m = yttermatt(kandidat);
+  if (Math.abs(kandidat.x) + m.bredd / 2 > TOMT.bredd / 2 + EPS || Math.abs(kandidat.z) + m.djup / 2 > TOMT.djup / 2 + EPS) {
+    return { ok: false, orsak: "utanfor" };
+  }
+  const med = objekt.find((o) => o.id !== ignorera && arVolym(o) && rektanglarOverlappar(kandidat, o, luft));
+  return med ? { ok: false, orsak: "krock", med } : { ok: true };
+}
+
+/** Grannar som kantsnappen kan luta sig mot: volymer vridna i kvartsvarv. */
+const arKvartsvarv = (o) => Math.abs(Math.sin((((o.rotation || 0) * Math.PI) / 180) * 2)) < 1e-6;
+
+/** Största avstånd i meter där en kant dras mot en grannes kant. */
+export const KANTTROSKEL = 0.6;
+
+/**
+ * Kantsnapp: rutnätet ger en bra plats, men mått som 6,1 m går inte jämnt ut
+ * i hela meter. Ligger en kant inom tröskeln från en grannes kant dras
+ * objektet så att kanterna möts exakt (kant mot kant) eller ligger i linje.
+ * Bara grannar vars sida ligger i höjd med objektet räknas. `luft` håller
+ * önskat fritt avstånd vid kant mot kant.
+ */
+export function kantSnappa(q, o, objekt, { ignorera = null, luft = 0, troskel = KANTTROSKEL } = {}) {
+  const m = yttermatt(o);
+  const grannar = objekt.filter((n) => n.id !== ignorera && arVolym(n) && arKvartsvarv(n));
+  const axel = (c, halv, liggerIHojd, kanter) => {
+    let b = null;
+    for (const n of grannar) {
+      const nm = yttermatt(n);
+      if (!liggerIHojd(n, nm)) continue;
+      const [nc, nh] = kanter(n, nm);
+      for (const delta of [nc + nh + luft + halv - c, nc - nh - luft - halv - c, nc + nh - halv - c, nc - nh + halv - c]) {
+        if (Math.abs(delta) <= troskel && (b === null || Math.abs(delta) < Math.abs(b))) b = delta;
+      }
+    }
+    return b === null ? c : r3(c + b);
+  };
+  const x = axel(
+    q.x,
+    m.bredd / 2,
+    (n, nm) => Math.abs(n.z - q.z) < nm.djup / 2 + m.djup / 2 + troskel,
+    (n, nm) => [n.x, nm.bredd / 2]
+  );
+  const z = axel(
+    q.z,
+    m.djup / 2,
+    (n, nm) => Math.abs(n.x - x) < nm.bredd / 2 + m.bredd / 2 + troskel,
+    (n, nm) => [n.z, nm.djup / 2]
+  );
+  // Aldrig ut ur tomten av en kantsnapp.
+  return {
+    x: Math.max(-TOMT.bredd / 2 + m.bredd / 2, Math.min(TOMT.bredd / 2 - m.bredd / 2, x)),
+    z: Math.max(-TOMT.djup / 2 + m.djup / 2, Math.min(TOMT.djup / 2 - m.djup / 2, z)),
+  };
+}
+
+/**
+ * Snappa och kontrollera i ett steg — det scenen, planvyn och placeringen
+ * alla använder. `o` har typ, bredd, djup, hojd och rotation.
+ * @returns {{x:number,z:number,ok:boolean,orsak?:string,med?:object}}
+ */
+export function provaPlacering(o, punkt, objekt, { ignorera = null, rutnat = RUTNAT, luft = 0 } = {}) {
+  if (!arVolym(o)) {
+    const q = innanforTomt(punkt.x, punkt.z);
+    return { ...q, ok: true };
+  }
+  let q = snappa(punkt.x, punkt.z, o, rutnat);
+  if (rutnat > 0) q = kantSnappa(q, o, objekt, { ignorera, luft });
+  return { ...q, ...kanPlaceras({ ...o, ...q }, objekt, { ignorera, luft }) };
+}
+
+/** Felmeddelande till användaren, eller null när placeringen är ok. */
+export function placeringsText(res) {
+  if (!res || res.ok) return null;
+  if (res.orsak === "utanfor") return "Det får inte plats där — objektet skulle hamna utanför tomten.";
+  return `Platsen är upptagen av ${res.med?.namn || "ett annat objekt"}.`;
+}
+
+/* ---------- BESS-data på volymer ---------- */
+
+export const SITE_STATUS = [
+  ["planerad", "Planerad"],
+  ["levererad", "Levererad"],
+  ["monterad", "Monterad"],
+  ["driftsatt", "Driftsatt"],
+];
+
+/** Numeriska fält med namn och eventuellt tak — används av objektFel. */
+const BESS_TAL = [
+  ["mw", "Effekt (MW)"],
+  ["mwh", "Energi (MWh)"],
+  ["mva", "Märkeffekt (MVA)"],
+  ["soc", "Laddstatus (SoC)", 100],
+];
+
+/** Fält per typ i sidopanelen. Hägnad och Låda har ingen BESS-data. */
+export const BESS_FALT = {
+  container: [
+    ["mwh", "Energi (MWh)"],
+    ["mw", "Effekt (MW)"],
+    ["soc", "Laddstatus SoC (%)"],
+  ],
+  skid: [["mw", "Effekt (MW)"]],
+  ehouse: [["mw", "Effekt (MW)"]],
+  trafo: [["mva", "Märkeffekt (MVA)"]],
+};
+
+export const harBessData = (typ) => !!BESS_FALT[typ];
+
+const num = (v) => (v === undefined || v === null || v === "" || !Number.isFinite(Number(v)) ? null : Number(v));
+
+/** Svenskt talformat med högst `d` decimaler. */
+export const fmtTal = (n, d = 1) => new Intl.NumberFormat("sv-SE", { maximumFractionDigits: d }).format(Number(n) || 0);
+
+/**
+ * Sammanställning av parken. Energi och effekt räknas på containrarna
+ * (batterierna); inverter och trafo summeras för sig. SoC är medel viktat på
+ * energi där MWh finns, annars ett vanligt medel. Saknade fält räknas som
+ * "ej angivet", inte som 0.
+ */
+export function parkSumma(objekt) {
+  const v = objekt.filter(arVolym);
+  const cont = v.filter((o) => o.typ === "container");
+  const summa = (lista, falt) => lista.reduce((a, o) => a + (num(o[falt]) ?? 0), 0);
+  const medSoc = cont.filter((o) => num(o.soc) !== null);
+  const vikt = medSoc.reduce((a, o) => a + (num(o.mwh) ?? 0), 0);
+  const soc = medSoc.length
+    ? vikt > 0
+      ? medSoc.reduce((a, o) => a + (num(o.mwh) ?? 0) * num(o.soc), 0) / vikt
+      : medSoc.reduce((a, o) => a + num(o.soc), 0) / medSoc.length
+    : null;
+  const bess = v.filter((o) => harBessData(o.typ));
+  return {
+    mwh: summa(cont, "mwh"),
+    mw: summa(cont, "mw"),
+    inverterMw: summa(v.filter((o) => o.typ === "skid" || o.typ === "ehouse"), "mw"),
+    trafoMva: summa(v.filter((o) => o.typ === "trafo"), "mva"),
+    soc,
+    antal: bess.length,
+    driftsatta: bess.filter((o) => o.status === "driftsatt").length,
+  };
+}
+
 /* ---------- Objekt i state ---------- */
 
 const avrunda = (n, d = 2) => Math.round((Number(n) || 0) * 10 ** d) / 10 ** d;
@@ -184,14 +418,15 @@ export function nastaNamn(befintliga, typ) {
 export function nyttObjekt(typ, projektId, punkt, befintliga = [], extra = {}) {
   const m = MALLAR[typ];
   if (!m) throw new Error(`Okänd typ: ${typ}`);
-  const { x, z } = innanforTomt(punkt.x, punkt.z);
+  // `exakt`: positionen kommer redan snappad till rutnätet — avrunda inte om den.
+  const { x, z } = extra.exakt ? { x: avrunda(punkt.x, 3), z: avrunda(punkt.z, 3) } : innanforTomt(punkt.x, punkt.z);
   const rad = {
     id: `so${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
     projektId,
     typ,
     x,
     z,
-    rotation: 0,
+    rotation: extra.rotation ? snappaRotation(extra.rotation) : 0,
   };
   if (typ === "nal") return { ...rad, punktId: extra.punktId || "" };
   return { ...rad, namn: extra.namn || nastaNamn(befintliga, typ), bredd: m.bredd, djup: m.djup, hojd: m.hojd };
@@ -212,6 +447,13 @@ export function objektFel(o, punkter = []) {
   for (const [falt, text] of [["bredd", "Bredd"], ["djup", "Djup"], ["hojd", "Höjd"]]) {
     if (!(Number(o[falt]) > 0)) return `${text} måste vara större än 0.`;
   }
+  for (const [falt, text, max] of BESS_TAL) {
+    const v = o[falt];
+    if (v === undefined || v === null || v === "") continue;
+    if (!Number.isFinite(Number(v)) || Number(v) < 0) return `${text} måste vara ett tal som inte är negativt.`;
+    if (max !== undefined && Number(v) > max) return `${text} kan högst vara ${max}.`;
+  }
+  if (o.status !== undefined && o.status !== "" && !SITE_STATUS.some(([id]) => id === o.status)) return "Okänd status.";
   return null;
 }
 

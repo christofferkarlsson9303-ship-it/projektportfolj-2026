@@ -4,24 +4,34 @@ import { Callout, Card, StatusBadge } from "../../components/ds/index.js";
 import { Falt, TaBortKnapp } from "../../components/ui/Falt.jsx";
 import { Vyvaljare } from "../../components/ui/Vyvaljare.jsx";
 import { SiteToppvy } from "../../components/site/SiteToppvy.jsx";
+import { SiteMeny } from "../../components/site/SiteMeny.jsx";
+import { ParkSumma } from "../../components/site/ParkSumma.jsx";
+import { Meter } from "../../components/ds/index.js";
 import { useSnabbUtskrift } from "../../components/field/SnabbUtskrift.jsx";
 import { datumKort } from "../../lib/datum.js";
 import {
+  BESS_FALT,
   MALLAR,
-  MALLORDNING,
+  SITE_STATUS,
   TOMT,
   TYPFARG,
   arNal,
   arOppenPunkt,
+  fmtTal,
+  harBessData,
   innanforTomt,
   lasPlan,
   nyttObjekt,
   objektFel,
   planMatt,
+  placeringsText,
+  provaPlacering,
   punkterForSite,
   rensaPlan,
+  roteraSteg,
   siteObjekt,
   sparaPlan,
+  RUTNAT,
 } from "../../lib/site.js";
 
 /* Siten — projektets tomt i 3D. Volymer och nålar ligger i portfolj/state
@@ -31,10 +41,9 @@ import {
 
 const SiteScen = lazy(() => import("./SiteScen.jsx"));
 
-const chip =
-  "cursor-pointer rounded-full border border-solid border-hairline-stark bg-surface px-3 py-1 font-body text-[12.5px] font-semibold text-ink transition-colors hover:bg-sunken aria-pressed:border-one-djup aria-pressed:bg-one-djup aria-pressed:text-white disabled:cursor-not-allowed disabled:opacity-60";
-
 const MAX_BILD = 2400;
+const BESS_TALFALT = new Set(["mw", "mwh", "mva", "soc"]);
+const STATUS_TON = { planerad: "neutral", levererad: "info", monterad: "warn", driftsatt: "ok" };
 const fmtM = (n) => String(Math.round((Number(n) || 0) * 100) / 100).replace(".", ",");
 
 /** "6,1" och "6.1" blir 6.1; tomt eller ogiltigt blir null. */
@@ -105,6 +114,8 @@ export function Site() {
 
   const [lage, setLage] = useState("orbit");
   const [laddad, setLaddad] = useState(null);
+  const [rutnat, setRutnat] = useState(true);
+  const [spokRot, setSpokRot] = useState(0);
   const [nalPunkt, setNalPunkt] = useState("");
   const [valtId, setValtId] = useState(null);
   const [fel3d, setFel3d] = useState(null);
@@ -128,15 +139,47 @@ export function Site() {
 
   const valt = objekt.find((o) => o.id === valtId) || null;
 
-  /* Esc avbryter placering. */
+  /* Tangenter på sidan: Esc avbryter placering, R roterar 90° (vald mall,
+     annars markerat objekt), G slår rutnätet av och på. Inte i textfält och
+     inte i gåläget, där tangenterna styr kameran. */
+  const rotera = () => {
+    if (laddad && laddad !== "nal") {
+      setSpokRot((r) => roteraSteg(r));
+      return;
+    }
+    if (valt && !arNal(valt)) {
+      const kand = { ...valt, rotation: roteraSteg(valt.rotation) };
+      const res = provaPlacering(kand, { x: valt.x, z: valt.z }, objekt, { ignorera: valt.id, rutnat: rutnat ? RUTNAT : 0 });
+      if (!res.ok) {
+        visaToast(placeringsText(res), "warn");
+        return;
+      }
+      dispatch({ type: "SITE_ANDRA", id: valt.id, andring: { rotation: kand.rotation, x: res.x, z: res.z } });
+    }
+  };
+  const roteraRef = useRef(rotera);
   useEffect(() => {
-    if (!laddad) return undefined;
-    const esc = (e) => {
-      if (e.key === "Escape") setLaddad(null);
+    roteraRef.current = rotera;
+  });
+  useEffect(() => {
+    const tangent = (e) => {
+      if (e.key === "Escape") {
+        setLaddad(null);
+        return;
+      }
+      if (e.ctrlKey || e.metaKey || e.altKey || lage === "ga") return;
+      if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target?.tagName || "") || e.target?.isContentEditable) return;
+      if (e.code === "KeyR") {
+        e.preventDefault();
+        roteraRef.current();
+      } else if (e.code === "KeyG") {
+        e.preventDefault();
+        setRutnat((v) => !v);
+      }
     };
-    window.addEventListener("keydown", esc);
-    return () => window.removeEventListener("keydown", esc);
-  }, [laddad]);
+    window.addEventListener("keydown", tangent);
+    return () => window.removeEventListener("keydown", tangent);
+  }, [lage]);
 
   if (!p) return <Callout ton="info">Lägg upp ett projekt först.</Callout>;
 
@@ -146,7 +189,21 @@ export function Site() {
       visaToast("Välj vilken punkt nålen ska peka på.", "warn");
       return;
     }
-    const rad = nyttObjekt(laddad, pid, { x, z }, objekt, laddad === "nal" ? { punktId: nalPunkt } : {});
+    let rad;
+    if (laddad === "nal") {
+      rad = nyttObjekt(laddad, pid, { x, z }, objekt, { punktId: nalPunkt });
+    } else {
+      // Samma snapp och kollisionsregler som spökobjektet i 3D-vyn visar.
+      const m = MALLAR[laddad];
+      const res = provaPlacering({ typ: laddad, bredd: m.bredd, djup: m.djup, hojd: m.hojd, rotation: spokRot }, { x, z }, objekt, {
+        rutnat: rutnat ? RUTNAT : 0,
+      });
+      if (!res.ok) {
+        visaToast(placeringsText(res), "warn");
+        return;
+      }
+      rad = nyttObjekt(laddad, pid, { x: res.x, z: res.z }, objekt, { exakt: true, rotation: spokRot });
+    }
     const fel = objektFel(rad, punkter);
     if (fel) {
       visaToast(fel, "warn");
@@ -176,6 +233,7 @@ export function Site() {
       const q = innanforTomt(falt === "x" ? v : valt.x, falt === "z" ? v : valt.z);
       return andra({ x: q.x, z: q.z });
     }
+    if (BESS_TALFALT.has(falt)) return andra({ [falt]: v === null ? undefined : v });
     return andra({ [falt]: v === null ? 0 : v });
   };
 
@@ -236,154 +294,157 @@ export function Site() {
   const status = laddad
     ? laddad === "nal" && !nalPunkt
       ? "Välj punkten nålen ska peka på."
-      : `Klicka på marken för att placera ${laddad === "ehouse" ? "E-House" : MALLAR[laddad].namn.toLowerCase()}. Esc avbryter.`
+      : `Klicka på marken för att placera ${laddad === "ehouse" ? "E-House" : MALLAR[laddad].namn.toLowerCase()}. R roterar, G rutnät, Esc avbryter.`
     : valt
-      ? `${namnFor(valt)} är markerad.`
-      : "Välj en mall för att placera, eller klicka på ett objekt.";
+      ? `${namnFor(valt)} är markerad. R roterar, dra för att flytta.`
+      : "Välj en komponent till vänster för att placera, eller klicka på ett objekt.";
 
   return (
     <div className="flex flex-col gap-4 lg:gap-6">
-      <Card
-        id="site-scen"
-        title={`Siten — ${p.nr ? `${p.nr} ` : ""}${p.namn}`}
-        subtitle={`Tomt ${TOMT.bredd} × ${TOMT.djup} m. ${volymAntal} ${volymAntal === 1 ? "volym" : "volymer"}, ${nalAntal} ${nalAntal === 1 ? "nål" : "nålar"}.${plan ? " Situationsplan som mark." : " Utan situationsplan: grus och körytor."}`}
-        action={
-          <button type="button" className="btn sec mini" onClick={aterstall} disabled={!objekt.length}>
-            Återställ
-          </button>
-        }
-      >
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
-          <Vyvaljare
-            etikett="Kamera"
-            varde={lage}
-            onValj={(v) => {
-              setLage(v);
-              setLaddad(null);
-            }}
-            alternativ={[
-              ["orbit", "Orbit", "Kameran kretsar runt tomten"],
-              ["ga", "Gå in", "Gå runt på ögonhöjd"],
-            ]}
-          />
-          <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Lägg till på siten">
-            {MALLORDNING.map((typ) => {
-              const m = MALLAR[typ];
-              const matt = typ === "nal" ? "pekar på en öppen punkt" : `${fmtM(m.bredd)} × ${fmtM(m.djup)} × ${fmtM(m.hojd)} m`;
-              return (
-                <button
-                  key={typ}
-                  type="button"
-                  className={chip}
-                  aria-pressed={laddad === typ}
-                  disabled={lage === "ga" || (typ === "nal" && !oppnaPunkter.length)}
-                  title={`${m.namn}: ${matt}`}
-                  onClick={() => setLaddad(laddad === typ ? null : typ)}
-                >
-                  + {m.namn}
-                </button>
-              );
-            })}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start lg:gap-6">
+        <Card
+          id="site-scen"
+          title={`Siten — ${p.nr ? `${p.nr} ` : ""}${p.namn}`}
+          subtitle={`Tomt ${TOMT.bredd} × ${TOMT.djup} m. ${volymAntal} ${volymAntal === 1 ? "volym" : "volymer"}, ${nalAntal} ${nalAntal === 1 ? "nål" : "nålar"}.${plan ? " Situationsplan som mark." : " Utan situationsplan: grus och körytor."}`}
+          action={
+            <button type="button" className="btn sec mini" onClick={aterstall} disabled={!objekt.length}>
+              Återställ
+            </button>
+          }
+        >
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+            <Vyvaljare
+              etikett="Kamera"
+              varde={lage}
+              onValj={(v) => {
+                setLage(v);
+                setLaddad(null);
+              }}
+              alternativ={[
+                ["orbit", "Orbit", "Kameran kretsar runt tomten"],
+                ["ga", "Gå in", "Gå runt på ögonhöjd"],
+              ]}
+            />
           </div>
-        </div>
 
-        {laddad === "nal" ? (
-          <div className="frow c2">
-            <div className="f">
-              <label htmlFor="site-nal-punkt">Punkt för nålen</label>
-              <select id="site-nal-punkt" value={nalPunkt} onChange={(e) => setNalPunkt(e.target.value)}>
-                <option value="">Välj punkt …</option>
-                {oppnaPunkter.map((x) => (
-                  <option key={x.id} value={x.id}>
-                    {x.titel}
-                  </option>
-                ))}
-              </select>
+          {laddad === "nal" ? (
+            <div className="frow c2">
+              <div className="f">
+                <label htmlFor="site-nal-punkt">Punkt för nålen</label>
+                <select id="site-nal-punkt" value={nalPunkt} onChange={(e) => setNalPunkt(e.target.value)}>
+                  <option value="">Välj punkt …</option>
+                  {oppnaPunkter.map((x) => (
+                    <option key={x.id} value={x.id}>
+                      {x.titel}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          ) : null}
+          {!oppnaPunkter.length ? (
+            <p className="m-0 text-[12.5px] text-ink-soft">
+              Nålar pekar på öppna punkter. Projektet har inga öppna punkter just nu.
+            </p>
+          ) : null}
+
+          <div className="flex flex-wrap items-center gap-2 text-[13px]">
+            <p className="m-0 text-ink-soft" aria-live="polite">
+              {status}
+            </p>
+            {laddad && !(laddad === "nal" && !nalPunkt) ? (
+              <button type="button" className="btn sec mini" onClick={() => placera(0, 0)}>
+                Placera mitt på tomten
+              </button>
+            ) : null}
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-[176px_minmax(0,1fr)] lg:items-start">
+            <SiteMeny
+              laddad={laddad}
+              onVal={setLaddad}
+              lage={lage}
+              kanNal={oppnaPunkter.length > 0}
+              rutnat={rutnat}
+              onRutnat={setRutnat}
+              spokRot={spokRot}
+              onRotera={rotera}
+            />
+            <div className="min-w-0">
+              {fel3d ? (
+                <Callout ton="warn">
+                  <b>3D-vyn kan inte visas.</b> {fel3d} Planvyn nedan visar samma objekt och går att klicka i.
+                </Callout>
+              ) : (
+                <Suspense fallback={<div className="h-[62vh] max-h-[720px] min-h-[360px] w-full rounded-lg bg-sunken" aria-busy="true" />}>
+                  <SiteScen
+                    objekt={objekt}
+                    punkter={punkter}
+                    plan={plan}
+                    valtId={valtId}
+                    laddad={laddad && !(laddad === "nal" && !nalPunkt) ? laddad : null}
+                    lage={lage}
+                    onPlacera={placera}
+                    onValj={setValtId}
+                    onFlytta={(id, x, z) => dispatch({ type: "SITE_ANDRA", id, andring: { x, z } })}
+                    onFel={setFel3d}
+                  />
+                </Suspense>
+              )}
             </div>
           </div>
-        ) : null}
-        {!oppnaPunkter.length ? (
-          <p className="m-0 text-[12.5px] text-ink-soft">
-            Nålar pekar på öppna punkter. Projektet har inga öppna punkter just nu.
-          </p>
-        ) : null}
-
-        <div className="flex flex-wrap items-center gap-2 text-[13px]">
-          <p className="m-0 text-ink-soft" aria-live="polite">
-            {status}
-          </p>
-          {laddad && !(laddad === "nal" && !nalPunkt) ? (
-            <button type="button" className="btn sec mini" onClick={() => placera(0, 0)}>
-              Placera mitt på tomten
-            </button>
-          ) : null}
-        </div>
-
-        {fel3d ? (
-          <Callout ton="warn">
-            <b>3D-vyn kan inte visas.</b> {fel3d} Planvyn nedan visar samma objekt och går att klicka i.
-          </Callout>
-        ) : (
-          <Suspense fallback={<div className="h-[62vh] max-h-[720px] min-h-[360px] w-full rounded-lg bg-sunken" aria-busy="true" />}>
-            <SiteScen
-              objekt={objekt}
-              punkter={punkter}
-              plan={plan}
-              valtId={valtId}
-              laddad={laddad && !(laddad === "nal" && !nalPunkt) ? laddad : null}
-              lage={lage}
-              onPlacera={placera}
-              onValj={setValtId}
-              onFlytta={(id, x, z) => dispatch({ type: "SITE_ANDRA", id, andring: { x, z } })}
-              onFel={setFel3d}
-            />
-          </Suspense>
-        )}
-      </Card>
+        </Card>
+        <aside aria-label="Markerat objekt och parkens data" className="flex min-w-0 flex-col gap-4 lg:gap-6">
+          <Card id="site-park" title="Parkens BESS-data" subtitle="Summerat ur objekten på siten.">
+            <ParkSumma objekt={objekt} />
+          </Card>
+            <Card
+              id="site-markerat"
+              title={valt ? namnFor(valt) : "Markerat objekt"}
+              subtitle={valt ? (arNal(valt) ? (arOppenPunkt(punktFor(valt)) ? "Nål på en öppen punkt" : "Nål på en punkt som inte är öppen") : `${MALLAR[valt.typ].namn} · mått i meter, rotation i grader`) : null}
+              badge={valt && !arNal(valt) && valt.status ? <StatusBadge ton={STATUS_TON[valt.status] || "neutral"} label={SITE_STATUS.find(([id]) => id === valt.status)?.[1] || valt.status} /> : null}
+              action={valt ? <TaBortKnapp etikett={`Ta bort ${namnFor(valt)}`} onClick={() => taBort(valt)} /> : null}
+            >
+              {!valt ? (
+                <p className="m-0 text-[13px] text-ink-soft">
+                  Inget markerat. Klicka på ett objekt i 3D-vyn, i planvyn eller i listan.
+                </p>
+              ) : arNal(valt) ? (
+                <NalPanel
+                  o={valt}
+                  punkt={punktFor(valt)}
+                  punkter={punkter}
+                  onPunkt={(punktId) => andra({ punktId })}
+                  onOppna={() => visa("punkter")}
+                  onSkrivUt={() => snabb.arbetslista(pid, { ids: [valt.punktId] })}
+                />
+              ) : (
+                <div key={`${valt.id}-${omritning}`} className="frow c3">
+                  <div className="f" style={{ gridColumn: "1 / -1" }}>
+                    <label htmlFor="site-namn">Namn</label>
+                    <Falt id="site-namn" varde={valt.namn} etikett="Namn" onCommit={(v) => andra({ namn: v.trim() || valt.namn })} />
+                  </div>
+                  {[
+                    ["bredd", "Bredd (m)"],
+                    ["djup", "Djup (m)"],
+                    ["hojd", "Höjd (m)"],
+                    ["rotation", "Rotation (grader)"],
+                    ["x", "Öster om mitten (m)"],
+                    ["z", "Söder om mitten (m)"],
+                  ].map(([falt, text]) => (
+                    <div className="f" key={falt}>
+                      <label htmlFor={`site-${falt}`}>{text}</label>
+                      <TalFalt id={`site-${falt}`} varde={valt[falt]} etikett={text} onCommit={(v) => andraMatt(falt, v)} />
+                    </div>
+                  ))}
+                </div>
+              )}
+              {valt && harBessData(valt.typ) ? <BessSektion key={`bess-${valt.id}-${omritning}`} o={valt} onTal={andraMatt} onAndra={andra} /> : null}
+            </Card>
+        </aside>
+      </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-6">
-        <Card
-          id="site-markerat"
-          title={valt ? namnFor(valt) : "Markerat objekt"}
-          subtitle={valt ? (arNal(valt) ? (arOppenPunkt(punktFor(valt)) ? "Nål på en öppen punkt" : "Nål på en punkt som inte är öppen") : `${MALLAR[valt.typ].namn} · mått i meter, rotation i grader`) : null}
-          action={valt ? <TaBortKnapp etikett={`Ta bort ${namnFor(valt)}`} onClick={() => taBort(valt)} /> : null}
-        >
-          {!valt ? (
-            <p className="m-0 text-[13px] text-ink-soft">
-              Inget markerat. Klicka på ett objekt i 3D-vyn, i planvyn eller i listan.
-            </p>
-          ) : arNal(valt) ? (
-            <NalPanel
-              o={valt}
-              punkt={punktFor(valt)}
-              punkter={punkter}
-              onPunkt={(punktId) => andra({ punktId })}
-              onOppna={() => visa("punkter")}
-              onSkrivUt={() => snabb.arbetslista(pid, { ids: [valt.punktId] })}
-            />
-          ) : (
-            <div key={`${valt.id}-${omritning}`} className="frow c3">
-              <div className="f" style={{ gridColumn: "1 / -1" }}>
-                <label htmlFor="site-namn">Namn</label>
-                <Falt id="site-namn" varde={valt.namn} etikett="Namn" onCommit={(v) => andra({ namn: v.trim() || valt.namn })} />
-              </div>
-              {[
-                ["bredd", "Bredd (m)"],
-                ["djup", "Djup (m)"],
-                ["hojd", "Höjd (m)"],
-                ["rotation", "Rotation (grader)"],
-                ["x", "Öster om mitten (m)"],
-                ["z", "Söder om mitten (m)"],
-              ].map(([falt, text]) => (
-                <div className="f" key={falt}>
-                  <label htmlFor={`site-${falt}`}>{text}</label>
-                  <TalFalt id={`site-${falt}`} varde={valt[falt]} etikett={text} onCommit={(v) => andraMatt(falt, v)} />
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
-
         <Card id="site-planvy" title="Planvy" subtitle="Samma objekt sedda ovanifrån. Norr uppåt.">
           <SiteToppvy
             objekt={objekt}
@@ -394,9 +455,7 @@ export function Site() {
             className="rounded-lg"
           />
         </Card>
-      </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-6">
         <Card
           id="site-objekt"
           title="Objekt på siten"
@@ -480,6 +539,61 @@ export function Site() {
         </Card>
       </div>
     </div>
+  );
+}
+
+/** BESS-data för en volym: effekt, energi, laddstatus, status och specifikation.
+ *  Allt är valfritt. Tomt fält tar bort värdet, det blir inte 0. */
+function BessSektion({ o, onTal, onAndra }) {
+  const falt = BESS_FALT[o.typ] || [];
+  const soc = o.soc === undefined || o.soc === null || o.soc === "" ? null : Number(o.soc);
+  return (
+    <section aria-labelledby="site-bess-rubrik" className="mt-4 flex flex-col gap-3 border-0 border-t border-solid border-hairline pt-4">
+      <h4 id="site-bess-rubrik" className="m-0 font-head text-[13px] font-bold text-ink">
+        BESS-data
+      </h4>
+      <div className="frow c2">
+        {falt.map(([nyckel, text]) => (
+          <div className="f" key={nyckel}>
+            <label htmlFor={`site-${nyckel}`}>{text}</label>
+            <TalFalt id={`site-${nyckel}`} varde={o[nyckel]} etikett={text} onCommit={(v) => onTal(nyckel, v)} />
+          </div>
+        ))}
+        <div className="f">
+          <label htmlFor="site-status">Status</label>
+          <select id="site-status" value={o.status || ""} onChange={(e) => onAndra({ status: e.target.value || undefined })}>
+            <option value="">Ej angiven</option>
+            {SITE_STATUS.map(([id, text]) => (
+              <option key={id} value={id}>
+                {text}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      {soc !== null && Number.isFinite(soc) ? (
+        <div className="flex flex-col gap-1">
+          <div className="flex items-baseline justify-between text-[12px] text-ink-soft">
+            <span>Laddstatus</span>
+            <span className="font-bold tabular-nums text-ink">{fmtTal(soc, 0)} %</span>
+          </div>
+          <Meter value={soc} label={`Laddstatus ${o.namn}`} ton={soc < 20 ? "pagar" : "klar"} />
+        </div>
+      ) : null}
+      <div className="f">
+        <label htmlFor="site-spec">Specifikation</label>
+        <Falt
+          id="site-spec"
+          flerrad
+          rows={3}
+          varde={o.spec}
+          etikett="Specifikation"
+          placeholder="Fabrikat, modell, kemi, kylning, anteckningar …"
+          maxLength={500}
+          onCommit={(v) => onAndra({ spec: v.trim() || undefined })}
+        />
+      </div>
+    </section>
   );
 }
 
