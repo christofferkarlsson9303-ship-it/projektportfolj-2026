@@ -165,7 +165,7 @@ Inget område är kritiskt i meningen "trasigt", men tre saker bör åtgärdas i
 | # | Prio | Åtgärd | Varför |
 |---|---|---|---|
 | 1 | **Hög** | Sluta leverera webben som en enda fil: bygg med riktig koddelning (ladda 3D, Excel, PDF och pdfjs först när de behövs), och behåll singlefile som separat bygge om en fristående fil behövs | 6,65 MB / 2,18 MB gzip vid första laddning. `lazy()` har ingen effekt idag |
-| 2 | **Hög** | Visa lagringsfel: om `localStorage.setItem` misslyckas, visa en tydlig varning i statusraden i stället för "sparad" | Tyst dataförlust i lokalt läge |
+| 2 | **Hög** | ✅ Åtgärdad 2026-10-11 (`lib/lokalLagring.js`, e2e `lagring.spec.js`). Visa lagringsfel: om `localStorage.setItem` misslyckas, visa en tydlig varning i statusraden i stället för "sparad" | Tyst dataförlust i lokalt läge |
 | 3 | **Hög** | Rätta kontrasten: använd en mörkare blå för knappbakgrund och text (till exempel `#00728f`, ca 5,6:1 mot vitt) och höj `--ink-faint` till minst 4,5:1 | Primärknappen (180 användningar) och sekundär text underkänns i WCAG AA |
 | 4 | **Medium** | Lägg till RLS-tester (pgTAP eller ett skript mot lokal Supabase) för `allowed_users`, `app_state` och `protokoll` | Policyerna är det som skyddar all data, men ingenting bevakar dem |
 | 5 | **Medium** | Self-hosta typsnitten (filerna finns redan) och lägg till CSP och säkerhetsheaders | Tar bort Google som tredjepart och stänger en lucka |
