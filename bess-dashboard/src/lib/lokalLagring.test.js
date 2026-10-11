@@ -33,4 +33,20 @@ describe("skrivLokalt", () => {
     expect(lokalFelText("blockerad")).toMatch(/^Kunde inte spara/);
     expect(lokalFelText("full")).not.toMatch(/sparad/);
   });
+
+  it("ett uppslag av localStorage som kastar ger blockerad, det kastar inte vidare", () => {
+    const orig = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+    Object.defineProperty(globalThis, "localStorage", {
+      configurable: true,
+      get() {
+        throw Object.assign(new Error("denied"), { name: "SecurityError" });
+      },
+    });
+    try {
+      expect(skrivLokalt("n", {})).toEqual({ ok: false, orsak: "blockerad" });
+    } finally {
+      if (orig) Object.defineProperty(globalThis, "localStorage", orig);
+      else delete globalThis.localStorage;
+    }
+  });
 });
