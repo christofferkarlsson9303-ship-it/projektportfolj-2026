@@ -255,7 +255,7 @@ function Hseq() {
       ? "Rond försenad"
       : h.utanRond
         ? "Rond saknas"
-        : "I moment";
+        : "I fas";
 
   return (
     <Kpi
