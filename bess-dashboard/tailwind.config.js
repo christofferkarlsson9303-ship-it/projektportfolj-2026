@@ -28,6 +28,8 @@ export default {
         "hairline-stark": "var(--hairline-stark)",
 
         "one-bla": "var(--one-bla)",
+        "text-bla": "var(--text-bla)",
+        "knapp-bla": "var(--knapp-bla)",
         "one-djup": "var(--one-djup)",
         turkos: "var(--turkos)",
         duvbla: "var(--duvbla)",

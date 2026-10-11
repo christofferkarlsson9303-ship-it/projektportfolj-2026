@@ -5,14 +5,14 @@
 :root{
   color-scheme:light dark;
   /* ONE Nordic-paletten — oförändrad */
-  --one-bla:#00b6de; --one-djup:#005f76; --turkos:#3cb8ba; --duvbla:#5b9bd5;
+  --one-bla:#00b6de; --knapp-bla:#00728f; --knapp-bla-hover:#005f76; --text-bla:#00728f; --one-djup:#005f76; --turkos:#3cb8ba; --duvbla:#5b9bd5;
   --himmel:#aee0e8; --rod:#ea5549; --orange:#f38d3d;
   --web1:#F5F7F9; --web2:#bdd5d7; --morkgra:#304047;
   --font-h:'Roboto Slab',Arial,serif; --font-b:'Open Sans',Arial,sans-serif;
 
   /* Semantiska ytor — styr ljust/mörkt */
   --surface:#ffffff; --ground:#F5F7F9; --sunken:#eef2f4; --raised:#ffffff;
-  --ink:#263840; --ink-soft:#61757e; --ink-faint:#8a9aa1;
+  --ink:#263840; --ink-soft:#4d6068; --ink-faint:#5a6e77;
   --hairline:#e6edf0; --hairline-stark:#d8e2e6;
   --sidebar-1:#005f76; --sidebar-2:#053f4c; --sidebar-3:#043540;
 
@@ -34,7 +34,7 @@
     --surface:#16272e; --ground:#0d1b21; --sunken:#11222a; --raised:#1b2f37;
     --ink:#e8f1f4; --ink-soft:#9ab0b9; --ink-faint:#7b929c;
     --hairline:#24404a; --hairline-stark:#2e4d58;
-    --web1:#11222a;
+    --web1:#11222a; --text-bla:#00b6de;
     --sidebar-1:#06323e; --sidebar-2:#042833; --sidebar-3:#03202a;
     --ok-bg:#10393b; --ok-ink:#6fd4d0;
     --warn-bg:#3d2a16; --warn-ink:#f0ac6a;
@@ -49,7 +49,7 @@
   --surface:#16272e; --ground:#0d1b21; --sunken:#11222a; --raised:#1b2f37;
   --ink:#e8f1f4; --ink-soft:#9ab0b9; --ink-faint:#7b929c;
   --hairline:#24404a; --hairline-stark:#2e4d58;
-  --web1:#11222a;
+  --web1:#11222a; --text-bla:#00b6de;
   --sidebar-1:#06323e; --sidebar-2:#042833; --sidebar-3:#03202a;
   --ok-bg:#10393b; --ok-ink:#6fd4d0;
   --warn-bg:#3d2a16; --warn-ink:#f0ac6a;
@@ -234,9 +234,9 @@ select,input[type=text],input[type=search],input[type=email],input[type=date],in
   border:1px solid var(--hairline-stark);border-radius:5px;padding:5px 7px;width:100%}
 select:focus,input:focus,textarea:focus{outline:2px solid var(--one-bla);outline-offset:-1px;border-color:var(--one-bla)}
 .btn{font-family:var(--font-b);font-weight:600;font-size:13px;border-radius:6px;padding:8px 15px;
-  cursor:pointer;border:none;background:var(--one-bla);color:#fff}
-.btn:hover{background:#00a3c7}
-.btn.sec{background:transparent;border:2px solid var(--one-bla);color:var(--one-bla);padding:6px 13px}
+  cursor:pointer;border:none;background:var(--knapp-bla);color:#fff}
+.btn:hover{background:var(--knapp-bla-hover)}
+.btn.sec{background:transparent;border:2px solid var(--knapp-bla);color:var(--text-bla);padding:6px 13px}
 .btn.sec:hover{background:var(--info-bg)}
 .btn.mini{font-size:12px;padding:5px 10px}
 .rowbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
@@ -292,7 +292,7 @@ footer{background:var(--morkgra);color:#cfd8dc;font-size:12px;padding:16px 24px;
 .q.ok{border-left:4px solid var(--turkos)}
 .qh{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
 .qt{font-weight:600;font-size:13.5px;flex:1;min-width:220px}
-.qn{font-family:var(--font-h);font-weight:700;color:var(--one-bla);margin-right:7px}
+.qn{font-family:var(--font-h);font-weight:700;color:var(--text-bla);margin-right:7px}
 .qa{margin-top:11px;font-size:12.5px;background:var(--sunken);border-radius:6px;padding:10px 12px;color:#3d5158}
 .q.flag .qa{background:var(--bad-bg);color:#8f2a22}
 .qa .ref{display:block;margin-top:6px;font-size:11px;color:var(--ink-soft);font-weight:600}
@@ -965,7 +965,7 @@ footer a{color:#fff}
   #aviseringutskrift{display:block!important}
   #aviseringutskrift .avisering{border:none;padding:0;max-width:none;background:#fff}
   #aviseringutskrift .avhuvud{border-bottom:3px solid #00b6de}
-  #aviseringutskrift .avavs{color:#00b6de}
+  #aviseringutskrift .avavs{color:#00728f}
   #aviseringutskrift .avhuvud h2{font-size:17pt;color:#141413}
   #aviseringutskrift .avrub{font-size:11pt;color:#005f76;border-bottom:1px solid #ccc;
     margin:14pt 0 6pt;page-break-after:avoid}
@@ -1105,7 +1105,7 @@ tr.lastrad:hover{opacity:.8}
   #rapportutskrift{display:block!important}
   #rapportutskrift .rapark{border:none;box-shadow:none;padding:0;max-width:none;background:#fff}
   #rapportutskrift .raphuvud{border-bottom:3px solid #00b6de}
-  #rapportutskrift .rapavs{color:#00b6de}
+  #rapportutskrift .rapavs{color:#00728f}
   #rapportutskrift .raphuvud h2{font-size:19pt;color:#141413}
   #rapportutskrift .rapdel{margin-bottom:18pt;page-break-inside:avoid}
   #rapportutskrift .rapdel h3{font-size:12.5pt;color:#005f76;border-bottom:1px solid #ccc}

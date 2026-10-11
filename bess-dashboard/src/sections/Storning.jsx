@@ -470,7 +470,7 @@ export function Storning() {
                 render: (s) => (
                   <button
                     type="button"
-                    className="border-0 bg-transparent p-0 font-bold text-one-bla underline decoration-dotted"
+                    className="border-0 bg-transparent p-0 font-bold text-text-bla underline decoration-dotted"
                     onClick={() => setOppen(oppen === s.id ? null : s.id)}
                     aria-expanded={oppen === s.id}
                   >

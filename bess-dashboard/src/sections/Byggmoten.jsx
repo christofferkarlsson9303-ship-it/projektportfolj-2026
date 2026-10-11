@@ -389,7 +389,7 @@ function Moteformular({ m, p }) {
             >
               <div className="flex items-center gap-3">
                 <h4 id={`para-${m.id}-${nr}`} className="m-0 flex-1 font-body text-[13.5px] font-semibold text-ink">
-                  <span className="mr-1 font-head font-bold text-one-bla">§{nr}</span> {rubrik}
+                  <span className="mr-1 font-head font-bold text-text-bla">§{nr}</span> {rubrik}
                 </h4>
                 <button
                   type="button"
@@ -539,7 +539,7 @@ export function Byggmoten() {
                 render: (x) => (
                   <button
                     type="button"
-                    className="border-0 bg-transparent p-0 font-bold text-one-bla underline decoration-dotted"
+                    className="border-0 bg-transparent p-0 font-bold text-text-bla underline decoration-dotted"
                     onClick={() => setOppet(x.id)}
                     aria-current={m && x.id === m.id ? "true" : undefined}
                   >
