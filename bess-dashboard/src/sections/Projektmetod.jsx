@@ -39,7 +39,7 @@ export function Projektmetod() {
           <p className="m-0 text-sm">{steg.text}</p>
           <p className="m-0 text-sm text-ink-soft"><b>Spara som bevis:</b> {steg.bevis}.</p>
           {p ? <p className="m-0 text-xs text-ink-soft">{passerade} av {relevanta.length} fasgrindar passerade enligt byggöversikten. Provresultat granskas separat.</p> : null}
-          <div className="flex flex-wrap gap-2">{steg.vyer.map(knapp)}{p ? <button type="button" className="btn sec mini" onClick={() => { setValtProjekt(p.id); oppnaPost("epc", `fas-${steg.faser[0]}`); }}>Visa stegets byggfaser</button> : null}</div>
+          <div className="flex flex-wrap gap-2">{steg.vyer.map(knapp)}{p ? <button type="button" className="btn sec mini" onClick={() => { setValtProjekt(p.id); oppnaPost("epc", `fas-${steg.faser[0]}`); }}>Visa stegets byggmoment</button> : null}</div>
         </Card></li>;
       })}</ol>
     </section>

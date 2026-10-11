@@ -65,6 +65,26 @@ function ejVunnetKrav(u, nr) {
   return { nr, falt, tabeller: [], punkter: [], totalt, klara: totalt - falt.length, faltKlart: !falt.length, klar: nr === 1 && !falt.length };
 }
 
+/** Obligatoriska punkter på en enskild guidesida: hur många som finns och hur många som är klara. */
+export function stegKrav(u, steg) {
+  let totalt = 0;
+  let oppna = 0;
+  for (const f of steg.falt || []) {
+    if (!f.obligatoriskt || !faltSynligt(f, u)) continue;
+    totalt += 1;
+    if (!ifylld(u.v?.[f.id], f)) oppna += 1;
+  }
+  if (steg.tabell?.obligatorisk) {
+    totalt += 1;
+    const rader = u.rader?.[steg.tabell.id] || [];
+    if (!rader.some((r) => steg.tabell.obligatorisk.every((k) => (r[k] || "").trim()))) oppna += 1;
+  }
+  const kritiska = stegPunkter(steg).filter((p) => p.kritisk);
+  totalt += kritiska.length;
+  oppna += kritiska.filter((p) => !arAvbockad(u, p)).length;
+  return { totalt, klara: totalt - oppna };
+}
+
 /** Antal faser i följd, från fas 1, som är godkända. */
 export function godkandaFaser(u) {
   let n = 0;

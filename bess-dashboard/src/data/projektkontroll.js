@@ -105,7 +105,7 @@ export const PROJEKTMALLAR = steg.map(([titel, rader], fas) => {
         : fas === 13 ? [egna[0], ...FALTMALLAR[3].punkter, egna[1]] : egna;
   return ({
   id: `projekt-${fas}`, nr: fas + 1, titel, kort: titel, utrustning: "Projektets avtalade kontrollomfattning",
-  flode: `EPC-fas ${fas}: ${FASER[fas].titel}. ${FASER[fas].grind.kod}: ${FASER[fas].grind.text} Dokumentera klartecken enligt godkänd kontrollplan.`,
+  flode: `Moment ${fas}: ${FASER[fas].titel}. ${FASER[fas].grind.kod}: ${FASER[fas].grind.text} Dokumentera klartecken enligt godkänd kontrollplan.`,
   punkter,
 });
 });

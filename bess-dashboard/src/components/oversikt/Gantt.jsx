@@ -149,7 +149,7 @@ export function Gantt({ i }) {
             aria-pressed={doljKlara}
             onClick={() => setDoljKlara((v) => !v)}
           >
-            {doljKlara ? "Visa alla 16 faser" : "Dölj passerade faser"}
+            {doljKlara ? "Visa alla 16 moment" : "Dölj passerade moment"}
           </button>
         ) : null}
       </div>
@@ -238,7 +238,7 @@ export function Gantt({ i }) {
                       type="button"
                       className={`ov-gantt-rad ov-gantt-fas ${f.status}${ostyrkt ? " ostyrkt" : ""}${kritiska.has(f.fas.nr) ? " kritisk" : ""}`}
                       onClick={() => oppnaPost("epc", `fas-${f.fas.nr}`)}
-                      aria-label={`Fas ${f.fas.nr} ${f.fas.titel}: ${statusText}, ${
+                      aria-label={`Moment ${f.fas.nr} ${f.fas.titel}: ${statusText}, ${
                         harDatum ? `${f.start} till ${f.slut}` : "ej planerad"
                       }, ${f.klara} av ${f.punkter} punkter klara, ${grindText}${lageText ? `, ${lageText}` : ""}${
                         saknasText ? `. ${saknasText}` : ""
@@ -345,11 +345,10 @@ export function Gantt({ i }) {
           </div>
 
           {ostyrkta.length ? (
-            <div className="ov-varning warn m-0" role="note" aria-label="Faser som inte är styrkta">
+            <div className="ov-varning warn m-0" role="note" aria-label="Moment som inte är styrkta">
               <FasLage lage="fardigt" />
               <span>
-                {ostyrkta.length} {ostyrkta.length === 1 ? "fas räknas" : "faser räknas"} som klar
-                {ostyrkta.length === 1 ? "" : "a"} utan dokumenterat klartecken:{" "}
+                {ostyrkta.length} moment räknas som {ostyrkta.length === 1 ? "klart" : "klara"} utan dokumenterat klartecken:{" "}
                 {ostyrkta.map((f) => `${f.fas.nr} ${f.fas.kort}`).join(", ")}. Fakturerad milstolpe visar
                 betalning, inte utförd kontroll.
               </span>
@@ -360,7 +359,7 @@ export function Gantt({ i }) {
             <p className="ov-varning m-0">
               <FasStatus status="sen" />
               <span>
-                {sena.map((f) => `Fas ${f.fas.nr} ${f.fas.kort}`).join(", ")}{" "}
+                {sena.map((f) => `Moment ${f.fas.nr} ${f.fas.kort}`).join(", ")}{" "}
                 har passerat sitt slutdatum utan passerad grind.
               </span>
             </p>

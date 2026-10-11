@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { oppna } from "./hjalpare.js";
 
-const GANTT = "Gantt över byggfaser, milstolpar och leveranser";
+const GANTT = "Gantt över byggmoment, milstolpar och leveranser";
 
 /** Staplar och romber bär datum i sin etikett — spårens fäll-knappar gör det inte. */
 const staplar = (gantt) => gantt.getByRole("button", { name: /\d{4}-\d{2}-\d{2}/ });

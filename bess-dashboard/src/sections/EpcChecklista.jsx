@@ -125,7 +125,7 @@ function Guide({ pid, mal }) {
         id="epc-steg"
         eyebrow="Guiden"
         title="Steg för steg — från affär till garantitid"
-        lead={`Varje fas avslutas med en grind: nästa fas startar inte förrän grinden är passerad. Bocka av punkterna för ${projektnamn} allt eftersom, sätt det som inte gäller som ej aktuellt och kommentera avvikelser och lärdomar direkt på punkten — de blir erfarenhetslistan.`}
+        lead={`Varje moment avslutas med en grind: nästa moment startar inte förrän grinden är passerad. Bocka av punkterna för ${projektnamn} allt eftersom, sätt det som inte gäller som ej aktuellt och kommentera avvikelser och lärdomar direkt på punkten — de blir erfarenhetslistan.`}
       >
         <ul className="epc-legend" aria-label="Markeringar">
           {Object.entries(MARKERINGAR).map(([k, m]) => (
@@ -252,7 +252,7 @@ export function EpcChecklista() {
             id="epc-rubrik"
             className="min-w-0 max-w-2xl flex-1"
             title="Så byggs en batteripark"
-            lead="Välj projekt. Öppna rätt fas och följ upp arbetet. Spara verkliga provresultat i fasens egenkontroller. En grind är ett dokumenterat klartecken att gå vidare."
+            lead="Välj projekt. Öppna rätt moment och följ upp arbetet. Spara verkliga provresultat i momentets egenkontroller. En grind är ett dokumenterat klartecken att gå vidare."
           >
             <p className="m-0 text-xs font-semibold text-ink-faint">
               Mallversion {VERSION.nr} · {VERSION.datum}. Bygger på Batch C-underlag. Kontrollera mot ditt projekts kontrakt och tillverkarmanualer.
@@ -260,7 +260,7 @@ export function EpcChecklista() {
           </SectionHeading>
           <ul aria-label="Guiden i siffror" className="m-0 grid list-none grid-cols-2 gap-4 p-0 sm:grid-cols-4">
             {[
-              [SUMMERING.faser, "faser med grind"],
+              [SUMMERING.faser, "moment med grind"],
               [SUMMERING.punkter, "kontrollpunkter"],
               [SUMMERING.hallpunkter, "hållpunkter"],
               [SUMMERING.motsagelser, "motsägelser att reda ut"],
@@ -277,7 +277,7 @@ export function EpcChecklista() {
       <Card
         id="epc-lage"
         title="Lägesbild — var projekten står"
-        subtitle="En ruta per fas. Välj ett projekt för att se läget nu, status per fas och guiden för just det projektet."
+        subtitle="En ruta per moment. Välj ett projekt för att se läget nu, status per moment och guiden för just det projektet."
       >
         <Portfoljlage valt={pid} onValj={setValtProjekt} />
         <ul className="ov-legend epc-lage-legend" aria-label="Lägen">
@@ -298,7 +298,7 @@ export function EpcChecklista() {
       <Card
         id="epc-summering"
         title={`Status — ${projektnamn}`}
-        subtitle="Exakt vad som är gjort och vad som återstår, per fas. En punkt är klar när den bockats av eller när fasens grind är passerad; det som inte gäller projektet räknas inte."
+        subtitle="Exakt vad som är gjort och vad som återstår, per moment. En punkt är klar när den bockats av eller när momentets grind är passerad; det som inte gäller projektet räknas inte."
       >
         <Summering pid={pid} onVisaFas={visaFas} />
       </Card>
@@ -332,7 +332,7 @@ export function EpcChecklista() {
       <Card
         id="epc-milstolpar"
         title="Betalmilstolpar"
-        subtitle="Sju betalningar kopplade till grindarna. Rutin: avisering (Excel) → beställarens OK → faktura i IFS. Faser med en betalning har orange kant i guiden."
+        subtitle="Sju betalningar kopplade till grindarna. Rutin: avisering (Excel) → beställarens OK → faktura i IFS. Moment med en betalning har orange kant i guiden."
       >
         <Milstolpstabell pid={pid} />
       </Card>

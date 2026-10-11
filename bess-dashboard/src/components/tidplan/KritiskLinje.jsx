@@ -43,7 +43,7 @@ export function KritiskLinje({ pid, projektNamn }) {
     <Card
       id="tp-kritisk"
       title={`Blir vi klara i tid – ${projektNamn}`}
-      subtitle="Räknat fas för fas. En försenad fas flyttar fram de faser som väntar på den, ända fram till slutbesiktningen."
+      subtitle="Räknat moment för moment. Ett försenat moment flyttar fram de moment som väntar på det, ända fram till slutbesiktningen."
       badge={<StatusBadge ton={lage.ton} label={lage.text} />}
       action={
         k ? (
@@ -74,8 +74,8 @@ export function KritiskLinje({ pid, projektNamn }) {
             />
             <StatTile
               label="Styr slutdatumet"
-              value={kedja.length ? `${kedja.length} faser` : "—"}
-              hint={kedja.length ? kedja.map((f) => f.nr).join(" → ") : "inga återstående faser"}
+              value={kedja.length ? `${kedja.length} moment` : "—"}
+              hint={kedja.length ? kedja.map((f) => f.nr).join(" → ") : "inga återstående moment"}
             />
           </div>
 
@@ -88,21 +88,21 @@ export function KritiskLinje({ pid, projektNamn }) {
 
           {k.forsening > 0 ? (
             <Callout ton="bad">
-              <b>Beräknat slut är {k.forsening} dagar efter kontraktets färdigdatum.</b> Faserna som styr:{" "}
+              <b>Beräknat slut är {k.forsening} dagar efter kontraktets färdigdatum.</b> Momenten som styr:{" "}
               {kedja.map((f) => `${f.nr} ${f.kort}`).join(" → ")}. Kontrollera om ni har rätt till tidsförlängning och
               meddela beställaren skriftligt i tid. Fristen står under Kontraktet.
             </Callout>
           ) : null}
 
           <div className="overflow-x-auto">
-            <table className="kl-tabell" aria-label="Fas för fas">
+            <table className="kl-tabell" aria-label="Moment för moment">
               <thead>
                 <tr>
-                  <th scope="col">Fas</th>
+                  <th scope="col">Moment</th>
                   <th scope="col">{k.referens === "baslinje" ? "Ursprunglig plan klar" : "Standardplan klar"}</th>
                   <th scope="col">Beräknat klart</th>
                   <th scope="col" className="num">Försening</th>
-                  <th scope="col" className="num" title="Hur många dagar fasen kan försenas utan att slutdatumet flyttas">Marginal</th>
+                  <th scope="col" className="num" title="Hur många dagar momentet kan försenas utan att slutdatumet flyttas">Marginal</th>
                   <th scope="col">Väntar på</th>
                 </tr>
               </thead>
@@ -129,7 +129,7 @@ export function KritiskLinje({ pid, projektNamn }) {
           {k.faser.some((f) => f.klar) ? (
             <div>
               <button type="button" className="btn sec mini" aria-expanded={visaKlara} onClick={() => setVisaKlara((v) => !v)}>
-                {visaKlara ? "Dölj klara faser" : `Visa klara faser (${k.faser.filter((f) => f.klar).length})`}
+                {visaKlara ? "Dölj klara moment" : `Visa klara moment (${k.faser.filter((f) => f.klar).length})`}
               </button>
             </div>
           ) : null}

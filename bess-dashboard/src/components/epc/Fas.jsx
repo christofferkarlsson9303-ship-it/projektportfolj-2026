@@ -142,7 +142,7 @@ function IProjektet({ lage, pid, projektnamn }) {
   const satt = (falt, varde) => dispatch({ type: "EPC_FAS", pid, fas: f.nr, falt, varde });
 
   return (
-    <aside className="epc-iprojekt" aria-label={`Fas ${f.nr} i ${projektnamn}`}>
+    <aside className="epc-iprojekt" aria-label={`Moment ${f.nr} i ${projektnamn}`}>
       <div className="epc-iprojekt-huvud">
         <b>I {projektnamn}</b>
         <FasStatus status={lage.status} />
@@ -191,7 +191,7 @@ function IProjektet({ lage, pid, projektnamn }) {
           <DatumFalt
             id={`fs-${pid}-${f.nr}`}
             varde={rad?.start || ""}
-            etikett={`Start för fas ${f.nr}`}
+            etikett={`Start för moment ${f.nr}`}
             onCommit={(v) => satt("start", v)}
           />
         </div>
@@ -200,7 +200,7 @@ function IProjektet({ lage, pid, projektnamn }) {
           <DatumFalt
             id={`fe-${pid}-${f.nr}`}
             varde={rad?.slut || ""}
-            etikett={`Slut för fas ${f.nr}`}
+            etikett={`Slut för moment ${f.nr}`}
             onCommit={(v) => satt("slut", v)}
           />
         </div>
@@ -235,7 +235,7 @@ function IProjektet({ lage, pid, projektnamn }) {
           id={`fa-${pid}-${f.nr}`}
           flerrad
           varde={rad?.anteckning || ""}
-          etikett={`Anteckningar för fas ${f.nr}`}
+          etikett={`Anteckningar för moment ${f.nr}`}
           onCommit={(v) => satt("anteckning", v)}
         />
       </div>
@@ -265,7 +265,7 @@ export function Fasruta({ lage, pid, projektnamn, oppen, onVaxla, filter, tvinga
           {f.nr}
         </span>
         <span className="epc-fastitel">
-          <span className="sr-only">Fas {f.nr}: </span>
+          <span className="sr-only">Moment {f.nr}: </span>
           <b>{f.titel}</b>
           <span className="epc-fasdatum">{f.syfte}</span>
         </span>

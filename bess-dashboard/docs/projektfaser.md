@@ -109,3 +109,15 @@ PDF för inlämning är spärrad (`pdfSparr`) bara när ingen fas är godkänd �
 - **Kick-out och slutrapport** (fas 8, sidan Ekonomiskt avslut och lärdomar): fälten `kickout*`, `lardomar`, `slutrapportResultat` och `avslutAta` enligt metoden 6.9.
 - **Trafikljus per fas**: projektledarens egen bedömning (grön, gul, röd) med kommentar, satt på sista sidan under Faserna och bara för upplåsta faser. Det sparas i utkastet (`trafikljus`) och visas i PDF-huvudet. Det räknas inte fram, eftersom metoden låter projektledaren bedöma.
 - **Projektkortet** i Översikt har knappen Öppna projektstart, som öppnar guiden för just det projektet (`oppnaProjektstart` i UiProvider).
+
+## Begrepp: fas, moment och etapp
+
+Tre olika indelningar fanns under samma ord. Nu har varje sin egen term:
+
+| Term | Vad | Antal | Var |
+|---|---|---|---|
+| **Fas** | Projektets styrning i Projektstart och på projektkorten. Styr status och låsning | 8 | Projektstart, Översikt, Risker |
+| **Moment** | EPC-checklistans steg, vart och ett med en grind (G0–G15) | 16 | Bygga batteripark, Gantt, Nästa uppgift, Kritisk linje, Idag |
+| **Etapp** | Byggplanens delar med milstolpar | 9 | Tidplan (byggplanen) |
+
+Bara texten som användaren ser är ändrad. Interna namn (`fas`, `faslage`, `fas-7`-ankare, `EPC_FAS`) är oförändrade, så lagrad data och länkar fungerar som förut. Anteckningar och ledtider talar om "moment 13 Idrifttagning", aldrig "fas 13".

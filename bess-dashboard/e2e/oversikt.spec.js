@@ -48,7 +48,7 @@ test("Gantt-schemat visar 16 faser, grindar och M1–M7 för valt projekt", asyn
   await expect(gantt.getByRole("list", { name: "Betalmilstolpar" }).getByRole("listitem")).toHaveCount(7);
 
   // Passerade faser kan döljas — resten ska vara kvar.
-  await gantt.getByRole("button", { name: "Dölj passerade faser" }).click();
+  await gantt.getByRole("button", { name: "Dölj passerade moment" }).click();
   const kvar = await gantt.locator("button.ov-gantt-fas").count();
   expect(kvar).toBeGreaterThan(0);
   expect(kvar).toBeLessThan(16);

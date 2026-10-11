@@ -15,14 +15,14 @@ export function EgenkontrollLage({ pid, fas }) {
   const scopes = [...new Set(["Hela anläggningen", ...rader.map((r) => r.omfattning).filter(Boolean)])];
   const index = new Map(rader.map((r) => [r.id, r]));
   const sum = kontrollSummering([{ ...mall, punkter: mall.punkter.map((p) => ({ ...p, kontroll: index.get(kontrollId(pid, omfattning, p.id)) })) }], PROJEKTKONTROLL_REVISION);
-  return <section className="my-3 rounded-sm border border-solid border-hairline bg-surface p-3" aria-label={`Egenkontroller i fas ${fas}`}>
+  return <section className="my-3 rounded-sm border border-solid border-hairline bg-surface p-3" aria-label={`Egenkontroller i moment ${fas}`}>
     <b className="text-sm">Verkliga egenkontroller</b>
-    <label className="mt-2 flex flex-col gap-1 text-xs">Kontrollomfattning för fas {fas}<select value={omfattning} onChange={(e) => setOmfattning(e.target.value)}>{scopes.map((s) => <option key={s}>{s}</option>)}</select></label>
+    <label className="mt-2 flex flex-col gap-1 text-xs">Kontrollomfattning för moment {fas}<select value={omfattning} onChange={(e) => setOmfattning(e.target.value)}>{scopes.map((s) => <option key={s}>{s}</option>)}</select></label>
     <p className="my-2 text-sm">{sum.klara} av {sum.totalt} kompletta · {sum.oppna} öppna · {sum.avvikelser} Ej OK</p>
-    <p className="my-2 text-xs text-ink-soft">Samma sparade resultat som i fältmaterialet. Fasens bockar och grind är separat uppföljning.</p>
+    <p className="my-2 text-xs text-ink-soft">Samma sparade resultat som i fältmaterialet. Momentets bockar och grind är separat uppföljning.</p>
     <div className="flex flex-wrap gap-2">
-      <button type="button" className="btn sec mini" onClick={() => snabb.fasblankett(pid, fas, { enhet: omfattning === "Hela anläggningen" ? "" : omfattning })}>Skriv ut fasens blankett</button>
-      <button type="button" className="btn sec mini" onClick={() => oppnaFaltmaterial({ mallpaket: "projekt", mallIds: [mall.id], enhet: omfattning === "Hela anläggningen" ? "" : omfattning })}>Registrera egenkontroller – fas {fas}</button>
+      <button type="button" className="btn sec mini" onClick={() => snabb.fasblankett(pid, fas, { enhet: omfattning === "Hela anläggningen" ? "" : omfattning })}>Skriv ut momentets blankett</button>
+      <button type="button" className="btn sec mini" onClick={() => oppnaFaltmaterial({ mallpaket: "projekt", mallIds: [mall.id], enhet: omfattning === "Hela anläggningen" ? "" : omfattning })}>Registrera egenkontroller – moment {fas}</button>
     </div>
   </section>;
 }

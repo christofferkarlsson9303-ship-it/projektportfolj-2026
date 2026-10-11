@@ -103,7 +103,7 @@ test("ett annat projekt väljs i lägesbilden och guiden följer med", async ({ 
   await expect(projektrad(page, /^36038 Alvesta/)).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByLabel("Startdatum för Alvesta Batteripark")).toBeVisible();
   // Faserna är stängda <details>, så rutan söks på attributet.
-  await expect(page.locator('aside[aria-label="Fas 0 i 36038 Alvesta"]')).toBeAttached();
+  await expect(page.locator('aside[aria-label="Moment 0 i 36038 Alvesta"]')).toBeAttached();
 });
 
 test("version 1.2: källgenomgången, nyckelvärdena och de tolv motsägelserna finns med", async ({ page }) => {
@@ -132,7 +132,7 @@ test("sökningen hittar lärdomen om CT-fönster", async ({ page }) => {
 test("en grind markeras passerad, fasen byter läge och det loggas", async ({ page }) => {
   const fas = page.locator("#fas-11");
   await fas.locator("summary").click();
-  const iProjektet = fas.getByRole("complementary", { name: "Fas 11 i 36037 Växjö" });
+  const iProjektet = fas.getByRole("complementary", { name: "Moment 11 i 36037 Växjö" });
   await iProjektet.getByRole("button", { name: "Markera G11 passerad idag" }).click();
   await expect(fas.locator("summary")).toContainText("Grind passerad");
   await expect(iProjektet).toContainText(/G11 passerad \d{4}-\d{2}-\d{2}/);
@@ -166,7 +166,7 @@ test("en ledtid markeras klar i förväg och går att ångra", async ({ page }) 
 
 test("Gantt-schemats fasrad öppnar fasen i guiden", async ({ page }) => {
   await gaTill(page, "Översikt");
-  await page.getByRole("button", { name: /^Fas 12 Anslutning BESS/ }).click();
+  await page.getByRole("button", { name: /^Moment 12 Anslutning BESS/ }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(KAPITEL);
   await expect(page.locator("#fas-12")).toHaveAttribute("open", "");
 });

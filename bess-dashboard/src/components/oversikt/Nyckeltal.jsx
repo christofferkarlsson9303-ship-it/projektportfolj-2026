@@ -145,7 +145,7 @@ function Hallpunkter() {
   }, [state]);
 
   const ton = !h.projekt.length ? "" : h.iSenFas ? "bad" : h.kommande.length ? "warn" : "ok";
-  const status = !h.projekt.length ? null : h.iSenFas ? "I försenad fas" : h.kommande.length ? "Bevaka" : "Inga just nu";
+  const status = !h.projekt.length ? null : h.iSenFas ? "I försenat moment" : h.kommande.length ? "Bevaka" : "Inga just nu";
   const namn = (pid) => {
     const p = state.projekt.find((x) => x.id === pid);
     return p ? kortNamn(p) : pid;

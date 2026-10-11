@@ -830,7 +830,7 @@ export const FASER: Fas[] = [
 /** Löpande genom hela projektet — ÄTA-disciplin, styrning och ekonomi varje vecka. */
 export const LOPANDE: Lopande = {
   titel: "Löpande genom hela projektet",
-  syfte: "ÄTA-disciplin, styrning och ekonomi – varje vecka, i varje fas.",
+  syfte: "ÄTA-disciplin, styrning och ekonomi – varje vecka, i varje moment.",
   sektioner: [
     {
       namn: "ÄTA / UR-disciplin (ABT 06)",

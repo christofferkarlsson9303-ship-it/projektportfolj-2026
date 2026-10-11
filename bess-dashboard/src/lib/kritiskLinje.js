@@ -230,7 +230,7 @@ export function drivtext(f, faser) {
   if (d.typ === "leverans") return d.text;
   if (d.typ === "fas") {
     const fore = faser.find((x) => x.nr === d.nr);
-    return `Fas ${d.nr} ${fore?.kort || ""} (${d.beroende.typ === "SS" ? "att den startar" : "att den blir klar"})`.trim();
+    return `Moment ${d.nr} ${fore?.kort || ""} (${d.beroende.typ === "SS" ? "att den startar" : "att den blir klar"})`.trim();
   }
   return f.egenPlan ? "Egna datum" : "Enligt plan";
 }

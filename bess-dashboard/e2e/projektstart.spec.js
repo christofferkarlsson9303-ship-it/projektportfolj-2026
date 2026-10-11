@@ -98,6 +98,15 @@ test("projektet startar i fas 1 och senare faser är låsta", async ({ page }) =
   await forvantaLast(page, 2, "Avropsacceptans", false);
   await forvantaLast(page, SISTA, "Granska och skapa", false);
 
+  // Fas 1 är stor och delas i två delar med egen räknare i navigeringen (bara synlig i bred vy).
+  const nav = page.getByRole("navigation", { name: "Stegen i projektstarten" });
+  if (await nav.getByRole("button", { name: "Projektkort" }).isVisible()) {
+    await expect(nav.getByText("Anbud och beslut")).toBeVisible();
+    await expect(nav.getByText("Kontrakt och uppstart")).toBeVisible();
+  }
+  await expect(page.getByText(/Utkastet sparas automatiskt i den här webbläsaren/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Gå till Granska och skapa" })).toBeVisible();
+
   // Det som återstår för att låsa upp fas 2 står överst.
   await expect(page.getByText(/Fas 1 · Anbud: \d+ obligatoriska punkter kvar för att låsa upp Fas 2 \(Planering\)/)).toBeVisible();
 

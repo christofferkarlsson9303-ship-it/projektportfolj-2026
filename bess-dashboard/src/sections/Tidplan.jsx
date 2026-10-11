@@ -228,7 +228,7 @@ export function Tidplan() {
           datum: f.start,
           slutdatum: f.slut,
           lage: FAS_TILL_LAGE[f.status] || "planerad",
-          typ: "Byggfas",
+          typ: "Byggmoment",
           anteckning: f.fas.syfte,
           kalla: { typ: "fas", pid: pr.id, nr: f.fas.nr },
         }));
@@ -251,7 +251,7 @@ export function Tidplan() {
         id: pr.id,
         namn: (pr.nr ? pr.nr + " " : "") + pr.namn,
         grupper: [
-          { id: "faser", namn: "Byggfaser", poster: faser },
+          { id: "faser", namn: "Byggmoment", poster: faser },
           { id: "handelser", namn: "Milstolpar och leveranser", poster: handelser },
         ],
       };
@@ -334,7 +334,7 @@ export function Tidplan() {
         id="tp-tidslinje"
         className="mb-4 lg:mb-6"
         title="Tidplan — Gantt"
-        subtitle="Byggfaser, milstolpar och leveranser per projekt. Peka på en stapel för detaljer, klicka för att ändra. Orange linje är i dag."
+        subtitle="Byggmoment, milstolpar och leveranser per projekt. Peka på en stapel för detaljer, klicka för att ändra. Orange linje är i dag."
         action={
           <Vyvaljare
             etikett="Omfattning"
@@ -349,7 +349,7 @@ export function Tidplan() {
       >
         <Tidslinje
           rader={tidslinjeRader}
-          etikett="Gantt över byggfaser, milstolpar och leveranser"
+          etikett="Gantt över byggmoment, milstolpar och leveranser"
           redigera={(post, rad) => <Redigering post={post} rad={rad} />}
         />
       </Card>

@@ -51,7 +51,7 @@ export const FAS_STATUS = {
  *                datum — det dokumenterade klartecknet för nästa steg
  *  En fakturerad milstolpe visar betalningsläget men styrker ingenting. */
 export const FAS_LAGE = {
-  godkand: ["ok", "Fas godkänd"],
+  godkand: ["ok", "Moment godkänt"],
   verifierad: ["info", "Kontroll verifierad"],
   fardigt: ["warn", "Arbete färdigt – ej verifierat"],
 };
@@ -64,7 +64,7 @@ export const LEDTID_STATUS = {
   bevaka: ["info", "Bevaka"],
   odaterad: ["", "Datum saknas"],
   klar: ["ok", "Klar"],
-  passerad: ["", "Fasen passerad"],
+  passerad: ["", "Momentet passerat"],
 };
 
 /** Kommentarstyper på en punkt. Avvikelser och lärdomar blir erfarenheter. */
@@ -496,21 +496,21 @@ export function nastaUppgifter(state, pid, nu = idag()) {
     const oppna = PUNKTER_I_FAS[f.fas.nr].filter((p) => oppen(p.id));
     for (const p of oppna) lagg({ typ: "punkt", punkt: p, fas: f, ton, orsak });
     if (!oppna.length && !f.grind.passerad)
-      lagg({ typ: "grind", fas: f, ton: "ok", orsak: `Alla punkter i fas ${f.fas.nr} är klara — dags för ${f.fas.grind.kod}` });
+      lagg({ typ: "grind", fas: f, ton: "ok", orsak: `Alla punkter i moment ${f.fas.nr} är klara — dags för ${f.fas.grind.kod}` });
   };
 
   const sena = faser.filter((f) => f.status === "sen");
   const pagar = faser.filter((f) => f.status === "pagar");
-  for (const f of sena) fasPoster(f, `Fas ${f.fas.nr} är försenad`, "bad");
-  for (const f of pagar) fasPoster(f, `Fas ${f.fas.nr} pågår`, "");
+  for (const f of sena) fasPoster(f, `Moment ${f.fas.nr} är försenat`, "bad");
+  for (const f of pagar) fasPoster(f, `Moment ${f.fas.nr} pågår`, "");
 
   const ejPasserade = faser.filter((f) => !f.grind.passerad && f.status !== "sen" && f.status !== "pagar");
   if (!sena.length && !pagar.length && ejPasserade.length) {
     const f = ejPasserade[0];
-    fasPoster(f, f.start ? `Fas ${f.fas.nr} startar ${datumKort(f.start)}` : `Nästa fas: ${f.fas.nr}`, "");
+    fasPoster(f, f.start ? `Moment ${f.fas.nr} startar ${datumKort(f.start)}` : `Nästa moment: ${f.fas.nr}`, "");
   } else if (ejPasserade.length) {
     const f = ejPasserade[0];
-    fasPoster(f, f.start ? `Förbered fas ${f.fas.nr} — startar ${datumKort(f.start)}` : `Förbered fas ${f.fas.nr}`, "");
+    fasPoster(f, f.start ? `Förbered moment ${f.fas.nr} — startar ${datumKort(f.start)}` : `Förbered moment ${f.fas.nr}`, "");
   }
   return ut;
 }

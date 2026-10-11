@@ -11,7 +11,7 @@ export const BATTERIPARK_MILSTOLPAR = [
         {n:"startmote", t:"Startmöte hållet och protokoll signerat", h:"Se Rutiner 2.1"} ] } ] },
 
   { id:"M2", titel:"M2 · Site Establishment — 25 %", grupper:[
-    { namn:"Fas 1 — Etablering",
+    { namn:"Etapp 1 — Etablering",
       info:"Ansvarig: UE mark / ONE Nordic. Handlingar: APD-plan godkänd av beställaren, startbesked, TA-plan, bygglov.",
       punkter:[
         {n:"startbesked", t:"Startbesked (byggnadsnämnd) mottaget — finns fysiskt på siten", h:"Utan det är det STOPP"},
@@ -26,7 +26,7 @@ export const BATTERIPARK_MILSTOLPAR = [
         {n:"avfall", t:"Sorterat byggavfallssystem på plats"} ] } ] },
 
   { id:"M3", titel:"M3 · Schakt + kabeltester — 25 %", grupper:[
-    { namn:"Fas 2 — Schakt och masshantering",
+    { namn:"Etapp 2 — Schakt och masshantering",
       info:"Ansvarig: UE mark. Handlingar: utsättningsritning, geoteknikrapport, kanalisationsritning.",
       punkter:[
         {n:"utsattning", t:"Utsättning genomförd av mätingenjör och godkänd av platschef", h:"Ingen grävmaskin startar utan godkänd utsättning"},
@@ -36,7 +36,7 @@ export const BATTERIPARK_MILSTOLPAR = [
         {n:"kanalisation", t:"Kanalisationsritning bekräftad i slutversion (ej utkast)"},
         {n:"rorplugg", t:"Alla rörändar pluggade direkt efter förläggning"},
         {n:"gpsror", t:"GPS-foto av rörläge taget innan återfyllning"} ] },
-    { namn:"Fas 5 — Kabelförläggning och kabeltester",
+    { namn:"Etapp 5 — Kabelförläggning och kabeltester",
       info:"Testprotokoll skickas till beställaren omedelbart efter test — krav för att M3 ska betalas ut.",
       punkter:[
         {n:"bottenlag", t:"Bottenlag sand/finmaterial i alla kabelgravar"},
@@ -50,14 +50,14 @@ export const BATTERIPARK_MILSTOLPAR = [
         {n:"klartecken", t:"Platschef har gett klartecken för återfyllning"} ] } ] },
 
   { id:"M4", titel:"M4 · Betongarbeten — 20 %", grupper:[
-    { namn:"Fas 3 — Jordtagssystem",
+    { namn:"Etapp 3 — Jordtagssystem",
       info:"Jordtagssystemet ska mätas och protokollföras INNAN återfyllning.",
       punkter:[
         {n:"jordinstr", t:"Jordinstruktion upprättad och signerad av elinstallatörsansvarig"},
         {n:"ringjord", t:"Ringjord komplett och sluten — kontinuitet verifierad"},
         {n:"gpsjord", t:"GPS-foto av alla korsningar och ändpunkter INNAN återfyllning"},
         {n:"jordmatt", t:"Jordtagsmotstånd uppmätt — protokoll signerat"} ] },
-    { namn:"Fas 4 — Fundament",
+    { namn:"Etapp 4 — Fundament",
       info:"Toleranser: ingjutningsgods ±5 mm (X/Y) / ±2 mm (höjd), fundamentyta ±2 mm/5 m.",
       punkter:[
         {n:"fotogrop", t:"Fundamentgrop fotograferad INNAN armering läggs"},
@@ -70,27 +70,27 @@ export const BATTERIPARK_MILSTOLPAR = [
         {n:"synavgrund", t:"Syn av grund genomförd med beställaren"} ] } ] },
 
   { id:"M5", titel:"M5 · Battery Commissioned — 15 %", grupper:[
-    { namn:"Fas 6 — E-House och ställverk",
+    { namn:"Etapp 6 — E-House och ställverk",
       info:"Nivellering max 2,5 mm/5 m. Fasordning L1/L2/L3 verifieras med fasindikator.",
       punkter:[
         {n:"ehouse", t:"E-House levererat, placerat och nivellerat (max 2,5 mm/5 m)"},
         {n:"ehousejord", t:"E-House jordanslutet direkt efter placering"},
         {n:"stallverk", t:"Ställverk monterat i rätt ordning — bussbar fasordning L1/L2/L3 verifierad"},
         {n:"moment", t:"Bussbarskopplingar åtdragna med kalibrerat momentverktyg — foto per koppling"} ] },
-    { namn:"Fas 7 — BESS-containrar",
+    { namn:"Etapp 7 — BESS-containrar",
       info:"Lyft max 5° lutning — annars risk för intern skada på battericeller.",
       punkter:[
         {n:"battplacering", t:"Containrar levererade, placerade, nivellerade och förankrade"},
         {n:"battjord", t:"Jordslinga ansluten till containrarna direkt efter placering"},
         {n:"battkabel", t:"DC/AC/kommunikation/brand anslutna enligt kabellista — alla genomföringar brandtätade"},
         {n:"precomm", t:"Leverantörens pre-commissioning check genomförd — protokoll signerat"} ] },
-    { namn:"Fas 8 — EMS, brandlarm och permanent inhägnad",
+    { namn:"Etapp 8 — EMS, brandlarm och permanent inhägnad",
       info:"Brandlarm och gasdetektering måste vara driftsatta och funktionstestade INNAN start.",
       punkter:[
         {n:"ems", t:"EMS driftsatt — all kommunikation testad"},
         {n:"brandlarm", t:"Brandlarm och gasdetektering driftsatta och funktionstestade INNAN BESS startas"},
         {n:"inhagnadperm", t:"Permanent inhägnad klar (2,5 m, anti-klättring, taggtråd, jordad) INNAN BESS-leverans"} ] },
-    { namn:"Fas 9 — Testning, SAT och driftsättning",
+    { namn:"Etapp 9 — Testning, SAT och driftsättning",
       info:"All testning dokumenteras med signerat protokoll. ITP ska vara godkänd av beställaren innan SAT startar.",
       punkter:[
         {n:"itp", t:"ITP (testplan) godkänd av beställaren INNAN SAT startar"},
