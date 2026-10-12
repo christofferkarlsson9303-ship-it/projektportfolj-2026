@@ -19,6 +19,8 @@ import {
   steg,
   titta,
 } from "../../lib/site.js";
+import { DIFF_FARG } from "../../lib/modellDiff.js";
+import { avstand, flygBana, flygTid, klippPlan } from "../../lib/modellKoppling.js";
 
 /* 3D-scenen för siten. Laddas för sig (lazy) så att three bara hämtas när
    någon öppnar siten.
@@ -33,6 +35,13 @@ import {
    ett spökobjekt musen, snappat till rutnätet (och till grannars kanter) och
    färgat efter om platsen är fri. Samma regler (lib/site.js, provaPlacering)
    gäller vid klick, dragning och R — scenen ritar bara resultatet.
+
+   Verktyg (styrs från verktygsfältet i Site.jsx): sektionslåda med clipping
+   planes, kryssmätning med raycasting mellan två punkter på ytor, och
+   jämförelse som färgar objekt efter en diff (lib/modellDiff.js). Kameran kan
+   flyga mjukt till en vy — Site ber om det via `flyg` och scenen räknar
+   banan med lib/modellKoppling.js, bildruta för bildruta i animationsloopen
+   (requestAnimationFrame).
 
    Färgerna läses ur designsystemets CSS-variabler när scenen byggs — inga
    egna hex-värden. */
@@ -122,7 +131,27 @@ function Joystick({ onAxel }) {
   );
 }
 
-export default function SiteScen({ objekt, punkter, plan, valtId, laddad, lage, rutnat = true, spokRot = 0, onPlacera, onValj, onFlytta, onFel }) {
+export default function SiteScen({
+  objekt,
+  punkter,
+  plan,
+  valtId,
+  laddad,
+  lage,
+  rutnat = true,
+  spokRot = 0,
+  sektion = null,
+  matning = false,
+  diff = null,
+  arenden = null,
+  flyg = null,
+  onKlar,
+  onPlacera,
+  onValj,
+  onFlytta,
+  onMatt,
+  onFel,
+}) {
   const holder = useRef(null);
   const s = useRef({});
   const senaste = useRef({});
@@ -130,7 +159,7 @@ export default function SiteScen({ objekt, punkter, plan, valtId, laddad, lage, 
 
   // Senaste props för händelser som registreras en gång.
   useEffect(() => {
-    senaste.current = { objekt, valtId, laddad, lage, rutnat, spokRot, onPlacera, onValj, onFlytta, onFel };
+    senaste.current = { objekt, valtId, laddad, lage, rutnat, spokRot, matning, onPlacera, onValj, onFlytta, onMatt, onKlar, onFel };
   });
 
   /* ---------- Bygg scenen en gång ---------- */
@@ -249,6 +278,12 @@ export default function SiteScen({ objekt, punkter, plan, valtId, laddad, lage, 
 
     const objektGrupp = new THREE.Group();
     scene.add(objektGrupp);
+    const matGrupp = new THREE.Group();
+    scene.add(matGrupp);
+    // Sektionslådans kanter, så att man ser vad som klipps.
+    const sektionLinjer = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1, 1, 1)), new THREE.LineBasicMaterial({ color: farg("--orange") }));
+    sektionLinjer.visible = false;
+    scene.add(sektionLinjer);
     // Spökobjektet visas medan en mall är vald; färgen säger om platsen är fri.
     const spok = new THREE.Group();
     spok.visible = false;
@@ -276,7 +311,7 @@ export default function SiteScen({ objekt, punkter, plan, valtId, laddad, lage, 
     io.observe(el);
 
     const ga = { pos: { x: INGANG.x, y: INGANG.y, z: INGANG.z }, yaw: INGANG.yaw, pitch: INGANG.pitch, avsikt: {}, joy: { fram: 0, sid: 0 } };
-    s.current = { renderer, etiketter, scene, camera, controls, objektGrupp, planGrupp, tomt, ga, meshar: new Map(), markera, rutnatLinjer, spok, spokPunkt: null };
+    s.current = { renderer, etiketter, scene, camera, controls, objektGrupp, planGrupp, tomt, ga, meshar: new Map(), markera, rutnatLinjer, spok, spokPunkt: null, matGrupp, sektionLinjer, flygning: null };
 
     /* ---------- Pekare: välja, placera, dra, titta ---------- */
     const ray = new THREE.Raycaster();
@@ -298,6 +333,54 @@ export default function SiteScen({ objekt, punkter, plan, valtId, laddad, lage, 
     const markpunkt = () => {
       const p = new THREE.Vector3();
       return ray.ray.intersectPlane(markplan, p) ? p : null;
+    };
+
+    /* Kryssmätning: träffa första ytan under pekaren (objekt eller mark). */
+    const ytpunkt = () => {
+      const traff = ray.intersectObjects(objektGrupp.children, true).find((h) => h.object.isMesh && h.object.visible && !h.object.userData.spok);
+      if (traff) return traff.point.clone();
+      return markpunkt();
+    };
+    const matMat = new THREE.MeshBasicMaterial({ color: farg("--orange"), depthTest: false });
+    const matLinje = new THREE.LineBasicMaterial({ color: farg("--orange"), depthTest: false });
+    const rensaMatning = () => {
+      for (const barn of [...matGrupp.children]) {
+        barn.traverse((o) => {
+          if (o.isCSS2DObject) o.element.remove();
+        });
+        matGrupp.remove(barn);
+        barn.geometry?.dispose?.();
+      }
+      s.current.matPunkter = [];
+      smutsig = true;
+    };
+    s.current.rensaMatning = rensaMatning;
+    s.current.matPunkter = [];
+    const lagg = (p) => {
+      let pts = s.current.matPunkter;
+      if (pts.length >= 2) {
+        rensaMatning();
+        pts = s.current.matPunkter;
+      }
+      pts.push([p.x, p.y, p.z]);
+      const kula = new THREE.Mesh(new THREE.SphereGeometry(0.22, 14, 10), matMat);
+      kula.position.copy(p);
+      kula.renderOrder = 10;
+      matGrupp.add(kula);
+      if (pts.length === 2) {
+        const [a, b] = pts;
+        const linje = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...a), new THREE.Vector3(...b)]), matLinje);
+        linje.renderOrder = 10;
+        matGrupp.add(linje);
+        const d = avstand(a, b);
+        const l = etikett(`${d.total.toFixed(2).replace(".", ",")} m`);
+        l.position.set((a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + 0.4, (a[2] + b[2]) / 2);
+        matGrupp.add(l);
+        senaste.current.onMatt?.({ a, b, ...d });
+      } else {
+        senaste.current.onMatt?.(null);
+      }
+      smutsig = true;
     };
 
     /* Spöket: räkna ut var det hamnar för senaste musposition och rita det.
@@ -364,7 +447,7 @@ export default function SiteScen({ objekt, punkter, plan, valtId, laddad, lage, 
       start = { x: e.clientX, y: e.clientY };
       straale(e);
       const id = traffadId();
-      if (id && id === p.valtId) {
+      if (id && id === p.valtId && !p.matning) {
         const m = s.current.meshar.get(id);
         const q = markpunkt();
         if (m && q) {
@@ -436,6 +519,11 @@ export default function SiteScen({ objekt, punkter, plan, valtId, laddad, lage, 
       start = null;
       if (flyttat > 6) return;
       straale(e);
+      if (p.matning) {
+        const y = ytpunkt();
+        if (y) lagg(y);
+        return;
+      }
       const id = traffadId();
       if (id) {
         p.onValj?.(id);
@@ -481,12 +569,51 @@ export default function SiteScen({ objekt, punkter, plan, valtId, laddad, lage, 
     window.addEventListener("keyup", tangentUpp);
     window.addEventListener("blur", tappa);
 
+    /* ---------- Kameraflygning ---------- */
+    const nuVy = () => {
+      const l = senaste.current.lage === "ga";
+      const mal = l ? [ga.pos.x - Math.sin(ga.yaw), ga.pos.y, ga.pos.z - Math.cos(ga.yaw)] : controls.target.toArray();
+      return { cameraPosition: camera.position.toArray(), target: mal, fov: camera.fov };
+    };
+    const startaFlyg = (till) => {
+      if (!till) return;
+      const lugnt = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      controls.autoRotate = false;
+      const fran = nuVy();
+      const dur = lugnt ? 0 : flygTid(fran, till);
+      controls.enabled = false;
+      s.current.flygning = { t0: performance.now(), dur, fran, till };
+      smutsig = true;
+    };
+    const stegaFlyg = (nu) => {
+      const f = s.current.flygning;
+      if (!f) return;
+      const t = f.dur ? (nu - f.t0) / f.dur : 1;
+      const v = flygBana(f.fran, f.till, t);
+      camera.position.set(...v.cameraPosition);
+      controls.target.set(...v.target);
+      if (Math.abs(camera.fov - v.fov) > 1e-6) {
+        camera.fov = v.fov;
+        camera.updateProjectionMatrix();
+      }
+      camera.lookAt(...v.target);
+      controls.update();
+      smutsig = true;
+      if (t >= 1) {
+        s.current.flygning = null;
+        controls.enabled = senaste.current.lage !== "ga";
+      }
+    };
+    s.current.startaFlyg = startaFlyg;
+    senaste.current.onKlar?.({ hamtaVy: nuVy, flygTill: startaFlyg, flyger: () => !!s.current.flygning, rensaMatning: () => s.current.rensaMatning?.() });
+
     /* ---------- Loop ---------- */
     let forra = performance.now();
     renderer.setAnimationLoop((t) => {
       const dt = Math.min(0.05, Math.max(0, (t - forra) / 1000));
       forra = t;
       if (!synlig) return;
+      if (s.current.flygning) stegaFlyg(performance.now());
       if (senaste.current.lage === "ga") {
         const d = forflyttning(ga.yaw, { ...ga.avsikt, framAxel: ga.joy.fram, sidAxel: ga.joy.sid }, dt);
         if (d.x || d.y || d.z) {
@@ -507,6 +634,7 @@ export default function SiteScen({ objekt, punkter, plan, valtId, laddad, lage, 
     });
 
     return () => {
+      senaste.current.onKlar?.(null);
       renderer.setAnimationLoop(null);
       ro.disconnect();
       io.disconnect();
@@ -531,6 +659,31 @@ export default function SiteScen({ objekt, punkter, plan, valtId, laddad, lage, 
     };
     // Scenen byggs en gång; props läses via `senaste`. `pek` ändras aldrig.
   }, [pek]);
+
+  /* ---------- Flyg på begäran ---------- */
+  useEffect(() => {
+    if (flyg?.viewpoint) s.current.startaFlyg?.(flyg.viewpoint);
+  }, [flyg?.tid]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ---------- Sektionslåda ---------- */
+  useEffect(() => {
+    const { renderer, sektionLinjer, markera } = s.current;
+    if (!renderer) return;
+    const plan = klippPlan(sektion);
+    renderer.clippingPlanes = plan.map((p) => new THREE.Plane(new THREE.Vector3(...p.normal), p.konstant));
+    if (sektion?.aktiv) {
+      const { min, max } = sektion;
+      sektionLinjer.scale.set(Math.max(0.001, max.x - min.x), Math.max(0.001, max.y - min.y), Math.max(0.001, max.z - min.z));
+      sektionLinjer.position.set((min.x + max.x) / 2, (min.y + max.y) / 2, (min.z + max.z) / 2);
+    }
+    sektionLinjer.visible = !!sektion?.aktiv;
+    markera?.();
+  }, [sektion]);
+
+  /* ---------- Mätläge av: rensa mätningen ---------- */
+  useEffect(() => {
+    if (!matning) s.current.rensaMatning?.();
+  }, [matning]);
 
   /* ---------- Objekten ---------- */
   useEffect(() => {
@@ -565,15 +718,25 @@ export default function SiteScen({ objekt, punkter, plan, valtId, laddad, lage, 
       } else {
         g.rotation.y = rad(o.rotation);
         const geo = new THREE.BoxGeometry(o.bredd, o.hojd, o.djup);
-        const lada = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: farg(TYPFARG[o.typ]), roughness: 0.75, metalness: 0.05 }));
+        // Jämförelse: tillagt och modifierat färgas efter diffen, resten behåller sin typfärg.
+        const ds = diff?.status?.get(o.id);
+        const lada = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: farg(ds ? DIFF_FARG[ds] : TYPFARG[o.typ]), roughness: 0.75, metalness: 0.05 }));
         lada.position.y = o.hojd / 2;
         lada.castShadow = true;
         lada.receiveShadow = true;
         const linjer = new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: o.id === valtId ? markering : kant }));
         linjer.position.y = o.hojd / 2;
         g.add(lada, linjer);
+        const antalArenden = arenden?.get(o.id) || 0;
         if (o.id === valtId) {
-          const l = etikett(o.soc !== undefined && o.soc !== null && o.soc !== "" ? `${o.namn} · ${Math.round(Number(o.soc))} %` : o.namn);
+          const delar = [o.namn];
+          if (o.soc !== undefined && o.soc !== null && o.soc !== "") delar.push(`${Math.round(Number(o.soc))} %`);
+          if (antalArenden) delar.push(`ÄTA ${antalArenden}`);
+          const l = etikett(delar.join(" · "));
+          l.position.y = o.hojd + 0.8;
+          g.add(l);
+        } else if (antalArenden) {
+          const l = etikett(`ÄTA ${antalArenden}`, "nal");
           l.position.y = o.hojd + 0.8;
           g.add(l);
         }
@@ -581,8 +744,24 @@ export default function SiteScen({ objekt, punkter, plan, valtId, laddad, lage, 
       objektGrupp.add(g);
       meshar.set(o.id, g);
     }
+    /* Borttaget i jämförelsen: rött genomskinligt spöke på den gamla platsen. Inget id — går inte att välja. */
+    for (const o of diff?.borttagna || []) {
+      if (arNal(o)) continue;
+      const g = new THREE.Group();
+      g.position.set(o.x || 0, 0, o.z || 0);
+      g.rotation.y = rad(o.rotation);
+      const geo = new THREE.BoxGeometry(o.bredd, o.hojd, o.djup);
+      const rod = farg(DIFF_FARG.borttagen);
+      const lada = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: rod, transparent: true, opacity: 0.35, depthWrite: false }));
+      lada.position.y = o.hojd / 2;
+      lada.userData.spok = true;
+      const linjer = new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: rod }));
+      linjer.position.y = o.hojd / 2;
+      g.add(lada, linjer);
+      objektGrupp.add(g);
+    }
     s.current.markera?.();
-  }, [objekt, valtId, punkter]);
+  }, [objekt, valtId, punkter, diff, arenden]);
 
   /* ---------- Rutnät och spöke följer props ---------- */
   useEffect(() => {

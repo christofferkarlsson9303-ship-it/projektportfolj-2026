@@ -57,6 +57,10 @@ export function UiProvider({ children }) {
   const [utskrift, setUtskrift] = useState(null);
   const [faltmaterial, setFaltmaterial] = useState(null);
   const [sokOppen, setSokOppen] = useState(false);
+  /* Markerat objekt på siten (objektets id = dess GUID). Delas mellan 3D-vyn och ÄTA-listan:
+     ett klick på ett objekt i 3D filtrerar ärendena, och ett ärende kan be 3D-vyn flyga dit. */
+  const [siteVal, setSiteVal] = useState(null);
+  const [siteFlyg, setSiteFlyg] = useState(null);
   const oppnaFaltmaterial = useCallback((urval = {}) => setFaltmaterial(urval), []);
   const stangFaltmaterial = useCallback(() => setFaltmaterial(null), []);
   const rensaUtskrift = useCallback(() => setUtskrift(null), []);
@@ -171,6 +175,16 @@ export function UiProvider({ children }) {
     setPostFokus({ vy, id, tid: Date.now() });
   }, []);
 
+  /** Visa ett objekt i 3D: byt till siten, markera objektet och be kameran flyga dit. */
+  const visaISite = useCallback((guid) => {
+    setSiteVal(guid || null);
+    setSiteFlyg(guid ? { guid, tid: Date.now() } : null);
+    setAktivVy("site");
+    setNavOppen(false);
+    setPostFokus(null);
+    setFokus(null);
+  }, []);
+
   /** Byt till Projektstart och be den öppna projektstarten för ett visst projekt. */
   const oppnaProjektstart = useCallback((pid) => {
     setProjektstartMal(pid);
@@ -222,9 +236,11 @@ export function UiProvider({ children }) {
       faltmaterial, oppnaFaltmaterial, stangFaltmaterial,
       sokOppen, setSokOppen,
       projektstartMal, oppnaProjektstart, rensaProjektstartMal,
+      siteVal, setSiteVal, siteFlyg, visaISite,
     }),
     [
       projektstartMal, oppnaProjektstart, rensaProjektstartMal,
+      siteVal, siteFlyg, visaISite,
       aktivVy, visa, valtProjekt, tema, vaxlaTema, tathet, setTathet, toast, visaToast,
       modal, fraga, bekrafta, stangModal, navOppen, fokus, oppnaFlagga,
       postFokus, oppnaPost, utskrift, skrivUt, rensaUtskrift, faltmaterial, oppnaFaltmaterial, stangFaltmaterial, sokOppen,

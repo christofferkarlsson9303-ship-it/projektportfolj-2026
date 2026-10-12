@@ -13,6 +13,7 @@ import { angraFakturaunderlag, skapaFakturaunderlag } from "../lib/planering.js"
 import { kalkylRader, kalkylSummor } from "../lib/atakalkyl.js";
 import { fmtSEK } from "../lib/format.js";
 import { MALLAR, arNal, objektFel, punkterForSite } from "../lib/site.js";
+import { kopplingFel } from "../lib/modellKoppling.js";
 import { projektFasFranEpc } from "../lib/projektfasEpc.js";
 import { arDold } from "../lib/arkiv.js";
 import { projektstartFel } from "../lib/projektstart.js";
@@ -631,6 +632,61 @@ export function reducer(state, action) {
       const kvar = (state.siteObjekt || []).filter((r) => r.projektId !== projektId);
       if (kvar.length === (state.siteObjekt || []).length) return state;
       return loggat({ ...state, siteObjekt: kvar }, projektId, "Site: återställd till tom tomt");
+    }
+
+    /* ---------- Ärende ↔ modell (CDE/BCF-anda) ----------
+       Ett UR/ÄTA-ärende pekar på ett siteObjekt (objectGuid), en kameravy, objektets
+       omslutande låda och en modellversion. Fälten ligger direkt på ärendet. Kopplingen
+       avvisas om ärendet eller objektet inte finns, eller om objektet hör till ett annat
+       projekt — state lämnas då orört. */
+    case "ATA_KOPPLA_OBJEKT": {
+      const { id, koppling } = action;
+      const u = (state.ur || []).find((r) => r.id === id);
+      if (!u || kopplingFel(koppling) !== null) return state;
+      const o = (state.siteObjekt || []).find((r) => r.id === koppling.objectGuid && r.projektId === u.projektId);
+      if (!o) return state;
+      const falt = {
+        objectGuid: koppling.objectGuid,
+        viewpoint: koppling.viewpoint ?? null,
+        boundingBox: koppling.boundingBox ?? null,
+        modelVersionId: koppling.modelVersionId ?? "",
+      };
+      if (JSON.stringify([u.objectGuid, u.viewpoint, u.boundingBox, u.modelVersionId]) === JSON.stringify([falt.objectGuid, falt.viewpoint, falt.boundingBox, falt.modelVersionId])) return state;
+      const ut = { ...state, ur: byt(state.ur, id, (r) => ({ ...r, ...falt })) };
+      return loggat(ut, u.projektId, `${u.nr || id}: kopplad till ${siteEtikett(state, o)} i 3D`);
+    }
+
+    case "ATA_LOSS_OBJEKT": {
+      const u = (state.ur || []).find((r) => r.id === action.id);
+      if (!u || !u.objectGuid) return state;
+      const ut = {
+        ...state,
+        ur: byt(state.ur, u.id, (r) => {
+          const { objectGuid: _g, viewpoint: _v, boundingBox: _b, modelVersionId: _m, ...kvar } = r;
+          return kvar;
+        }),
+      };
+      return loggat(ut, u.projektId, `${u.nr || u.id}: koppling till 3D-objekt borttagen`);
+    }
+
+    /* ---------- Modellversioner ----------
+       En ögonblicksbild av projektets siteObjekt, som jämförelseverktyget ställer mot
+       nuläget. Bilden tas ur state, inte ur anroparen. De 20 senaste per projekt sparas. */
+    case "MODELLVERSION_SKAPA": {
+      const { projektId, id, namn, datum } = action;
+      if (!projektId || !id || !state.projekt.some((p) => p.id === projektId)) return state;
+      if ((state.modellVersioner || []).some((v) => v.id === id)) return state;
+      const objekt = structuredClone((state.siteObjekt || []).filter((o) => o.projektId === projektId));
+      const rad = { id, projektId, namn: String(namn || "").trim() || "Modellversion", datum: datum || new Date().toISOString(), objekt };
+      const andra = (state.modellVersioner || []).filter((v) => v.projektId !== projektId);
+      const egna = [...(state.modellVersioner || []).filter((v) => v.projektId === projektId), rad].slice(-20);
+      return loggat({ ...state, modellVersioner: [...andra, ...egna] }, projektId, `Modellversion sparad: ${rad.namn} (${objekt.length} objekt)`);
+    }
+
+    case "MODELLVERSION_TA_BORT": {
+      const v = (state.modellVersioner || []).find((r) => r.id === action.id);
+      if (!v) return state;
+      return loggat({ ...state, modellVersioner: state.modellVersioner.filter((r) => r.id !== v.id) }, v.projektId, `Modellversion borttagen: ${v.namn}`);
     }
 
     /* ---------- Byggmöten ----------

@@ -22,9 +22,9 @@ const mattText = (m) => `${fmtTal(m.bredd, 2)} × ${fmtTal(m.djup, 2)} × ${fmtT
 export function SiteMeny({ laddad, onVal, lage, kanNal, rutnat, onRutnat, spokRot, onRotera, className = "" }) {
   const ga = lage === "ga";
   return (
-    <nav aria-label="Komponenter" className={`flex min-w-0 flex-col gap-4 ${className}`.trim()}>
+    <nav aria-label="Komponenter" className={`flex min-w-0 flex-row flex-wrap gap-x-4 gap-y-3 xl:flex-col xl:flex-nowrap xl:gap-4 ${className}`.trim()}>
       {KOMPONENTGRUPPER.map((g) => (
-        <div key={g.id} role="group" aria-labelledby={`site-grupp-${g.id}`} className="flex flex-col gap-1.5">
+        <div key={g.id} role="group" aria-labelledby={`site-grupp-${g.id}`} className="flex min-w-[10.5rem] flex-1 flex-col gap-1.5 xl:min-w-0 xl:flex-none">
           <p id={`site-grupp-${g.id}`} className="m-0 text-[11px] font-bold uppercase tracking-wider text-ink-soft">
             {g.namn}
           </p>
@@ -61,7 +61,7 @@ export function SiteMeny({ laddad, onVal, lage, kanNal, rutnat, onRutnat, spokRo
         </div>
       ))}
 
-      <div role="group" aria-label="Placering" className="flex flex-col gap-1.5 border-0 border-t border-solid border-hairline pt-3">
+      <div role="group" aria-label="Placering" className="flex min-w-[10.5rem] flex-1 flex-col gap-1.5 border-0 border-t border-solid border-hairline pt-3 xl:min-w-0 xl:flex-none">
         <button type="button" className={KNAPP} aria-pressed={rutnat} onClick={() => onRutnat(!rutnat)} title="Visa rutnät och snappa till det (G)">
           <span className="font-semibold">Rutnät</span>
           <span className="ml-auto text-[11px] opacity-75">{rutnat ? "på · G" : "av · G"}</span>

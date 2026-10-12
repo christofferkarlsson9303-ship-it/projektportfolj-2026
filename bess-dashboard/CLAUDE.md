@@ -10,6 +10,7 @@ En visuell prototyp byggdes 2026-10-04 i ett annat verktyg (Grok). Den ligger **
 - **Ett klick till papper är PR 28**, grenen `snabbutskrift`. `useSnabbUtskrift()` i `src/components/field/SnabbUtskrift.jsx` skriver ut arbetslista och fasblankett utan att öppna panelen. Panelen (`FaltmaterialPanel.jsx`) finns kvar för fler val. Ctrl/Cmd+K har samma dokument. Bygg inte en ny utskriftsväg.
 - **Designsystemet** är `src/components/ds/` (`Card`, `StatTile`, `StatusBadge`, `Callout`). Nya ytor använder det. Inga nya hex-färger, inget parallellt tema.
 - **ÄTA-kalkylen finns på två ställen med samma kod.** Kortet i vy `ata` (”Öppna i kalkyl”) och egen flik `atakalkyl` (`AtaKalkylVy.jsx`). Logiken ligger i `src/sections/Ata/useAtaKalkyl.jsx` och tabellen i `KalkylTabell.jsx`. Ändra där, inte i två kopior.
+- **Ärenden på siten.** UR/ÄTA-poster kan kopplas till ett `siteObjekt` (`objectGuid`, `viewpoint`, `boundingBox`, `modelVersionId`) och 3D-vyn kan jämföra modellversioner. Läs [`docs/modellarenden.md`](docs/modellarenden.md) innan du ändrar det. Ingen IFC, ingen egen backend.
 - **Data** är två JSONB-rader: `portfolj/state` och `portfolj/ekonomi`. RLS skyddar. Ändra inte schemat för en kalkylator eller en bild.
 
 ## Gör inte

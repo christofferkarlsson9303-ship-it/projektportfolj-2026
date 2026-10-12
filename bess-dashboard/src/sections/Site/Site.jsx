@@ -2,9 +2,15 @@ import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { Callout, Card, StatusBadge } from "../../components/ds/index.js";
 import { Falt, TaBortKnapp } from "../../components/ui/Falt.jsx";
-import { Vyvaljare } from "../../components/ui/Vyvaljare.jsx";
 import { SiteToppvy } from "../../components/site/SiteToppvy.jsx";
 import { SiteMeny } from "../../components/site/SiteMeny.jsx";
+import { SplitVy } from "../../components/site/SplitVy.jsx";
+import { SiteVerktygsfalt } from "../../components/site/SiteVerktygsfalt.jsx";
+import { SiteArenden } from "../../components/site/SiteArenden.jsx";
+import { diffStatusPerGuid, diffaModeller } from "../../lib/modellDiff.js";
+import { SEKTION_STANDARD, arendenFor, arendenPerObjekt, boundingBoxFor, byggKoppling, kopplingFel, viewpointForBox } from "../../lib/modellKoppling.js";
+import { nyAtaPost } from "../../lib/nyaPoster.js";
+import { hamtaNamn } from "../../state/portfolj-reducer.js";
 import { ParkSumma } from "../../components/site/ParkSumma.jsx";
 import { Meter } from "../../components/ds/index.js";
 import { useSnabbUtskrift } from "../../components/field/SnabbUtskrift.jsx";
@@ -102,8 +108,8 @@ function Farg({ typ }) {
 }
 
 export function Site() {
-  const { state, dispatch } = usePortfolj();
-  const { valtProjekt, visaToast, bekrafta, visa } = useUi();
+  const { state, dispatch, laggTill } = usePortfolj();
+  const { valtProjekt, visaToast, bekrafta, fraga, visa, oppnaPost, siteVal: valtId, setSiteVal: setValtId, siteFlyg } = useUi();
   const snabb = useSnabbUtskrift();
 
   const p = state.projekt.find((x) => x.id === valtProjekt) || state.projekt[0];
@@ -117,7 +123,13 @@ export function Site() {
   const [rutnat, setRutnat] = useState(true);
   const [spokRot, setSpokRot] = useState(0);
   const [nalPunkt, setNalPunkt] = useState("");
-  const [valtId, setValtId] = useState(null);
+  const [sektion, setSektion] = useState(SEKTION_STANDARD);
+  const [matning, setMatning] = useState(false);
+  const [matt, setMatt] = useState(null);
+  const [jamforId, setJamforId] = useState(null);
+  const [flyg, setFlyg] = useState(null);
+  const [bred, setBred] = useState(0);
+  const sceneApi = useRef(null);
   const [fel3d, setFel3d] = useState(null);
   const [plan, setPlan] = useState(() => (pid ? lasPlan(pid) : null));
   const [planPid, setPlanPid] = useState(pid);
@@ -133,11 +145,50 @@ export function Site() {
   if (planPid !== pid) {
     setPlanPid(pid);
     setPlan(pid ? lasPlan(pid) : null);
-    setValtId(null);
     setLaddad(null);
   }
+  // Markeringen och jämförelsen hör till projektet — nollställ vid byte (delat läge i UiProvider, därför i en effekt).
+  const forraPid = useRef(pid);
+  useEffect(() => {
+    if (forraPid.current === pid) return;
+    forraPid.current = pid;
+    setValtId(null);
+    setJamforId(null);
+    setMatning(false);
+    setMatt(null);
+  }, [pid, setValtId]);
 
   const valt = objekt.find((o) => o.id === valtId) || null;
+
+  /* ---------- Ärenden, versioner och jämförelse ---------- */
+  const arendeRader = useMemo(() => (pid ? arendenFor(state.ur, pid) : []), [state.ur, pid]);
+  const arendenMap = useMemo(() => (pid ? arendenPerObjekt(state.ur, pid) : new Map()), [state.ur, pid]);
+  const objektById = useMemo(() => new Map(objekt.map((o) => [o.id, o])), [objekt]);
+  const versioner = useMemo(() => (state.modellVersioner || []).filter((v) => v.projektId === pid), [state.modellVersioner, pid]);
+  const jamfor = versioner.find((v) => v.id === jamforId) || null;
+  const diffData = useMemo(() => {
+    if (!jamfor) return null;
+    const d = diffaModeller(jamfor.objekt, objekt);
+    return { ...d, status: diffStatusPerGuid(d), borttagnaObjekt: jamfor.objekt.filter((o) => d.borttagna.includes(o.id)) };
+  }, [jamfor, objekt]);
+  const diffProp = useMemo(() => (diffData ? { status: diffData.status, borttagna: diffData.borttagnaObjekt } : null), [diffData]);
+
+  /** Be kameran flyga till en vy (och lämna gåläget, där kameran inte flyger). */
+  const flygTill = (viewpoint) => {
+    setLage("orbit");
+    setFlyg({ tid: Date.now(), viewpoint });
+  };
+
+  /* Ett ärende i ÄTA-sektionen bad om "Visa i 3D": markera objektet och flyg till dess låda. */
+  const [sedd, setSedd] = useState(null);
+  if (siteFlyg && siteFlyg.tid !== sedd) {
+    setSedd(siteFlyg.tid);
+    const o = objekt.find((x) => x.id === siteFlyg.guid);
+    if (o) {
+      setLage("orbit");
+      setFlyg({ tid: siteFlyg.tid, viewpoint: viewpointForBox(boundingBoxFor(o)) });
+    }
+  }
 
   /* Tangenter på sidan: Esc avbryter placering, R roterar 90° (vald mall,
      annars markerat objekt), G slår rutnätet av och på. Inte i textfält och
@@ -182,6 +233,62 @@ export function Site() {
   }, [lage]);
 
   if (!p) return <Callout ton="info">Lägg upp ett projekt först.</Callout>;
+
+  const visaArende = (u) => {
+    const o = objektById.get(u.objectGuid);
+    if (!o) return;
+    setValtId(o.id);
+    flygTill(viewpointForBox(boundingBoxFor(o)));
+  };
+  const visaArendeVy = (u) => {
+    if (!objektById.get(u.objectGuid) || !u.viewpoint) return;
+    setValtId(u.objectGuid);
+    flygTill(u.viewpoint);
+  };
+  /** Kopplingen för ett objekt: dagens kameravy om scenen kan svara, annars en vy som ramar in lådan. */
+  const kopplingFor = (o) => byggKoppling(o, { viewpoint: lage === "orbit" ? sceneApi.current?.hamtaVy?.() : undefined, modelVersionId: versioner.at(-1)?.id || "" });
+  const kopplaArende = (u) => {
+    if (!valt) return;
+    dispatch({ type: "ATA_KOPPLA_OBJEKT", id: u.id, koppling: kopplingFor(valt) });
+    visaToast(`${u.nr || "Ärendet"} kopplat till ${valt.namn || "objektet"}.`);
+  };
+  const losArende = (u) => dispatch({ type: "ATA_LOSS_OBJEKT", id: u.id });
+  const nyttArende = async () => {
+    if (!valt || arNal(valt)) return;
+    const sv = await fraga({
+      titel: `Nytt ärende på ${valt.namn}`,
+      lead: "Ärendet kopplas till objektet och sparar kamerans vy, så att man hittar tillbaka dit i 3D-vyn.",
+      falt: [{ namn: "benamning", etikett: "Kort beskrivning av händelsen", typ: "textarea" }],
+      ok: "Registrera",
+    });
+    if (!sv || !sv.benamning) return;
+    const koppling = kopplingFor(valt);
+    if (kopplingFel(koppling)) {
+      visaToast(kopplingFel(koppling), "warn");
+      return;
+    }
+    laggTill("ur", nyAtaPost(state, pid, { benamning: sv.benamning, ansvarig: hamtaNamn() || "", ...koppling }));
+    visaToast(`Ärende registrerat på ${valt.namn}.`);
+  };
+  const sparaVersion = async () => {
+    const sv = await fraga({
+      titel: "Spara modellversion",
+      lead: `En bild av de ${objekt.length} objekten på siten just nu. Du kan jämföra senare ändringar mot den.`,
+      falt: [{ namn: "namn", etikett: "Namn på versionen", typ: "text" }],
+      ok: "Spara",
+    });
+    if (!sv) return;
+    dispatch({ type: "MODELLVERSION_SKAPA", projektId: pid, id: `mv${Date.now().toString(36)}`, namn: sv.namn, datum: new Date().toISOString() });
+    visaToast("Modellversion sparad.");
+  };
+  const taBortVersion = async (id) => {
+    const v = versioner.find((x) => x.id === id);
+    if (!v) return;
+    const ja = await bekrafta(`Modellversionen ”${v.namn}” tas bort. Siten och ärendena påverkas inte.`, { titel: "Ta bort modellversion", ok: "Ta bort", fara: true });
+    if (!ja) return;
+    dispatch({ type: "MODELLVERSION_TA_BORT", id });
+    setJamforId(null);
+  };
 
   const placera = (x, z) => {
     if (!laddad) return;
@@ -299,101 +406,13 @@ export function Site() {
       ? `${namnFor(valt)} är markerad. R roterar, dra för att flytta.`
       : "Välj en komponent till vänster för att placera, eller klicka på ett objekt.";
 
-  return (
-    <div className="flex flex-col gap-4 lg:gap-6">
-      <div className="flex flex-col gap-4 lg:gap-6">
-        <Card
-          id="site-scen"
-          title={`Siten — ${p.nr ? `${p.nr} ` : ""}${p.namn}`}
-          subtitle={`Tomt ${TOMT.bredd} × ${TOMT.djup} m. ${volymAntal} ${volymAntal === 1 ? "volym" : "volymer"}, ${nalAntal} ${nalAntal === 1 ? "nål" : "nålar"}.${plan ? " Situationsplan som mark." : " Utan situationsplan: grus och körytor."}`}
-          action={
-            <button type="button" className="btn sec mini" onClick={aterstall} disabled={!objekt.length}>
-              Återställ
-            </button>
-          }
-        >
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
-            <Vyvaljare
-              etikett="Kamera"
-              varde={lage}
-              onValj={(v) => {
-                setLage(v);
-                setLaddad(null);
-              }}
-              alternativ={[
-                ["orbit", "Orbit", "Kameran kretsar runt tomten"],
-                ["ga", "Gå in", "Gå runt på ögonhöjd"],
-              ]}
-            />
-          </div>
-
-          {laddad === "nal" ? (
-            <div className="frow c2">
-              <div className="f">
-                <label htmlFor="site-nal-punkt">Punkt för nålen</label>
-                <select id="site-nal-punkt" value={nalPunkt} onChange={(e) => setNalPunkt(e.target.value)}>
-                  <option value="">Välj punkt …</option>
-                  {oppnaPunkter.map((x) => (
-                    <option key={x.id} value={x.id}>
-                      {x.titel}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          ) : null}
-          {!oppnaPunkter.length ? (
-            <p className="m-0 text-[12.5px] text-ink-soft">
-              Nålar pekar på öppna punkter. Projektet har inga öppna punkter just nu.
-            </p>
-          ) : null}
-
-          <div className="flex flex-wrap items-center gap-2 text-[13px]">
-            <p className="m-0 text-ink-soft" aria-live="polite">
-              {status}
-            </p>
-            {laddad && !(laddad === "nal" && !nalPunkt) ? (
-              <button type="button" className="btn sec mini" onClick={() => placera(0, 0)}>
-                Placera mitt på tomten
-              </button>
-            ) : null}
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-[176px_minmax(0,1fr)] lg:items-start">
-            <SiteMeny
-              laddad={laddad}
-              onVal={setLaddad}
-              lage={lage}
-              kanNal={oppnaPunkter.length > 0}
-              rutnat={rutnat}
-              onRutnat={setRutnat}
-              spokRot={spokRot}
-              onRotera={rotera}
-            />
-            <div className="relative min-w-0">
-              {fel3d ? (
-                <Callout ton="warn">
-                  <b>3D-vyn kan inte visas.</b> {fel3d} Planvyn nedan visar samma objekt och går att klicka i.
-                </Callout>
-              ) : (
-                <Suspense fallback={<div className="h-[62vh] max-h-[720px] min-h-[360px] w-full rounded-lg bg-sunken" aria-busy="true" />}>
-                  <SiteScen
-                    objekt={objekt}
-                    punkter={punkter}
-                    plan={plan}
-                    valtId={valtId}
-                    laddad={laddad && !(laddad === "nal" && !nalPunkt) ? laddad : null}
-                    lage={lage}
-                    onPlacera={placera}
-                    onValj={setValtId}
-                    onFlytta={(id, x, z) => dispatch({ type: "SITE_ANDRA", id, andring: { x, z } })}
-                    onFel={setFel3d}
-                  />
-                </Suspense>
-              )}
+  /* Vänstra delen är bred nog för att sidopanelen ska få ligga som överlägg i 3D-vyn;
+     annars ligger den som ett eget kort under. */
+  const overlay = bred >= 820;
+  const markeratKort = (
             <Card
               id="site-markerat"
-              className={`mt-3 lg:absolute lg:bottom-3 lg:right-3 lg:top-3 lg:z-[3] lg:mt-0 lg:w-[340px] lg:overflow-y-auto lg:shadow-lg ${valt ? "" : "lg:hidden"}`}
+              className={overlay ? `absolute bottom-3 right-3 top-3 z-[3] w-[340px] overflow-y-auto shadow-lg ${valt ? "" : "hidden"}` : ""}
               title={valt ? namnFor(valt) : "Markerat objekt"}
               subtitle={valt ? (arNal(valt) ? (arOppenPunkt(punktFor(valt)) ? "Nål på en öppen punkt" : "Nål på en punkt som inte är öppen") : `${MALLAR[valt.typ].namn} · mått i meter, rotation i grader`) : null}
               badge={valt && !arNal(valt) && valt.status ? <StatusBadge ton={STATUS_TON[valt.status] || "neutral"} label={SITE_STATUS.find(([id]) => id === valt.status)?.[1] || valt.status} /> : null}
@@ -435,8 +454,149 @@ export function Site() {
               )}
               {valt && harBessData(valt.typ) ? <BessSektion key={`bess-${valt.id}-${omritning}`} o={valt} onTal={andraMatt} onAndra={andra} /> : null}
             </Card>
+  );
+
+  return (
+    <div className="flex flex-col gap-4 lg:gap-6">
+      <div className="flex flex-col gap-4 lg:gap-6">
+        <Card
+          id="site-scen"
+          title={`Siten — ${p.nr ? `${p.nr} ` : ""}${p.namn}`}
+          subtitle={`Tomt ${TOMT.bredd} × ${TOMT.djup} m. ${volymAntal} ${volymAntal === 1 ? "volym" : "volymer"}, ${nalAntal} ${nalAntal === 1 ? "nål" : "nålar"}.${plan ? " Situationsplan som mark." : " Utan situationsplan: grus och körytor."}`}
+          action={
+            <button type="button" className="btn sec mini" onClick={aterstall} disabled={!objekt.length}>
+              Återställ
+            </button>
+          }
+        >
+          <SiteVerktygsfalt
+            lage={lage}
+            onLage={(v) => {
+              setLage(v);
+              setLaddad(null);
+              if (v === "ga") setMatning(false);
+            }}
+            sektion={sektion}
+            onSektion={setSektion}
+            matning={matning}
+            onMatning={(v) => {
+              setMatning(v);
+              if (v) setLaddad(null);
+              if (!v) setMatt(null);
+            }}
+            matt={matt}
+            onRensaMatning={() => {
+              setMatt(null);
+              sceneApi.current?.rensaMatning?.();
+            }}
+            versioner={versioner}
+            jamforId={jamforId}
+            onJamfor={setJamforId}
+            onSparaVersion={sparaVersion}
+            onTaBortVersion={taBortVersion}
+            diff={diffData}
+          />
+
+          {laddad === "nal" ? (
+            <div className="frow c2">
+              <div className="f">
+                <label htmlFor="site-nal-punkt">Punkt för nålen</label>
+                <select id="site-nal-punkt" value={nalPunkt} onChange={(e) => setNalPunkt(e.target.value)}>
+                  <option value="">Välj punkt …</option>
+                  {oppnaPunkter.map((x) => (
+                    <option key={x.id} value={x.id}>
+                      {x.titel}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
+          ) : null}
+          {!oppnaPunkter.length ? (
+            <p className="m-0 text-[12.5px] text-ink-soft">
+              Nålar pekar på öppna punkter. Projektet har inga öppna punkter just nu.
+            </p>
+          ) : null}
+
+          <div className="flex flex-wrap items-center gap-2 text-[13px]">
+            <p className="m-0 text-ink-soft" aria-live="polite">
+              {status}
+            </p>
+            {laddad && !(laddad === "nal" && !nalPunkt) ? (
+              <button type="button" className="btn sec mini" onClick={() => placera(0, 0)}>
+                Placera mitt på tomten
+              </button>
+            ) : null}
           </div>
+
+          <SplitVy
+            onBredd={setBred}
+            vanster={
+              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[176px_minmax(0,1fr)] xl:items-start">
+            <SiteMeny
+              laddad={laddad}
+              onVal={setLaddad}
+              lage={lage}
+              kanNal={oppnaPunkter.length > 0}
+              rutnat={rutnat}
+              onRutnat={setRutnat}
+              spokRot={spokRot}
+              onRotera={rotera}
+            />
+            <div className="relative min-w-0">
+              {fel3d ? (
+                <Callout ton="warn">
+                  <b>3D-vyn kan inte visas.</b> {fel3d} Planvyn nedan visar samma objekt och går att klicka i.
+                </Callout>
+              ) : (
+                <Suspense fallback={<div className="h-[62vh] max-h-[720px] min-h-[360px] w-full rounded-lg bg-sunken" aria-busy="true" />}>
+                  <SiteScen
+                    objekt={objekt}
+                    punkter={punkter}
+                    plan={plan}
+                    valtId={valtId}
+                    laddad={laddad && !(laddad === "nal" && !nalPunkt) ? laddad : null}
+                    lage={lage}
+                    rutnat={rutnat}
+                    spokRot={spokRot}
+                    sektion={sektion}
+                    matning={matning}
+                    diff={diffProp}
+                    arenden={arendenMap}
+                    flyg={flyg}
+                    onPlacera={placera}
+                    onValj={setValtId}
+                    onMatt={setMatt}
+                    onKlar={(api) => {
+                      sceneApi.current = api;
+                    }}
+                    onFlytta={(id, x, z) => dispatch({ type: "SITE_ANDRA", id, andring: { x, z } })}
+                    onFel={setFel3d}
+                  />
+                </Suspense>
+              )}
+              {overlay ? markeratKort : null}
+            </div>
+              </div>
+            }
+            hoger={
+              <aside aria-label="Ärenden på siten" className="flex flex-col gap-3 rounded-lg border border-solid border-hairline bg-sunken p-3 lg:h-full">
+                <h4 className="m-0 font-head text-[14px] font-bold text-ink">Ärenden</h4>
+                <SiteArenden
+                  rader={arendeRader}
+                  valt={valt}
+                  objektById={objektById}
+                  onVisa={visaArende}
+                  onVisaVy={visaArendeVy}
+                  onKoppla={kopplaArende}
+                  onLos={losArende}
+                  onOppna={(u) => oppnaPost("ata", u.id)}
+                  onNy={nyttArende}
+                />
+              </aside>
+            }
+          />
+          {!overlay ? markeratKort : null}
         </Card>
         <Card id="site-park" title="Parkens BESS-data" subtitle="Summerat ur objekten på siten.">
           <ParkSumma objekt={objekt} className="sm:grid-cols-4" />
