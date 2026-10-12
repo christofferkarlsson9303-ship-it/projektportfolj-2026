@@ -10,7 +10,7 @@ import { nyDagboksrad } from "../../lib/nyaPoster.js";
 import { hamtaNamn } from "../../state/portfolj-reducer.js";
 import { flagga } from "./flode.js";
 import { registerStatus } from "../../lib/status.js";
-import { arKopplad, byggKoppling } from "../../lib/modellKoppling.js";
+import { allaModellObjekt, arKopplad, byggKoppling } from "../../lib/modellKoppling.js";
 
 import { Callout, StatusBadge } from "../../components/ds/index.js";
 /* Ärendepanelen — glider in från höger och låter tavlan ligga kvar bakom.
@@ -97,8 +97,8 @@ const vek = (v) => (Array.isArray(v) ? v.map((n) => String(Math.round(n * 10) / 
 function Koppling3D({ u }) {
   const { state, dispatch } = usePortfolj();
   const { siteVal, visaISite, visaToast } = useUi();
-  const o = arKopplad(u) ? (state.siteObjekt || []).find((x) => x.id === u.objectGuid && x.projektId === u.projektId) : null;
-  const markerat = siteVal ? (state.siteObjekt || []).find((x) => x.id === siteVal && x.projektId === u.projektId) : null;
+  const o = arKopplad(u) ? allaModellObjekt(state, u.projektId).find((x) => x.id === u.objectGuid) : null;
+  const markerat = siteVal ? allaModellObjekt(state, u.projektId).find((x) => x.id === siteVal) : null;
 
   const kopplaTillMarkerat = () => {
     dispatch({ type: "ATA_KOPPLA_OBJEKT", id: u.id, koppling: byggKoppling(markerat, { modelVersionId: (state.modellVersioner || []).filter((v) => v.projektId === u.projektId).at(-1)?.id || "" }) });

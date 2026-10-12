@@ -250,6 +250,8 @@ export const SEED = {
   siteObjekt: [],
   /* Ögonblicksbilder av siteObjekt för jämförelseverktyget (lib/modellDiff.js). */
   modellVersioner: [],
+  /* Importerade IFC-modeller: metadata per objekt (lib/ifcModell.js). Geometrin ligger i IndexedDB. */
+  ifcModeller: [],
 
   /* Ändringslogg — statusändringar m.fl. händelser, senaste ~150 posterna, nyast först. */
   andringslogg: []

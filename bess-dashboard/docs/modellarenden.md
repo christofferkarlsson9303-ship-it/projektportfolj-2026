@@ -57,6 +57,30 @@ Koordinater byts mellan appens Y-upp och BCF:s Z-upp: `(x, y, z)` blir `(x, −z
 
 **Import** (`lasBcf` → `planeraImport` → `ATA_IMPORTERA_BCF`) visar först en bekräftelse (nya, uppdaterade, kopplade, kommentarer som hoppas över). Ett topic med känt `bcfGuid` uppdaterar ärendet, annars skapas ett nytt med nummer ur projektets serie. Reducern skriver bara BCF-fält (`BCF_FALT`) och tar bort ogiltig status, kameravy eller koppling i stället för att spara dem. Komponenter som inte matchar något objekt sparas i `bcfKomponenter` så att de kan kopplas när modellen finns. BCF 3.0, ortogonala kameror och kommentarer stöds inte (antalet kommentarer rapporteras).
 
+## IFC-import (Steg B2)
+
+Kortet **IFC-modeller** på siten importerar en `.ifc`-fil. Filen läses i webbläsaren med `web-ifc` (wasm, enkeltrådat, hämtas från samma server som appen — aldrig CDN — och först när någon importerar). Inget laddas upp och ingen server eller migrering behövs.
+
+| Vad | Var | Delas |
+|---|---|---|
+| Metadata per objekt: `guid` (GlobalId), `eid` (expressID), namn, klass, låda | `state.ifcModeller` (`portfolj/state`), skapas med `IFC_MODELL_LAGG_TILL` | ja |
+| Geometri (positioner, normaler, index, färg per del) | IndexedDB `bess-ifc` i webbläsaren (`lib/ifcCache.js`) | **nej** |
+| Dölj/visa modell | `localStorage` `bess-ifc-dolda` | nej |
+
+Koden: `lib/ifcApi.js` (initiering), `lib/ifcLaddare.js` (läsning, ren funktion av ett `IfcAPI`), `lib/ifcModell.js` (metadata, sökning, `ifcObjektSomSite`), `components/site/IfcImportDialog.jsx` och `IfcModeller.jsx`. `SiteScen.jsx` ritar modellerna i en egen grupp (en mesh per del, `userData.id` = GlobalId) som bara byggs om när modellerna byts; markering ändrar bara materialet.
+
+**Koordinater.** web-ifc ger redan Y upp och meter (enhetsskalan tillämpas, mm = m). Hela modellen flyttas så att fotavtrycket centreras på tomten och lägsta punkt hamnar på marken — georefererade modeller ligger annars kilometer från origo. Förskjutningen sparas på modellen.
+
+**Ärenden.** Ett IFC-objekt är ett objekt som alla andra: `objectGuid` = GlobalId, `boundingBox` ur objektets låda, kameravy via `viewpointForBox`. `ATA_KOPPLA_OBJEKT` och BCF-importen godtar GlobalId från projektets IFC-modeller (`allaModellObjekt`). BCF exporterar dem som `IfcGuid`. Tas modellen bort ligger ärendets koppling kvar.
+
+**Gränser.**
+- Högst **3 000 objekt per modell** (`IFC_MAX_OBJEKT`) och **3 modeller per projekt** — metadatan ligger i en enda JSONB-rad. Större modeller avkortas med en varning i importen. Rum, öppningar, rutnät och annotationer tas inte med.
+- **Geometrin finns bara i webbläsaren som importerade filen.** Kollegor ser objekten, kan söka, välja och skriva ärenden, men ser modellen i 3D först när de importerat samma fil. Kortet säger det.
+- Läsningen körs på huvudtråden: en stor fil kan göra fliken seg en stund. Web worker är inte gjort.
+- Skrivskyddat: IFC-objekt kan inte flyttas, roteras eller tas bort på siten, och ingår inte i modellversioner/jämförelsen eller planvyn.
+- Provat mot en minimal IFC4-fixtur (`src/test/miniIfc.js`) och riktig web-ifc. Riktiga Revit-/ArchiCAD-exporter, IFC2x3 och mycket stora filer är **inte** provade.
+- `build:single` lägger in wasm-filen (~1,6 MB) i HTML-filen.
+
 ## Inte gjort (Steg B, resten)
 
-IFC-laddning (`web-ifc`) och `expressID`, en server-side `POST /api/models/diff` och modellversioner som egen tabell. Se till att besluta modellkälla först; `guid`-fältet och `diffaModeller` är förberedda för det.
+Jämförelse mellan två IFC-versioner (`diffaModeller` är förberedd: den jämför på `guid`), en server-side `POST /api/models/diff` och modellversioner som egen tabell.

@@ -12,6 +12,7 @@ import { forslagText, kanTillampas, tillampaForslag } from "../lib/importera.js"
 import { angraFakturaunderlag, skapaFakturaunderlag } from "../lib/planering.js";
 import { kalkylRader, kalkylSummor } from "../lib/atakalkyl.js";
 import { fmtSEK } from "../lib/format.js";
+import { IFC_MAX_MODELLER, ifcModellFel, ifcObjektForProjekt } from "../lib/ifcModell.js";
 import { MALLAR, arNal, objektFel, punkterForSite } from "../lib/site.js";
 import { boxFel, kopplingFel, viewpointFel } from "../lib/modellKoppling.js";
 import { arGuid } from "../lib/bcfHanterare.js";
@@ -686,7 +687,8 @@ export function reducer(state, action) {
       const { id, koppling } = action;
       const u = (state.ur || []).find((r) => r.id === id);
       if (!u || kopplingFel(koppling) !== null) return state;
-      const o = (state.siteObjekt || []).find((r) => r.id === koppling.objectGuid && r.projektId === u.projektId);
+      const o = (state.siteObjekt || []).find((r) => r.id === koppling.objectGuid && r.projektId === u.projektId)
+        || ifcObjektForProjekt(state, u.projektId).find((r) => r.id === koppling.objectGuid);
       if (!o) return state;
       const falt = {
         objectGuid: koppling.objectGuid,
@@ -719,7 +721,7 @@ export function reducer(state, action) {
     case "ATA_IMPORTERA_BCF": {
       const { projektId, nya = [], uppdatera = [] } = action;
       if (!state.projekt.some((p) => p.id === projektId)) return state;
-      const objektIds = new Set((state.siteObjekt || []).filter((o) => o.projektId === projektId).map((o) => o.id));
+      const objektIds = new Set([...(state.siteObjekt || []).filter((o) => o.projektId === projektId), ...ifcObjektForProjekt(state, projektId)].map((o) => o.id));
       const ur = state.ur || [];
       let rader = ur;
       let antalNya = 0;
@@ -778,6 +780,25 @@ export function reducer(state, action) {
       const v = (state.modellVersioner || []).find((r) => r.id === action.id);
       if (!v) return state;
       return loggat({ ...state, modellVersioner: state.modellVersioner.filter((r) => r.id !== v.id) }, v.projektId, `Modellversion borttagen: ${v.namn}`);
+    }
+
+    /* ---------- IFC-modeller ----------
+       Bara metadata (GlobalId, expressID, namn, klass, låda) sparas här; geometrin ligger i
+       webbläsarens IndexedDB (lib/ifcCache.js). Högst IFC_MAX_MODELLER per projekt. En modell
+       som tas bort tar inte med sig ärendena — de behåller sitt GlobalId och sin kameravy. */
+    case "IFC_MODELL_LAGG_TILL": {
+      const m = action.modell;
+      if (ifcModellFel(m) !== null || !state.projekt.some((p) => p.id === m.projektId)) return state;
+      const alla = state.ifcModeller || [];
+      if (alla.some((r) => r.id === m.id)) return state;
+      if (alla.filter((r) => r.projektId === m.projektId).length >= IFC_MAX_MODELLER) return state;
+      return loggat({ ...state, ifcModeller: [...alla, structuredClone(m)] }, m.projektId, `IFC-modell tillagd: ${m.namn} (${m.objekt.length} objekt)`);
+    }
+
+    case "IFC_MODELL_TA_BORT": {
+      const m = (state.ifcModeller || []).find((r) => r.id === action.id);
+      if (!m) return state;
+      return loggat({ ...state, ifcModeller: state.ifcModeller.filter((r) => r.id !== m.id) }, m.projektId, `IFC-modell borttagen: ${m.namn}`);
     }
 
     /* ---------- Byggmöten ----------

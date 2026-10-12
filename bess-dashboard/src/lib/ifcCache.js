@@ -24,11 +24,6 @@ function omvandlaFel(e) {
   return new IfcCacheFel(`Webbläsarens lagring för IFC-modeller fungerar inte (${e?.message || namn || "okänt fel"}).`, "blockerad");
 }
 
-const lofte = (req) =>
-  new Promise((resolve, reject) => {
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
 
 /** Det riktiga lagret ovanpå IndexedDB. `fabrik` är en IDBFactory (globalThis.indexedDB som standard). */
 export function indexedDbLager(fabrik = globalThis.indexedDB) {

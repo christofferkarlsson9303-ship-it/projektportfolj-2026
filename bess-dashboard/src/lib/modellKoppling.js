@@ -9,6 +9,7 @@
    Koordinater: three.js, högerhänt, +Y upp, meter. Vektorer är [x, y, z]. */
 
 import { TOMT, arNal, yttermatt } from "./site.js";
+import { ifcObjektForProjekt } from "./ifcModell.js";
 
 export const FOV = 55;
 /** Höjden på en nål (pinne och topp), för dess låda. */
@@ -23,11 +24,17 @@ const arVektor = (v) => Array.isArray(v) && v.length === 3 && v.every(arTal);
 
 /** Omslutande låda i världen för ett siteObjekt. En volym tas efter rotation. */
 export function boundingBoxFor(o) {
+  if (o?.typ === "ifc" && Array.isArray(o.bb) && o.bb.length === 6) return { min: o.bb.slice(0, 3), max: o.bb.slice(3) };
   const x = Number(o?.x) || 0;
   const z = Number(o?.z) || 0;
   if (arNal(o)) return { min: [r3(x - NAL_RADIE), 0, r3(z - NAL_RADIE)], max: [r3(x + NAL_RADIE), NAL_HOJD, r3(z + NAL_RADIE)] };
   const m = yttermatt(o);
   return { min: [r3(x - m.bredd / 2), 0, r3(z - m.djup / 2)], max: [r3(x + m.bredd / 2), r3(Number(o?.hojd) || 0), r3(z + m.djup / 2)] };
+}
+
+/** Alla objekt ärenden kan peka på i ett projekt: siteObjekt plus objekt ur importerade IFC-modeller. */
+export function allaModellObjekt(state, projektId) {
+  return [...(state?.siteObjekt || []).filter((o) => o.projektId === projektId), ...ifcObjektForProjekt(state, projektId)];
 }
 
 export const boxCentrum = (b) => [0, 1, 2].map((i) => r3((b.min[i] + b.max[i]) / 2));

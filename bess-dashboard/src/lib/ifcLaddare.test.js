@@ -1,5 +1,4 @@
 import { dirname } from "node:path";
-import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { miniIfc, tomIfc } from "../test/miniIfc.js";

@@ -145,6 +145,8 @@ export default function SiteScen({
   diff = null,
   arenden = null,
   flyg = null,
+  ifcModeller = null,
+  ifcObjekt = null,
   onKlar,
   onPlacera,
   onValj,
@@ -278,6 +280,9 @@ export default function SiteScen({
 
     const objektGrupp = new THREE.Group();
     scene.add(objektGrupp);
+    /* Importerade IFC-modeller: egen grupp, byggs om bara när modellerna byts (inte vid varje markering). */
+    const ifcGrupp = new THREE.Group();
+    scene.add(ifcGrupp);
     const matGrupp = new THREE.Group();
     scene.add(matGrupp);
     // Sektionslådans kanter, så att man ser vad som klipps.
@@ -311,7 +316,7 @@ export default function SiteScen({
     io.observe(el);
 
     const ga = { pos: { x: INGANG.x, y: INGANG.y, z: INGANG.z }, yaw: INGANG.yaw, pitch: INGANG.pitch, avsikt: {}, joy: { fram: 0, sid: 0 } };
-    s.current = { renderer, etiketter, scene, camera, controls, objektGrupp, planGrupp, tomt, ga, meshar: new Map(), markera, rutnatLinjer, spok, spokPunkt: null, matGrupp, sektionLinjer, flygning: null };
+    s.current = { renderer, etiketter, scene, camera, controls, objektGrupp, ifcGrupp, planGrupp, tomt, ga, meshar: new Map(), markera, rutnatLinjer, spok, spokPunkt: null, matGrupp, sektionLinjer, flygning: null };
 
     /* ---------- Pekare: välja, placera, dra, titta ---------- */
     const ray = new THREE.Raycaster();
@@ -322,8 +327,9 @@ export default function SiteScen({
       ndc.set(((e.clientX - b.left) / b.width) * 2 - 1, -((e.clientY - b.top) / b.height) * 2 + 1);
       ray.setFromCamera(ndc, camera);
     };
+    const traffbara = () => [...objektGrupp.children, ...ifcGrupp.children.filter((g) => g.visible)];
     const traffadId = () => {
-      for (const h of ray.intersectObjects(objektGrupp.children, true)) {
+      for (const h of ray.intersectObjects(traffbara(), true)) {
         let o = h.object;
         while (o && !o.userData.id) o = o.parent;
         if (o) return o.userData.id;
@@ -337,7 +343,7 @@ export default function SiteScen({
 
     /* Kryssmätning: träffa första ytan under pekaren (objekt eller mark). */
     const ytpunkt = () => {
-      const traff = ray.intersectObjects(objektGrupp.children, true).find((h) => h.object.isMesh && h.object.visible && !h.object.userData.spok);
+      const traff = ray.intersectObjects(traffbara(), true).find((h) => h.object.isMesh && h.object.visible && !h.object.userData.spok);
       if (traff) return traff.point.clone();
       return markpunkt();
     };
@@ -788,6 +794,76 @@ export default function SiteScen({
     }
     s.current.markera?.();
   }, [objekt, valtId, punkter, diff, arenden]);
+
+  /* ---------- IFC-modeller ----------
+     En grupp per modell, en Mesh per del och färg, med GlobalId på varje mesh så att
+     träff, markering och ärenden pratar om samma objekt. Modellen är redan centrerad
+     och i meter (lib/ifcLaddare.js). Byggs bara om när modellerna byts. */
+  useEffect(() => {
+    const { ifcGrupp, markera } = s.current;
+    if (!ifcGrupp) return;
+    for (const barn of [...ifcGrupp.children]) {
+      ifcGrupp.remove(barn);
+      frigor(barn);
+    }
+    for (const m of ifcModeller || []) {
+      if (!m.geometri) continue;
+      const grupp = new THREE.Group();
+      grupp.userData.modellId = m.id;
+      const material = new Map();
+      for (const o of m.geometri) {
+        const guid = m.guidPerEid?.[o.eid];
+        if (!guid) continue;
+        for (const del of o.delar) {
+          const [r, g, b, a] = del.farg;
+          const nyckel = [r, g, b, a].map((v) => Math.round(v * 255)).join(",");
+          let mat = material.get(nyckel);
+          if (!mat) {
+            mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(r, g, b), roughness: 0.8, metalness: 0.05, side: THREE.DoubleSide, transparent: a < 1, opacity: a, depthWrite: a >= 1 });
+            material.set(nyckel, mat);
+          }
+          const geo = new THREE.BufferGeometry();
+          geo.setAttribute("position", new THREE.BufferAttribute(del.pos, 3));
+          geo.setAttribute("normal", new THREE.BufferAttribute(del.nor, 3));
+          geo.setIndex(new THREE.BufferAttribute(del.idx, 1));
+          const mesh = new THREE.Mesh(geo, mat);
+          mesh.castShadow = a >= 1;
+          mesh.receiveShadow = true;
+          mesh.userData.id = guid;
+          mesh.userData.mat = mat;
+          grupp.add(mesh);
+        }
+      }
+      ifcGrupp.add(grupp);
+    }
+    markera?.();
+  }, [ifcModeller]);
+
+  /* Markerat IFC-objekt: orange material och en etikett. Ändrar bara materialet, bygger inget om. */
+  useEffect(() => {
+    const { ifcGrupp, markera } = s.current;
+    if (!ifcGrupp) return;
+    const mark = new THREE.MeshStandardMaterial({ color: farg("--orange"), roughness: 0.5, side: THREE.DoubleSide });
+    let etikettObj = null;
+    ifcGrupp.traverse((o) => {
+      if (o.isMesh) o.material = o.userData.id === valtId ? mark : o.userData.mat;
+    });
+    const valt = ifcObjekt?.get(valtId);
+    if (valt) {
+      const antalArenden = arenden?.get(valtId) || 0;
+      etikettObj = etikett([valt.namn, antalArenden ? `ÄTA ${antalArenden}` : ""].filter(Boolean).join(" · "));
+      etikettObj.position.set((valt.bb[0] + valt.bb[3]) / 2, valt.bb[4] + 0.8, (valt.bb[2] + valt.bb[5]) / 2);
+      ifcGrupp.add(etikettObj);
+    }
+    markera?.();
+    return () => {
+      mark.dispose();
+      if (etikettObj) {
+        etikettObj.element.remove();
+        ifcGrupp.remove(etikettObj);
+      }
+    };
+  }, [valtId, ifcModeller, ifcObjekt, arenden]);
 
   /* ---------- Rutnät och spöke följer props ---------- */
   useEffect(() => {

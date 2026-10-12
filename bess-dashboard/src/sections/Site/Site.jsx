@@ -7,6 +7,10 @@ import { SiteMeny } from "../../components/site/SiteMeny.jsx";
 import { SplitVy } from "../../components/site/SplitVy.jsx";
 import { SiteVerktygsfalt } from "../../components/site/SiteVerktygsfalt.jsx";
 import { SiteArenden } from "../../components/site/SiteArenden.jsx";
+import { IfcModeller } from "../../components/site/IfcModeller.jsx";
+import { IfcImportDialog } from "../../components/site/IfcImportDialog.jsx";
+import { skapaIfcCache } from "../../lib/ifcCache.js";
+import { ifcObjektForProjekt, kortKlass } from "../../lib/ifcModell.js";
 import { diffStatusPerGuid, diffaModeller } from "../../lib/modellDiff.js";
 import { SEKTION_STANDARD, arendenFor, arendenPerObjekt, boundingBoxFor, byggKoppling, kopplingFel, viewpointForBox } from "../../lib/modellKoppling.js";
 import { nyAtaPost } from "../../lib/nyaPoster.js";
@@ -118,6 +122,9 @@ export function Site() {
   const pid = p?.id;
   const objekt = useMemo(() => (pid ? siteObjekt(state, pid) : []), [state, pid]);
   const punkter = useMemo(() => (pid ? punkterForSite(state, pid) : []), [state, pid]);
+  const ifcModeller = useMemo(() => (state.ifcModeller || []).filter((m) => m.projektId === pid), [state.ifcModeller, pid]);
+  const ifcObjekt = useMemo(() => (pid ? ifcObjektForProjekt(state, pid) : []), [state, pid]);
+  const ifcObjektById = useMemo(() => new Map(ifcObjekt.map((o) => [o.id, o])), [ifcObjekt]);
   const oppnaPunkter = punkter.filter(arOppenPunkt);
 
   const [lage, setLage] = useState("orbit");
@@ -161,12 +168,81 @@ export function Site() {
     setMatt(null);
   }, [pid, setValtId]);
 
-  const valt = objekt.find((o) => o.id === valtId) || null;
+  const valt = objekt.find((o) => o.id === valtId) || ifcObjektById.get(valtId) || null;
+  const arIfc = valt?.typ === "ifc";
+
+  /* ---------- IFC: geometri i webbläsarens IndexedDB, dold/visad per webbläsare ---------- */
+  const ifcCache = useMemo(() => skapaIfcCache(), []);
+  const [ifcGeo, setIfcGeo] = useState(() => new Map());
+  const [ifcDialog, setIfcDialog] = useState(false);
+  const [ifcDolda, setIfcDolda] = useState(() => {
+    try {
+      return new Set(JSON.parse(localStorage.getItem("bess-ifc-dolda") || "[]"));
+    } catch {
+      return new Set();
+    }
+  });
+  useEffect(() => {
+    let avbruten = false;
+    for (const m of ifcModeller) {
+      if (ifcGeo.has(m.id)) continue;
+      ifcCache
+        .hamta(m.id)
+        .then((geometri) => {
+          if (avbruten || !geometri) return;
+          setIfcGeo((g) => (g.has(m.id) ? g : new Map(g).set(m.id, { geometri, guidPerEid: Object.fromEntries(m.objekt.map((o) => [o.eid, o.guid])) })));
+        })
+        .catch(() => {});
+    }
+    return () => {
+      avbruten = true;
+    };
+  }, [ifcModeller, ifcGeo, ifcCache]);
+  const ifcGeometriFinns = useMemo(() => new Set(ifcModeller.filter((m) => ifcGeo.has(m.id)).map((m) => m.id)), [ifcModeller, ifcGeo]);
+  const ifcSynliga = useMemo(
+    () => ifcModeller.filter((m) => ifcGeo.has(m.id) && !ifcDolda.has(m.id)).map((m) => ({ id: m.id, ...ifcGeo.get(m.id) })),
+    [ifcModeller, ifcGeo, ifcDolda],
+  );
+  const vaxlaIfcDold = (id) =>
+    setIfcDolda((d) => {
+      const n = new Set(d);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      try {
+        localStorage.setItem("bess-ifc-dolda", JSON.stringify([...n]));
+      } catch {
+        /* sparas inte i privat läge */
+      }
+      return n;
+    });
+  const laggTillIfc = async ({ modell, geometri, guidPerEid }) => {
+    dispatch({ type: "IFC_MODELL_LAGG_TILL", modell });
+    setIfcGeo((g) => new Map(g).set(modell.id, { geometri, guidPerEid }));
+    try {
+      await ifcCache.spara(modell.id, geometri);
+    } catch (e) {
+      visaToast(`Modellen lades till men geometrin sparades inte: ${e.message} Den syns tills sidan laddas om.`, "warn");
+      return null;
+    }
+    visaToast(`IFC-modellen ”${modell.namn}” importerad (${modell.objekt.length} objekt).`);
+    return null;
+  };
+  const taBortIfc = async (m) => {
+    const ja = await bekrafta(`”${m.namn}” tas bort från projektet. Ärenden som pekar på dess objekt behåller sitt GlobalId och sin kameravy.`, { titel: "Ta bort IFC-modell", ok: "Ta bort", fara: true });
+    if (!ja) return;
+    dispatch({ type: "IFC_MODELL_TA_BORT", id: m.id });
+    setIfcGeo((g) => {
+      const n = new Map(g);
+      n.delete(m.id);
+      return n;
+    });
+    ifcCache.ta(m.id).catch(() => {});
+  };
 
   /* ---------- Ärenden, versioner och jämförelse ---------- */
   const arendeRader = useMemo(() => (pid ? arendenFor(state.ur, pid) : []), [state.ur, pid]);
   const arendenMap = useMemo(() => (pid ? arendenPerObjekt(state.ur, pid) : new Map()), [state.ur, pid]);
-  const objektById = useMemo(() => new Map(objekt.map((o) => [o.id, o])), [objekt]);
+  const objektById = useMemo(() => new Map([...ifcObjekt, ...objekt].map((o) => [o.id, o])), [objekt, ifcObjekt]);
   const versioner = useMemo(() => (state.modellVersioner || []).filter((v) => v.projektId === pid), [state.modellVersioner, pid]);
   const jamfor = versioner.find((v) => v.id === jamforId) || null;
   const diffData = useMemo(() => {
@@ -186,7 +262,7 @@ export function Site() {
   const [sedd, setSedd] = useState(null);
   if (siteFlyg && siteFlyg.tid !== sedd) {
     setSedd(siteFlyg.tid);
-    const o = objekt.find((x) => x.id === siteFlyg.guid);
+    const o = objekt.find((x) => x.id === siteFlyg.guid) || ifcObjektById.get(siteFlyg.guid);
     if (o) {
       setLage("orbit");
       setFlyg({ tid: siteFlyg.tid, viewpoint: viewpointForBox(boundingBoxFor(o)) });
@@ -201,7 +277,7 @@ export function Site() {
       setSpokRot((r) => roteraSteg(r));
       return;
     }
-    if (valt && !arNal(valt)) {
+    if (valt && !arNal(valt) && !arIfc) {
       const kand = { ...valt, rotation: roteraSteg(valt.rotation) };
       const res = provaPlacering(kand, { x: valt.x, z: valt.z }, objekt, { ignorera: valt.id, rutnat: rutnat ? RUTNAT : 0 });
       if (!res.ok) {
@@ -310,7 +386,7 @@ export function Site() {
       const plan = planeraImport(r.topics, {
         ur: state.ur,
         projektId: pid,
-        objekt,
+        objekt: [...ifcObjekt, ...objekt],
         lada: boundingBoxFor,
         skapaPost: (falt) => {
           const rad = { ...nyAtaPost(state0, pid, { ansvarig: hamtaNamn() || "", ...falt }), id: `u${Date.now().toString(36)}${state0.ur.length.toString(36)}` };
@@ -462,7 +538,9 @@ export function Site() {
       ? "Välj punkten nålen ska peka på."
       : `Klicka på marken för att placera ${laddad === "ehouse" ? "E-House" : MALLAR[laddad].namn.toLowerCase()}. R roterar, G rutnät, Esc avbryter.`
     : valt
-      ? `${namnFor(valt)} är markerad. R roterar, dra för att flytta.`
+      ? arIfc
+        ? `${namnFor(valt)} (IFC) är markerad.`
+        : `${namnFor(valt)} är markerad. R roterar, dra för att flytta.`
       : "Välj en komponent till vänster för att placera, eller klicka på ett objekt.";
 
   /* Vänstra delen är bred nog för att sidopanelen ska få ligga som överlägg i 3D-vyn;
@@ -473,14 +551,25 @@ export function Site() {
               id="site-markerat"
               className={overlay ? `absolute bottom-3 right-3 top-3 z-[3] w-[340px] overflow-y-auto shadow-lg ${valt ? "" : "hidden"}` : ""}
               title={valt ? namnFor(valt) : "Markerat objekt"}
-              subtitle={valt ? (arNal(valt) ? (arOppenPunkt(punktFor(valt)) ? "Nål på en öppen punkt" : "Nål på en punkt som inte är öppen") : `${MALLAR[valt.typ].namn} · mått i meter, rotation i grader`) : null}
-              badge={valt && !arNal(valt) && valt.status ? <StatusBadge ton={STATUS_TON[valt.status] || "neutral"} label={SITE_STATUS.find(([id]) => id === valt.status)?.[1] || valt.status} /> : null}
-              action={valt ? <TaBortKnapp etikett={`Ta bort ${namnFor(valt)}`} onClick={() => taBort(valt)} /> : null}
+              subtitle={valt ? (arIfc ? `IFC · ${kortKlass(valt.klass)}` : arNal(valt) ? (arOppenPunkt(punktFor(valt)) ? "Nål på en öppen punkt" : "Nål på en punkt som inte är öppen") : `${MALLAR[valt.typ].namn} · mått i meter, rotation i grader`) : null}
+              badge={valt && !arNal(valt) && !arIfc && valt.status ? <StatusBadge ton={STATUS_TON[valt.status] || "neutral"} label={SITE_STATUS.find(([id]) => id === valt.status)?.[1] || valt.status} /> : null}
+              action={valt && !arIfc ? <TaBortKnapp etikett={`Ta bort ${namnFor(valt)}`} onClick={() => taBort(valt)} /> : null}
             >
               {!valt ? (
                 <p className="m-0 text-[13px] text-ink-soft">
                   Inget markerat. Klicka på ett objekt i 3D-vyn, i planvyn eller i listan.
                 </p>
+              ) : arIfc ? (
+                <dl className="m-0 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[13px]">
+                  <dt className="text-ink-soft">Klass</dt>
+                  <dd className="m-0 text-ink">{valt.klass || "okänd"}</dd>
+                  <dt className="text-ink-soft">GlobalId</dt>
+                  <dd className="m-0 break-all font-mono text-[12px] text-ink">{valt.id}</dd>
+                  <dt className="text-ink-soft">expressID</dt>
+                  <dd className="m-0 text-ink">{valt.eid}</dd>
+                  <dt className="text-ink-soft">Mått</dt>
+                  <dd className="m-0 text-ink">{[0, 1, 2].map((i) => fmtM(valt.bb[i + 3] - valt.bb[i])).join(" × ")} m (B × H × D)</dd>
+                </dl>
               ) : arNal(valt) ? (
                 <NalPanel
                   o={valt}
@@ -511,7 +600,7 @@ export function Site() {
                   ))}
                 </div>
               )}
-              {valt && harBessData(valt.typ) ? <BessSektion key={`bess-${valt.id}-${omritning}`} o={valt} onTal={andraMatt} onAndra={andra} /> : null}
+              {valt && !arIfc && harBessData(valt.typ) ? <BessSektion key={`bess-${valt.id}-${omritning}`} o={valt} onTal={andraMatt} onAndra={andra} /> : null}
             </Card>
   );
 
@@ -621,6 +710,8 @@ export function Site() {
                     sektion={sektion}
                     matning={matning}
                     diff={diffProp}
+                    ifcModeller={ifcSynliga}
+                    ifcObjekt={ifcObjektById}
                     arenden={arendenMap}
                     flyg={flyg}
                     onPlacera={placera}
@@ -660,10 +751,27 @@ export function Site() {
           />
           {!overlay ? markeratKort : null}
         </Card>
+        <IfcModeller
+          modeller={ifcModeller}
+          objekt={ifcObjekt}
+          geometriFinns={ifcGeometriFinns}
+          dolda={ifcDolda}
+          valtId={valtId}
+          onImportera={() => setIfcDialog(true)}
+          onVisaDold={vaxlaIfcDold}
+          onTaBort={taBortIfc}
+          onValj={(id) => {
+            setValtId(id);
+            const o = ifcObjektById.get(id);
+            if (o && lage === "orbit") flygTill(viewpointForBox(boundingBoxFor(o)));
+          }}
+        />
         <Card id="site-park" title="Parkens BESS-data" subtitle="Summerat ur objekten på siten.">
           <ParkSumma objekt={objekt} className="sm:grid-cols-4" />
         </Card>
       </div>
+
+      {ifcDialog ? <IfcImportDialog projektId={pid} filnamnFinns={ifcModeller.map((m) => m.filnamn)} onLagg={laggTillIfc} onStang={() => setIfcDialog(false)} /> : null}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-6">
         <Card id="site-planvy" title="Planvy" subtitle="Samma objekt sedda ovanifrån. Norr uppåt.">

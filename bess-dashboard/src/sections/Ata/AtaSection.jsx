@@ -15,6 +15,7 @@ import { AtaTableView } from "./AtaTableView.jsx";
 import { AtaTimelineView } from "./AtaTimelineView.jsx";
 import { AtaDrawerDetails } from "./AtaDrawerDetails.jsx";
 import { AtaKalkyl } from "./AtaKalkyl.jsx";
+import { allaModellObjekt } from "../../lib/modellKoppling.js";
 
 /* ÄTA och hinder.
 
@@ -69,7 +70,7 @@ export function Ata() {
 
   /* Ett markerat objekt i 3D-vyn filtrerar registret till objektets ärenden. Finns objektet inte
      (annat projekt, borttaget) gäller inget filter. */
-  const filterObjekt = siteVal ? (state.siteObjekt || []).find((o) => o.id === siteVal && o.projektId === pid) || null : null;
+  const filterObjekt = siteVal ? allaModellObjekt(state, pid).find((o) => o.id === siteVal) || null : null;
   const registerRader = filterObjekt ? n.rader.filter((u) => u.objectGuid === filterObjekt.id) : n.rader;
 
   const valdPost = n.rader.find((u) => u.id === oppen) || null;
