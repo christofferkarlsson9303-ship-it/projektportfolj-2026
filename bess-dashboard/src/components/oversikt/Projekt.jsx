@@ -6,7 +6,8 @@ import { fmtSEK } from "../../lib/format.js";
 import { dagarTill, idag } from "../../lib/datum.js";
 import { ekonomi, nastaHandelse, oppnaUR, projektKlass, projektUnderlag } from "../../lib/berakningar.js";
 import { Meter, StatusBadge, TableRegion } from "../ds/index.js";
-import { EJ_VUNNET_ORSAKER, FAS_ANTAL, arFasNr, faseInfo } from "../../data/projektfaser.ts";
+import { EJ_VUNNET_ORSAKER, FAS_ANTAL, arFasNr, faseInfo, statusEtikett } from "../../data/projektfaser.ts";
+import { FasMatare } from "../projekt/FasMatare.jsx";
 
 /* ---------- Projektkort ---------- */
 
@@ -19,8 +20,25 @@ import { EJ_VUNNET_ORSAKER, FAS_ANTAL, arFasNr, faseInfo } from "../../data/proj
 const tonForDagar = (d) => (d === null ? "" : d < 0 ? "bad" : d < 60 ? "warn" : "");
 
 export function Projektkort({ p }) {
-  const { state, uppdStatus, markeraEjVunnet } = usePortfolj();
-  const { setValtProjekt, valtProjekt, visa, oppnaProjektstart, fraga, visaToast } = useUi();
+  const { state, dispatch, uppdStatus, markeraEjVunnet } = usePortfolj();
+  const { setValtProjekt, valtProjekt, visa, oppnaProjektstart, fraga, bekrafta, visaToast } = useUi();
+
+  /* Flytta projektet till en annan fas. Anbud → Planering är det vanliga fallet (anbudet vunnet) och har egen text.
+     Statusen följer fasen. Att backa eller hoppa över faser frågar först. */
+  const nuFas = arFasNr(p.fas) ? p.fas : 1;
+  const bytFas = async (nr) => {
+    const till = faseInfo(nr);
+    const vunnet = nuFas === 1 && nr === 2;
+    const ja = await bekrafta(
+      vunnet
+        ? `${p.namn}: anbudet är vunnet och projektet går vidare till fas 2, ${till.kort}. Statusen blir ${statusEtikett(till.status)}.`
+        : `${p.namn} flyttas från fas ${nuFas} (${faseInfo(nuFas).kort}) till fas ${nr} (${till.kort}). Statusen blir ${statusEtikett(till.status)}.${nr > nuFas + 1 ? " Du hoppar över fas " + (nuFas + 1) + (nr > nuFas + 2 ? "–" + (nr - 1) : "") + "." : ""}`,
+      { titel: vunnet ? "Anbudet vunnet?" : "Ändra projektets fas", ok: vunnet ? "Ja, gå till fas 2" : "Ändra fas" }
+    );
+    if (!ja) return;
+    dispatch({ type: "SATT_PROJEKTFAS", id: p.id, fas: nr });
+    visaToast(`${p.namn} ligger nu i fas ${nr}, ${till.kort}.`);
+  };
 
   /* Ett förlorat anbud flyttas till arkivet: fas 2–8 döljs och projektet räknas inte i aktiva vyer. */
   const markeraEjVunnetMedOrsak = async () => {
@@ -80,6 +98,12 @@ export function Projektkort({ p }) {
           <span className="sr-only"> — öppna tidplanen</span>
         </button>
       </h3>
+
+      {p.status !== "ANBUD_EJ_VUNNET" ? (
+        <div className="my-3">
+          <FasMatare fas={nuFas} onVal={bytFas} etikett={`Fas för ${p.namn}`} />
+        </div>
+      ) : null}
 
       <ul className="projkort-fakta">
         <li className={effekt ? "" : "tom"}>
@@ -148,6 +172,11 @@ export function Projektkort({ p }) {
         <button type="button" className="btn sec mini" onClick={() => oppnaProjektstart(p.id)}>
           <Flag size={14} aria-hidden="true" /> Öppna projektstart<span className="sr-only"> för {p.namn}</span>
         </button>
+        {p.status !== "ANBUD_EJ_VUNNET" && nuFas === 1 ? (
+          <button type="button" className="btn mini" onClick={() => bytFas(2)}>
+            Anbudet vunnet: gå till fas 2<span className="sr-only"> för {p.namn}</span>
+          </button>
+        ) : null}
         {p.status !== "ANBUD_EJ_VUNNET" ? (
           <button type="button" className="btn sec mini" onClick={markeraEjVunnetMedOrsak}>
             Markera som ej vunnet<span className="sr-only"> för {p.namn}</span>

@@ -1,10 +1,14 @@
 import { useState } from "react";
+import { ChevronDown, CircleCheck, CircleHelp, TriangleAlert } from "lucide-react";
 import { usePortfolj, useUi } from "../state/hooks.js";
-import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
-import { Callout, Card, Meter, StatusBadge, TableRegion } from "../components/ds/index.js";
+import { Card, Meter, StatusBadge, TableRegion } from "../components/ds/index.js";
 import { Falt } from "../components/ui/Falt.jsx";
-import { Slideover } from "../components/ui/Slideover.jsx";
+import { VeckoProjektflikar } from "../components/veckokoll/VeckoProjektflikar.jsx";
+import { BessStatusHeader } from "../components/site/BessStatusHeader.jsx";
 import { VECKOFRAGOR } from "../data/veckofragor.js";
+import { nyAtaPost } from "../lib/nyaPoster.js";
+import { ataPaverkan, bessStadierForProjekt, effektText, parkKomponenter, veckaSiffror } from "../lib/veckoOversikt.js";
+import { parkSumma, siteObjekt } from "../lib/site.js";
 import { veckaBesvarade, veckaFlaggor, veckorad } from "../lib/berakningar.js";
 import { idag, veckaEtikett, veckaForskjut, veckaNu } from "../lib/datum.js";
 import { allvar, ALLVARSNAMN, SVARSORD } from "../lib/veckotriage.js";
@@ -26,8 +30,12 @@ import { registerStatus } from "../lib/status.js";
    fält, men de går genom SATT_VECKORAD som vilket fält som helst — reducern
    behövde inte röras.
 
-   Vyn står på designsystemet: veckan som Card med veckoväxlaren i huvudet
-   och mätare, frågekorten i Cards form, anteckning och historik som kort. */
+   Vyn står på designsystemet: projektflikar och BESS-översikten överst, veckan som Card med
+   veckoväxlaren i huvudet och mätare, frågekorten i Cards form, anteckning och historik som kort.
+
+   Frågekorten är toggle-grupper med ikon (OK, Varning, Avvikelse). Väljs Varning eller Avvikelse får
+   kortet en färgad vänsterkant och ett snabbfält fälls ut under det: noteringen och knapparna för
+   öppen punkt, ÄTA och störning. Det som förut låg i en sidopanel finns nu direkt på kortet. */
 
 const ANTAL_FRAGOR = VECKOFRAGOR.length;
 
@@ -35,8 +43,12 @@ const ANTAL_FRAGOR = VECKOFRAGOR.length;
    lintern Date.now() som ett orent anrop under render. */
 const nyttId = (prefix) => prefix + Date.now();
 
-function Fragekort({ f, svar, kommentar, onSvara, onOppna }) {
+const IKON = { ok: CircleCheck, varning: CircleHelp, avvikelse: TriangleAlert };
+
+function Fragekort({ f, svar, kommentar, utfalld, onSvara, onVaxla, onKommentar, onPunkt, onAta, onStorning }) {
   const grad = svar ? allvar(f, svar) : null;
+  const behover = grad === "varning" || grad === "avvikelse";
+  const snabbId = `veckosnabb-${f.n}`;
 
   return (
     <article className={`veckokort ${grad || ""}`.trim()}>
@@ -48,15 +60,11 @@ function Fragekort({ f, svar, kommentar, onSvara, onOppna }) {
       <div className="veckokort-svar" role="group" aria-label={`Svar på fråga ${f.n}`}>
         {f.alt.map((a) => {
           const g = allvar(f, a);
+          const Ikon = IKON[g];
           return (
-            <button
-              key={a}
-              type="button"
-              className={g}
-              aria-pressed={svar === a}
-              onClick={() => onSvara(f.n, a)}
-            >
-              {ALLVARSNAMN[g]}
+            <button key={a} type="button" className={g} aria-pressed={svar === a} onClick={() => onSvara(f.n, a)}>
+              <Ikon size={18} aria-hidden="true" />
+              <span>{ALLVARSNAMN[g]}</span>
               <span className="ord">{SVARSORD[a]}</span>
             </button>
           );
@@ -67,14 +75,47 @@ function Fragekort({ f, svar, kommentar, onSvara, onOppna }) {
         <>
           <div className="veckokort-rad">{f.svar[svar]}</div>
           <div className="veckokort-fot">
-            {grad === "ok" ? null : (
-              <button type="button" className="btn sec mini" onClick={() => onOppna(f.n)}>
-                {kommentar ? "Öppna kommentaren" : "Kommentera och åtgärda"}
+            {behover ? (
+              <button type="button" className="btn sec mini" aria-expanded={utfalld} aria-controls={snabbId} onClick={() => onVaxla(f.n)}>
+                <ChevronDown size={14} aria-hidden="true" className={`transition-transform duration-200 motion-reduce:transition-none ${utfalld ? "rotate-180" : ""}`} />
+                {utfalld ? "Dölj åtgärder" : "Visa åtgärder"}
               </button>
-            )}
+            ) : null}
             {f.ref ? <span className="ref">{f.ref}</span> : null}
             {kommentar ? <span className="veckokort-kommentar">Kommenterad</span> : null}
           </div>
+
+          {behover && utfalld ? (
+            <div id={snabbId} className="veckokort-snabb" role="group" aria-label={`Åtgärder för fråga ${f.n}`}>
+              <div className="f mb-0">
+                <label htmlFor={`vecka-kommentar-${f.n}`}>Kommentar till {grad === "avvikelse" ? "avvikelsen" : "varningen"}</label>
+                {/* Lokalt utkast som sparas vid blur, Ctrl+Enter eller när fältet försvinner — inte per
+                    tangenttryck. Förut gick två dispatchar per bokstav (värde + datum), och hela appen
+                    renderades om mitt i skrivandet. */}
+                <Falt
+                  flerrad
+                  id={`vecka-kommentar-${f.n}`}
+                  varde={kommentar}
+                  etikett={`Kommentar till ${grad === "avvikelse" ? "avvikelsen" : "varningen"}`}
+                  placeholder="Vad har hänt, vad har du gjort och vad behöver följas upp?"
+                  onCommit={(v) => onKommentar(f.n, v)}
+                />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" className="btn mini" onClick={() => onPunkt(f)}>
+                  Skapa öppen punkt
+                </button>
+                <button type="button" className="btn sec mini" onClick={() => onAta(f)}>
+                  Skapa ÄTA
+                </button>
+                {[2, 5].includes(f.n) ? (
+                  <button type="button" className="btn sec mini" onClick={() => onStorning(f)}>
+                    Skapa underrättelse om störning
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
         </>
       ) : null}
     </article>
@@ -83,15 +124,20 @@ function Fragekort({ f, svar, kommentar, onSvara, onOppna }) {
 
 export function Veckokoll() {
   const { state, dispatch, laggTill } = usePortfolj();
-  const { valtProjekt: pid, visaToast, oppnaPost } = useUi();
+  const { valtProjekt: pid, setValtProjekt, visa, visaToast, oppnaPost, visaISite } = useUi();
   const [vecka, setVecka] = useState(veckaNu);
-  const [oppenFraga, setOppenFraga] = useState(null);
+  // Kort med varning eller avvikelse är utfällda som standard; här ligger de som användaren dolt.
+  const [dolda, setDolda] = useState({});
 
   const p = state.projekt.find((x) => x.id === pid);
   const rad = veckorad(state, pid, vecka);
   const flaggor = veckaFlaggor(rad);
   const besvarade = veckaBesvarade(rad);
   const nuvarande = vecka === veckaNu();
+
+  const siffror = veckaSiffror(rad);
+  const objekt = siteObjekt(state, pid);
+  const komponenter = parkKomponenter(objekt);
 
   const historik = state.veckokoll
     .filter((r) => r.projektId === pid)
@@ -110,8 +156,17 @@ export function Veckokoll() {
   // Samma svar igen nollställer — man ska kunna ångra ett felklick.
   const svara = (n, varde) => satt("q" + n, rad?.["q" + n] === varde ? "" : varde);
 
-  const fragan = VECKOFRAGOR.find((f) => f.n === oppenFraga) || null;
-  const oppetSvar = fragan ? rad?.["q" + fragan.n] || "" : "";
+  const vaxlaSnabb = (n) => setDolda((d) => ({ ...d, [n]: !d[n] }));
+
+  const ataFranFraga = (f) => {
+    const post = nyAtaPost(state, pid, {
+      benamning: `Veckokoll ${veckaEtikett(vecka)} fråga ${f.n}: ${f.fraga}`.slice(0, 300),
+      ansvarig: hamtaNamn() || "",
+    });
+    laggTill("ur", post);
+    visaToast("ÄTA-posten är skapad. Komplettera den under ÄTA och hinder.");
+    oppnaPost("ata", post.id);
+  };
 
   const punktFranFraga = (f) => {
     const svar = rad?.["q" + f.n] || "";
@@ -158,7 +213,21 @@ export function Veckokoll() {
 
   return (
     <>
-      <Projektvaljare />
+      <VeckoProjektflikar projekt={state.projekt} valtId={pid} vecka={vecka} state={state} onVal={setValtProjekt} />
+
+      <BessStatusHeader
+        projekt={p}
+        effekt={effektText(p, parkSumma(objekt))}
+        siffror={siffror}
+        ata={ataPaverkan(state, pid)}
+        stadier={bessStadierForProjekt(state, pid)}
+        komponenter={komponenter}
+        ur={state.ur}
+        onVisaI3D={visaISite}
+        onOppnaSiten={() => visa("site")}
+        onOppnaAta={() => visa("ata")}
+        onOppnaTidplan={() => visa("tidplan")}
+      />
 
       <div className="flex flex-col gap-4 lg:gap-6">
         <Card
@@ -206,8 +275,13 @@ export function Veckokoll() {
               f={f}
               svar={rad?.["q" + f.n] || ""}
               kommentar={rad?.["k" + f.n] || ""}
+              utfalld={!dolda[f.n]}
               onSvara={svara}
-              onOppna={setOppenFraga}
+              onVaxla={vaxlaSnabb}
+              onKommentar={(n, v) => satt("k" + n, v)}
+              onPunkt={punktFranFraga}
+              onAta={ataFranFraga}
+              onStorning={storningFranFraga}
             />
           ))}
         </div>
@@ -284,56 +358,6 @@ export function Veckokoll() {
         </div>
       </div>
 
-      {fragan ? (
-        <Slideover
-          titel={`Fråga ${fragan.n} — ${ALLVARSNAMN[allvar(fragan, oppetSvar)] || "Obesvarad"}`}
-          etikett={`Fråga ${fragan.n} i veckokollen`}
-          onStang={() => setOppenFraga(null)}
-        >
-          <p className="veckokort-fraga" style={{ margin: 0 }}>
-            {fragan.fraga}
-          </p>
-
-          {oppetSvar ? (
-            <Callout ton={{ ok: "ok", varning: "warn", avvikelse: "bad" }[allvar(fragan, oppetSvar)] || "info"} className="mt-3">
-              {fragan.svar[oppetSvar]}
-            </Callout>
-          ) : null}
-          {fragan.ref ? <p className="m-0 mt-2 text-[11px] font-semibold text-ink-soft">{fragan.ref}</p> : null}
-
-          <div className="f">
-            <label htmlFor={`vecka-kommentar-${fragan.n}`}>Kommentar till avvikelsen</label>
-            {/* Lokalt utkast som sparas vid blur, Ctrl+Enter eller när panelen
-                stängs — inte per tangenttryck. Förut gick två dispatchar per
-                bokstav (värde + datum), och hela appen renderades om mitt i
-                skrivandet. key per fråga ger ett nytt utkast när man byter fråga. */}
-            <Falt
-              key={fragan.n}
-              flerrad
-              id={`vecka-kommentar-${fragan.n}`}
-              varde={rad?.["k" + fragan.n] || ""}
-              etikett="Kommentar till avvikelsen"
-              placeholder="Vad har hänt, vad har du gjort och vad behöver följas upp?"
-              onCommit={(v) => satt("k" + fragan.n, v)}
-            />
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <button type="button" className="btn" onClick={() => punktFranFraga(fragan)}>
-              Skapa öppen punkt
-            </button>
-            {[2, 5].includes(fragan.n) ? (
-              <button
-                type="button"
-                className="btn sec"
-                onClick={() => storningFranFraga(fragan)}
-              >
-                Skapa underrättelse om störning
-              </button>
-            ) : null}
-          </div>
-        </Slideover>
-      ) : null}
     </>
   );
 }

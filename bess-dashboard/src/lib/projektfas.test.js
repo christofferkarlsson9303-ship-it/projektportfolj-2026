@@ -5,7 +5,7 @@ import { FASER, FAS_ANTAL, arFasNr, faseFranGammal, fasFranStatus, riskFasFranGa
 import { RISKKATEGORI_ID, arRiskKategori } from "../data/riskTyper.ts";
 import { PROJEKTSTATUS, RISKKATEGORI } from "../data/konstanter.js";
 import { efterInlasning } from "../state/portfolj-reducer.js";
-import { aktuellFas, alltGodkant, fasKrav, fasLage, godkandaFaser, pdfSparr, rapportFas, stegIFas, stegLast } from "./projektfas.js";
+import { aktuellFas, alltGodkant, fasKrav, fasLage, godkandaFaser, pdfArUtkast, pdfKvar, rapportFas, stegIFas, stegLast } from "./projektfas.js";
 import { lasUtkast, projektFranUtkast, projektstartDokument, projektstartPost, tomtUtkast, utkastAndrat, utkastFranPost, utkastFranProjekt, kortAndringar } from "./projektstart.js";
 import { stegPunkter } from "./stegpunkter.js";
 
@@ -60,8 +60,8 @@ describe("Faserna som data", () => {
   it("har 18 sidor över åtta faser: mark och betong, montage och ekonomiskt avslut är egna sidor", () => {
     expect(STEG).toHaveLength(18);
     expect(STEG.map((s) => [s.id, s.fas])).toEqual([
-      ["projekt", 1], ["avrop", 1], ["direktiv", 1], ["intressenter", 1], ["kontrakt", 1], ["organisation", 1],
-      ["risker", 2], ["tidplan", 2], ["losning", 2], ["tillstand", 2],
+      ["projekt", 1], ["avrop", 1], ["direktiv", 1], ["intressenter", 1], ["kontrakt", 1],
+      ["organisation", 2], ["risker", 2], ["tidplan", 2], ["losning", 2], ["tillstand", 2],
       ["hseq", 3], ["cbop", 4], ["ebop", 5], ["provning", 6], ["avslut", 7], ["ekonomi", 8], ["garanti", 8], ["sammanfattning", null],
     ]);
   });
@@ -178,8 +178,8 @@ describe("Progressiv upplåsning", () => {
   });
 });
 
-describe("PDF för ledningen följer de godkända faserna", () => {
-  it("är ackumulerande: bara sidor och risker för godkända faser, men huvudet visar aktuell fas", () => {
+describe("PDF för ledningen följer de upplåsta faserna", () => {
+  it("är ackumulerande: sidor och risker för upplåsta faser (godkända och aktuell), huvudet visar aktuell fas", () => {
     const u = godkannFas(godkannFas(tomtUtkast(), 1), 2);
     u.rader.risker = [
       { id: "a", titel: "Tidig risk", fas: "2", kategori: "kma", sannolikhet: "2", konsekvens: "2", agare: "PL", atgard: "" },
@@ -187,11 +187,12 @@ describe("PDF för ledningen följer de godkända faserna", () => {
     ];
     const d = projektstartDokument(u, { datum: "2026-10-09" });
     const ps = d.projektstart;
-    // Fas 1 och 2 är godkända, fas 3 är aktuell och ingår inte i rapporten.
-    expect(ps.fas).toMatchObject({ nr: 3, omfattar: 2, antal: 8, kort: "Etablering", status: "Produktion", statusId: "PRODUKTION" });
+    // Fas 1 och 2 är godkända och fas 3 är aktuell (upplåst, inte godkänd): de tre ingår, fas 4 och uppåt inte.
+    expect(ps.fas).toMatchObject({ nr: 3, omfattar: 3, utkast: true, antal: 8, kort: "Etablering", status: "Produktion", statusId: "PRODUKTION" });
     expect(ps.lage.skede).toBe("Produktion");
-    expect(new Set(ps.sektioner.map((x) => x.fasNr))).toEqual(new Set([1, 2]));
-    expect(ps.sektioner.some((x) => x.id === "hseq")).toBe(false);
+    expect(new Set(ps.sektioner.map((x) => x.fasNr))).toEqual(new Set([1, 2, 3]));
+    expect(ps.sektioner.some((x) => x.id === "hseq")).toBe(true);
+    expect(ps.sektioner.some((x) => x.id === "cbop")).toBe(false);
     const risker = ps.sektioner.find((x) => x.id === "risker").tabell;
     expect(risker.kolumner).toContain("Åtgärdsplan");
     expect(risker.kolumner.at(-1)).toBe("Värde");
@@ -201,44 +202,63 @@ describe("PDF för ledningen följer de godkända faserna", () => {
     expect(risker.rader[0].at(-1)).toBe("4");
     expect(ps.fas.faser.map((f) => f.status)).toEqual(["klar", "klar", "aktuell", "last", "last", "last", "last", "last"]);
   });
-  it("växer med projektet: godkända faser 1–3 ger sidor för fas 1–3, alla åtta ger alla sidor", () => {
+  it("växer med projektet: rapporten omfattar de upplåsta faserna, alla åtta ger alla sidor", () => {
     const u = tomtUtkast();
     for (let nr = 1; nr <= 3; nr++) godkannFas(u, nr);
-    expect(Math.max(...projektstartDokument(u, { datum: "x" }).projektstart.sektioner.map((x) => x.fasNr))).toBe(3);
+    // Fas 1–3 godkända ⇒ fas 4 är upplåst och ingår, fas 5 och uppåt inte.
+    expect(Math.max(...projektstartDokument(u, { datum: "x" }).projektstart.sektioner.map((x) => x.fasNr))).toBe(4);
     for (let nr = 4; nr <= 8; nr++) godkannFas(u, nr);
     expect(projektstartDokument(u, { datum: "x" }).projektstart.sektioner).toHaveLength(STEG.length - 1);
   });
-  it("omfattar faserna före golvet för ett projekt som redan är igång", () => {
+  it("omfattar faserna före golvet och aktuell fas för ett projekt som redan är igång", () => {
     const u = utkastFranProjekt({ id: "x", namn: "Växjö", nr: "36037", status: "PRODUKTION" }, SEED);
-    expect(rapportFas(u)).toBe(3);
-    expect(pdfSparr(u)).toEqual([]);
-    expect(Math.max(...projektstartDokument(u, { datum: "x" }).projektstart.sektioner.map((x) => x.fasNr))).toBe(3);
+    expect(rapportFas(u)).toBe(aktuellFas(u));
+    expect(rapportFas(u)).toBeGreaterThan(1);
+    expect(Math.max(...projektstartDokument(u, { datum: "x" }).projektstart.sektioner.map((x) => x.fasNr))).toBe(rapportFas(u));
   });
-  it("spärras bara när ingen fas är godkänd, och listar då vad som återstår i fas 1", () => {
+  it("spärras aldrig: ett nytt utkast ger en PDF med fas 1, märkt utkast, och listar vad som återstår", () => {
     const u = tomtUtkast();
-    expect(rapportFas(u)).toBe(0);
-    const sparr = pdfSparr(u);
-    expect(sparr.map((x) => x.id)).toEqual(expect.arrayContaining(["namn", "beslut", "mal"]));
-    expect(sparr.some((x) => /kritiska kontrollpunkter/.test(x.etikett))).toBe(true);
+    expect(rapportFas(u)).toBe(1);
+    const kvar = pdfKvar(u);
+    expect(kvar.map((x) => x.id)).toEqual(expect.arrayContaining(["namn", "beslut", "mal"]));
+    expect(kvar.some((x) => /kritiska kontrollpunkter/.test(x.etikett))).toBe(true);
+    expect(pdfArUtkast(u)).toBe(true);
+    const d = projektstartDokument(u, { datum: "x" }).projektstart;
+    expect(d.fas).toMatchObject({ utkast: true, omfattar: 1 });
+    expect(d.fas.kvar).toBe(kvar.length);
+    expect(d.sektioner.every((x) => x.fasNr === 1)).toBe(true);
     // Bara fälten räcker inte. Fas 1 ska vara godkänd, kontrollpunkterna med.
     godkannFas(u, 1, { bara: ["falt", "tabeller"] });
-    expect(pdfSparr(u).length).toBeGreaterThan(0);
-    expect(pdfSparr(u).every((x) => /kritisk/.test(x.etikett))).toBe(true);
+    expect(pdfKvar(u).length).toBeGreaterThan(0);
+    expect(pdfKvar(u).every((x) => /kritisk/.test(x.etikett))).toBe(true);
     godkannFas(u, 1);
-    expect(rapportFas(u)).toBe(1);
-    expect(pdfSparr(u)).toEqual([]);
+    expect(pdfArUtkast(godkannFas(u, 1))).toBe(true); // fas 2 är nu aktuell och inte godkänd
   });
-  it("spärras inte av att nästa fas har tomma fält: att godkänna fas 1 låser inte PDF:en", () => {
+  it("fas 2 ingår i PDF:en så fort den är upplåst, märkt utkast, och en helt godkänd fas ger ingen utkastmärkning", () => {
     const u = godkannFas(tomtUtkast(), 1);
     expect(aktuellFas(u)).toBe(2);
+    expect(rapportFas(u)).toBe(2);
     expect(fasKrav(u, 2).falt.length).toBeGreaterThan(0);
-    expect(pdfSparr(u)).toEqual([]);
+    const d = projektstartDokument(u, { datum: "x" }).projektstart;
+    expect(Math.max(...d.sektioner.map((x) => x.fasNr))).toBe(2);
+    expect(d.fas.utkast).toBe(true);
+    // Allt godkänt: inget utkast.
+    for (let nr = 2; nr <= 8; nr++) godkannFas(u, nr);
+    expect(pdfArUtkast(u)).toBe(false);
+    expect(projektstartDokument(u, { datum: "x" }).projektstart.fas.utkast).toBe(false);
   });
-  it("låses igen om en kritisk punkt i fas 1 avbockas", () => {
+  it("blir utkast igen om en kritisk punkt i fas 1 avbockas", () => {
     const u = godkannFas(tomtUtkast(), 1);
     const p = stegPunkter(STEG.find((s) => s.id === "avrop")).find((x) => x.kritisk);
     u.kryss[p.bucket][p.id] = false;
-    expect(pdfSparr(u).length).toBeGreaterThan(0);
+    expect(aktuellFas(u)).toBe(1);
+    expect(pdfKvar(u).length).toBeGreaterThan(0);
+  });
+  it("organisation och uppstart är inte ett krav för att godkänna fas 1 (anbudet), men för fas 2", () => {
+    const u = godkannFas(tomtUtkast(), 1);
+    expect(fasKrav(u, 1).klar).toBe(true);
+    expect(fasKrav(u, 2).falt.map((f) => f.id)).toContain("roll_pl");
+    expect(fasKrav(godkannFas(structuredClone(u), 2), 2).klar).toBe(true);
   });
 });
 
@@ -258,11 +278,14 @@ describe("Metodens delar i guiden", () => {
     const punkter = stegPunkter(org).filter((p) => p.bucket === "kickoff");
     expect(punkter.length).toBeGreaterThanOrEqual(8);
     expect(punkter.find((p) => p.id === "kickoffHeld").kritisk).toBe(true);
-    // Fas 1 godkänns inte utan den.
+    // Uppstarten hör till fas 2: fas 1 (anbudet) godkänns utan den, men fas 2 gör det inte.
+    expect(org.fas).toBe(2);
     const u = godkannFas(tomtUtkast(), 1);
     expect(aktuellFas(u)).toBe(2);
-    u.kryss.kickoff.kickoffHeld = false;
-    expect(aktuellFas(u)).toBe(1);
+    const klar = godkannFas(godkannFas(tomtUtkast(), 1), 2);
+    expect(aktuellFas(klar)).toBe(3);
+    klar.kryss.kickoff.kickoffHeld = false;
+    expect(aktuellFas(klar)).toBe(2);
   });
   it("har en interface-lista med de fem gränssnitten i metoden som startrader", () => {
     const t = STEG.find((s) => s.id === "losning").tabell;

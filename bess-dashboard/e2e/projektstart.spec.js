@@ -102,7 +102,7 @@ test("projektet startar i fas 1 och senare faser är låsta", async ({ page }) =
   const nav = page.getByRole("navigation", { name: "Stegen i projektstarten" });
   if (await nav.getByRole("button", { name: "Projektkort" }).isVisible()) {
     await expect(nav.getByText("Anbud och beslut")).toBeVisible();
-    await expect(nav.getByText("Kontrakt och uppstart")).toBeVisible();
+    await expect(nav.getByText("Intressenter och kontrakt")).toBeVisible();
   }
   await expect(page.getByText(/Utkastet sparas automatiskt i den här webbläsaren/)).toBeVisible();
   await expect(page.getByRole("button", { name: "Gå till Granska och skapa" })).toBeVisible();

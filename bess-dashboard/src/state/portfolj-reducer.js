@@ -443,6 +443,19 @@ export function reducer(state, action) {
       return loggat(nytt, id, `Anbud markerat som ej vunnet (${namn})${text ? `: ${String(text).trim().slice(0, 100)}` : ""}. Flyttat till arkivet.`);
     }
 
+    /* Sätter projektets fas för hand, till exempel när ett anbud vunnits (fas 1 → 2). Statusen följer
+       fasen. Ett förlorat anbud har bara Återaktivera, och ogiltiga fasnummer avvisas. Loggas. */
+    case "SATT_PROJEKTFAS": {
+      const { id, fas } = action;
+      const rad = state.projekt.find((p) => p.id === id);
+      if (!rad || rad.status === "ANBUD_EJ_VUNNET" || !arFasNr(fas)) return state;
+      const fore = arFasNr(rad.fas) ? rad.fas : fasFranStatus(rad.status);
+      const ny = faseInfo(fas);
+      if (fore === fas && normaliseraStatus(rad.status) === ny.status) return state;
+      const nytt = { ...state, projekt: byt(state.projekt, id, (p) => ({ ...p, fas, status: ny.status, fasModell: FAS_MODELL })) };
+      return loggat(nytt, id, `Fas ändrad: ${fore}. ${faseInfo(fore).kort} → ${fas}. ${ny.kort} (status ${statusEtikett(ny.status)})`);
+    }
+
     /* Tillämpar ett granskat importförslag (lib/importera.js). En
        säkerhetskopia körs genom samma normalisering och migrering som en
        vanlig inläsning, så att äldre filer får de fält som tillkommit sedan.

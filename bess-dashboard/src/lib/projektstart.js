@@ -4,7 +4,7 @@ import { FAS_ANTAL, FAS_MODELL, arFasNr, faseFranGammal, faseInfo, fasFranStatus
 import { arRiskKategori } from "../data/riskTyper.ts";
 import { arAvbockad, stegPunkter } from "./stegpunkter.js";
 import { RISKGRANSER, riskNivaFranVarde } from "./risknivaer.js";
-import { aktuellFas, arEjVunnetUtkast, faltSynligt, fasLage, rapportFas } from "./projektfas.js";
+import { aktuellFas, arEjVunnetUtkast, faltSynligt, fasLage, pdfKvar, rapportFas } from "./projektfas.js";
 import { idag } from "./datum.js";
 
 export { arAvbockad, stegPunkter, RISKGRANSER };
@@ -267,16 +267,16 @@ const altEtikett = (k, val) => {
 /** Riskvärde (S × K) som text, för kolumnen Värde i PDF:ens riskregister. */
 const riskvardeText = (r) => String((Math.max(1, Math.min(5, Number(r.sannolikhet) || 3))) * Math.max(1, Math.min(5, Number(r.konsekvens) || 3)));
 
-/** Underlaget till PDF:en. Rapporten är ackumulerande och omfattar de godkända faserna, alltså
- *  fas 1 till `rapportFas`. Huvudet visar ändå projektets aktuella fas och status. */
+/** Underlaget till PDF:en. Rapporten är ackumulerande och omfattar de upplåsta faserna, alltså
+ *  fas 1 till `rapportFas` (projektets aktuella fas). Är aktuell fas inte godkänd märks rapporten
+ *  som utkast (`fas.utkast`), så att den går att visa för ledningen innan anbudet lämnas. */
 export function projektstartDokument(u, { datum, skapadAv = "", historik = [], sparad = "" }) {
   const v = u.v;
   const nuFas = aktuellFas(u);
   const fasInfo = faseInfo(nuFas);
   const lager = fasLage(u);
-  /* En rapport utan godkänd fas kan inte exporteras. Underlaget byggs ändå, med fas 1, så att
-     förhandsvisning och tester inte behöver specialfall. */
   const omfattar = Math.max(1, rapportFas(u));
+  const kvar = pdfKvar(u);
   const sektioner = STEG.filter((s) => s.id !== SISTA_STEG && s.fas <= omfattar).map((s) => {
     /* Fält: [etikett, värde, stycken]. Långa fält får stycken och visas som
        rubrik med brödtext i PDF:en, korta som rad. Saknat projektnummer skrivs
@@ -356,6 +356,8 @@ export function projektstartDokument(u, { datum, skapadAv = "", historik = [], s
       fas: {
         nr: nuFas,
         omfattar,
+        utkast: kvar.length > 0,
+        kvar: kvar.length,
         antal: FAS_ANTAL,
         kort: fasInfo.kort,
         titel: fasInfo.titel,

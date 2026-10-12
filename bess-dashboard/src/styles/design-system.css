@@ -1232,27 +1232,41 @@ tr.lastrad:hover{opacity:.8}
 .veckokort-rutnat{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:16px}
 @media(min-width:1024px){.veckokort-rutnat{gap:24px}}
 .veckokort{background:var(--surface);border:1px solid var(--hairline);box-shadow:var(--sh-sm);
-  border-left:3px solid var(--hairline-stark);border-radius:12px;padding:16px;
-  display:flex;flex-direction:column;gap:12px}
+  border-left:4px solid var(--hairline-stark);border-radius:12px;padding:16px;
+  display:flex;flex-direction:column;gap:12px;
+  transition:box-shadow .2s var(--ease),transform .2s var(--ease),border-color .2s var(--ease),background-color .2s var(--ease)}
+.veckokort:hover{box-shadow:var(--sh-md);transform:translateY(-1px)}
 .veckokort .ref{font-size:11px;color:var(--ink-soft);font-weight:600}
 .veckokort.ok{border-left-color:var(--turkos)}
-.veckokort.varning{border-left-color:var(--orange)}
-.veckokort.avvikelse{border-left-color:var(--rod)}
+.veckokort.varning{border-left-color:var(--orange);background:linear-gradient(90deg,var(--warn-bg),var(--surface) 38%)}
+.veckokort.avvikelse{border-left-color:var(--rod);background:linear-gradient(90deg,var(--bad-bg),var(--surface) 38%)}
 .veckokort-fraga{display:flex;gap:8px;font-size:13px;line-height:1.45;color:var(--ink)}
-.veckokort-nr{font-weight:700;color:var(--ink-faint);flex:0 0 auto}
-.veckokort-svar{display:flex;gap:6px;flex-wrap:wrap}
-.veckokort-svar button{font-family:var(--font-b);font-size:12px;font-weight:600;
+.veckokort-nr{font-weight:700;color:var(--ink-soft);flex:0 0 auto}
+/* Svaren som en toggle-grupp: ikon, allvarsgrad och svarsord, lika breda. */
+.veckokort-svar{display:flex;gap:6px}
+.veckokort-svar button{font-family:var(--font-b);font-size:12px;font-weight:600;flex:1 1 0;min-width:0;
   border:1px solid var(--hairline-stark);background:var(--surface);color:var(--ink-soft);
-  border-radius:999px;padding:5px 11px;cursor:pointer;display:inline-flex;gap:5px;align-items:baseline}
-.veckokort-svar button:hover{border-color:var(--ink-faint)}
-.veckokort-svar button .ord{font-weight:400;font-size:11px;color:var(--ink-faint)}
+  border-radius:10px;padding:7px 8px;cursor:pointer;display:inline-flex;flex-direction:column;gap:2px;align-items:center;
+  text-align:center;transition:transform .15s var(--ease),background-color .15s var(--ease),border-color .15s var(--ease),box-shadow .15s var(--ease)}
+.veckokort-svar button:hover{border-color:var(--ink-faint);background:var(--sunken)}
+.veckokort-svar button:active{transform:scale(.97)}
+.veckokort-svar button:focus-visible{outline:2px solid var(--one-bla);outline-offset:2px}
+.veckokort-svar button svg{flex:0 0 auto}
+.veckokort-svar button .ord{font-weight:400;font-size:11px;color:var(--ink-soft)}
+.veckokort-svar button[aria-pressed="true"]{box-shadow:var(--sh-sm)}
 .veckokort-svar button[aria-pressed="true"].ok{background:var(--ok-bg);border-color:var(--turkos);color:var(--ok-ink)}
 .veckokort-svar button[aria-pressed="true"].varning{background:var(--warn-bg);border-color:var(--orange);color:var(--warn-ink)}
 .veckokort-svar button[aria-pressed="true"].avvikelse{background:var(--bad-bg);border-color:var(--rod);color:var(--bad-ink)}
-.veckokort-svar button[aria-pressed="true"] .ord{color:inherit;opacity:.75}
+.veckokort-svar button[aria-pressed="true"] .ord{color:inherit;opacity:.8}
 .veckokort-rad{font-size:12.5px;line-height:1.5;color:var(--ink-soft)}
 .veckokort-fot{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.veckokort-kommentar{font-size:12px;color:var(--ink-faint)}
+.veckokort-kommentar{font-size:12px;color:var(--ink-soft)}
+/* Snabbfältet som fälls ut under ett kort med varning eller avvikelse. */
+.veckokort-snabb{display:flex;flex-direction:column;gap:10px;padding-top:12px;border-top:1px solid var(--hairline);
+  animation:veckoSnabbIn .22s var(--ease)}
+.veckokort-snabb textarea{min-height:64px}
+@keyframes veckoSnabbIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.veckokort,.veckokort-snabb{transition:none;animation:none}.veckokort:hover{transform:none}}
 
 /* ---------- Slutdokumentation ---------- */
 .slutdok-lista{list-style:none;margin:0;padding:0}

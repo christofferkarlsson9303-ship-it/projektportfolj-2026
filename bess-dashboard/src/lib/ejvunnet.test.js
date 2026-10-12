@@ -3,7 +3,7 @@ import { SEED } from "../data/seed.js";
 import { STEG } from "../data/projektstartSteg.js";
 import { efterInlasning, reducer } from "../state/portfolj-reducer.js";
 import { aktivVy, aktivaProjekt, forlorade } from "./arkiv.js";
-import { aktuellFas, arEjVunnetUtkast, fasKrav, fasLage, godkandaFaser, stegLast, pdfSparr } from "./projektfas.js";
+import { aktuellFas, arEjVunnetUtkast, fasKrav, fasLage, godkandaFaser, stegLast, pdfKvar } from "./projektfas.js";
 import { kortAndringar, projektFranUtkast, projektstartDokument, synligaSteg, tomtUtkast } from "./projektstart.js";
 
 const grund = () => efterInlasning(structuredClone(SEED));
@@ -92,7 +92,7 @@ describe("Förlorat anbud i guiden", () => {
     expect(godkandaFaser(u)).toBe(1);
     expect(stegLast(u, STEG.find((s) => s.id === "risker"))).toBe(true);
     expect(fasLage(u).filter((f) => f.status !== "last")).toHaveLength(1);
-    expect(pdfSparr(u)).toEqual([]);
+    expect(pdfKvar(u)).toEqual([]);
   });
 
   it("visar orsaksfälten bara vid Tacka nej", () => {
