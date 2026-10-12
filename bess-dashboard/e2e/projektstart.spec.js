@@ -4,8 +4,8 @@ import { gaTill, oppna } from "./hjalpare.js";
 /* Fliken Projektstart: åtta faser. Projektet startar i fas 1 och nästa fas låses
    upp först när allt obligatoriskt i den förra är godkänt. Guidens sidor är
    18 stycken: 1 Projektkort, 2 Avropsacceptans, 3 Projektdirektiv, 4 Intressenter,
-   5 Kontrakt och kassaflöde, 6 Organisation och uppstart (fas 1),
-   7 Riskregister, 8 Tidplan, 9 Godkänd lösning, 10 Tillstånd och nätägare (fas 2),
+   5 Kontrakt och kassaflöde (fas 1, anbudet),
+   6 Organisation och uppstart, 7 Riskregister, 8 Tidplan, 9 Godkänd lösning, 10 Tillstånd och nätägare (fas 2),
    11 HSEQ (fas 3), 12 Mark och betong (fas 4), 13 Leveranser, lyft och montage (fas 5),
    14 Provning (fas 6), 15 Slutbesiktning (fas 7), 16 Ekonomiskt avslut och 17 Garanti (fas 8)
    och 18 Granska och skapa. */
@@ -43,11 +43,9 @@ async function bockaAlla(page) {
   while (await knappar.count()) await knappar.first().click();
 }
 
-/** Bockar av kontrollpunkterna på Kontrakt och Organisation, så att de kritiska punkterna i fas 1 är klara. */
-async function bockaKontraktOchOrganisation(page) {
+/** Bockar av kontrollpunkterna på Kontrakt, så att de kritiska punkterna i fas 1 är klara. Organisation och uppstart hör till fas 2. */
+async function bockaKontrakt(page) {
   await gaTillSteg(page, 5, "Kontrakt och kassaflöde");
-  await bockaAlla(page);
-  await gaTillSteg(page, 6, "Organisation och uppstart");
   await bockaAlla(page);
 }
 
@@ -69,14 +67,11 @@ async function fyllFas1(page, { checklista = true, namn = "Fas-test", nr } = {})
   await page.getByLabel(/^Signerat av projektledare/).fill("PL Test");
   await page.getByLabel(/^Signerat av intern beställare/).fill("Beställare Test");
   await page.getByLabel(/^Signeringsdatum/).fill("2026-10-12");
-  // Kontrakt och organisation hör också till fas 1.
+  // Kontrakt hör också till fas 1. Organisation och uppstart är fas 2 och inget krav för anbudet.
   await gaTillSteg(page, 5, "Kontrakt och kassaflöde");
   await page.getByLabel(/^Betalvillkor/).fill("30 dagar netto");
   await page.locator("#ps-bankgaranti").fill("10 % i original");
   await page.getByLabel("Milstolpar, rad 1: Datum").fill("2027-01-15");
-  if (checklista) await bockaAlla(page);
-  await gaTillSteg(page, 6, "Organisation och uppstart");
-  await page.getByLabel(/^Projektledare/).fill("PL Test");
   if (checklista) await bockaAlla(page);
 }
 
@@ -91,7 +86,9 @@ test("projektet startar i fas 1 och senare faser är låsta", async ({ page }) =
 
   // Sidor i fas 2–8 är låsta, sidor i fas 1 och den sista sidan är öppna.
   await forvantaLast(page, 4, "Intressenter", false);
-  await forvantaLast(page, 6, "Organisation och uppstart", false);
+  await forvantaLast(page, 5, "Kontrakt och kassaflöde", false);
+  // Organisation och uppstart hör till fas 2: låst under anbudet.
+  await forvantaLast(page, 6, "Organisation och uppstart");
   await forvantaLast(page, 7, "Riskregister");
   await forvantaLast(page, 11, "HSEQ och etablering");
   await forvantaLast(page, 17, "Eftermarknad och garanti");
@@ -111,7 +108,7 @@ test("projektet startar i fas 1 och senare faser är låsta", async ({ page }) =
   await expect(page.getByText(/Fas 1 · Anbud: \d+ obligatoriska punkter kvar för att låsa upp Fas 2 \(Planering\)/)).toBeVisible();
 
   // Från sista sidan i fas 1 går man inte vidare till fas 2.
-  await gaTillSteg(page, 6, "Organisation och uppstart");
+  await gaTillSteg(page, 5, "Kontrakt och kassaflöde");
   await expect(page.getByRole("button", { name: "Nästa" })).toBeDisabled();
   expect(fel).toEqual([]);
 });
@@ -124,7 +121,7 @@ test("fas 2 låses upp först när allt obligatoriskt i fas 1 är godkänt", asy
   await expect(page.getByText(/ONE-P · Fas 1 av 8/)).toBeVisible();
   await forvantaLast(page, 7, "Riskregister");
 
-  await bockaKontraktOchOrganisation(page);
+  await bockaKontrakt(page);
 
   // Ett avropsbeslut som inte är Gå vidare godkänner inte fasen.
   await gaTillSteg(page, 2, "Avropsacceptans");
@@ -156,8 +153,8 @@ test("projektet skapas utan att alla faser är genomgångna och startar i sin fa
   await expect(page.getByRole("button", { name: "Skapa projekt" })).toBeEnabled();
   await page.getByRole("button", { name: "Skapa projekt" }).click();
 
-  // Obligatoriska fält saknas i fas 1, så PDF:en för inlämning är spärrad och ingen laddas ned.
-  await expect(page.getByText(/Projektet är skapat i fas 1 \(Anbud\)\. PDF:en är spärrad tills fas 1 är godkänd/)).toBeVisible();
+  // Obligatoriska fält saknas i fas 1, så ingen PDF laddas ned automatiskt (den går att ladda ned som utkast för hand).
+  await expect(page.getByText(/Projektet är skapat i fas 1 \(Anbud\)\. PDF:en märks utkast tills fas 1 är godkänd, och går att ladda ned när du vill/)).toBeVisible();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Min projektmetod");
 
   await oppnaProjektstart(page);
@@ -168,30 +165,42 @@ test("projektet skapas utan att alla faser är genomgångna och startar i sin fa
   expect(fel).toEqual([]);
 });
 
-test("PDF för inlämning är spärrad tills en fas är godkänd och omfattar de godkända faserna", async ({ page }) => {
+test("PDF:en går att ladda ned som utkast under anbudet och växer med de upplåsta faserna", async ({ page }) => {
   const { fel } = await oppna(page, "Projektstart");
+  const pdf = page.getByRole("button", { name: "Ladda ned PDF" });
+
+  // Utan projektnamn finns inget att visa.
+  await gaTillSteg(page, SISTA, "Granska och skapa");
+  await expect(pdf).toBeDisabled();
+
+  await gaTillSteg(page, 1, "Projektkort");
   await page.getByLabel(/^Projektnamn/).fill("PDF-test");
   await gaTillSteg(page, SISTA, "Granska och skapa");
 
-  const pdf = page.getByRole("button", { name: "Ladda ned PDF" });
-  await expect(pdf).toBeDisabled();
-  await expect(page.getByText("PDF för inlämning är spärrad: ingen fas är godkänd än")).toBeVisible();
+  // Fas 1 är inte godkänd, men PDF:en är inte spärrad: den märks utkast, för genomgång med ledningen.
+  await expect(pdf).toBeEnabled();
+  await expect(page.getByText(/PDF:en är ett utkast tills fas 1 \(Anbud\) är godkänd/)).toBeVisible();
   // Varje sak som återstår är en knapp till sidan där den görs.
   await page.getByRole("button", { name: "Beställare", exact: true }).click();
   await expect(page.getByLabel(/^Beställare/)).toBeVisible();
+  await gaTillSteg(page, SISTA, "Granska och skapa");
+  const utkast = page.waitForEvent("download");
+  await pdf.click();
+  expect((await utkast).suggestedFilename()).toMatch(/^projektstart_.*\.pdf$/);
 
-  // Fälten räcker inte. De kritiska kontrollpunkterna i fasen ska också vara bockade.
+  // Fälten räcker inte för att godkänna fas 1. De kritiska kontrollpunkterna ska också vara bockade.
   await fyllFas1(page, { checklista: false, namn: "PDF-test" });
   await gaTillSteg(page, SISTA, "Granska och skapa");
-  await expect(pdf).toBeDisabled();
-  await bockaKontraktOchOrganisation(page);
+  await expect(page.getByText(/PDF:en är ett utkast tills fas 1/)).toBeVisible();
+  await bockaKontrakt(page);
   await gaTillSteg(page, 2, "Avropsacceptans");
   await bockaAlla(page);
 
-  // Fas 1 är godkänd. Fas 2 är nu aktuell och dess fält är tomma, men det spärrar inte PDF:en.
+  // Fas 1 är godkänd. Fas 2 är nu aktuell och upplåst: PDF:en omfattar den, märkt utkast tills fas 2 är godkänd.
   await gaTillSteg(page, SISTA, "Granska och skapa");
   await expect(pdf).toBeEnabled();
-  await expect(page.getByText(/PDF:en omfattar de godkända faserna\./)).toBeVisible();
+  await expect(page.getByText(/PDF:en är ett utkast tills fas 2 \(Planering\) är godkänd/)).toBeVisible();
+  await expect(page.getByText(/PDF:en omfattar de upplåsta faserna/)).toBeVisible();
   const nedladdning = page.waitForEvent("download");
   await pdf.click();
   expect((await nedladdning).suggestedFilename()).toMatch(/^projektstart_.*\.pdf$/);
@@ -378,7 +387,8 @@ test("sista sidan visar alla åtta faser med status, och Öppna är låst för l
   await expect(faser.getByRole("listitem").nth(0)).toContainText("Godkänd");
   await expect(faser.getByRole("listitem").nth(1)).toContainText("Pågår");
   await faser.getByRole("listitem").nth(1).getByRole("button", { name: "Öppna" }).click();
-  await expect(page.getByRole("heading", { name: "7. Riskregister" })).toBeVisible();
+  // Fas 2 öppnas på dess första sida, Organisation och uppstart.
+  await expect(page.getByRole("heading", { name: "6. Organisation och uppstart" })).toBeVisible();
   expect(fel).toEqual([]);
 });
 
@@ -427,7 +437,7 @@ test("projektledarens trafikljus per fas sparas i utkastet och finns bara för u
   expect(fel).toEqual([]);
 });
 
-test("direktivet måste signeras, och uppstartsavstämning (fas 1) och interface-lista (fas 2) finns", async ({ page }) => {
+test("direktivet måste signeras, och uppstartsavstämning och interface-lista (båda fas 2) finns", async ({ page }) => {
   const { fel } = await oppna(page, "Projektstart");
   await fyllFas1(page);
   await expect(page.getByText(/ONE-P · Fas 2 av 8/)).toBeVisible();

@@ -6,7 +6,11 @@ import { projektPrio } from "../../lib/veckoOversikt.js";
 
    Prick och ring är dekor — läget står också som text för skärmläsare (sr-only) och i titeln. Fliken är en
    `tab` i en `tablist`: pil-tangenter flyttar och väljer, bara den valda ligger i tabbordningen. Ringen
-   ritas med strokeDashoffset (en egenskap som webbläsaren kan animera utan att räkna om layouten). */
+   ritas med strokeDashoffset (en egenskap som webbläsaren kan animera utan att räkna om layouten).
+
+   Raden scrollar i sidled när flikarna inte ryms. `contain: paint` stoppar att det scrollbara innehållets bredd
+   räknas in i sidans bredd — utan det zoomar mobilen ut hela sidan (layoutvyn blev 665 px på en 412 px skärm och
+   klick hamnade på fel element). Utfyllnaden ger plats åt fokusring och skugga, som annars klipps. */
 
 const PRIO = {
   bad: { prick: "bg-bad-ink", text: "Avvikelse" },
@@ -54,7 +58,7 @@ export function VeckoProjektflikar({ projekt, valtId, vecka, state, onVal }) {
   };
 
   return (
-    <div ref={ref} role="tablist" aria-label="Välj projekt" onKeyDown={tangent} className="mb-4 flex gap-2 overflow-x-auto pb-1" data-roll="veckoflikar">
+    <div ref={ref} role="tablist" aria-label="Välj projekt" onKeyDown={tangent} className="mb-3 flex w-full max-w-full gap-2 overflow-x-auto px-1 pb-3 pt-1 lg:mb-4" data-roll="veckoflikar" style={{ contain: "paint" }}>
       {projekt.map((p) => {
         const vald = p.id === valtId;
         const s = projektPrio(state, p.id, vecka);

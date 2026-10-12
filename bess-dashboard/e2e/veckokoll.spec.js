@@ -14,6 +14,13 @@ test("checklistan visar nio frågekort", async ({ page }) => {
   await expect(page.getByRole("progressbar", FRAGOR)).toHaveAttribute("aria-valuenow", "0");
 });
 
+// Projektflikarna scrollar i sidled inne i sig själva. Vidgade de sidan zoomade mobilen ut och klick hamnade fel.
+test("sidan är inte bredare än skärmen, även med flera projektflikar", async ({ page }) => {
+  const vidd = await page.evaluate(() => ({ layout: window.innerWidth, skarm: document.documentElement.clientWidth, innehall: document.documentElement.scrollWidth }));
+  expect(vidd.layout).toBe(vidd.skarm);
+  expect(vidd.innehall).toBeLessThanOrEqual(vidd.skarm);
+});
+
 test("svaren är en toggle-grupp med ikon, och ett svar räknas direkt utan sparaknapp", async ({ page }) => {
   const forsta = page.locator(KORT).first();
   const grupp = forsta.getByRole("group", { name: "Svar på fråga 1" });
@@ -147,14 +154,13 @@ test("en avvikelse kan bli en öppen punkt", async ({ page }) => {
 test("en avvikelse kan bli en ÄTA-post och öppnar den", async ({ page }) => {
   const forsta = page.locator(KORT).first();
   await forsta.getByRole("button", { name: /Avvikelse/ }).click();
-  const fore = ((await portfolj(page)).ur || []).length;
 
   await forsta.getByRole("group", { name: "Åtgärder för fråga 1" }).getByRole("button", { name: "Skapa ÄTA" }).click();
 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("ÄTA och hinder");
-  await expect.poll(async () => ((await portfolj(page)).ur || []).length).toBe(fore + 1);
-  const ny = ((await portfolj(page)).ur || []).at(-1);
-  expect(ny.benamning).toMatch(/^Veckokoll .* fråga 1: Vet jag vad som ingår i kontraktet/);
+  await expect
+    .poll(async () => ((await portfolj(page)).ur || []).find((u) => /^Veckokoll .* fråga 1: Vet jag vad som ingår i kontraktet/.test(u.benamning || ""))?.projektId)
+    .toBe("36037");
 });
 
 test("projektflikarna är en tablist med en flik per projekt, pilar flyttar och valet följer med", async ({ page }) => {

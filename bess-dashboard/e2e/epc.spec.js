@@ -131,7 +131,8 @@ test("sökningen hittar lärdomen om CT-fönster", async ({ page }) => {
 
 test("en grind markeras passerad, fasen byter läge och det loggas", async ({ page }) => {
   const fas = page.locator("#fas-11");
-  await fas.locator("summary").click();
+  // Momentet som pågår idag är redan utfällt (det följer datumet), så öppna det bara om det är stängt.
+  if (!(await fas.evaluate((el) => el.open))) await fas.locator("summary").click();
   const iProjektet = fas.getByRole("complementary", { name: "Moment 11 i 36037 Växjö" });
   await iProjektet.getByRole("button", { name: "Markera G11 passerad idag" }).click();
   await expect(fas.locator("summary")).toContainText("Grind passerad");
