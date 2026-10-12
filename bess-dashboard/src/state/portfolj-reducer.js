@@ -3,7 +3,7 @@
    som gör att React kan rendera om rätt delar av trädet. */
 
 import { SEED } from "../data/seed.js";
-import { KANDA_MAPPAR, PILL, SLUTDOK_MALL } from "../data/konstanter.js";
+import { ATA_KLASS, ATA_STATUS, KANDA_MAPPAR, PILL, SLUTDOK_MALL } from "../data/konstanter.js";
 import { LEDTIDER, PUNKT_FOR_ID } from "../data/bessChecklistData.ts";
 import { migreraUr } from "../lib/berakningar.js";
 import { nyApdRad } from "../lib/apd.js";
@@ -13,7 +13,8 @@ import { angraFakturaunderlag, skapaFakturaunderlag } from "../lib/planering.js"
 import { kalkylRader, kalkylSummor } from "../lib/atakalkyl.js";
 import { fmtSEK } from "../lib/format.js";
 import { MALLAR, arNal, objektFel, punkterForSite } from "../lib/site.js";
-import { kopplingFel } from "../lib/modellKoppling.js";
+import { boxFel, kopplingFel, viewpointFel } from "../lib/modellKoppling.js";
+import { arGuid } from "../lib/bcfHanterare.js";
 import { projektFasFranEpc } from "../lib/projektfasEpc.js";
 import { arDold } from "../lib/arkiv.js";
 import { projektstartFel } from "../lib/projektstart.js";
@@ -270,6 +271,35 @@ function siteEtikett(state, o) {
   const p = (state.punkter || []).find((x) => x.id === o.punktId);
   const titel = p ? String(p.titel) : o.punktId;
   return `Nål på ${titel.length > 50 ? titel.slice(0, 47) + "…" : titel}`;
+}
+
+/** Fält en BCF-import får sätta på ett ärende. Allt annat (belopp, fakturering, datum m.m.) rörs aldrig. */
+const BCF_FALT = ["benamning", "status", "klass", "ansvarig", "bcfGuid", "bcfBeskrivning", "bcfKomponenter", "objectGuid", "viewpoint", "boundingBox", "modelVersionId"];
+
+/** Rensar BCF-fält: okända nycklar och ogiltiga värden tas bort i stället för att sparas. */
+function bcfRensa(falt, objektIds) {
+  const ut = {};
+  for (const k of BCF_FALT) if (falt?.[k] !== undefined) ut[k] = falt[k];
+  if (typeof ut.benamning !== "string" || !ut.benamning.trim()) delete ut.benamning;
+  else ut.benamning = ut.benamning.trim().slice(0, 300);
+  if (!ATA_STATUS.includes(ut.status)) delete ut.status;
+  if (!ATA_KLASS.some(([k]) => k === ut.klass)) delete ut.klass;
+  if (typeof ut.ansvarig !== "string") delete ut.ansvarig;
+  if (typeof ut.bcfBeskrivning !== "string") delete ut.bcfBeskrivning;
+  else ut.bcfBeskrivning = ut.bcfBeskrivning.slice(0, 2000);
+  if (!arGuid(ut.bcfGuid)) delete ut.bcfGuid;
+  if (!Array.isArray(ut.bcfKomponenter)) delete ut.bcfKomponenter;
+  else ut.bcfKomponenter = ut.bcfKomponenter.filter((g) => typeof g === "string" && g).slice(0, 50);
+  if (ut.viewpoint !== undefined && viewpointFel(ut.viewpoint) !== null) delete ut.viewpoint;
+  if (ut.boundingBox !== undefined && boxFel(ut.boundingBox) !== null) delete ut.boundingBox;
+  // En koppling kräver ett objekt som finns i projektet — annars faller den bort men kameran kan stå kvar.
+  if (ut.objectGuid !== undefined && (typeof ut.objectGuid !== "string" || !objektIds.has(ut.objectGuid))) {
+    delete ut.objectGuid;
+    delete ut.boundingBox;
+    delete ut.modelVersionId;
+  }
+  if (ut.modelVersionId !== undefined && typeof ut.modelVersionId !== "string") delete ut.modelVersionId;
+  return ut;
 }
 
 function loggat(state, projektId, text) {
@@ -667,6 +697,54 @@ export function reducer(state, action) {
         }),
       };
       return loggat(ut, u.projektId, `${u.nr || u.id}: koppling till 3D-objekt borttagen`);
+    }
+
+    /* ---------- BCF ----------
+       Import skapar nya ärenden och uppdaterar de som redan har samma bcfGuid. Bara BCF-fälten
+       (se BCF_FALT) skrivs; en ogiltig status, kameravy eller koppling tas bort ur raden i
+       stället för att sparas. Ett nytt ärende vars bcfGuid redan finns i projektet hoppas över. */
+    case "ATA_IMPORTERA_BCF": {
+      const { projektId, nya = [], uppdatera = [] } = action;
+      if (!state.projekt.some((p) => p.id === projektId)) return state;
+      const objektIds = new Set((state.siteObjekt || []).filter((o) => o.projektId === projektId).map((o) => o.id));
+      const ur = state.ur || [];
+      let rader = ur;
+      let antalNya = 0;
+      let antalUppd = 0;
+      for (const u of uppdatera) {
+        const rad = rader.find((r) => r.id === u?.id && r.projektId === projektId);
+        if (!rad) continue;
+        const falt = bcfRensa(u.falt, objektIds);
+        if (!Object.keys(falt).length) continue;
+        rader = byt(rader, rad.id, (r) => ({ ...r, ...falt }));
+        antalUppd += 1;
+      }
+      for (const n of nya) {
+        if (!n || typeof n.id !== "string" || n.projektId !== projektId || rader.some((r) => r.id === n.id)) continue;
+        if (n.bcfGuid && rader.some((r) => r.projektId === projektId && r.bcfGuid === n.bcfGuid)) continue;
+        const falt = bcfRensa(n, objektIds);
+        if (!falt.benamning) continue;
+        // BCF-fälten kommer bara ur den rensade `falt` — inget som rensats bort får följa med n.
+        const bas = Object.fromEntries(Object.entries(n).filter(([k]) => !BCF_FALT.includes(k)));
+        rader = [...rader, { ...bas, ...falt }];
+        antalNya += 1;
+      }
+      if (!antalNya && !antalUppd) return state;
+      return loggat({ ...state, ur: rader }, projektId, `BCF-import: ${antalNya} nya och ${antalUppd} uppdaterade ärenden`);
+    }
+
+    /* Efter en export: ärenden som fick ett nytt BCF-guid sparar det, så att en senare import uppdaterar dem. */
+    case "ATA_SATT_BCFGUID": {
+      const guider = action.guider || {};
+      let rader = state.ur || [];
+      let andrat = false;
+      for (const [id, g] of Object.entries(guider)) {
+        const rad = rader.find((r) => r.id === id);
+        if (!rad || !arGuid(g) || rad.bcfGuid === g) continue;
+        rader = byt(rader, id, (r) => ({ ...r, bcfGuid: g }));
+        andrat = true;
+      }
+      return andrat ? { ...state, ur: rader } : state;
     }
 
     /* ---------- Modellversioner ----------

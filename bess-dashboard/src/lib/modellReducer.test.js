@@ -135,3 +135,93 @@ describe("modellversioner", () => {
     expect(SEED.modellVersioner).toEqual([]);
   });
 });
+
+describe("BCF-import i reducern", () => {
+  const GUID = "3f2504e0-4f89-41d3-9a0c-0305e82c3301";
+  const GUID2 = "4f2504e0-4f89-41d3-9a0c-0305e82c3302";
+  const vp = { cameraPosition: [1, 2, 3], target: [0, 0, 0], fov: 55 };
+  let rader = 0;
+  /** nyAtaPost bygger id ur klockan — två i samma millisekund krockar, så id:n sätts här. */
+  const nyRad = (s, pid, falt) => ({ ...nyAtaPost(s, pid, falt), id: `ubcf${(rader += 1)}` });
+
+  it("skapar nya ärenden och loggar", () => {
+    const { s, pid } = medArendeOchObjekt();
+    const ny = nyRad(s, pid, { benamning: "Från BCF", bcfGuid: GUID, status: "godkand", klass: "hinder", viewpoint: vp });
+    const ut = reducer(s, { type: "ATA_IMPORTERA_BCF", projektId: pid, nya: [ny], uppdatera: [] });
+    const rad = ut.ur.find((r) => r.id === ny.id);
+    expect(rad).toMatchObject({ benamning: "Från BCF", bcfGuid: GUID, status: "godkand", klass: "hinder", viewpoint: vp });
+    expect(ut.andringslogg[0].text).toBe("BCF-import: 1 nya och 0 uppdaterade ärenden");
+  });
+
+  it("uppdaterar ett befintligt ärende men rör bara BCF-fält", () => {
+    const { s, pid, u } = medArendeOchObjekt();
+    const med = reducer(s, { type: "UPPDATERA", lista: "ur", id: u.id, falt: "belopp", varde: 12345 });
+    const ut = reducer(med, { type: "ATA_IMPORTERA_BCF", projektId: pid, nya: [], uppdatera: [{ id: u.id, falt: { benamning: "Ny titel", status: "stangd", belopp: 1, fakturaDatum: "2026-01-01", id: "hackat", projektId: "annat" } }] });
+    const rad = ut.ur.find((r) => r.id === u.id);
+    expect(rad.benamning).toBe("Ny titel");
+    expect(rad.status).toBe("stangd");
+    expect(rad.belopp).toBe(12345);
+    expect(rad.fakturaDatum).toBe("");
+    expect(rad.id).toBe(u.id);
+    expect(rad.projektId).toBe(pid);
+  });
+
+  it("ogiltig status, klass, kameravy och låda tas bort i stället för att sparas", () => {
+    const { s, pid, u } = medArendeOchObjekt();
+    const ut = reducer(s, {
+      type: "ATA_IMPORTERA_BCF",
+      projektId: pid,
+      nya: [],
+      uppdatera: [{ id: u.id, falt: { benamning: "OK", status: "hackat", klass: "xx", viewpoint: { fov: 5 }, boundingBox: { min: [1, 1, 1], max: [0, 0, 0] }, bcfGuid: "inte-guid" } }],
+    });
+    const rad = ut.ur.find((r) => r.id === u.id);
+    expect(rad.benamning).toBe("OK");
+    expect(rad.status).toBe(u.status);
+    expect(rad.klass).toBe(u.klass);
+    expect("viewpoint" in rad).toBe(false);
+    expect("bcfGuid" in rad).toBe(false);
+  });
+
+  it("en koppling till ett objekt som inte finns släpps, men kameran och komponenterna står kvar", () => {
+    const { s, pid } = medArendeOchObjekt();
+    const ny = nyRad(s, pid, { benamning: "X", bcfGuid: GUID, objectGuid: "finns-inte", boundingBox: { min: [0, 0, 0], max: [1, 1, 1] }, modelVersionId: "v1", viewpoint: vp, bcfKomponenter: ["abc"] });
+    const rad = reducer(s, { type: "ATA_IMPORTERA_BCF", projektId: pid, nya: [ny], uppdatera: [] }).ur.find((r) => r.id === ny.id);
+    expect("objectGuid" in rad).toBe(false);
+    expect("boundingBox" in rad).toBe(false);
+    expect(rad.viewpoint).toEqual(vp);
+    expect(rad.bcfKomponenter).toEqual(["abc"]);
+  });
+
+  it("en koppling till ett objekt som finns behålls", () => {
+    const { s, pid, o } = medArendeOchObjekt();
+    const ny = nyRad(s, pid, { benamning: "X", bcfGuid: GUID, objectGuid: o.id, viewpoint: vp });
+    expect(reducer(s, { type: "ATA_IMPORTERA_BCF", projektId: pid, nya: [ny], uppdatera: [] }).ur.find((r) => r.id === ny.id).objectGuid).toBe(o.id);
+  });
+
+  it("samma fil två gånger ger inga dubbletter", () => {
+    const { s, pid } = medArendeOchObjekt();
+    const ny = nyRad(s, pid, { benamning: "Från BCF", bcfGuid: GUID });
+    const a = reducer(s, { type: "ATA_IMPORTERA_BCF", projektId: pid, nya: [ny], uppdatera: [] });
+    const dubbel = { ...ny, id: "annat-id" };
+    expect(reducer(a, { type: "ATA_IMPORTERA_BCF", projektId: pid, nya: [dubbel], uppdatera: [] })).toBe(a);
+    expect(a.ur.filter((r) => r.bcfGuid === GUID)).toHaveLength(1);
+  });
+
+  it("avvisar nya rader för fel projekt, utan benämning eller med upptaget id, och okänt projekt", () => {
+    const { s, pid, u } = medArendeOchObjekt();
+    const bra = nyRad(s, pid, { benamning: "Bra", bcfGuid: GUID2 });
+    expect(reducer(s, { type: "ATA_IMPORTERA_BCF", projektId: "finns-inte", nya: [bra], uppdatera: [] })).toBe(s);
+    expect(reducer(s, { type: "ATA_IMPORTERA_BCF", projektId: pid, nya: [{ ...bra, projektId: "annat" }], uppdatera: [] })).toBe(s);
+    expect(reducer(s, { type: "ATA_IMPORTERA_BCF", projektId: pid, nya: [{ ...bra, benamning: "  " }], uppdatera: [] })).toBe(s);
+    expect(reducer(s, { type: "ATA_IMPORTERA_BCF", projektId: pid, nya: [{ ...bra, id: u.id }], uppdatera: [] })).toBe(s);
+    expect(reducer(s, { type: "ATA_IMPORTERA_BCF", projektId: pid, nya: [], uppdatera: [{ id: "finns-inte", falt: { benamning: "x" } }] })).toBe(s);
+  });
+
+  it("ATA_SATT_BCFGUID sparar giltiga guid och struntar i resten", () => {
+    const { s, u } = medArendeOchObjekt();
+    const ut = reducer(s, { type: "ATA_SATT_BCFGUID", guider: { [u.id]: GUID, nope: GUID2 } });
+    expect(ut.ur.find((r) => r.id === u.id).bcfGuid).toBe(GUID);
+    expect(reducer(ut, { type: "ATA_SATT_BCFGUID", guider: { [u.id]: GUID } })).toBe(ut);
+    expect(reducer(s, { type: "ATA_SATT_BCFGUID", guider: { [u.id]: "inte-guid" } })).toBe(s);
+  });
+});

@@ -11,6 +11,8 @@ import { diffStatusPerGuid, diffaModeller } from "../../lib/modellDiff.js";
 import { SEKTION_STANDARD, arendenFor, arendenPerObjekt, boundingBoxFor, byggKoppling, kopplingFel, viewpointForBox } from "../../lib/modellKoppling.js";
 import { nyAtaPost } from "../../lib/nyaPoster.js";
 import { hamtaNamn } from "../../state/portfolj-reducer.js";
+import { bcfFilnamn, byggBcf, dataUrlTillBytes, importSammanfattning, lasBcf, planeraImport } from "../../lib/bcfHanterare.js";
+import { laddaNer } from "../../lib/export.js";
 import { ParkSumma } from "../../components/site/ParkSumma.jsx";
 import { Meter } from "../../components/ds/index.js";
 import { useSnabbUtskrift } from "../../components/field/SnabbUtskrift.jsx";
@@ -129,6 +131,7 @@ export function Site() {
   const [jamforId, setJamforId] = useState(null);
   const [flyg, setFlyg] = useState(null);
   const [bred, setBred] = useState(0);
+  const [bcfJobb, setBcfJobb] = useState("");
   const sceneApi = useRef(null);
   const [fel3d, setFel3d] = useState(null);
   const [plan, setPlan] = useState(() => (pid ? lasPlan(pid) : null));
@@ -270,6 +273,62 @@ export function Site() {
     laggTill("ur", nyAtaPost(state, pid, { benamning: sv.benamning, ansvarig: hamtaNamn() || "", ...koppling }));
     visaToast(`Ärende registrerat på ${valt.namn}.`);
   };
+  /* ---------- BCF ---------- */
+  const projektNamn = p ? `${p.nr ? `${p.nr} ` : ""}${p.namn}` : "";
+
+  /** Exporterar de valda ärendena till en .bcfzip. Skärmdumpen tas från varje ärendes egen vy. */
+  const exporteraBcf = async (ids) => {
+    const valda = arendeRader.filter((u) => ids.includes(u.id));
+    if (!valda.length) return;
+    setBcfJobb("Exporterar …");
+    try {
+      const snapshots = {};
+      for (const u of valda) {
+        if (!u.viewpoint) continue;
+        const bytes = dataUrlTillBytes(sceneApi.current?.skarmdump?.(u.viewpoint));
+        if (bytes) snapshots[u.id] = bytes;
+      }
+      const { data, nyaGuid } = await byggBcf(valda, { snapshots, forfattare: hamtaNamn() || "Okänd", projektNamn });
+      if (Object.keys(nyaGuid).length) dispatch({ type: "ATA_SATT_BCFGUID", guider: nyaGuid });
+      const r = await laddaNer(bcfFilnamn(p.nr || p.namn), data, "application/zip");
+      if (r.ok) visaToast(`${valda.length} ärenden exporterade${Object.keys(snapshots).length < valda.length ? " (utan skärmdump där 3D-vyn saknas)" : ""}.`);
+      else if (!r.tyst) visaToast(r.txt || "Exporten misslyckades.", "warn");
+    } catch (e) {
+      visaToast(`BCF-exporten misslyckades: ${e.message}`, "warn");
+    } finally {
+      setBcfJobb("");
+    }
+  };
+
+  /** Läser en .bcfzip, visar vad som händer och importerar efter bekräftelse. */
+  const importeraBcf = async (fil) => {
+    if (!fil) return;
+    setBcfJobb("Läser …");
+    try {
+      const r = await lasBcf(new Uint8Array(await fil.arrayBuffer()));
+      const state0 = { ur: state.ur };
+      const plan = planeraImport(r.topics, {
+        ur: state.ur,
+        projektId: pid,
+        objekt,
+        lada: boundingBoxFor,
+        skapaPost: (falt) => {
+          const rad = { ...nyAtaPost(state0, pid, { ansvarig: hamtaNamn() || "", ...falt }), id: `u${Date.now().toString(36)}${state0.ur.length.toString(36)}` };
+          state0.ur = [...state0.ur, rad];
+          return rad;
+        },
+      });
+      const ja = await bekrafta(importSammanfattning(plan, r), { titel: `Importera ${r.topics.length} ärenden från BCF`, ok: "Importera" });
+      if (!ja) return;
+      dispatch({ type: "ATA_IMPORTERA_BCF", projektId: pid, nya: plan.nya, uppdatera: plan.uppdatera });
+      visaToast(`BCF importerad: ${plan.nya.length} nya, ${plan.uppdatera.length} uppdaterade.`);
+    } catch (e) {
+      visaToast(e.message || "Filen gick inte att läsa som BCF.", "warn");
+    } finally {
+      setBcfJobb("");
+    }
+  };
+
   const sparaVersion = async () => {
     const sv = await fraga({
       titel: "Spara modellversion",
@@ -592,6 +651,9 @@ export function Site() {
                   onLos={losArende}
                   onOppna={(u) => oppnaPost("ata", u.id)}
                   onNy={nyttArende}
+                  onExportBcf={exporteraBcf}
+                  onImportBcf={importeraBcf}
+                  bcfJobb={bcfJobb}
                 />
               </aside>
             }

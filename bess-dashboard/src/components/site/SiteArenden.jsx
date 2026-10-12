@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { StatusBadge } from "../ds/index.js";
 import { registerStatus } from "../../lib/status.js";
 import { arKopplad } from "../../lib/modellKoppling.js";
@@ -15,11 +15,23 @@ const SEG =
   "cursor-pointer rounded-full border border-solid border-hairline-stark bg-surface px-3 py-1 font-body text-[12.5px] font-semibold text-ink transition-colors motion-reduce:transition-none hover:bg-sunken " +
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-one-bla aria-pressed:border-one-djup aria-pressed:bg-one-djup aria-pressed:text-white";
 
-export function SiteArenden({ rader, valt, objektById, onVisa, onVisaVy, onKoppla, onLos, onOppna, onNy }) {
+export function SiteArenden({ rader, valt, objektById, onVisa, onVisaVy, onKoppla, onLos, onOppna, onNy, onExportBcf, onImportBcf, bcfJobb = "" }) {
   const [vy, setVy] = useState("objekt");
+  const [valda, setValda] = useState(() => new Set());
+  const filRef = useRef(null);
   const medObjekt = !!valt && vy === "objekt";
   const synliga = medObjekt ? rader.filter((u) => u.objectGuid === valt.id) : rader;
   const antalObjekt = valt ? rader.filter((u) => u.objectGuid === valt.id).length : 0;
+  // Valet gäller bara ärenden som finns kvar — ett borttaget ärende ska inte exporteras.
+  const giltiga = rader.filter((u) => valda.has(u.id)).map((u) => u.id);
+  const vaxla = (id) =>
+    setValda((f) => {
+      const n = new Set(f);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  const alla = synliga.length > 0 && synliga.every((u) => valda.has(u.id));
 
   return (
     <div className="flex flex-col gap-3">
@@ -35,6 +47,29 @@ export function SiteArenden({ rader, valt, objektById, onVisa, onVisaVy, onKoppl
         </button>
       </div>
 
+      <div className="flex flex-wrap items-center gap-2" role="group" aria-label="BCF — utbyte med andra modellverktyg">
+        <button type="button" className="btn sec mini" disabled={!synliga.length} onClick={() => setValda(alla ? new Set() : new Set(synliga.map((u) => u.id)))}>
+          {alla ? "Avmarkera alla" : "Markera alla synliga"}
+        </button>
+        <button type="button" className="btn mini" disabled={!giltiga.length || !!bcfJobb} onClick={() => onExportBcf(giltiga)} title="Spara de markerade ärendena som en .bcfzip med kameravy och skärmdump">
+          {bcfJobb || `Exportera BCF (${giltiga.length})`}
+        </button>
+        <input
+          ref={filRef}
+          type="file"
+          accept=".bcfzip,.bcf,application/zip"
+          className="sr-only"
+          aria-label="Välj BCF-fil att importera"
+          onChange={(e) => {
+            onImportBcf(e.target.files?.[0]);
+            e.target.value = "";
+          }}
+        />
+        <button type="button" className="btn sec mini" disabled={!!bcfJobb} onClick={() => filRef.current?.click()}>
+          Importera BCF …
+        </button>
+      </div>
+
       {!valt ? <p className="m-0 text-[12.5px] text-ink-soft">Klicka på ett objekt i 3D-vyn för att se dess ärenden och registrera nya.</p> : null}
 
       {synliga.length ? (
@@ -46,6 +81,13 @@ export function SiteArenden({ rader, valt, objektById, onVisa, onVisaVy, onKoppl
             return (
               <li key={u.id} className="flex flex-col gap-2 rounded-lg border border-solid border-hairline bg-surface p-3 transition-[border-color,box-shadow] duration-150 motion-reduce:transition-none hover:border-hairline-stark hover:shadow-sm">
                 <div className="flex flex-wrap items-start gap-2">
+                  <input
+                    type="checkbox"
+                    className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-[var(--knapp-bla)]"
+                    checked={valda.has(u.id)}
+                    onChange={() => vaxla(u.id)}
+                    aria-label={`Välj ${u.nr || "ärendet"} för BCF-export`}
+                  />
                   <button
                     type="button"
                     className="min-w-0 flex-1 cursor-pointer rounded border-0 bg-transparent p-0 text-left font-body focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-one-bla"

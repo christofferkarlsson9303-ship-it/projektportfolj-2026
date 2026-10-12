@@ -37,6 +37,26 @@ Färger i 3D (designsystemets tokens, inga egna hex): Tillagd `--ok-ink`, Bortta
 - **Gå in:** den befintliga gåläges-koden (pekarlås + egen blickstyrning i `lib/site.js`). `PointerLockControls` skulle bara duplicera den.
 - **Jämför med:** välj en sparad modellversion — objekten färgas efter diffen och en teckenförklaring visas.
 
-## Inte gjort (Steg B)
+## BCF 2.1 (Steg B1)
 
-IFC-laddning (`web-ifc`), `expressID`, en server-side `POST /api/models/diff`, modellversioner som egen tabell och BCF-export/-import. Se till att besluta modellkälla först; `guid`-fältet och `diffaModeller` är förberedda för det.
+Ärendepanelen har kryssrutor per ärende, **Exportera BCF (n)** och **Importera BCF …**. Logiken ligger i `src/lib/bcfHanterare.js` (ren, utan WebGL och DOM; XML skrivs som text och läses av en liten egen parser, zip via `jszip`).
+
+**Export** ger en `.bcfzip`: `bcf.version`, `project.bcfp` och en mapp per ärende (mappnamn = topic-GUID) med `markup.bcf`, `viewpoint.bcfv` och `snapshot.png`. Skärmdumpen tas ur 3D-scenen från ärendets egen kameravy (`skarmdump(viewpoint)`), och saknas där scenen inte kan ritas. Ärendet får ett `bcfGuid` så att en senare import uppdaterar det i stället för att dubblera.
+
+| Ärendet | BCF |
+|---|---|
+| `benamning` | `Topic/Title` |
+| `klass` | `TopicType` (ÄTA, Hinder, Hinder och ÄTA, Ärende) |
+| `status` | `TopicStatus` (Open, In Progress, Resolved, Closed) |
+| `handelseDatum`, `ansvarig` | `CreationDate`, `AssignedTo` |
+| `nr`, exakt status och klass | `Labels`: `ata-nr:`, `ata-status:`, `ata-klass:` (ger förlustfri rundtur) |
+| `viewpoint` | `PerspectiveCamera` (position, riktning, upp, FOV) |
+| `objectGuid` | `Components/Selection/Component` (`IfcGuid` om det är ett IFC-GUID, annars `AuthoringToolId`) |
+
+Koordinater byts mellan appens Y-upp och BCF:s Z-upp: `(x, y, z)` blir `(x, −z, y)`. BCF har inget kameramål, så vid import läggs målet vid det matchade objektets mitt, annars 10 m framför kameran.
+
+**Import** (`lasBcf` → `planeraImport` → `ATA_IMPORTERA_BCF`) visar först en bekräftelse (nya, uppdaterade, kopplade, kommentarer som hoppas över). Ett topic med känt `bcfGuid` uppdaterar ärendet, annars skapas ett nytt med nummer ur projektets serie. Reducern skriver bara BCF-fält (`BCF_FALT`) och tar bort ogiltig status, kameravy eller koppling i stället för att spara dem. Komponenter som inte matchar något objekt sparas i `bcfKomponenter` så att de kan kopplas när modellen finns. BCF 3.0, ortogonala kameror och kommentarer stöds inte (antalet kommentarer rapporteras).
+
+## Inte gjort (Steg B, resten)
+
+IFC-laddning (`web-ifc`) och `expressID`, en server-side `POST /api/models/diff` och modellversioner som egen tabell. Se till att besluta modellkälla först; `guid`-fältet och `diffaModeller` är förberedda för det.

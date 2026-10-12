@@ -604,8 +604,34 @@ export default function SiteScen({
         controls.enabled = senaste.current.lage !== "ga";
       }
     };
+    /* Skärmdump som data-URL (PNG), tagen från en given vy utan att användaren ser kameran röra sig:
+       kameran sätts, scenen ritas, bilden läses av och kameran återställs i samma bildruta. Används av
+       BCF-exporten. Null om scenen inte kan ritas. */
+    const skarmdump = (vp) => {
+      try {
+        const sparad = { pos: camera.position.clone(), mal: controls.target.clone(), fov: camera.fov, rot: camera.rotation.clone() };
+        if (vp) {
+          camera.position.set(...vp.cameraPosition);
+          controls.target.set(...vp.target);
+          camera.fov = vp.fov;
+          camera.updateProjectionMatrix();
+          camera.lookAt(...vp.target);
+        }
+        renderer.render(scene, camera);
+        const url = renderer.domElement.toDataURL("image/png");
+        camera.position.copy(sparad.pos);
+        controls.target.copy(sparad.mal);
+        camera.fov = sparad.fov;
+        camera.updateProjectionMatrix();
+        camera.rotation.copy(sparad.rot);
+        smutsig = true;
+        return url;
+      } catch {
+        return null;
+      }
+    };
     s.current.startaFlyg = startaFlyg;
-    senaste.current.onKlar?.({ hamtaVy: nuVy, flygTill: startaFlyg, flyger: () => !!s.current.flygning, rensaMatning: () => s.current.rensaMatning?.() });
+    senaste.current.onKlar?.({ hamtaVy: nuVy, flygTill: startaFlyg, flyger: () => !!s.current.flygning, rensaMatning: () => s.current.rensaMatning?.(), skarmdump });
 
     /* ---------- Loop ---------- */
     let forra = performance.now();
