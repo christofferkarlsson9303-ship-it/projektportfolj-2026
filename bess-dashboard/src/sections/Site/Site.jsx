@@ -301,7 +301,7 @@ export function Site() {
 
   return (
     <div className="flex flex-col gap-4 lg:gap-6">
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start lg:gap-6">
+      <div className="flex flex-col gap-4 lg:gap-6">
         <Card
           id="site-scen"
           title={`Siten — ${p.nr ? `${p.nr} ` : ""}${p.namn}`}
@@ -370,7 +370,7 @@ export function Site() {
               spokRot={spokRot}
               onRotera={rotera}
             />
-            <div className="min-w-0">
+            <div className="relative min-w-0">
               {fel3d ? (
                 <Callout ton="warn">
                   <b>3D-vyn kan inte visas.</b> {fel3d} Planvyn nedan visar samma objekt och går att klicka i.
@@ -391,15 +391,9 @@ export function Site() {
                   />
                 </Suspense>
               )}
-            </div>
-          </div>
-        </Card>
-        <aside aria-label="Markerat objekt och parkens data" className="flex min-w-0 flex-col gap-4 lg:gap-6">
-          <Card id="site-park" title="Parkens BESS-data" subtitle="Summerat ur objekten på siten.">
-            <ParkSumma objekt={objekt} />
-          </Card>
             <Card
               id="site-markerat"
+              className={`mt-3 lg:absolute lg:bottom-3 lg:right-3 lg:top-3 lg:z-[3] lg:mt-0 lg:w-[340px] lg:overflow-y-auto lg:shadow-lg ${valt ? "" : "lg:hidden"}`}
               title={valt ? namnFor(valt) : "Markerat objekt"}
               subtitle={valt ? (arNal(valt) ? (arOppenPunkt(punktFor(valt)) ? "Nål på en öppen punkt" : "Nål på en punkt som inte är öppen") : `${MALLAR[valt.typ].namn} · mått i meter, rotation i grader`) : null}
               badge={valt && !arNal(valt) && valt.status ? <StatusBadge ton={STATUS_TON[valt.status] || "neutral"} label={SITE_STATUS.find(([id]) => id === valt.status)?.[1] || valt.status} /> : null}
@@ -441,7 +435,12 @@ export function Site() {
               )}
               {valt && harBessData(valt.typ) ? <BessSektion key={`bess-${valt.id}-${omritning}`} o={valt} onTal={andraMatt} onAndra={andra} /> : null}
             </Card>
-        </aside>
+            </div>
+          </div>
+        </Card>
+        <Card id="site-park" title="Parkens BESS-data" subtitle="Summerat ur objekten på siten.">
+          <ParkSumma objekt={objekt} className="sm:grid-cols-4" />
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-6">
