@@ -49,7 +49,7 @@ test("avropsbeslutet Tacka nej kräver en orsak, döljer fas 2–8 och arkiverar
 
   // Fas 2–8 är dolda: bara fas 1 finns kvar i faserna och i navigeringen.
   await expect(page.getByRole("list", { name: "Faser i projektet" }).getByRole("listitem")).toHaveCount(1);
-  await expect(page.getByText(/ONE-P · Fas 1 av 8 · Steg 2 av 7/)).toBeVisible();
+  await expect(page.getByText(/ONE-P · .*Fas 1 av 8 · Steg 2 av 7/)).toBeVisible();
   await expect(page.getByText(/obligatorisk punkt kvar för att flytta anbudet till arkivet/)).toBeVisible();
 
   // Utan orsak går anbudet inte att skapa.

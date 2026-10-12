@@ -10,7 +10,7 @@ import { FASER, FAS_ANTAL, arFasNr, faseInfo, statusEtikett } from "../../data/p
    Vyvaljare. Det valda värdet är aria-checked; fasens namn och status står som text, aldrig bara
    som färg. Bara transform och opacity animeras, och inget alls vid prefers-reduced-motion. */
 
-export function FasMatare({ fas, onVal, disabled = false, etikett = "Projektets fas", kompakt = false }) {
+export function FasMatare({ fas, onVal, disabled = false, etikett = "Projektets fas" }) {
   const aktuell = arFasNr(fas) ? fas : 1;
   const ref = useRef(null);
   const info = faseInfo(aktuell);
@@ -78,9 +78,6 @@ export function FasMatare({ fas, onVal, disabled = false, etikett = "Projektets 
                 >
                   {passerad ? <Check size={11} strokeWidth={3} /> : f.nr}
                 </span>
-                {kompakt ? null : (
-                  <span className={`hidden w-full truncate text-center text-[10.5px] leading-tight sm:block ${vald ? "font-bold text-ink" : "text-ink-soft"}`}>{f.kort}</span>
-                )}
               </button>
             );
           })}
