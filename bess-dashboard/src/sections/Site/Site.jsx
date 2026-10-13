@@ -7,6 +7,7 @@ import { SiteMeny } from "../../components/site/SiteMeny.jsx";
 import { SplitVy } from "../../components/site/SplitVy.jsx";
 import { SiteVerktygsfalt } from "../../components/site/SiteVerktygsfalt.jsx";
 import { SiteArenden } from "../../components/site/SiteArenden.jsx";
+import { Skeleton } from "../../components/ui/Skeleton.jsx";
 import { IfcModeller } from "../../components/site/IfcModeller.jsx";
 import { IfcImportDialog } from "../../components/site/IfcImportDialog.jsx";
 import { skapaIfcCache } from "../../lib/ifcCache.js";
@@ -697,7 +698,7 @@ export function Site() {
                   <b>3D-vyn kan inte visas.</b> {fel3d} Planvyn nedan visar samma objekt och går att klicka i.
                 </Callout>
               ) : (
-                <Suspense fallback={<div className="h-[62vh] max-h-[720px] min-h-[360px] w-full rounded-lg bg-sunken" aria-busy="true" />}>
+                <Suspense fallback={<Skeleton etikett="Laddar 3D-vyn …" className="h-[62vh] max-h-[720px] min-h-[360px] w-full" />}>
                   <SiteScen
                     objekt={objekt}
                     punkter={punkter}

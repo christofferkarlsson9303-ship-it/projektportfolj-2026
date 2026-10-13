@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { IFC_MAX_OBJEKT, fmtStorlek, ifcModellRad, kortKlass } from "../../lib/ifcModell.js";
 import { geometriStorlek, lasIfc } from "../../lib/ifcLaddare.js";
+import { Skeleton } from "../ui/Skeleton.jsx";
 import { hamtaIfcApi } from "../../lib/ifcApi.js";
 
 /* Importerar en IFC-fil till projektet. Filen läses i webbläsaren (web-ifc); ingenting laddas upp.
@@ -102,6 +103,17 @@ export function IfcImportDialog({ projektId, filnamnFinns = [], onLagg, onStang 
             Läser {fil?.name} ({fmtStorlek(fil?.size)}) …{" "}
             {framsteg?.totalt ? `${framsteg.gjorda} av ${framsteg.totalt} element` : "förbereder läsaren"}. Större filer kan göra fliken seg en stund.
           </p>
+        ) : null}
+        {fas === "laser" ? (
+          <div
+            role="progressbar"
+            aria-label="Läsning av IFC-filen"
+            aria-valuemin={0}
+            aria-valuemax={framsteg?.totalt || 100}
+            aria-valuenow={framsteg?.totalt ? framsteg.gjorda : undefined}
+          >
+            <Skeleton className="h-2 w-full" />
+          </div>
         ) : null}
 
         {fas === "klart" && res ? (

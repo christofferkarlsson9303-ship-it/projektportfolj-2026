@@ -2104,3 +2104,12 @@ button.ov-gantt-rad:hover>:first-child,button.ov-gantt-rad:focus-visible>:first-
 .ps-puls{animation:psPuls .35s ease-out}
 .ps-byt{animation:psByt .28s ease-out both}
 @media (prefers-reduced-motion:reduce){.ps-rad-in,.ps-puls,.ps-byt{animation:none}}
+
+/* ---------- Interaktionstillstånd och laddning ---------- */
+.btn{transition:background-color .15s,transform .1s,box-shadow .15s}
+.btn:active:not(:disabled){transform:translateY(1px)}
+.btn:focus-visible{outline:2px solid var(--one-bla);outline-offset:2px}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn[aria-busy="true"]{cursor:progress}
+.skeleton{background:linear-gradient(90deg,var(--sunken,#eef3f5) 25%,var(--hairline-stark) 50%,var(--sunken,#eef3f5) 75%);background-size:200% 100%;animation:skeleton-skimmer 1.4s ease-in-out infinite}
+@keyframes skeleton-skimmer{from{background-position:200% 0}to{background-position:-200% 0}}
