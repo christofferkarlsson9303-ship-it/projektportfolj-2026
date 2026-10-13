@@ -8,11 +8,20 @@ import { betalRad, ekonomi, mUnderlagKlart, mstatusRad, nastaMilstolpe, projekt 
 import { registerStatus } from "../lib/status.js";
 import { avvikandeAndelar, kontraktsText } from "../lib/kontraktsgrund.js";
 import { kontraktsprofil } from "../lib/kontraktsprofil.js";
+import { FAS_ANTAL, arEjVunnet, arFasNr, faseInfo } from "../data/projektfaser.ts";
+import { FASSTATUS, fasStatus, milstolparIFas, projektfasForMilstolpe } from "../lib/fasmappning.js";
+import { faslage } from "../lib/epc.js";
+import { FasAvvikelse, useFlyttaFas } from "../components/projekt/FasAvvikelse.jsx";
 
 /* Betalningsmilstolparna M1–M7 på designsystemet: ett översiktskort med
    fakturerat, nästa lyft och kvar, och en ruta per milstolpe i ordning.
    Därunder ett kort per milstolpe med underlagen att bocka av och
-   faktureringen. Nästa lyft ramas in i ONE Blå — det är den som ska drivas. */
+   faktureringen. Nästa lyft ramas in i ONE Blå — det är den som ska drivas.
+
+   Varje milstolpe hör till en av projektets faser 1–8 (lib/fasmappning.js,
+   via grinden den låser) och visar fasens status som projektkortet. När
+   underlaget är klart för alla milstolpar i projektets aktuella fas föreslås
+   nästa fas. Fasen flyttas aldrig utan att någon bekräftar. */
 
 /** Läget för en milstolpe i remsan — text bär läget, kanten förstärker. */
 const LAGE = {
@@ -38,7 +47,9 @@ function Remsa({ state, pid, nastaKod }) {
             } ${lage === "nu" ? "bg-info-bg" : "bg-surface"}`}
           >
             <b className="font-head text-[15px] leading-tight text-ink">{m.kod}</b>
-            <span className="text-[11px] tabular-nums text-ink-soft">{m.andel} %</span>
+            <span className="text-[11px] tabular-nums text-ink-soft">
+              {m.andel} % · fas {projektfasForMilstolpe(m.kod)}
+            </span>
             <span className="text-[10.5px] font-semibold leading-tight text-ink-soft">
               <span className="sr-only">{m.namn} — </span>
               {LAGE[lage].text}
@@ -76,7 +87,9 @@ function Oversikt({ state, pid, p, nastaKod }) {
   );
 }
 
-function Milstolpe({ m, state, pid, kv, ar, dispatch }) {
+function Milstolpe({ m, state, pid, kv, ar, dispatch, aktivFas }) {
+  const fas = projektfasForMilstolpe(m.kod);
+  const fs = FASSTATUS[fasStatus(fas, aktivFas)];
   const b = betalRad(state, pid, m.kod);
   const u = mUnderlagKlart(state, pid, m);
   const r = mstatusRad(state, pid, m.kod);
@@ -86,7 +99,7 @@ function Milstolpe({ m, state, pid, kv, ar, dispatch }) {
     <Card
       id={`ms-${pid}-${m.kod}`}
       title={`${m.kod} · ${m.namn}`}
-      subtitle={m.krav}
+      subtitle={`Fas ${fas} · ${faseInfo(fas).titel}. ${m.krav}`}
       className={ar ? "ring-2 ring-one-bla" : ""}
       badge={
         <>
@@ -94,6 +107,7 @@ function Milstolpe({ m, state, pid, kv, ar, dispatch }) {
             <b className="font-body text-base tabular-nums text-ink">{m.andel} %</b>
             <span className="text-xs tabular-nums text-ink-soft">{belopp !== null ? fmtSEK(belopp) : "belopp saknas"}</span>
           </span>
+          <StatusBadge ton={fs.ton} label={`Fas ${fas}: ${fs.text}`} />
           {ar ? <StatusBadge ton="info" label="Nästa lyft" /> : null}
           <StatusBadge {...registerStatus(b ? b.status : "kvar")} />
         </>
@@ -164,6 +178,36 @@ function Milstolpe({ m, state, pid, kv, ar, dispatch }) {
   );
 }
 
+/** Underlaget för milstolparna i projektets aktuella fas är klart (eller fakturerat): fasen kan
+ *  godkännas och projektet gå vidare. Visas bara för faser som har betalmilstolpar. */
+function FasFramdrift({ state, pid, p }) {
+  const flytta = useFlyttaFas();
+  const fas = arFasNr(p.fas) ? p.fas : 1;
+  const koder = milstolparIFas(fas);
+  if (arEjVunnet(p.status) || fas >= FAS_ANTAL || !koder.length) return null;
+  const klara = koder.every((kod) => {
+    const m = MILSTOLPE_MODELL.find((x) => x.kod === kod);
+    return betalRad(state, pid, kod)?.status === "fakturerad" || (m && mUnderlagKlart(state, pid, m).allt);
+  });
+  if (!klara) return null;
+  const nasta = fas + 1;
+  return (
+    <Callout ton="info">
+      <b>
+        Underlaget för {koder.join(" och ")} är klart. Fas {fas} ({faseInfo(fas).kort}) kan godkännas.
+      </b>{" "}
+      Kontrollera att fasens obligatoriska punkter också är klara i Projektstart.{" "}
+      <button
+        type="button"
+        className="btn sec mini ml-1"
+        onClick={() => flytta(p, nasta, { orsak: `Underlaget för ${koder.join(" och ")} är klart.` })}
+      >
+        Flytta till fas {nasta} · {faseInfo(nasta).kort}
+      </button>
+    </Callout>
+  );
+}
+
 export function Milstolpar() {
   const { state, dispatch } = usePortfolj();
   const { valtProjekt: pid } = useUi();
@@ -172,6 +216,7 @@ export function Milstolpar() {
   if (!p) return null;
 
   const kv = ekonomi(state, pid).kv;
+  const momentlage = faslage(state, pid);
   const nastaKod = (nastaMilstolpe(state, pid) || {}).kod;
 
   return (
@@ -179,6 +224,8 @@ export function Milstolpar() {
       <Projektvaljare />
       <div className="flex flex-col gap-4 lg:gap-6">
         <Oversikt state={state} pid={pid} p={p} nastaKod={nastaKod} />
+        <FasAvvikelse p={p} faslage={momentlage} />
+        <FasFramdrift state={state} pid={pid} p={p} />
         {avvikandeAndelar(kontraktsprofil(state, pid), MILSTOLPE_MODELL).length ? (
           <Callout ton="warn">
             <b>Kontraktets andelar skiljer sig från sidans modell:</b>{" "}
@@ -189,7 +236,7 @@ export function Milstolpar() {
           </Callout>
         ) : null}
         {MILSTOLPE_MODELL.map((m) => (
-          <Milstolpe key={m.kod} m={m} state={state} pid={pid} kv={kv} ar={m.kod === nastaKod} dispatch={dispatch} />
+          <Milstolpe key={m.kod} m={m} state={state} pid={pid} kv={kv} ar={m.kod === nastaKod} dispatch={dispatch} aktivFas={p.fas} />
         ))}
         <Callout>
           <b>Rutin.</b> Skicka förhandsavisering på Excel-mallen via e-post för beställarens godkännande först —

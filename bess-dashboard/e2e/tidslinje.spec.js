@@ -23,8 +23,8 @@ test("gantt ritar staplar och visar i dag-linjen i bild", async ({ page }) => {
   expect(idag.x).toBeGreaterThanOrEqual(lada.x);
   expect(idag.x + idag.width).toBeLessThanOrEqual(lada.x + lada.width);
 
-  // Byggfaserna ur Bygga batteripark ritas som staplar med start och slut.
-  await expect(gantt.getByRole("button", { name: /^\d+ · .+ till \d{4}-\d{2}-\d{2}/ }).first()).toBeAttached();
+  // Byggmomenten ur Bygga batteripark ritas som staplar med start och slut, märkta med projektets fas 1–8.
+  await expect(gantt.getByRole("button", { name: /^Fas [1-8] · .+ \(moment \d+\).* till \d{4}-\d{2}-\d{2}/ }).first()).toBeAttached();
 });
 
 test("stapeln har beskrivande etikett och öppnar detaljvyn", async ({ page }) => {

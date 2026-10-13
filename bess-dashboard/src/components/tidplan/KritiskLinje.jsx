@@ -4,15 +4,21 @@ import { Callout, Card, StatTile, StatusBadge } from "../ds/index.js";
 import { datumKort, idag } from "../../lib/datum.js";
 import { hamtaNamn } from "../../state/portfolj-reducer.js";
 import { baslinjerad, drivtext, kritiskLinje } from "../../lib/kritiskLinje.js";
+import { FASSTATUS, fasStatus, grupperaMoment, projektfasForMilstolpe } from "../../lib/fasmappning.js";
+import { faseInfo } from "../../data/projektfaser.ts";
 
-/* Tidplan med beroenden: prognos per fas, kritisk linje och vad det betyder
+/* Tidplan med beroenden: prognos per moment, kritisk linje och vad det betyder
    för betalmilstolparna. Beroendena är standardnätet för BESS-EPC
-   (src/data/fasberoenden.js); förseningar förs vidare genom det. */
+   (src/data/fasberoenden.js); förseningar förs vidare genom det.
+
+   Momenten 0–15 står under projektets fas 1–8 (lib/fasmappning.js). Fasrubriken
+   visar samma status som projektkortet. Betalningarna visar sin fas. */
 
 const dagar = (n) => (n === null || n === undefined ? "—" : n === 0 ? "0 dagar" : `${n > 0 ? "+" : "−"}${Math.abs(n)} ${Math.abs(n) === 1 ? "dag" : "dagar"}`);
 
 export function KritiskLinje({ pid, projektNamn }) {
   const { state, dispatch } = usePortfolj();
+  const aktivFas = state.projekt.find((x) => x.id === pid)?.fas;
   const { bekrafta, visaToast, oppnaPost } = useUi();
   const nu = idag();
   const k = useMemo(() => kritiskLinje(state, pid, nu), [state, pid, nu]);
@@ -107,7 +113,14 @@ export function KritiskLinje({ pid, projektNamn }) {
                 </tr>
               </thead>
               <tbody>
-                {k.faser.filter((f) => visaKlara || !f.klar).map((f) => (
+                {grupperaMoment(k.faser.filter((f) => visaKlara || !f.klar)).flatMap(({ fas, rader }) => [
+                  <tr key={`fas-${fas.nr}`} className="kl-fasrubrik">
+                    <th scope="colgroup" colSpan={6}>
+                      Fas {fas.nr} · {fas.titel}
+                      <StatusBadge ton={FASSTATUS[fasStatus(fas.nr, aktivFas)].ton} label={FASSTATUS[fasStatus(fas.nr, aktivFas)].text} className="ml-2 normal-case tracking-normal" />
+                    </th>
+                  </tr>,
+                  ...rader.map((f) => (
                   <tr key={f.nr} className={f.klar ? "klar" : f.kritisk ? "kritisk" : undefined}>
                     <th scope="row">
                       <button type="button" className="kl-fas" onClick={() => oppnaPost("epc", `fas-${f.nr}`)}>
@@ -122,7 +135,8 @@ export function KritiskLinje({ pid, projektNamn }) {
                     <td className="num">{f.slack === null ? "—" : `${f.slack} ${f.slack === 1 ? "dag" : "dagar"}`}</td>
                     <td className="kl-driv">{drivtext(f, k.faser)}</td>
                   </tr>
-                ))}
+                  )),
+                ])}
               </tbody>
             </table>
           </div>
@@ -139,6 +153,7 @@ export function KritiskLinje({ pid, projektNamn }) {
               <thead>
                 <tr>
                   <th scope="col">Betalning</th>
+                  <th scope="col">Fas</th>
                   <th scope="col">Grind</th>
                   <th scope="col">{k.referens === "baslinje" ? "Ursprunglig plan" : "Standardplan"}</th>
                   <th scope="col">Beräknat</th>
@@ -149,6 +164,9 @@ export function KritiskLinje({ pid, projektNamn }) {
                 {k.milstolpar.map((m) => (
                   <tr key={m.kod} className={m.klar ? "klar" : undefined}>
                     <th scope="row">{m.kod}</th>
+                    <td>
+                      {projektfasForMilstolpe(m.kod)} · {faseInfo(projektfasForMilstolpe(m.kod)).kort}
+                    </td>
                     <td>{m.grind}</td>
                     <td>{datumKort(m.plan)}</td>
                     <td>{datumKort(m.prognos)}</td>

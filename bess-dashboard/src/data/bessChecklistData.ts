@@ -25,7 +25,13 @@
 
    Två saker är tillägg, inte ur PDF:en, och markerade där de står:
    - `kort` och `mall` per fas (kort namn för Gantt och standardplanens läge)
-   - `ankare` och `dagar` per ledtid (vad fristen räknas mot, i dagar) */
+   - `ankare` och `dagar` per ledtid (vad fristen räknas mot, i dagar)
+   - `projektfas` per fas: vilken av projektets faser 1–8 momentet hör till
+
+   Checklistans faser kallas moment i gränssnittet (moment 0–15), så att de
+   inte krockar med projektets fas 1–8. */
+
+import type { FasNr } from "./projektfaser.ts";
 
 /* ---------- Typer ---------- */
 
@@ -56,6 +62,9 @@ export interface Fas {
   kort: string;
   syfte: string;
   grind: { kod: string; text: string };
+  /** Projektfasen 1–8 (data/projektfaser.ts) som momentet hör till. Den enda kopplingen mellan
+   *  checklistans moment 0–15 och projektets faser — läs den via lib/fasmappning.js. */
+  projektfas: FasNr;
   /** Betalningen som grinden låser ("orange ram i flödet"), annars null. */
   milstolpe: MilstolpeKod | null;
   /** Fasens läge i standardplanen på MALL_SKALA. Tillägg — se lib/epc.js. */
@@ -146,6 +155,7 @@ export const FASER: Fas[] = [
     kort: "Anbud & kalkyl",
     syfte: "Rätt pris, rätt reservationer – risker prissatta innan kontrakt.",
     grind: { kod: "G0", text: "Anbud lämnat med granskad kalkyl och reservationsbilaga" },
+    projektfas: 1,
     milstolpe: null,
     mall: { fran: -1.0, till: 0.0 },
     sektioner: [
@@ -199,6 +209,7 @@ export const FASER: Fas[] = [
     kort: "Kontrakt & uppstart",
     syfte: "Formalia klar tidigt så att M1 kan faktureras och inget stoppar byggstart.",
     grind: { kod: "G1", text: "Kontrakt signerat, säkerhet ställd, M1 fakturerad" },
+    projektfas: 1,
     milstolpe: "M1",
     mall: { fran: 0.0, till: 0.08 },
     sektioner: [
@@ -251,6 +262,7 @@ export const FASER: Fas[] = [
     kort: "Tillstånd & myndighet",
     syfte: "Inga myndighetsstopp. Starta ledtidskrävande ärenden först.",
     grind: { kod: "G2", text: "Alla entreprenörstillstånd klara före byggstart" },
+    projektfas: 2,
     milstolpe: null,
     mall: { fran: 0.0, till: 0.25 },
     sektioner: [
@@ -294,6 +306,7 @@ export const FASER: Fas[] = [
     kort: "Projektering & granskning",
     syfte: "Godkända bygghandlingar = M2. Inget byggs på handling under granskning.",
     grind: { kod: "G3", text: "Bygghandlingar godkända av beställaren (M2)" },
+    projektfas: 2,
     milstolpe: "M2",
     mall: { fran: 0.03, till: 0.3 },
     sektioner: [
@@ -340,6 +353,7 @@ export const FASER: Fas[] = [
     kort: "Inköp & ledtider",
     syfte: "Material på plats före behov. Rätt spec vid första leveransen.",
     grind: { kod: "G4", text: "Inköpsmatris komplett, alla kritiska ordrar bekräftade" },
+    projektfas: 2,
     milstolpe: null,
     mall: { fran: 0.05, till: 0.6 },
     sektioner: [
@@ -381,6 +395,7 @@ export const FASER: Fas[] = [
     kort: "Etablering & BAS-U",
     syfte: "Säker arbetsplats från dag 1 – inga sanktioner, inga viten.",
     grind: { kod: "G5", text: "Etablering klar, AMP kvitterad av alla" },
+    projektfas: 3,
     milstolpe: null,
     mall: { fran: 0.22, till: 0.3 },
     sektioner: [
@@ -432,6 +447,7 @@ export const FASER: Fas[] = [
     kort: "Mark & geoteknik",
     syfte: "Schaktbotten godkänd i tid. Varje avvikande ton dokumenterad.",
     grind: { kod: "G6", text: "Schaktbotten godkänd (milstolpe)" },
+    projektfas: 4,
     milstolpe: null,
     mall: { fran: 0.28, till: 0.5 },
     sektioner: [
@@ -471,6 +487,7 @@ export const FASER: Fas[] = [
     kort: "Fundament & betong",
     syfte: "Rätt nivå och planhet första gången – betong går inte att ångra.",
     grind: { kod: "G7", text: "Fundament godkända = klart för leverans (M4)" },
+    projektfas: 4,
     milstolpe: "M4",
     mall: { fran: 0.45, till: 0.68 },
     sektioner: [
@@ -513,6 +530,7 @@ export const FASER: Fas[] = [
     kort: "Jordning",
     syfte: "Godkänt jordtag före montage – fel här blockerar driftsättning och betalning.",
     grind: { kod: "G8", text: "Jordtagsmätning godkänd" },
+    projektfas: 4,
     milstolpe: null,
     mall: { fran: 0.48, till: 0.7 },
     sektioner: [
@@ -543,6 +561,7 @@ export const FASER: Fas[] = [
     kort: "Kabel & kanalisation",
     syfte: "Kabeltester godkända och skickade till beställaren = M3.",
     grind: { kod: "G9", text: "Kabeltestprotokoll signerade och skickade (M3)" },
+    projektfas: 4,
     milstolpe: "M3",
     mall: { fran: 0.5, till: 0.75 },
     sektioner: [
@@ -577,6 +596,7 @@ export const FASER: Fas[] = [
     kort: "Stationshus & MV",
     syfte: "Ställverket provat och klart för spänningssättning utan överraskningar.",
     grind: { kod: "G10", text: "SAT ställverk godkänd, klart för spänningssättning" },
+    projektfas: 5,
     milstolpe: null,
     mall: { fran: 0.85, till: 1.45 },
     sektioner: [
@@ -618,6 +638,7 @@ export const FASER: Fas[] = [
     kort: "Leverans & lyft",
     syfte: "Lyft på avtalade dagar – fundament klara, kran och väg klara.",
     grind: { kod: "G11", text: "Samtliga enheter placerade, fastsatta och jordade" },
+    projektfas: 5,
     milstolpe: null,
     mall: { fran: 1.0, till: 1.25 },
     sektioner: [
@@ -659,6 +680,7 @@ export const FASER: Fas[] = [
     kort: "Anslutning BESS/PCS",
     syfte: "Rätt moment, rätt ordning, rätt dokumenterat – klart för cold commissioning.",
     grind: { kod: "G12", text: "Cold commissioning-checklista inlämnad" },
+    projektfas: 5,
     milstolpe: null,
     mall: { fran: 1.1, till: 1.55 },
     sektioner: [
@@ -696,6 +718,7 @@ export const FASER: Fas[] = [
     kort: "Idrifttagning",
     syfte: "M5 kräver verifiering från BESS-leverantören – planera deras närvaro.",
     grind: { kod: "G13", text: "BESS commissioned, verifierat av OEM (M5)" },
+    projektfas: 6,
     milstolpe: "M5",
     mall: { fran: 1.45, till: 1.9 },
     sektioner: [
@@ -749,6 +772,7 @@ export const FASER: Fas[] = [
     kort: "Besiktning & överlämning",
     syfte: "Godkänd slutbesiktning = M6. Anmärkningar stängda = M7.",
     grind: { kod: "G14", text: "Slutbesiktning godkänd, anläggning övertagen" },
+    projektfas: 7,
     milstolpe: "M6",
     mall: { fran: 1.85, till: 2.0 },
     sektioner: [
@@ -781,6 +805,7 @@ export const FASER: Fas[] = [
     kort: "Slutdok & garanti",
     syfte: "Slutbetalning utan tvist, garantitid under kontroll.",
     grind: { kod: "G15", text: "Slutreglering klar, projekt stängt, lärdomar dokumenterade" },
+    projektfas: 8,
     milstolpe: null,
     mall: { fran: 1.8, till: 3.0 },
     sektioner: [

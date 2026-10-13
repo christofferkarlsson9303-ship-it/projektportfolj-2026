@@ -1,9 +1,9 @@
 import { Check, Lock } from "lucide-react";
+import { FASSTATUS, fasStatusFranLage } from "../../lib/fasmappning.js";
 
 /* De åtta faserna som en rad i guidens huvud: godkända, aktuell och låsta.
-   Visas på mörk bakgrund. Status står också i text för skärmläsare. */
-
-const TEXT = { klar: "godkänd", upplast: "upplåst", aktuell: "pågår", last: "låst" };
+   Visas på mörk bakgrund. Status står också i text för skärmläsare, med samma
+   ord som projektkortet, tidplanen och milstolparna (lib/fasmappning.js). */
 const STAPEL = {
   klar: "bg-one-bla",
   upplast: "bg-one-bla/60",
@@ -20,7 +20,7 @@ export function FasIndikator({ faser, visadFas }) {
           <span className={`mt-1 flex items-center gap-1 text-[11px] leading-tight ${f.status === "last" ? "opacity-60" : ""} ${f.nr === visadFas ? "font-bold" : ""}`}>
             {f.status === "last" ? <Lock size={11} aria-hidden="true" className="shrink-0" /> : f.status === "klar" ? <Check size={11} aria-hidden="true" className="shrink-0" /> : null}
             <span className="truncate">{f.nr}. {f.kort}</span>
-            <span className="sr-only"> ({TEXT[f.status]})</span>
+            <span className="sr-only"> ({FASSTATUS[fasStatusFranLage(f)].text.toLowerCase()})</span>
           </span>
         </li>
       ))}

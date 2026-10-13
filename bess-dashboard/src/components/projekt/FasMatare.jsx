@@ -1,10 +1,12 @@
 import { useRef } from "react";
 import { Check } from "lucide-react";
 import { FASER, FAS_ANTAL, arFasNr, faseInfo, statusEtikett } from "../../data/projektfaser.ts";
+import { FASSTATUS, fasStatus } from "../../lib/fasmappning.js";
 
 /* Fasmätaren: projektets åtta faser som en rad med ett fyllt spår. Visar vilken fas projektet ligger
    i, och låter projektledaren flytta det — till exempel från Anbud till Planering när anbudet är
-   vunnet. Statusen följer fasen (se SATT_PROJEKTFAS).
+   vunnet. Statusen följer fasen (se SATT_PROJEKTFAS). Klar, pågår och låst kommer ur
+   lib/fasmappning.js, samma som i projektstarten, tidplanen och milstolparna.
 
    Tillgänglighet: en radiogroup. Piltangenter flyttar fokus och Enter/Mellanslag väljer, som i
    Vyvaljare. Det valda värdet är aria-checked; fasens namn och status står som text, aldrig bara
@@ -52,14 +54,15 @@ export function FasMatare({ fas, onVal, disabled = false, etikett = "Projektets 
         <div ref={ref} role="radiogroup" aria-label={etikett} onKeyDown={tangent} className="relative grid grid-cols-8 gap-0">
           {FASER.map((f) => {
             const vald = f.nr === aktuell;
-            const passerad = f.nr < aktuell;
+            const st = fasStatus(f.nr, aktuell);
+            const passerad = st === "klar";
             return (
               <button
                 key={f.nr}
                 type="button"
                 role="radio"
                 aria-checked={vald}
-                aria-label={`Fas ${f.nr}, ${f.kort}, status ${statusEtikett(f.status)}${vald ? ", aktuell" : passerad ? ", passerad" : ""}`}
+                aria-label={`Fas ${f.nr}, ${f.kort}: ${FASSTATUS[st].text}${vald ? ", aktuell" : ""}. Projektstatus ${statusEtikett(f.status)}`}
                 tabIndex={vald ? 0 : -1}
                 disabled={disabled}
                 onClick={() => !vald && onVal(f.nr)}

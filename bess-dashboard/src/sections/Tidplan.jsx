@@ -19,9 +19,15 @@ import {
   rutinNyckel,
 } from "../lib/berakningar.js";
 
+import { faseInfo } from "../data/projektfaser.ts";
+import { projektfasForMilstolpe } from "../lib/fasmappning.js";
+
 /* Tidplanen på designsystemet: Gantt-schemat, milstolparna och leveranserna
    som kort, och byggfaserna som utfällbara rader i ett kort — varje fas med
-   mätare, räknare och avbockningslistor per grupp. */
+   mätare, räknare och avbockningslistor per grupp.
+
+   Byggmomenten (0–15) och milstolparna (M1–M7) visar projektets fas 1–8 ur
+   lib/fasmappning.js, så att tidplanen och projektkortet säger samma fas. */
 
 /* ---------- Gantt: data och redigering ---------- */
 
@@ -170,7 +176,12 @@ function Byggfas({ fas, pid }) {
           <span className="flex h-8 min-w-8 shrink-0 items-center justify-center rounded-md bg-one-djup px-1.5 text-xs font-bold text-white">
             {fas.id}
           </span>
-          <span className="min-w-0 flex-1 text-[14px] font-semibold leading-snug text-ink">{fas.titel}</span>
+          <span className="min-w-0 flex-1 text-[14px] font-semibold leading-snug text-ink">
+            {fas.titel}
+            <span className="block text-xs font-normal text-ink-soft">
+              Fas {projektfasForMilstolpe(fas.id)} · {faseInfo(projektfasForMilstolpe(fas.id)).kort}
+            </span>
+          </span>
           <Meter value={klar} max={tot} size="sm" className="w-16 shrink-0 sm:w-20" />
           <span className="w-10 shrink-0 text-right text-xs tabular-nums text-ink-soft">
             {klar}/{tot}
@@ -224,7 +235,8 @@ export function Tidplan() {
         .filter((f) => f.start && f.slut)
         .map((f) => ({
           id: `fas-${f.fas.nr}`,
-          titel: `${f.fas.nr} · ${f.fas.kort}`,
+          /* Fas 1–8 först, momentets eget nummer inom parentes: samma fasnummer som projektkortet. */
+          titel: `Fas ${f.fas.projektfas} · ${f.fas.kort} (moment ${f.fas.nr})`,
           datum: f.start,
           slutdatum: f.slut,
           lage: FAS_TILL_LAGE[f.status] || "planerad",

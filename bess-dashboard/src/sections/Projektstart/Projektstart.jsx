@@ -432,14 +432,20 @@ export function Projektstart() {
   const fel = sista ? projektstartFel(utanDetta, forhandsrad) || orsakFel : "";
 
   /* När en fas godkänns låses nästa upp och projektets status följer med. Meddelandet visas
-     bara när fasen ändras av arbetet i guiden, inte när man byter projekt. */
+     bara när fasen ändras av arbetet i guiden, inte när man byter projekt. Ett befintligt projekt
+     flyttas direkt till den nya fasen (SATT_PROJEKTFAS), så att projektkort, tidplan och milstolpar
+     visar samma fas utan att guiden först sparas. Fasen flyttas bara framåt här; backar guiden
+     (en bock tas bort) gäller det först när projektstarten sparas. */
   const forraFas = useRef({ lage, fas: nuFas });
   useEffect(() => {
     const f = forraFas.current;
     if (f.lage === lage && nuFas > f.fas) {
+      if (projektet && !ejVunnet && projektet.fas !== nuFas) dispatch({ type: "SATT_PROJEKTFAS", id: projektet.id, fas: nuFas });
       visaToast(`Fas ${nuFas} (${faseInfo(nuFas).kort}) är upplåst. Projektets status är nu ${statusEtikett(faseInfo(nuFas).status)}.`);
     }
     forraFas.current = { lage, fas: nuFas };
+    // projektet och ejVunnet läses bara när fasen ändras; de ska inte i sig utlösa effekten.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lage, nuFas, visaToast]);
 
   /* Nytt steg ska börja överst. Annars står man kvar längst ned efter en lång checklista. */
