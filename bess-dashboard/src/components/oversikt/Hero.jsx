@@ -33,8 +33,9 @@ function LiveMarke() {
   );
 }
 
-/** Kraftkurvan: ONE Nordics signaturelement, ritat in en gång när vyn öppnas. */
-export function Kraftkurva() {
+/** Kraftkurvan: ONE Nordics signaturelement, ritat in en gång när vyn öppnas.
+ *  `className="rap-kurva"` ger en statisk variant för utskrift (ingen animation). */
+export function Kraftkurva({ className = "ov-kurva" }) {
   const kurvor = [
     ["M0 196 C180 190 300 168 380 118 S500 20 540 6", "var(--one-bla)"],
     ["M0 198 C200 194 320 176 400 138 S510 52 540 34", "var(--turkos)"],
@@ -43,7 +44,7 @@ export function Kraftkurva() {
     ["M90 200 C280 199 390 194 460 182 S525 150 540 142", "var(--rod)"],
   ];
   return (
-    <svg className="ov-kurva" viewBox="0 0 540 200" aria-hidden="true" focusable="false">
+    <svg className={className} viewBox="0 0 540 200" aria-hidden="true" focusable="false">
       {kurvor.map(([d, farg], k) => (
         <path key={farg} d={d} pathLength="1000" style={{ stroke: farg, "--k": k }} />
       ))}
