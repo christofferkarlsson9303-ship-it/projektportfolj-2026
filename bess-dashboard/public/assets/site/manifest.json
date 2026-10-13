@@ -1,0 +1,16 @@
+{
+  "_om": "Tillgångar för 3D-siten: texturer (Artlist, Nano Banana 2) och 3D-modeller (.glb). Batterimodellerna är Artlist-genererade (Hyper3D Rodin) ur referensbilder i CATL EnerX- respektive Sungrow PowerTitan-stil, utan logotyper. skid.glb för CATL/PE är Christoffers modell av Power Electronics MV-skid. mark.jpg och himmel.jpg är Christoffers bilder: grus (1024² kakel) och himmel över skog och kraftledning (utfylld till 2:1 med horisonten i mitten). Scenen laddar bara det som står i listan.",
+  "catl-pe": [
+    "container.jpg",
+    "skid.jpg",
+    "skid.glb",
+    "container.glb",
+    "mark.jpg",
+    "himmel.jpg"
+  ],
+  "sungrow": [
+    "container.glb",
+    "mark.jpg",
+    "himmel.jpg"
+  ]
+}

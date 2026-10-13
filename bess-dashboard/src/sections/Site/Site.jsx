@@ -22,6 +22,9 @@ import { ParkSumma } from "../../components/site/ParkSumma.jsx";
 import { Meter } from "../../components/ds/index.js";
 import { useSnabbUtskrift } from "../../components/field/SnabbUtskrift.jsx";
 import { datumKort } from "../../lib/datum.js";
+import { SiteFilterrad, SiteKameror, SiteProfilData } from "../../components/site/SiteVisning.jsx";
+import { HARDVARUPROFILER, profilIdFor } from "../../data/hardvaruprofiler.js";
+import { STANDARDLAGER, kameravinklar, mattFor, profilKpi, standardlayout } from "../../lib/siteLager.js";
 import {
   BESS_FALT,
   MALLAR,
@@ -57,6 +60,25 @@ const SiteScen = lazy(() => import("./SiteScen.jsx"));
 const MAX_BILD = 2400;
 const BESS_TALFALT = new Set(["mw", "mwh", "mva", "soc"]);
 const STATUS_TON = { planerad: "neutral", levererad: "info", monterad: "warn", driftsatt: "ok" };
+/* Visningsval per webbläsare (filter, Hög kvalitet). Bekvämlighet, inte data: kan saknas eller
+   kasta i privat läge, och då gäller standardvärdena. */
+const VISNING_NYCKEL = "bess-site-visning-v1";
+function lasVisning() {
+  try {
+    const v = JSON.parse(window.localStorage.getItem(VISNING_NYCKEL) || "null");
+    return v && typeof v === "object" ? v : null;
+  } catch {
+    return null;
+  }
+}
+function sparaVisning(v) {
+  try {
+    window.localStorage.setItem(VISNING_NYCKEL, JSON.stringify(v));
+  } catch {
+    /* lagring saknas — valet gäller bara den här visningen */
+  }
+}
+
 const fmtM = (n) => String(Math.round((Number(n) || 0) * 100) / 100).replace(".", ",");
 
 /** "6,1" och "6.1" blir 6.1; tomt eller ogiltigt blir null. */
@@ -122,6 +144,10 @@ export function Site() {
   const p = state.projekt.find((x) => x.id === valtProjekt) || state.projekt[0];
   const pid = p?.id;
   const objekt = useMemo(() => (pid ? siteObjekt(state, pid) : []), [state, pid]);
+  /* Hårdvaruprofilen styr mått, etiketter, komponentdata och standardlayout (data/hardvaruprofiler.js). */
+  const profilId = profilIdFor(p);
+  const profil = HARDVARUPROFILER[profilId];
+  const vinklar = useMemo(() => kameravinklar(objekt), [objekt]);
   const punkter = useMemo(() => (pid ? punkterForSite(state, pid) : []), [state, pid]);
   const ifcModeller = useMemo(() => (state.ifcModeller || []).filter((m) => m.projektId === pid), [state.ifcModeller, pid]);
   const ifcObjekt = useMemo(() => (pid ? ifcObjektForProjekt(state, pid) : []), [state, pid]);
@@ -138,6 +164,16 @@ export function Site() {
   const [matt, setMatt] = useState(null);
   const [jamforId, setJamforId] = useState(null);
   const [flyg, setFlyg] = useState(null);
+  const [visning, setVisning] = useState(() => {
+    const v = lasVisning();
+    return { lager: { ...STANDARDLAGER, ...(v?.lager || {}) }, hogKvalitet: !!v?.hogKvalitet };
+  });
+  const andraVisning = (andring) =>
+    setVisning((v) => {
+      const ny = { ...v, ...andring };
+      sparaVisning(ny);
+      return ny;
+    });
   const [bred, setBred] = useState(0);
   const [bcfJobb, setBcfJobb] = useState("");
   const sceneApi = useRef(null);
@@ -437,7 +473,7 @@ export function Site() {
       rad = nyttObjekt(laddad, pid, { x, z }, objekt, { punktId: nalPunkt });
     } else {
       // Samma snapp och kollisionsregler som spökobjektet i 3D-vyn visar.
-      const m = MALLAR[laddad];
+      const m = mattFor(profilId, laddad) || MALLAR[laddad];
       const res = provaPlacering({ typ: laddad, bredd: m.bredd, djup: m.djup, hojd: m.hojd, rotation: spokRot }, { x, z }, objekt, {
         rutnat: rutnat ? RUTNAT : 0,
       });
@@ -445,7 +481,8 @@ export function Site() {
         visaToast(placeringsText(res), "warn");
         return;
       }
-      rad = nyttObjekt(laddad, pid, { x: res.x, z: res.z }, objekt, { exakt: true, rotation: spokRot });
+      rad = { ...nyttObjekt(laddad, pid, { x: res.x, z: res.z }, objekt, { exakt: true, rotation: spokRot }), bredd: m.bredd, djup: m.djup, hojd: m.hojd };
+
     }
     const fel = objektFel(rad, punkter);
     if (fel) {
@@ -483,6 +520,23 @@ export function Site() {
   const taBort = (o) => {
     dispatch({ type: "SITE_TA_BORT", id: o.id });
     if (valtId === o.id) setValtId(null);
+  };
+
+  /* Profilens standardlayout på en tom tomt. Skriver aldrig över befintliga volymer. */
+  const laggStandardlayout = async () => {
+    const ja = await bekrafta(
+      `En exempellayout för ${profil.namn} läggs på tomten för ${p.nr || p.namn}: batterienheter, ${profil.skid.prefix === "SKID" ? "skid" : "MV-stationer"}, ställverk och transformator. Den är ett exempel, inte projektets ritning, och kan flyttas och ändras efteråt.`,
+      { titel: "Lägg in standardlayout", ok: "Lägg in" }
+    );
+    if (!ja) return;
+    dispatch({ type: "SITE_STANDARDLAYOUT", projektId: pid, rader: standardlayout(profilId, pid), profil: profil.kort });
+    setValtId(null);
+  };
+
+  const bytProfil = (id) => {
+    if (id === profilId) return;
+    dispatch({ type: "UPPDATERA", lista: "projekt", id: pid, falt: "hardvaruprofil", varde: id });
+    visaToast(`${p.nr || p.namn} använder nu ${HARDVARUPROFILER[id].namn}. Nya enheter får profilens mått.`);
   };
 
   const aterstall = async () => {
@@ -646,6 +700,26 @@ export function Site() {
             diff={diffData}
           />
 
+          <SiteFilterrad
+            lager={visning.lager}
+            onLager={(lager) => andraVisning({ lager })}
+            hogKvalitet={visning.hogKvalitet}
+            onHogKvalitet={(hogKvalitet) => andraVisning({ hogKvalitet })}
+            profilId={profilId}
+            onProfil={bytProfil}
+          />
+          {visning.lager.dc || visning.lager.hsp || visning.lager.lsp || visning.lager.fiber || visning.lager.jord ? (
+            <p className="m-0 text-[12px] text-ink-soft">Kabelvägarna är schematiska, räknade ur enheternas lägen. De är inte en kabel- eller relationsritning.</p>
+          ) : null}
+          {!volymAntal ? (
+            <Callout ton="info">
+              <b>Inga enheter på tomten.</b> Placera enheter med menyn, eller lägg in en standardlayout för {profil.namn}.{" "}
+              <button type="button" className="btn sec mini ml-1" onClick={laggStandardlayout}>
+                Lägg in standardlayout
+              </button>
+            </Callout>
+          ) : null}
+
           {laddad === "nal" ? (
             <div className="frow c2">
               <div className="f">
@@ -715,6 +789,10 @@ export function Site() {
                     ifcObjekt={ifcObjektById}
                     arenden={arendenMap}
                     flyg={flyg}
+                    lager={visning.lager}
+                    hogKvalitet={visning.hogKvalitet}
+                    profil={profilId}
+                    spokMatt={laddad ? mattFor(profilId, laddad) : null}
                     onPlacera={placera}
                     onValj={setValtId}
                     onMatt={setMatt}
@@ -726,6 +804,7 @@ export function Site() {
                   />
                 </Suspense>
               )}
+              {!fel3d ? <SiteKameror vinklar={vinklar} onFlyg={flygTill} /> : null}
               {overlay ? markeratKort : null}
             </div>
               </div>
@@ -769,6 +848,14 @@ export function Site() {
         />
         <Card id="site-park" title="Parkens BESS-data" subtitle="Summerat ur objekten på siten.">
           <ParkSumma objekt={objekt} className="sm:grid-cols-4" />
+        </Card>
+        <Card
+          id="site-profil"
+          title={`Hårdvaruprofil — ${profil.namn}`}
+          subtitle={`${profil.anvands}. Värden med källa; det som inte är bekräftat mot datablad eller kontrakt är märkt.`}
+          badge={<StatusBadge ton="neutral" label={profil.kort} />}
+        >
+          <SiteProfilData profil={profil} kpi={profilKpi(profilId, objekt)} />
         </Card>
       </div>
 

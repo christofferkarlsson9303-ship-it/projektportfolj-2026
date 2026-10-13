@@ -21,6 +21,8 @@ import {
 } from "../../lib/site.js";
 import { DIFF_FARG } from "../../lib/modellDiff.js";
 import { avstand, flygBana, flygTid, klippPlan } from "../../lib/modellKoppling.js";
+import { LAGER, STANDARDLAGER, kabelvagar } from "../../lib/siteLager.js";
+import { frigorTexturer, laddaTexturer, modellFor } from "./siteTexturer.js";
 
 /* 3D-scenen för siten. Laddas för sig (lazy) så att three bara hämtas när
    någon öppnar siten.
@@ -44,7 +46,14 @@ import { avstand, flygBana, flygTid, klippPlan } from "../../lib/modellKoppling.
    (requestAnimationFrame).
 
    Färgerna läses ur designsystemets CSS-variabler när scenen byggs — inga
-   egna hex-värden. */
+   egna hex-värden.
+
+   Filterlager (`lager`): Märkning ger en klickbar namnetikett på varje enhet,
+   DC, HSP 12 kV, LSP, Fiber/tele och Jord ritar schematiska kabelvägar ur
+   lib/siteLager.js. "Hög kvalitet" (`hogKvalitet`) lägger texturer på volymer
+   och mark och en 360°-himmel bakom scenen (siteTexturer.js). Etiketterna är
+   CSS2D-objekt i samma 3D-rum som volymerna och följer dem i varje bildruta,
+   också under en kameraflygning. */
 
 const ORBITLAGE = [46, 40, 58];
 const rad = (g) => ((Number(g) || 0) * Math.PI) / 180;
@@ -54,29 +63,40 @@ function farg(variabel) {
   return v ? new THREE.Color(v) : new THREE.Color(0.55, 0.6, 0.62);
 }
 
+/** Frigör geometri och material. En modellkopia (`userData.delad`) delar dem med den laddade
+ *  modellen och hoppas över — den frigörs när Hög kvalitet slås av. */
 function frigor(rot) {
-  rot.traverse((o) => {
-    o.geometry?.dispose?.();
-    const m = o.material;
-    for (const x of Array.isArray(m) ? m : m ? [m] : []) {
-      x.map?.dispose?.();
-      x.dispose?.();
-    }
-  });
+  if (rot.userData?.delad) return;
+  rot.geometry?.dispose?.();
+  const m = rot.material;
+  for (const x of Array.isArray(m) ? m : m ? [m] : []) {
+    x.map?.dispose?.();
+    x.dispose?.();
+  }
+  for (const barn of rot.children || []) frigor(barn);
 }
 
 /** Plana ytor på varandra (mark, grus, väg, plan) — djupförskjutning i
  *  stället för höjd, annars flimrar de i varandra på avstånd. */
-const lager = (n) => ({ polygonOffset: true, polygonOffsetFactor: -n, polygonOffsetUnits: -n * 4 });
+const djupLager = (n) => ({ polygonOffset: true, polygonOffsetFactor: -n, polygonOffsetUnits: -n * 4 });
 
 const kortTitel = (t) => (String(t).length > 42 ? String(t).slice(0, 39) + "…" : String(t));
 
-function etikett(text, ton = "") {
-  const el = document.createElement("div");
-  el.className = `pointer-events-none whitespace-nowrap rounded-md border border-solid px-1.5 py-0.5 font-body text-[11px] font-semibold shadow-sm ${
-    ton === "nal" ? "border-orange bg-surface text-ink" : "border-hairline bg-surface text-ink"
+function etikett(text, ton = "", onKlick = null) {
+  const el = document.createElement(onKlick ? "button" : "div");
+  el.className = `${onKlick ? "pointer-events-auto cursor-pointer hover:border-one-bla focus-visible:outline focus-visible:outline-2 focus-visible:outline-one-bla" : "pointer-events-none"} whitespace-nowrap rounded-md border border-solid px-1.5 py-0.5 font-body text-[11px] font-semibold shadow-sm ${
+    ton === "nal" ? "border-orange bg-surface text-ink" : ton === "valt" ? "border-orange bg-surface text-ink" : "border-hairline bg-surface text-ink"
   }`;
   el.textContent = text;
+  if (onKlick) {
+    el.type = "button";
+    el.dataset.roll = "site-etikett";
+    el.setAttribute("aria-label", `Markera ${text}`);
+    el.addEventListener("click", (e) => {
+      e.stopPropagation();
+      onKlick();
+    });
+  }
   return new CSS2DObject(el);
 }
 
@@ -147,6 +167,10 @@ export default function SiteScen({
   flyg = null,
   ifcModeller = null,
   ifcObjekt = null,
+  lager = STANDARDLAGER,
+  hogKvalitet = false,
+  profil = "catl-pe",
+  spokMatt = null,
   onKlar,
   onPlacera,
   onValj,
@@ -158,10 +182,13 @@ export default function SiteScen({
   const s = useRef({});
   const senaste = useRef({});
   const [pek] = useState(() => typeof window !== "undefined" && !!window.matchMedia?.("(pointer: coarse)").matches);
+  const [laddadeTexturer, setTexturer] = useState(null);
+  // Av = inga texturer, även om de från förra gången fortfarande ligger i state.
+  const texturer = hogKvalitet ? laddadeTexturer : null;
 
   // Senaste props för händelser som registreras en gång.
   useEffect(() => {
-    senaste.current = { objekt, valtId, laddad, lage, rutnat, spokRot, matning, onPlacera, onValj, onFlytta, onMatt, onKlar, onFel };
+    senaste.current = { objekt, valtId, laddad, lage, rutnat, spokRot, spokMatt, matning, onPlacera, onValj, onFlytta, onMatt, onKlar, onFel };
   });
 
   /* ---------- Bygg scenen en gång ---------- */
@@ -239,14 +266,14 @@ export default function SiteScen({
     const tomt = new THREE.Group();
     const grus = new THREE.Mesh(
       new THREE.PlaneGeometry(TOMT.bredd, TOMT.djup),
-      new THREE.MeshStandardMaterial({ color: farg("--ink-faint"), roughness: 1, ...lager(1) })
+      new THREE.MeshStandardMaterial({ color: farg("--ink-faint"), roughness: 1, ...djupLager(1) })
     );
     grus.rotation.x = -Math.PI / 2;
     grus.position.y = 0.01;
     grus.receiveShadow = true;
     tomt.add(grus);
     for (const k of KORYTOR) {
-      const v = new THREE.Mesh(new THREE.PlaneGeometry(k.bredd, k.djup), new THREE.MeshStandardMaterial({ color: farg("--morkgra"), roughness: 0.9, ...lager(2) }));
+      const v = new THREE.Mesh(new THREE.PlaneGeometry(k.bredd, k.djup), new THREE.MeshStandardMaterial({ color: farg("--morkgra"), roughness: 0.9, ...djupLager(2) }));
       v.rotation.x = -Math.PI / 2;
       v.position.set(k.x, 0.02, k.z);
       v.receiveShadow = true;
@@ -296,6 +323,9 @@ export default function SiteScen({
     scene.add(spok);
     const planGrupp = new THREE.Group();
     scene.add(planGrupp);
+    // Schematiska kabelvägar per filterlager.
+    const kabelGrupp = new THREE.Group();
+    scene.add(kabelGrupp);
 
     const storlek = () => {
       const w = el.clientWidth || 1;
@@ -316,7 +346,7 @@ export default function SiteScen({
     io.observe(el);
 
     const ga = { pos: { x: INGANG.x, y: INGANG.y, z: INGANG.z }, yaw: INGANG.yaw, pitch: INGANG.pitch, avsikt: {}, joy: { fram: 0, sid: 0 } };
-    s.current = { renderer, etiketter, scene, camera, controls, objektGrupp, ifcGrupp, planGrupp, tomt, ga, meshar: new Map(), markera, rutnatLinjer, spok, spokPunkt: null, matGrupp, sektionLinjer, flygning: null };
+    s.current = { renderer, etiketter, scene, camera, controls, objektGrupp, ifcGrupp, planGrupp, kabelGrupp, tomt, mark, grus, ga, meshar: new Map(), markera, rutnatLinjer, spok, spokPunkt: null, matGrupp, sektionLinjer, flygning: null };
 
     /* ---------- Pekare: välja, placera, dra, titta ---------- */
     const ray = new THREE.Raycaster();
@@ -398,7 +428,9 @@ export default function SiteScen({
     const uppdateraSpok = () => {
       const p = senaste.current;
       const q = s.current.spokPunkt;
-      const mall = p.laddad && p.laddad !== "nal" ? MALLAR[p.laddad] : null;
+      const bas = p.laddad && p.laddad !== "nal" ? MALLAR[p.laddad] : null;
+      // Profilens mått för container och skid (lib/siteLager.js mattFor), annars mallens.
+      const mall = bas ? { ...bas, ...(p.spokMatt || {}) } : null;
       if (!mall || !q || p.lage === "ga") {
         if (spok.visible) {
           spok.visible = false;
@@ -409,7 +441,7 @@ export default function SiteScen({
       const rot = p.spokRot || 0;
       const ob = { typ: p.laddad, bredd: mall.bredd, djup: mall.djup, hojd: mall.hojd, rotation: rot };
       const res = provaPlacering(ob, q, p.objekt || [], { rutnat: p.rutnat === false ? 0 : RUTNAT });
-      const dim = `${p.laddad}`;
+      const dim = `${p.laddad}:${mall.bredd}x${mall.djup}x${mall.hojd}`;
       if (spokTyp !== p.laddad || spokDim !== dim) {
         for (const barn of [...spok.children]) {
           spok.remove(barn);
@@ -731,6 +763,8 @@ export default function SiteScen({
     meshar.clear();
     const kant = farg("--one-djup");
     const markering = farg("--orange");
+    const vit = new THREE.Color(1, 1, 1);
+    const markeraId = (id) => senaste.current.onValj?.(id);
 
     for (const o of objekt) {
       const g = new THREE.Group();
@@ -752,24 +786,53 @@ export default function SiteScen({
         const geo = new THREE.BoxGeometry(o.bredd, o.hojd, o.djup);
         // Jämförelse: tillagt och modifierat färgas efter diffen, resten behåller sin typfärg.
         const ds = diff?.status?.get(o.id);
-        const lada = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: farg(ds ? DIFF_FARG[ds] : TYPFARG[o.typ]), roughness: 0.75, metalness: 0.05 }));
+        /* Hög kvalitet: container och skid får textur, med typfärgen inblandad så att tonen följer
+           designsystemet. En jämförelse (diff) vinner — då gäller bara diffens färg. */
+        const del = o.typ === "container" ? "container" : o.typ === "skid" ? "skid" : "";
+        const tex = !ds && texturer ? texturer[del] : null;
+        // Ett genererat foto får bara en aning typfärg; en ritad textur mer, så att typen syns.
+        const ton = texturer?.kalla?.[del] === "genererad" ? 0.12 : 0.45;
+        const material = tex
+          ? new THREE.MeshStandardMaterial({ map: tex, color: vit.clone().lerp(farg(TYPFARG[o.typ]), ton), roughness: 0.6, metalness: 0.2 })
+          : new THREE.MeshStandardMaterial({ color: farg(ds ? DIFF_FARG[ds] : TYPFARG[o.typ]), roughness: 0.75, metalness: 0.05 });
+        /* Med en 3D-modell (Hög kvalitet) blir lådan osynlig men ligger kvar: den är det som
+           träffas vid klick och dragning och det som gången krockar mot. Kanten syns bara när
+           objektet är markerat. */
+        const modell = !ds && texturer?.modeller?.[o.typ];
+        if (modell) {
+          material.transparent = true;
+          material.opacity = 0;
+          material.depthWrite = false;
+        }
+        const lada = new THREE.Mesh(geo, material);
         lada.position.y = o.hojd / 2;
-        lada.castShadow = true;
-        lada.receiveShadow = true;
+        lada.castShadow = !modell;
+        lada.receiveShadow = !modell;
         const linjer = new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: o.id === valtId ? markering : kant }));
         linjer.position.y = o.hojd / 2;
+        linjer.visible = !modell || o.id === valtId;
         g.add(lada, linjer);
+        // Batterierna fylls ut till profilens mått (datablad); skiden behåller modellens proportioner.
+        const anpassa = o.typ === "container";
+        if (modell) g.add(modellFor(modell, o, { anpassa }));
+        // Etiketten svävar över det som syns: modellens höjd när den används, annars lådans.
+        const etikettY = (modell && !anpassa ? modell.userData.matt.y * ((Number(o.bredd) || 1) / (modell.userData.matt.x || 1)) : o.hojd) + 0.8;
         const antalArenden = arenden?.get(o.id) || 0;
         if (o.id === valtId) {
           const delar = [o.namn];
           if (o.soc !== undefined && o.soc !== null && o.soc !== "") delar.push(`${Math.round(Number(o.soc))} %`);
           if (antalArenden) delar.push(`ÄTA ${antalArenden}`);
-          const l = etikett(delar.join(" · "));
-          l.position.y = o.hojd + 0.8;
+          const l = etikett(delar.join(" · "), "valt");
+          l.position.y = etikettY;
+          g.add(l);
+        } else if (lager?.markning) {
+          // Märkning: klickbar namnetikett på varje enhet, med ÄTA-antal när det finns.
+          const l = etikett([o.namn, antalArenden ? `ÄTA ${antalArenden}` : ""].filter(Boolean).join(" · "), antalArenden ? "nal" : "", () => markeraId(o.id));
+          l.position.y = etikettY;
           g.add(l);
         } else if (antalArenden) {
           const l = etikett(`ÄTA ${antalArenden}`, "nal");
-          l.position.y = o.hojd + 0.8;
+          l.position.y = etikettY;
           g.add(l);
         }
       }
@@ -793,7 +856,89 @@ export default function SiteScen({
       objektGrupp.add(g);
     }
     s.current.markera?.();
-  }, [objekt, valtId, punkter, diff, arenden]);
+  }, [objekt, valtId, punkter, diff, arenden, lager?.markning, texturer]);
+
+  /* ---------- Kabellager ----------
+     Schematiska vägar ur lib/siteLager.js som tunna band på marken, ett lager i taget och med
+     olika höjd så att de inte flimrar i varandra. Byggs om när objekten eller filtren ändras. */
+  useEffect(() => {
+    const { kabelGrupp, markera } = s.current;
+    if (!kabelGrupp) return;
+    for (const barn of [...kabelGrupp.children]) {
+      kabelGrupp.remove(barn);
+      frigor(barn);
+    }
+    const vagar = kabelvagar(objekt || []);
+    LAGER.filter((l) => l.id !== "markning" && lager?.[l.id]).forEach((l, i) => {
+      const mat = new THREE.MeshBasicMaterial({ color: farg(l.farg), depthWrite: false, ...djupLager(4 + i) });
+      const y = 0.09 + i * 0.015;
+      const bredd = l.id === "hsp" ? 0.32 : l.id === "jord" ? 0.18 : 0.22;
+      const g = new THREE.Group();
+      g.userData.lager = l.id;
+      for (const linje of vagar[l.id] || []) {
+        for (let k = 1; k < linje.length; k++) {
+          const [x0, z0] = linje[k - 1];
+          const [x1, z1] = linje[k];
+          const langd = Math.hypot(x1 - x0, z1 - z0);
+          if (langd < 0.01) continue;
+          const band = new THREE.Mesh(new THREE.PlaneGeometry(langd + bredd, bredd), mat);
+          band.rotation.x = -Math.PI / 2;
+          band.rotation.z = -Math.atan2(z1 - z0, x1 - x0);
+          band.position.set((x0 + x1) / 2, y, (z0 + z1) / 2);
+          band.renderOrder = 3;
+          g.add(band);
+        }
+      }
+      kabelGrupp.add(g);
+    });
+    markera?.();
+  }, [objekt, lager]);
+
+  /* ---------- Hög kvalitet: texturer och himmel ----------
+     Laddas när växeln slås på eller profilen byts. Av: enfärgad mark och ingen himmel. */
+  useEffect(() => {
+    let avbruten = false;
+    let laddade = null;
+    if (!hogKvalitet) return undefined;
+    laddaTexturer(profil).then((t) => {
+      if (avbruten) {
+        frigorTexturer(t);
+        return;
+      }
+      laddade = t;
+      setTexturer(t);
+    });
+    return () => {
+      avbruten = true;
+      if (laddade) frigorTexturer(laddade);
+    };
+  }, [hogKvalitet, profil]);
+
+  useEffect(() => {
+    const { scene, mark, grus, markera } = s.current;
+    if (!scene) return;
+    scene.background = texturer?.himmel || null;
+    /* Gruset inne på tomten får samma bild som marken, med samma kornstorlek: marken är 500 m
+       med texturen upprepad 60 gånger, så tomten upprepar den i proportion till sina mått.
+       Utan det blir kornen så små att ytan ser grå ut. */
+    let tomtGrus = null;
+    if (texturer?.mark) {
+      const meterPerRuta = 500 / (texturer.mark.repeat.x || 1);
+      tomtGrus = texturer.mark.clone();
+      tomtGrus.repeat.set(TOMT.bredd / meterPerRuta, TOMT.djup / meterPerRuta);
+      tomtGrus.needsUpdate = true;
+    }
+    for (const yta of [mark, grus]) {
+      if (!yta) continue;
+      const tex = yta === mark ? texturer?.mark : tomtGrus;
+      yta.material.map = tex || null;
+      // Tomten något ljusare än marken utanför, så att gränsen syns.
+      yta.material.color = tex ? new THREE.Color(1, 1, 1).lerp(farg(yta === mark ? "--web2" : "--ink-faint"), yta === mark ? 0.35 : 0.12) : farg(yta === mark ? "--web2" : "--ink-faint");
+      yta.material.needsUpdate = true;
+    }
+    markera?.();
+    return () => tomtGrus?.dispose();
+  }, [texturer]);
 
   /* ---------- IFC-modeller ----------
      En grupp per modell, en Mesh per del och färg, med GlobalId på varje mesh så att
@@ -894,7 +1039,7 @@ export default function SiteScen({
       tex.colorSpace = THREE.SRGBColorSpace;
       tex.anisotropy = s.current.renderer?.capabilities.getMaxAnisotropy?.() || 1;
       const { bredd, djup } = planMatt(plan);
-      const yta = new THREE.Mesh(new THREE.PlaneGeometry(bredd, djup), new THREE.MeshStandardMaterial({ map: tex, roughness: 1, ...lager(3) }));
+      const yta = new THREE.Mesh(new THREE.PlaneGeometry(bredd, djup), new THREE.MeshStandardMaterial({ map: tex, roughness: 1, ...djupLager(3) }));
       yta.rotation.x = -Math.PI / 2;
       yta.receiveShadow = true;
       const g = new THREE.Group();
@@ -953,7 +1098,7 @@ export default function SiteScen({
     >
       <p
         id="site-hjalp"
-        className="pointer-events-none absolute left-3 top-3 z-[2] m-0 max-w-[min(520px,calc(100%-24px))] rounded-lg border border-solid border-hairline bg-surface px-2.5 py-1.5 text-[12px] leading-snug text-ink shadow-sm"
+        className="pointer-events-none absolute left-3 top-3 z-[2] m-0 max-w-[min(520px,calc(100%-170px))] rounded-lg border border-solid border-hairline bg-surface px-2.5 py-1.5 text-[12px] leading-snug text-ink shadow-sm"
       >
         {hjalp}
       </p>
