@@ -134,6 +134,8 @@ export async function laddaTexturer(profilId, bas = import.meta.env?.BASE_URL ||
   for (const typ of MODELLTYPER) {
     if (finns.has(`${typ}.glb`)) ut.modeller[typ] = await laddaModell(`${bas}assets/site/${profilId}/${typ}.glb`);
   }
+  // Sungrow har ingen skid.glb: MV-stationen ritas i koden (se ritadMvStation).
+  if (!ut.modeller.skid && profilId === "sungrow") ut.modeller.skid = ritadMvStation();
   for (const del of DELAR) {
     const fil = FILAR[del];
     const t = finns.has(fil) ? await ladda(`${bas}assets/site/${profilId}/${fil}`) : null;
@@ -201,6 +203,80 @@ function laddaModell(url) {
       () => ok(null),
     );
   });
+}
+
+/* ---------- MV-station ritad i koden ----------
+   Sungrow-profilens MV-station byggd ur enkla lådor efter en referensbild (Artlist), i metrar:
+   betongplatta, vit kapsling, tak med utsprång och tre dörrpar på framsidan (RMU, transformator
+   med ventilationsgaller, LSP-skåp), kabelgenomföringar och varningsskyltar. Stilreferens, inte
+   Sungrows ritning — måtten följer profilen (6,1 × 2,5 × 2,9 m, att verifiera). Gråtonerna och
+   den gula skylten är bildinnehåll, inte gränssnittsfärger. */
+
+export function ritadMvStation() {
+  const L = 6.1;
+  const D = 2.5;
+  const PLATTA = 0.18;
+  const KROPP = 2.58;
+  const mat = (r, g, b, extra = {}) => new THREE.MeshStandardMaterial({ color: new THREE.Color(r / 255, g / 255, b / 255), roughness: 0.6, metalness: 0.1, ...extra });
+  const betong = mat(168, 168, 164, { roughness: 0.95, metalness: 0 });
+  const vit = mat(236, 238, 238);
+  const dorr = mat(226, 229, 230);
+  const fog = mat(70, 76, 80);
+  const galler = mat(120, 126, 130);
+  const gul = mat(240, 196, 40, { roughness: 0.5 });
+  const lada = (b, h, d, m, x, y, z) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(b, h, d), m);
+    mesh.position.set(x, y, z);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    return mesh;
+  };
+
+  const rot = new THREE.Group();
+  rot.add(lada(L + 0.5, PLATTA, D + 0.5, betong, 0, PLATTA / 2, 0));
+  rot.add(lada(L, KROPP, D, vit, 0, PLATTA + KROPP / 2, 0));
+  rot.add(lada(L + 0.2, 0.12, D + 0.2, vit, 0, PLATTA + KROPP + 0.06, 0));
+
+  // Tre fack på framsidan (z = D/2): RMU, transformator, LSP. Varje fack har två dörrblad.
+  const fram = D / 2 + 0.012;
+  const fack = L / 3;
+  const dorrH = KROPP - 0.42;
+  const dorrY = PLATTA + 0.2 + dorrH / 2;
+  for (let f = 0; f < 3; f++) {
+    const mitt = -L / 2 + fack * (f + 0.5);
+    rot.add(lada(0.03, KROPP - 0.1, 0.03, fog, -L / 2 + fack * f, PLATTA + KROPP / 2, fram));
+    for (const s of [-1, 1]) {
+      const bladB = fack / 2 - 0.14;
+      const x = mitt + s * (bladB / 2 + 0.04);
+      rot.add(lada(bladB, dorrH, 0.024, dorr, x, dorrY, fram));
+      // Handtag vid mittfogen.
+      rot.add(lada(0.04, 0.18, 0.04, fog, mitt + s * 0.12, dorrY, fram + 0.03));
+      if (f === 1) {
+        // Transformatorfacket: övre och nedre galler med lameller.
+        for (const gy of [dorrY + dorrH * 0.22, dorrY - dorrH * 0.24]) {
+          rot.add(lada(bladB - 0.2, dorrH * 0.36, 0.02, galler, x, gy, fram + 0.014));
+          for (let i = 0; i < 9; i++) rot.add(lada(bladB - 0.24, 0.025, 0.03, fog, x, gy - dorrH * 0.16 + i * dorrH * 0.04, fram + 0.03));
+        }
+      }
+    }
+    // Varningsskylt och två kabelgenomföringar per fack.
+    rot.add(lada(0.16, 0.16, 0.01, gul, mitt + 0.32, dorrY + 0.1, fram + 0.02));
+    for (const s of [-1, 1]) {
+      const genom = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.1, 12), galler);
+      genom.rotation.x = Math.PI / 2;
+      genom.position.set(mitt + s * 0.5, PLATTA + 0.1, fram + 0.04);
+      rot.add(genom);
+    }
+  }
+  // Baksidan: en servicedörr per fack, utan detaljer.
+  for (let f = 0; f < 3; f++) rot.add(lada(fack - 0.4, dorrH, 0.024, dorr, -L / 2 + fack * (f + 0.5), dorrY, -fram));
+
+  const yttre = new THREE.Group();
+  yttre.add(rot);
+  // Måtten är kapslingens, så att den skalas 1:1 mot profilens bredd; plattan sticker ut runt om.
+  yttre.userData.matt = { x: L, y: PLATTA + KROPP + 0.12, z: D };
+  yttre.userData.ritad = true;
+  return yttre;
 }
 
 /** En kopia av modellen skalad till objektets bredd (x), med modellens egna proportioner, så att
