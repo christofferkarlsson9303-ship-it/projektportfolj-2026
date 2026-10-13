@@ -7,9 +7,15 @@ import { dagarTill, datumKort, idag, MANADER } from "../../lib/datum.js";
 import { FAS_LAGE, FAS_STATUS, dagarMellan, faslage, milstolpslage, planAnkare } from "../../lib/epc.js";
 import { kritiskLinje } from "../../lib/kritiskLinje.js";
 import { Lank, Ruta } from "./Ruta.jsx";
+import { StatusBadge } from "../ds/index.js";
+import { FasAvvikelse } from "../projekt/FasAvvikelse.jsx";
+import { faseInfo } from "../../data/projektfaser.ts";
+import { FASSTATUS, fasStatus, grupperaMoment, projektfasForMilstolpe } from "../../lib/fasmappning.js";
 
-/* Fasplanen som Gantt-schema: batteriparkens 16 faser med grindarna G0–G15
-   och betalmilstolparna M1–M7 för valt projekt.
+/* Fasplanen som Gantt-schema: batteriparkens 16 moment (0–15) med grindarna
+   G0–G15 och betalmilstolparna M1–M7 för valt projekt. Momenten står under
+   projektets fas 1–8 (lib/fasmappning.js), och varje fasrubrik visar samma
+   status som projektkortet: klar, pågår eller låst.
 
    Staplarnas färg är en ton i tre steg (klar → pågår → kommande), samma
    validerade ramp som nyckeltalen; bara försenad bär statusrött. Varje rad
@@ -200,6 +206,8 @@ export function Gantt({ i }) {
                           <b>
                             {m.kod} · {m.namn} · {m.andel} %
                           </b>
+                          Fas {projektfasForMilstolpe(m.kod)} · {faseInfo(projektfasForMilstolpe(m.kod)).kort}
+                          <br />
                           {m.utloses}. {MS_TEXT[m.status]} · {datumKort(m.datum)} ({m.grind})
                         </span>
                       </span>
@@ -219,7 +227,20 @@ export function Gantt({ i }) {
                   />
                 ) : null}
 
-                {synliga.map((f, rad) => {
+                {grupperaMoment(synliga).flatMap(({ fas, rader }) => [
+                  <div key={`fas-${fas.nr}`} className="ov-gantt-rad ov-gantt-fasrubrik">
+                    <span className="ov-gantt-etikett">
+                      <span className="ov-gantt-fasnamn">
+                        Fas {fas.nr} · {fas.kort}
+                      </span>
+                      {p ? (
+                        <StatusBadge ton={FASSTATUS[fasStatus(fas.nr, p.fas)].ton} label={FASSTATUS[fasStatus(fas.nr, p.fas)].text} />
+                      ) : null}
+                    </span>
+                    <span className="ov-gantt-spar" aria-hidden="true" />
+                  </div>,
+                  ...rader.map((f) => {
+                  const rad = synliga.indexOf(f);
                   const harDatum = f.start && f.slut;
                   const vanster = harDatum ? x(f.start) : 0;
                   const bredd = harDatum ? Math.max(0.6, x(f.slut) - vanster) : 0;
@@ -238,7 +259,7 @@ export function Gantt({ i }) {
                       type="button"
                       className={`ov-gantt-rad ov-gantt-fas ${f.status}${ostyrkt ? " ostyrkt" : ""}${kritiska.has(f.fas.nr) ? " kritisk" : ""}`}
                       onClick={() => oppnaPost("epc", `fas-${f.fas.nr}`)}
-                      aria-label={`Moment ${f.fas.nr} ${f.fas.titel}: ${statusText}, ${
+                      aria-label={`Moment ${f.fas.nr} ${f.fas.titel}, fas ${f.fas.projektfas}: ${statusText}, ${
                         harDatum ? `${f.start} till ${f.slut}` : "ej planerad"
                       }, ${f.klara} av ${f.punkter} punkter klara, ${grindText}${lageText ? `, ${lageText}` : ""}${
                         saknasText ? `. ${saknasText}` : ""
@@ -268,8 +289,10 @@ export function Gantt({ i }) {
                             </span>
                             <span className={`ov-gantt-tips${sida}`} style={{ left: vanster + "%" }}>
                               <b>
-                                Fas {f.fas.nr} · {f.fas.titel}
+                                Moment {f.fas.nr} · {f.fas.titel}
                               </b>
+                              Fas {f.fas.projektfas} · {faseInfo(f.fas.projektfas).kort}
+                              <br />
                               {datumKort(f.start)} – {datumKort(f.slut)} {f.egenPlan ? "· egna datum" : "· standardplan"}
                               <br />
                               {statusText} · {f.klara} av {f.punkter} klara
@@ -296,7 +319,8 @@ export function Gantt({ i }) {
                       </span>
                     </button>
                   );
-                })}
+                  }),
+                ])}
               </div>
             </div>
           </div>
@@ -305,7 +329,7 @@ export function Gantt({ i }) {
             <ul className="ov-legend">
               <li>
                 <i className="klar" aria-hidden="true" />
-                Fas godkänd
+                Moment godkänt
               </li>
               <li>
                 <i className="ostyrkt" aria-hidden="true" />
@@ -354,6 +378,8 @@ export function Gantt({ i }) {
               </span>
             </div>
           ) : null}
+
+          <FasAvvikelse p={p} faslage={faser} />
 
           {sena.length ? (
             <p className="ov-varning m-0">

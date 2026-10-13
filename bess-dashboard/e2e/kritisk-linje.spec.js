@@ -9,7 +9,8 @@ test("tidplanen visar prognos per fas och kritisk linje, och baslinjen kan spara
   const faser = kort.getByRole("table", { name: "Moment för moment" });
   const visaKlara = kort.getByRole("button", { name: /^Visa klara moment/ });
   if (await visaKlara.count()) await visaKlara.click();
-  await expect(faser.getByRole("row")).toHaveCount(17); // rubrik + 16 moment
+  await expect(faser.getByRole("row")).toHaveCount(25); // rubrik + 8 fasrubriker + 16 moment
+  await expect(faser.getByRole("columnheader", { name: /^Fas 4 · Mark och betong \(cBoP\)/ })).toBeVisible();
   await expect(kort.getByRole("table", { name: "Betalningar mot beräknat slut" }).getByRole("row")).toHaveCount(8);
   await expect(kort.getByText(/Spara dagens plan som ursprunglig plan/)).toBeVisible();
 

@@ -6,8 +6,12 @@ import { fmtSEK } from "../../lib/format.js";
 import { dagarTill, idag } from "../../lib/datum.js";
 import { ekonomi, nastaHandelse, oppnaUR, projektKlass, projektUnderlag } from "../../lib/berakningar.js";
 import { Meter, StatusBadge, TableRegion } from "../ds/index.js";
-import { EJ_VUNNET_ORSAKER, FAS_ANTAL, arFasNr, faseInfo, statusEtikett } from "../../data/projektfaser.ts";
+import { useMemo } from "react";
+import { EJ_VUNNET_ORSAKER, arFasNr } from "../../data/projektfaser.ts";
 import { FasMatare } from "../projekt/FasMatare.jsx";
+import { FasAvvikelse, useFlyttaFas } from "../projekt/FasAvvikelse.jsx";
+import { fasEtikett } from "../../lib/fasmappning.js";
+import { faslage } from "../../lib/epc.js";
 
 /* ---------- Projektkort ---------- */
 
@@ -20,25 +24,15 @@ import { FasMatare } from "../projekt/FasMatare.jsx";
 const tonForDagar = (d) => (d === null ? "" : d < 0 ? "bad" : d < 60 ? "warn" : "");
 
 export function Projektkort({ p }) {
-  const { state, dispatch, uppdStatus, markeraEjVunnet } = usePortfolj();
-  const { setValtProjekt, valtProjekt, visa, oppnaProjektstart, fraga, bekrafta, visaToast } = useUi();
+  const { state, uppdStatus, markeraEjVunnet } = usePortfolj();
+  const { setValtProjekt, valtProjekt, visa, oppnaProjektstart, fraga, visaToast } = useUi();
 
   /* Flytta projektet till en annan fas. Anbud → Planering är det vanliga fallet (anbudet vunnet) och har egen text.
-     Statusen följer fasen. Att backa eller hoppa över faser frågar först. */
+     Statusen följer fasen. Frågan, loggen och bekräftelsen är desamma som i tidplanen och milstolparna. */
   const nuFas = arFasNr(p.fas) ? p.fas : 1;
-  const bytFas = async (nr) => {
-    const till = faseInfo(nr);
-    const vunnet = nuFas === 1 && nr === 2;
-    const ja = await bekrafta(
-      vunnet
-        ? `${p.namn}: anbudet är vunnet och projektet går vidare till fas 2, ${till.kort}. Statusen blir ${statusEtikett(till.status)}.`
-        : `${p.namn} flyttas från fas ${nuFas} (${faseInfo(nuFas).kort}) till fas ${nr} (${till.kort}). Statusen blir ${statusEtikett(till.status)}.${nr > nuFas + 1 ? " Du hoppar över fas " + (nuFas + 1) + (nr > nuFas + 2 ? "–" + (nr - 1) : "") + "." : ""}`,
-      { titel: vunnet ? "Anbudet vunnet?" : "Ändra projektets fas", ok: vunnet ? "Ja, gå till fas 2" : "Ändra fas" }
-    );
-    if (!ja) return;
-    dispatch({ type: "SATT_PROJEKTFAS", id: p.id, fas: nr });
-    visaToast(`${p.namn} ligger nu i fas ${nr}, ${till.kort}.`);
-  };
+  const flyttaFas = useFlyttaFas();
+  const bytFas = (nr) => flyttaFas(p, nr);
+  const momentlage = useMemo(() => faslage(state, p.id), [state, p.id]);
 
   /* Ett förlorat anbud flyttas till arkivet: fas 2–8 döljs och projektet räknas inte i aktiva vyer. */
   const markeraEjVunnetMedOrsak = async () => {
@@ -74,7 +68,7 @@ export function Projektkort({ p }) {
       <header className="projkort-topp">
         <span className={`projkort-nr${p.nr ? "" : " saknas"}`}>{p.nr || "AO-nr saknas"}</span>
         <span className="flex flex-wrap items-center justify-end gap-2">
-          {arFasNr(p.fas) ? <StatusBadge ton="neutral" label={`Fas ${p.fas} av ${FAS_ANTAL} · ${faseInfo(p.fas).kort}`} /> : null}
+          {arFasNr(p.fas) ? <StatusBadge ton="neutral" label={fasEtikett(p.fas)} /> : null}
           <SelStatus
             alternativ={PROJEKTSTATUS}
             varde={p.status || "PLANERING_OCH_UPPSTART"}
@@ -100,8 +94,9 @@ export function Projektkort({ p }) {
       </h3>
 
       {p.status !== "ANBUD_EJ_VUNNET" ? (
-        <div className="my-3">
+        <div className="my-3 flex flex-col gap-2">
           <FasMatare fas={nuFas} onVal={bytFas} etikett={`Fas för ${p.namn}`} />
+          <FasAvvikelse p={p} faslage={momentlage} kompakt />
         </div>
       ) : null}
 

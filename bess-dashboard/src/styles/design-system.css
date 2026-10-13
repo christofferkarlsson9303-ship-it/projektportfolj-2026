@@ -1977,6 +1977,10 @@ button.ov-gantt-rad:focus-visible{outline:3px solid var(--one-bla);outline-offse
 /* Kritisk linje: fasen styr slutbesiktningen. Mörk ram runt stapeln — inte
    rött, som redan betyder försenad, och inte färg på ytan, där statusen syns. */
 
+.ov-gantt-fasrubrik{min-height:30px;border-top:1px solid var(--hairline);margin-top:2px}
+.ov-gantt-fasrubrik .ov-gantt-etikett{gap:6px;padding-top:6px}
+.ov-gantt-fasnamn{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kl-tabell tr.kl-fasrubrik th{padding-top:12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);background:var(--sunken)}
 .ov-gantt-msrad .ov-gantt-nr{background:var(--warn-bg);color:var(--warn-ink)}
 .ov-gantt-namn{flex:1;min-width:0;font-size:12.5px;line-height:1.2;color:var(--ink);white-space:nowrap}
 .ov-gantt-msrad .ov-gantt-namn{color:var(--ink-soft)}
