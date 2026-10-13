@@ -1,5 +1,8 @@
 {
-  "_om": "Genererade tillgångar för 3D-siten (Higgsfield). Lägg filen i mappen och dess namn här. Scenen laddar bara det som står i listan; saknas en fil ritas en enkel textur i koden i stället.",
-  "catl-pe": [],
+  "_om": "Genererade tillgångar för 3D-siten (Artlist, Nano Banana 2). Lägg filen i mappen och dess namn här. Scenen laddar bara det som står i listan; saknas en fil ritas en enkel textur i koden i stället.",
+  "catl-pe": [
+    "container.jpg",
+    "skid.jpg"
+  ],
   "sungrow": []
 }

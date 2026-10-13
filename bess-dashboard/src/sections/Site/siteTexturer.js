@@ -4,7 +4,7 @@ import * as THREE from "three";
    laddas när siten öppnas.
 
    Två källor, i den ordningen:
-   1. Genererade bilder (Higgsfield) i public/assets/site/<profil>/: container, skid, mark (kakel)
+   1. Genererade bilder (Artlist) i public/assets/site/<profil>/: container, skid, mark (kakel)
       och himmel (360°, ekvirektangulär 2:1). Bara filer som står i manifest.json hämtas, så en
       saknad fil ger aldrig ett konsolfel.
    2. Annars en enkel textur ritad här: korrugerad plåt, paneler med galler, grus och en

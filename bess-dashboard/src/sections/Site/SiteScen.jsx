@@ -786,9 +786,12 @@ export default function SiteScen({
         const ds = diff?.status?.get(o.id);
         /* Hög kvalitet: container och skid får textur, med typfärgen inblandad så att tonen följer
            designsystemet. En jämförelse (diff) vinner — då gäller bara diffens färg. */
-        const tex = !ds && texturer ? texturer[o.typ === "container" ? "container" : o.typ === "skid" ? "skid" : ""] : null;
+        const del = o.typ === "container" ? "container" : o.typ === "skid" ? "skid" : "";
+        const tex = !ds && texturer ? texturer[del] : null;
+        // Ett genererat foto får bara en aning typfärg; en ritad textur mer, så att typen syns.
+        const ton = texturer?.kalla?.[del] === "genererad" ? 0.12 : 0.45;
         const material = tex
-          ? new THREE.MeshStandardMaterial({ map: tex, color: vit.clone().lerp(farg(TYPFARG[o.typ]), 0.45), roughness: 0.6, metalness: 0.2 })
+          ? new THREE.MeshStandardMaterial({ map: tex, color: vit.clone().lerp(farg(TYPFARG[o.typ]), ton), roughness: 0.6, metalness: 0.2 })
           : new THREE.MeshStandardMaterial({ color: farg(ds ? DIFF_FARG[ds] : TYPFARG[o.typ]), roughness: 0.75, metalness: 0.05 });
         const lada = new THREE.Mesh(geo, material);
         lada.position.y = o.hojd / 2;
