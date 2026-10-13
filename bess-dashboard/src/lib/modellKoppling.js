@@ -131,8 +131,12 @@ const lerpV = (a, b, t) => a.map((v, i) => lerp(v, b[i], t));
  */
 export function flygBana(fran, till, t) {
   const e = easeInOutCubic(Math.max(0, Math.min(1, Number(t) || 0)));
+  const pos = lerpV(fran.cameraPosition, till.cameraPosition, e);
+  /* `till.bage` (meter) lyfter kameran i en båge mitt i flygningen, så att en kameraåkning går
+     över parken i stället för genom den. Noll i början och slutet. */
+  if (Number(till.bage) > 0 && e > 0 && e < 1) pos[1] += Math.sin(Math.PI * e) * Number(till.bage);
   return {
-    cameraPosition: lerpV(fran.cameraPosition, till.cameraPosition, e),
+    cameraPosition: pos,
     target: lerpV(fran.target, till.target, e),
     fov: lerp(fran.fov, till.fov, e),
   };
@@ -140,6 +144,7 @@ export function flygBana(fran, till, t) {
 
 /** Flygtid i millisekunder efter avståndet — kort för nära, aldrig över 1,4 s. */
 export function flygTid(fran, till) {
+  if (Number(till.tid) > 0) return Math.round(Number(till.tid));
   const d = Math.hypot(...fran.cameraPosition.map((v, i) => v - till.cameraPosition[i]));
   return Math.round(Math.max(450, Math.min(1400, 450 + d * 12)));
 }

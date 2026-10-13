@@ -654,6 +654,18 @@ export function reducer(state, action) {
       return loggat(ut, rad.projektId, `Site: ${siteEtikett(state, rad)} placerad`);
     }
 
+    /* Profilens standardlayout (lib/siteLager.js) på en tom tomt, i ett steg och med en loggrad.
+       Har projektet redan volymer på siten görs ingenting — layouten skriver aldrig över. */
+    case "SITE_STANDARDLAYOUT": {
+      const { projektId, rader, profil } = action;
+      if (!Array.isArray(rader) || !rader.length || rader.some((r) => r.projektId !== projektId)) return state;
+      if ((state.siteObjekt || []).some((r) => r.projektId === projektId && r.typ !== "nal")) return state;
+      const punkter = punkterForSite(state, projektId);
+      if (rader.some((r) => objektFel(r, punkter) !== null)) return state;
+      const ut = { ...state, siteObjekt: [...(state.siteObjekt || []), ...rader] };
+      return loggat(ut, projektId, `Site: standardlayout ${profil || ""} inlagd (${rader.length} objekt)`.replace("  ", " "));
+    }
+
     case "SITE_ANDRA": {
       const { id, andring } = action;
       const o = (state.siteObjekt || []).find((r) => r.id === id);
