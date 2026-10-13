@@ -1146,6 +1146,17 @@ tr.lastrad:hover{opacity:.8}
   #utskrift .box{page-break-inside:avoid}
   #utskrift .raphead{page-break-after:avoid}
   #utskrift .dokumentskift{page-break-before:always}
+  /* Beställarrapporten: Kraftkurvan i sidhuvudet, statisk. Papperet är vitt även i mörkt läge, så
+     texten använder de ljusa värdena för --ok-ink, --one-djup och --bad-ink (inga nya färger). */
+  #utskrift .raphead{position:relative;overflow:hidden}
+  #utskrift .rap-kurva{position:absolute;right:0;bottom:0;width:46%;height:auto;opacity:.85;pointer-events:none}
+  #utskrift .rap-kurva path{fill:none;stroke-width:2.2;stroke-linecap:round}
+  #utskrift .raphead .rap-text{position:relative}
+  #utskrift .rap-sektion{page-break-inside:avoid}
+  #utskrift td.fas-klar{color:#0f6b6d;font-weight:700}
+  #utskrift td.fas-pagar{color:#005f76;font-weight:700}
+  #utskrift td.sen{color:#b8322a;font-weight:700}
+  #utskrift .rap-not{font-size:8.5pt;color:#555;margin:-4px 0 10px}
 }
 
 /* ---------- ÄTA: tavla, kort och ärendepanel ---------- */
