@@ -3,6 +3,9 @@ import { ataSummering, slutdokIndex } from "../../lib/berakningar.js";
 import { berakFlaggor } from "../../lib/flaggor.js";
 import { dagarTill, idag } from "../../lib/datum.js";
 import { fmtProcent, fmtSEK } from "../../lib/format.js";
+import { bestallarrapportData, statusrad } from "../../lib/bestallarrapport.js";
+import { Kraftkurva } from "../oversikt/Hero.jsx";
+import { hamtaNamn } from "../../state/portfolj-reducer.js";
 
 /* Statusrapport till beställaren — ett A4-underlag som går att ta med till
    byggmötet eller bifoga i mejl.
@@ -10,19 +13,164 @@ import { fmtProcent, fmtSEK } from "../../lib/format.js";
    Rapporten säger medvetet också det som är obekvämt: försenade milstolpar,
    öppna ÄTA och punkter som passerat sitt datum. En statusrapport som bara
    visar det som går bra är inte värd att skicka, och beställaren ser ändå
-   verkligheten på plats. */
+   verkligheten på plats.
+
+   Med ett valt projekt kommer också fasstatus (bara påbörjade och klara faser,
+   samma regel som projektstartens PDF), betalmilstolparna M1–M7 med fas,
+   prognos mot kontraktet och anläggningsdata. Datan räknas i
+   lib/bestallarrapport.js. */
+
+const fasNamn = (f) => `Fas ${f.fas} · ${f.fasKort}`;
 
 function Huvud({ projekt }) {
+  const av = (hamtaNamn() || "").trim();
   return (
     <div className="raphead med-logo">
-      <img src={logotyp} alt="" className="logo" />
-      <div>
+      <Kraftkurva className="rap-kurva" />
+      <img src={logotyp} alt="" className="logo rap-text" />
+      <div className="rap-text">
         <h1>Statusrapport</h1>
         <div className="s">
-          {projekt?.namn || "Portföljen"}
-          {projekt?.nr ? ` · AO ${projekt.nr}` : ""} · Upprättad {idag()} · ONE Nordic AB
+          {projekt ? `${projekt.nr ? projekt.nr + " " : ""}${projekt.namn}` : "Portföljen"} · Upprättad {idag()}
+          {av ? ` av ${av}` : ""} · ONE Nordic AB
         </div>
       </div>
+    </div>
+  );
+}
+
+function Faser({ d }) {
+  return (
+    <div className="rap-sektion">
+      <div className="delrubrik">Projektets faser</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Fas</th>
+            <th>Namn</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {d.faser.map((f) => (
+            <tr key={f.nr}>
+              <td>
+                {f.nr} av {d.antalFaser}
+              </td>
+              <td>{f.titel}</td>
+              <td className={f.status === "klar" ? "fas-klar" : "fas-pagar"}>{f.text}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {d.aterstar.length ? (
+        <p className="rap-not">
+          Återstår: fas {d.aterstar[0]}
+          {d.aterstar.length > 1 ? `–${d.aterstar.at(-1)}` : ""}. De tas med i rapporten när de påbörjas.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function Betalningar({ d }) {
+  return (
+    <div className="rap-sektion">
+      <div className="delrubrik">Betalningsmilstolpar M1–M7</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Milstolpe</th>
+            <th>Fas</th>
+            <th>Andel</th>
+            <th>Plan / grind</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {d.milstolpar.map((m) => (
+            <tr key={m.kod}>
+              <td>
+                {m.kod} · {m.namn}
+              </td>
+              <td>{fasNamn(m)}</td>
+              <td>{m.andel} %</td>
+              <td>{m.datum || "—"}</td>
+              <td className={m.status === "fakturerad" ? "fas-klar" : m.status === "pagaende" ? "fas-pagar" : ""}>{m.text}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function Prognos({ tid }) {
+  if (!tid) {
+    return (
+      <div className="box">
+        <b>Prognos saknas</b>
+        Projektets startdatum eller färdigdatum saknas, så slutbesiktningen kan inte beräknas.
+      </div>
+    );
+  }
+  const sen = tid.forsening > 0;
+  const mot = tid.forsening === null ? "—" : sen ? `${tid.forsening} dagar sent` : tid.forsening < 0 ? `${-tid.forsening} dagar före` : "I tid";
+  return (
+    <table className="rap-sektion">
+      <tbody>
+        <tr>
+          <th>Beräknad slutbesiktning</th>
+          <td className={sen ? "sen" : ""}>
+            {tid.slutPrognos || "—"} · {mot}
+          </td>
+        </tr>
+        <tr>
+          <th>Kontraktets färdigdatum</th>
+          <td>{tid.kontrakt || "—"}</td>
+        </tr>
+        <tr>
+          <th>Styr slutdatumet</th>
+          <td>{tid.styr.length ? tid.styr.map((m) => `${m.kort} (fas ${m.fas})`).join(", ") : "Inga återstående moment"}</td>
+        </tr>
+      </tbody>
+    </table>
+  );
+}
+
+function Anlaggning({ a }) {
+  const effekt = a.mw ? `${a.mw} MW / ${a.mwh ?? "—"} MWh` : "Ej angiven";
+  const site = a.siteMwh ? `${a.siteMw || "—"} MW / ${a.siteMwh} MWh enligt siten` : "";
+  return (
+    <div className="rap-sektion">
+      <div className="delrubrik">Anläggning</div>
+      <table>
+        <tbody>
+          <tr>
+            <th>Effekt / energi</th>
+            <td>
+              {effekt}
+              {site ? ` (${site})` : ""}
+            </td>
+          </tr>
+          <tr>
+            <th>MV-skid</th>
+            <td>{statusrad(a.skid, "MV-skid")}</td>
+          </tr>
+          <tr>
+            <th>Battericontainrar</th>
+            <td>{statusrad(a.container, "containrar")}</td>
+          </tr>
+          <tr>
+            <th>Nätanslutning</th>
+            <td>
+              {a.natagare || "Nätägare ej angiven"}
+              {a.natkontakt ? ` · ${a.natkontakt}` : ""}
+              {a.natmoment.map((m) => ` · ${m.kort}: ${m.text.toLowerCase()}${m.slut ? `, ${m.status === "klar" ? "klar" : "plan klar"} ${m.slut}` : ""}`).join("")}
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -59,6 +207,7 @@ export function Bestallarrapport({ state, pid }) {
   const risker = state.risker.filter((r) => horTill(r) && r.status !== "stangd");
   const slutdok = pid ? slutdokIndex(state, pid) : null;
   const hoga = berakFlaggor(state).filter((f) => f.niva === "hog" && (!pid || f.projektId === pid));
+  const d = pid ? bestallarrapportData(state, pid) : null;
 
   return (
     <>
@@ -73,6 +222,9 @@ export function Bestallarrapport({ state, pid }) {
           ["Slutdokumentation", slutdok ? fmtProcent(slutdok.proc) : "—"],
         ]}
       />
+
+      {d ? <Faser d={d} /> : null}
+      {d ? <Anlaggning a={d.anlaggning} /> : null}
 
       {ata ? (
         <>
@@ -98,7 +250,10 @@ export function Bestallarrapport({ state, pid }) {
         </>
       ) : null}
 
+      {d ? <Betalningar d={d} /> : null}
+
       <div className="delrubrik">Tidplan</div>
+      {d ? <Prognos tid={d.tid} /> : null}
       {forsenade.length ? (
         <table>
           <thead>
