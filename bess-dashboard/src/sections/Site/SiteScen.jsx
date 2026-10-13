@@ -918,13 +918,26 @@ export default function SiteScen({
     const { scene, mark, grus, markera } = s.current;
     if (!scene) return;
     scene.background = texturer?.himmel || null;
+    /* Gruset inne på tomten får samma bild som marken, med samma kornstorlek: marken är 500 m
+       med texturen upprepad 60 gånger, så tomten upprepar den i proportion till sina mått.
+       Utan det blir kornen så små att ytan ser grå ut. */
+    let tomtGrus = null;
+    if (texturer?.mark) {
+      const meterPerRuta = 500 / (texturer.mark.repeat.x || 1);
+      tomtGrus = texturer.mark.clone();
+      tomtGrus.repeat.set(TOMT.bredd / meterPerRuta, TOMT.djup / meterPerRuta);
+      tomtGrus.needsUpdate = true;
+    }
     for (const yta of [mark, grus]) {
       if (!yta) continue;
-      yta.material.map = texturer?.mark || null;
-      yta.material.color = texturer?.mark ? new THREE.Color(1, 1, 1).lerp(farg(yta === mark ? "--web2" : "--ink-faint"), 0.35) : farg(yta === mark ? "--web2" : "--ink-faint");
+      const tex = yta === mark ? texturer?.mark : tomtGrus;
+      yta.material.map = tex || null;
+      // Tomten något ljusare än marken utanför, så att gränsen syns.
+      yta.material.color = tex ? new THREE.Color(1, 1, 1).lerp(farg(yta === mark ? "--web2" : "--ink-faint"), yta === mark ? 0.35 : 0.12) : farg(yta === mark ? "--web2" : "--ink-faint");
       yta.material.needsUpdate = true;
     }
     markera?.();
+    return () => tomtGrus?.dispose();
   }, [texturer]);
 
   /* ---------- IFC-modeller ----------
