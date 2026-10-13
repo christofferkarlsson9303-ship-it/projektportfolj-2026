@@ -165,9 +165,10 @@ test("en ledtid markeras klar i förväg och går att ångra", async ({ page }) 
   await expect(raden.getByRole("button", { name: /^Klar/ })).toBeVisible();
 });
 
-test("Gantt-schemats fasrad öppnar fasen i guiden", async ({ page }) => {
+test("Gantt-schemats momentmeny öppnar fasen i guiden", async ({ page }) => {
   await gaTill(page, "Översikt");
   await page.getByRole("button", { name: /^Moment 12 Anslutning BESS/ }).click();
+  await page.getByRole("group", { name: /^Moment 12 .*veckor och status/ }).getByRole("button", { name: "Öppna i guiden" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(KAPITEL);
   await expect(page.locator("#fas-12")).toHaveAttribute("open", "");
 });

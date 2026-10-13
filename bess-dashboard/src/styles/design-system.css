@@ -1991,6 +1991,22 @@ button.ov-gantt-rad:focus-visible{outline:3px solid var(--one-bla);outline-offse
 .ov-gantt-fasrubrik{min-height:30px;border-top:1px solid var(--hairline);margin-top:2px}
 .ov-gantt-fasrubrik .ov-gantt-etikett{gap:6px;padding-top:6px}
 .ov-gantt-fasnamn{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Fasrubriken är en knapp som fäller ihop momenten. Ihopfälld bär den fasens samlade stapel
+   (klassen ov-gantt-samlad + läget) i samma toner som momenten. */
+button.ov-gantt-fasrubrik{border-top:1px solid var(--hairline);border-radius:0}
+.ov-gantt-chevron{flex:0 0 auto;color:var(--ink-faint);transform:rotate(-90deg);transition:transform .15s}
+.ov-gantt-chevron.oppen{transform:none}
+/* Momentmenyn: fälls ut under raden, hela schemats bredd. Inga nya färger. */
+.ov-gantt-meny{position:relative;z-index:4;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px 20px;margin:4px 0 8px;
+  padding:12px 14px;border:1px solid var(--hairline-stark);border-radius:10px;background:var(--raised);box-shadow:var(--sh-md);
+  font-size:12.5px;line-height:1.45;color:var(--ink-soft)}
+.ov-gantt-meny b{display:block;margin-bottom:2px;font-size:12.5px;color:var(--ink)}
+.ov-gantt-meny-del{display:flex;flex-direction:column;gap:6px;min-width:0}
+.ov-gantt-stegrad{display:flex;flex-wrap:wrap;gap:6px 14px}
+.ov-gantt-steg{display:flex;align-items:center;gap:6px}
+.ov-gantt-steg>span{min-width:0;font-weight:600;color:var(--ink)}
+.ov-gantt-val{display:inline-flex;align-items:center;gap:6px;min-height:32px;color:var(--ink);cursor:pointer}
+.ov-gantt-meny-fot{grid-column:1/-1;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}
 .kl-tabell tr.kl-fasrubrik th{padding-top:12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);background:var(--sunken)}
 .ov-gantt-msrad .ov-gantt-nr{background:var(--warn-bg);color:var(--warn-ink)}
 .ov-gantt-namn{flex:1;min-width:0;font-size:12.5px;line-height:1.2;color:var(--ink);white-space:nowrap}
@@ -2008,14 +2024,14 @@ button.ov-gantt-rad:focus-visible{outline:3px solid var(--one-bla);outline-offse
 .ov-gantt-stapel{position:absolute;top:7px;height:14px;border-radius:4px;overflow:hidden;background:var(--viz-spar);
   box-shadow:inset 0 0 0 1px var(--hairline-stark);animation:ovAvsloja .8s var(--ease) .15s both}
 .ov-gantt-stapel i{display:block;height:100%;background:var(--viz-pagar)}
-.ov-gantt-fas.klar .ov-gantt-stapel{background:var(--viz-klar);box-shadow:none}
+.ov-gantt-fas.klar .ov-gantt-stapel,.ov-gantt-samlad.klar .ov-gantt-stapel{background:var(--viz-klar);box-shadow:none}
 /* Klar i tid men inte styrkt: randig varningston i stället för fylld klar-ton,
    så en härledd grind inte ser ut som en godkänd. Texten bredvid säger varför. */
 .ov-gantt-fas.ostyrkt .ov-gantt-nr{background:var(--warn-bg);color:var(--warn-ink)}
 .ov-gantt-fas.ostyrkt .ov-gantt-stapel{background:repeating-linear-gradient(135deg,var(--warn-bg) 0 6px,var(--surface) 6px 10px);box-shadow:inset 0 0 0 1.5px var(--warn-ink)}
-.ov-gantt-fas.pagar .ov-gantt-stapel{
+.ov-gantt-fas.pagar .ov-gantt-stapel,.ov-gantt-samlad.pagar .ov-gantt-stapel{
   background:color-mix(in srgb,var(--viz-pagar) 30%,var(--surface));box-shadow:inset 0 0 0 1.5px var(--viz-pagar)}
-.ov-gantt-fas.sen .ov-gantt-stapel{background:var(--bad-bg);box-shadow:inset 0 0 0 1.5px var(--rod)}
+.ov-gantt-fas.sen .ov-gantt-stapel,.ov-gantt-samlad.sen .ov-gantt-stapel{background:var(--bad-bg);box-shadow:inset 0 0 0 1.5px var(--rod)}
 /* (efter statusreglerna så att ramen vinner; innanför stapeln eftersom
    avslöjandeanimationen klipper allt utanför) */
 .ov-gantt-fas.kritisk .ov-gantt-stapel{box-shadow:inset 0 0 0 2.5px var(--ink)}

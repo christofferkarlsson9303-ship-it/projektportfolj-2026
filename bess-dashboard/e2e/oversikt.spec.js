@@ -54,6 +54,56 @@ test("Gantt-schemat visar 16 faser, grindar och M1–M7 för valt projekt", asyn
   expect(kvar).toBeLessThan(16);
 });
 
+test("Gantt: klickmenyn flyttar ett moment en vecka och sätter grinden, utan att dra", async ({ page }) => {
+  const gantt = page.getByRole("region", { name: "Fasplan, grindar och betalningar" });
+  const moment = gantt.getByRole("button", { name: /^Moment 15 / });
+  await moment.click();
+  await expect(moment).toHaveAttribute("aria-expanded", "true");
+  const meny = gantt.getByRole("group", { name: /^Moment 15 .*veckor och status/ });
+  const veckor = meny.locator("p").first();
+  const fore = (await veckor.textContent()).trim();
+  expect(fore).toMatch(/^v\. \d{2} \d{4} – v\. \d{2} \d{4}/);
+
+  await meny.getByRole("button", { name: "Flytta momentet: en vecka senare" }).click();
+  await expect(veckor).not.toHaveText(fore);
+  const rad = async () =>
+    page.evaluate(() => (JSON.parse(localStorage.getItem("batchc-portfolj-v1") || "{}").epcFaser || []).find((r) => r.fas === 15 && r.projektId === "36037"));
+  await expect.poll(async () => new Date((await rad())?.start + "T12:00:00").getDay()).toBe(1); // måndag
+  await expect.poll(async () => new Date((await rad())?.slut + "T12:00:00").getDay()).toBe(5); // fredag
+  await meny.getByRole("button", { name: "Flytta momentet: en vecka tidigare" }).click();
+  await expect(veckor).toHaveText(fore.replace("standardplan", "egna datum"));
+
+  await meny.getByRole("radio", { name: /^Klar — G15 passerad/ }).check();
+  await expect(moment).toHaveAttribute("aria-label", /: Grind passerad,/);
+  await meny.getByRole("radio", { name: "Följer datumen" }).check();
+  await expect(moment).not.toHaveAttribute("aria-label", /: Grind passerad,/);
+
+  await meny.getByRole("button", { name: "Stäng" }).click();
+  await expect(meny).toHaveCount(0);
+  await expect(moment).toBeFocused();
+});
+
+test("Gantt: faserna fälls ihop till en stapel och nivåväljaren växlar fas/moment", async ({ page }) => {
+  const gantt = page.getByRole("region", { name: "Fasplan, grindar och betalningar" });
+  const niva = gantt.getByRole("radiogroup", { name: "Nivå i Gantt-schemat" });
+  await niva.getByRole("radio", { name: "Faser" }).click();
+  await expect(gantt.locator("button.ov-gantt-fas")).toHaveCount(0);
+  const rubriker = gantt.locator("button.ov-gantt-fasrubrik");
+  const antal = await rubriker.count();
+  expect(antal).toBeGreaterThan(3);
+  await expect(gantt.locator(".ov-gantt-samlad .ov-gantt-stapel")).toHaveCount(antal);
+
+  await rubriker.first().click();
+  await expect(rubriker.first()).toHaveAttribute("aria-expanded", "true");
+  expect(await gantt.locator("button.ov-gantt-fas").count()).toBeGreaterThan(0);
+
+  await niva.getByRole("radio", { name: "Moment" }).click();
+  await expect(gantt.locator("button.ov-gantt-fas")).toHaveCount(16);
+  await rubriker.nth(1).click();
+  await expect(rubriker.nth(1)).toHaveAttribute("aria-expanded", "false");
+  expect(await gantt.locator("button.ov-gantt-fas").count()).toBeLessThan(16);
+});
+
 test("ett projekt utan datum får fälten direkt i Gantt-schemat", async ({ page }) => {
   const gantt = page.getByRole("region", { name: "Fasplan, grindar och betalningar" });
   await gantt.getByRole("group", { name: "Projekt i Gantt-schemat" }).getByRole("button", { name: "Göteborg" }).click();
