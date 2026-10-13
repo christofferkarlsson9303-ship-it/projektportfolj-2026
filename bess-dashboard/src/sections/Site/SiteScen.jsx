@@ -812,9 +812,11 @@ export default function SiteScen({
         linjer.position.y = o.hojd / 2;
         linjer.visible = !modell || o.id === valtId;
         g.add(lada, linjer);
-        if (modell) g.add(modellFor(modell, o));
+        // Batterierna fylls ut till profilens mått (datablad); skiden behåller modellens proportioner.
+        const anpassa = o.typ === "container";
+        if (modell) g.add(modellFor(modell, o, { anpassa }));
         // Etiketten svävar över det som syns: modellens höjd när den används, annars lådans.
-        const etikettY = (modell ? modell.userData.matt.y * ((Number(o.bredd) || 1) / (modell.userData.matt.x || 1)) : o.hojd) + 0.8;
+        const etikettY = (modell && !anpassa ? modell.userData.matt.y * ((Number(o.bredd) || 1) / (modell.userData.matt.x || 1)) : o.hojd) + 0.8;
         const antalArenden = arenden?.get(o.id) || 0;
         if (o.id === valtId) {
           const delar = [o.namn];

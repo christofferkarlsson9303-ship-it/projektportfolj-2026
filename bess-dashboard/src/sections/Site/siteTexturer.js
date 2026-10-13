@@ -204,12 +204,16 @@ function laddaModell(url) {
 }
 
 /** En kopia av modellen skalad till objektets bredd (x), med modellens egna proportioner, så att
- *  den inte blir utdragen. Geometri och material delas med originalet: kopian märks `delad` och
+ *  den inte blir utdragen (eller till alla tre mått med `anpassa`). Geometri och material delas med originalet: kopian märks `delad` och
  *  får inte frigöras när objektet tas bort. */
-export function modellFor(modell, o) {
+export function modellFor(modell, o, { anpassa = false } = {}) {
   const k = modell.clone(true);
-  const s = (Number(o.bredd) || 1) / (modell.userData.matt.x || 1);
-  k.scale.setScalar(s);
+  const m = modell.userData.matt;
+  const s = (Number(o.bredd) || 1) / (m.x || 1);
+  /* `anpassa`: modellen fylls ut till objektets bredd, höjd och djup. Används för batterierna,
+     där profilens mått kommer ur databladet och den genererade modellens proportioner inte gör det. */
+  if (anpassa) k.scale.set(s, (Number(o.hojd) || 1) / (m.y || 1), (Number(o.djup) || 1) / (m.z || 1));
+  else k.scale.setScalar(s);
   k.userData.delad = true;
   return k;
 }

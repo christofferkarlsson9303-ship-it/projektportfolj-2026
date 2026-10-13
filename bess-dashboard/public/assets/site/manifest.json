@@ -1,9 +1,12 @@
 {
-  "_om": "Tillgångar för 3D-siten: texturer (Artlist, Nano Banana 2) och 3D-modeller (.glb). Lägg filen i profilens mapp och dess namn här. Scenen laddar bara det som står i listan; utan modell ritas en låda med textur, utan textur en textur ritad i koden. skid.glb för CATL/PE är Christoffers modell av MV-skiden.",
+  "_om": "Tillgångar för 3D-siten: texturer (Artlist, Nano Banana 2) och 3D-modeller (.glb). Batterimodellerna är Artlist-genererade (Hyper3D Rodin) ur referensbilder i CATL EnerX- respektive Sungrow PowerTitan-stil, utan logotyper. skid.glb för CATL/PE är Christoffers modell av Power Electronics MV-skid. Scenen laddar bara det som står i listan.",
   "catl-pe": [
     "container.jpg",
     "skid.jpg",
-    "skid.glb"
+    "skid.glb",
+    "container.glb"
   ],
-  "sungrow": []
+  "sungrow": [
+    "container.glb"
+  ]
 }
