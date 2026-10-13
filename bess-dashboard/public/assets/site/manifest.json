@@ -1,8 +1,9 @@
 {
-  "_om": "Genererade tillgångar för 3D-siten (Artlist, Nano Banana 2). Lägg filen i mappen och dess namn här. Scenen laddar bara det som står i listan; saknas en fil ritas en enkel textur i koden i stället.",
+  "_om": "Tillgångar för 3D-siten: texturer (Artlist, Nano Banana 2) och 3D-modeller (.glb). Lägg filen i profilens mapp och dess namn här. Scenen laddar bara det som står i listan; utan modell ritas en låda med textur, utan textur en textur ritad i koden. skid.glb för CATL/PE är Christoffers modell av MV-skiden.",
   "catl-pe": [
     "container.jpg",
-    "skid.jpg"
+    "skid.jpg",
+    "skid.glb"
   ],
   "sungrow": []
 }

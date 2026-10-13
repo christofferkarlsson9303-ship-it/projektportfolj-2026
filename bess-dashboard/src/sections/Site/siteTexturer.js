@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 /* Texturer och himmel för "Hög kvalitet" i 3D-siten. Ligger bredvid scenen så att three bara
    laddas när siten öppnas.
@@ -128,7 +129,11 @@ function ladda(url) {
 export async function laddaTexturer(profilId, bas = import.meta.env?.BASE_URL || "/") {
   const m = await manifest(bas);
   const finns = new Set(Array.isArray(m[profilId]) ? m[profilId] : []);
-  const ut = { kalla: {} };
+  const ut = { kalla: {}, modeller: {} };
+  // 3D-modeller (container.glb, skid.glb) ersätter lådan när de finns.
+  for (const typ of MODELLTYPER) {
+    if (finns.has(`${typ}.glb`)) ut.modeller[typ] = await laddaModell(`${bas}assets/site/${profilId}/${typ}.glb`);
+  }
   for (const del of DELAR) {
     const fil = FILAR[del];
     const t = finns.has(fil) ? await ladda(`${bas}assets/site/${profilId}/${fil}`) : null;
@@ -145,4 +150,66 @@ export async function laddaTexturer(profilId, bas = import.meta.env?.BASE_URL ||
 
 export function frigorTexturer(t) {
   for (const del of DELAR) t?.[del]?.dispose?.();
+  for (const m of Object.values(t?.modeller || {})) {
+    m?.traverse((o) => {
+      o.geometry?.dispose?.();
+      for (const x of Array.isArray(o.material) ? o.material : o.material ? [o.material] : []) {
+        x.map?.dispose?.();
+        x.dispose?.();
+      }
+    });
+  }
+}
+
+/* ---------- 3D-modeller ----------
+   En .glb per typ. Ljus i filen (KHR_lights_punctual) tas bort — scenen har sin egen belysning,
+   och sex skid med fyra lampor var skulle göra den långsam. Modellen läggs med botten på y = 0
+   och mitten i origo, med sin längsta sida längs x, så att den kan skalas till objektets bredd. */
+
+const MODELLTYPER = ["container", "skid"];
+
+function laddaModell(url) {
+  return new Promise((ok) => {
+    new GLTFLoader().load(
+      url,
+      (gltf) => {
+        const rot = gltf.scene;
+        const ljus = [];
+        rot.traverse((o) => {
+          if (o.isLight) ljus.push(o);
+          if (o.isMesh) {
+            o.castShadow = true;
+            o.receiveShadow = true;
+          }
+        });
+        for (const l of ljus) l.parent?.remove(l);
+        rot.updateMatrixWorld(true);
+        const box = new THREE.Box3().setFromObject(rot);
+        const storlek = box.getSize(new THREE.Vector3());
+        const mitt = box.getCenter(new THREE.Vector3());
+        // Längsta sidan längs x: vrid 90° om modellen är längre i z än i x.
+        const yttre = new THREE.Group();
+        const inre = new THREE.Group();
+        inre.add(rot);
+        rot.position.set(-mitt.x, -box.min.y, -mitt.z);
+        if (storlek.z > storlek.x) inre.rotation.y = Math.PI / 2;
+        yttre.add(inre);
+        yttre.userData.matt = storlek.z > storlek.x ? { x: storlek.z, y: storlek.y, z: storlek.x } : { x: storlek.x, y: storlek.y, z: storlek.z };
+        ok(yttre);
+      },
+      undefined,
+      () => ok(null),
+    );
+  });
+}
+
+/** En kopia av modellen skalad till objektets bredd (x), med modellens egna proportioner, så att
+ *  den inte blir utdragen. Geometri och material delas med originalet: kopian märks `delad` och
+ *  får inte frigöras när objektet tas bort. */
+export function modellFor(modell, o) {
+  const k = modell.clone(true);
+  const s = (Number(o.bredd) || 1) / (modell.userData.matt.x || 1);
+  k.scale.setScalar(s);
+  k.userData.delad = true;
+  return k;
 }

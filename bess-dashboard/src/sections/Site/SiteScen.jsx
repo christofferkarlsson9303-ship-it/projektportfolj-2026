@@ -22,7 +22,7 @@ import {
 import { DIFF_FARG } from "../../lib/modellDiff.js";
 import { avstand, flygBana, flygTid, klippPlan } from "../../lib/modellKoppling.js";
 import { LAGER, STANDARDLAGER, kabelvagar } from "../../lib/siteLager.js";
-import { frigorTexturer, laddaTexturer } from "./siteTexturer.js";
+import { frigorTexturer, laddaTexturer, modellFor } from "./siteTexturer.js";
 
 /* 3D-scenen för siten. Laddas för sig (lazy) så att three bara hämtas när
    någon öppnar siten.
@@ -63,15 +63,17 @@ function farg(variabel) {
   return v ? new THREE.Color(v) : new THREE.Color(0.55, 0.6, 0.62);
 }
 
+/** Frigör geometri och material. En modellkopia (`userData.delad`) delar dem med den laddade
+ *  modellen och hoppas över — den frigörs när Hög kvalitet slås av. */
 function frigor(rot) {
-  rot.traverse((o) => {
-    o.geometry?.dispose?.();
-    const m = o.material;
-    for (const x of Array.isArray(m) ? m : m ? [m] : []) {
-      x.map?.dispose?.();
-      x.dispose?.();
-    }
-  });
+  if (rot.userData?.delad) return;
+  rot.geometry?.dispose?.();
+  const m = rot.material;
+  for (const x of Array.isArray(m) ? m : m ? [m] : []) {
+    x.map?.dispose?.();
+    x.dispose?.();
+  }
+  for (const barn of rot.children || []) frigor(barn);
 }
 
 /** Plana ytor på varandra (mark, grus, väg, plan) — djupförskjutning i
@@ -793,29 +795,42 @@ export default function SiteScen({
         const material = tex
           ? new THREE.MeshStandardMaterial({ map: tex, color: vit.clone().lerp(farg(TYPFARG[o.typ]), ton), roughness: 0.6, metalness: 0.2 })
           : new THREE.MeshStandardMaterial({ color: farg(ds ? DIFF_FARG[ds] : TYPFARG[o.typ]), roughness: 0.75, metalness: 0.05 });
+        /* Med en 3D-modell (Hög kvalitet) blir lådan osynlig men ligger kvar: den är det som
+           träffas vid klick och dragning och det som gången krockar mot. Kanten syns bara när
+           objektet är markerat. */
+        const modell = !ds && texturer?.modeller?.[o.typ];
+        if (modell) {
+          material.transparent = true;
+          material.opacity = 0;
+          material.depthWrite = false;
+        }
         const lada = new THREE.Mesh(geo, material);
         lada.position.y = o.hojd / 2;
-        lada.castShadow = true;
-        lada.receiveShadow = true;
+        lada.castShadow = !modell;
+        lada.receiveShadow = !modell;
         const linjer = new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: o.id === valtId ? markering : kant }));
         linjer.position.y = o.hojd / 2;
+        linjer.visible = !modell || o.id === valtId;
         g.add(lada, linjer);
+        if (modell) g.add(modellFor(modell, o));
+        // Etiketten svävar över det som syns: modellens höjd när den används, annars lådans.
+        const etikettY = (modell ? modell.userData.matt.y * ((Number(o.bredd) || 1) / (modell.userData.matt.x || 1)) : o.hojd) + 0.8;
         const antalArenden = arenden?.get(o.id) || 0;
         if (o.id === valtId) {
           const delar = [o.namn];
           if (o.soc !== undefined && o.soc !== null && o.soc !== "") delar.push(`${Math.round(Number(o.soc))} %`);
           if (antalArenden) delar.push(`ÄTA ${antalArenden}`);
           const l = etikett(delar.join(" · "), "valt");
-          l.position.y = o.hojd + 0.8;
+          l.position.y = etikettY;
           g.add(l);
         } else if (lager?.markning) {
           // Märkning: klickbar namnetikett på varje enhet, med ÄTA-antal när det finns.
           const l = etikett([o.namn, antalArenden ? `ÄTA ${antalArenden}` : ""].filter(Boolean).join(" · "), antalArenden ? "nal" : "", () => markeraId(o.id));
-          l.position.y = o.hojd + 0.8;
+          l.position.y = etikettY;
           g.add(l);
         } else if (antalArenden) {
           const l = etikett(`ÄTA ${antalArenden}`, "nal");
-          l.position.y = o.hojd + 0.8;
+          l.position.y = etikettY;
           g.add(l);
         }
       }
