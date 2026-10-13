@@ -49,18 +49,18 @@ test("avropsbeslutet Tacka nej kräver en orsak, döljer fas 2–8 och arkiverar
 
   // Fas 2–8 är dolda: bara fas 1 finns kvar i faserna och i navigeringen.
   await expect(page.getByRole("list", { name: "Faser i projektet" }).getByRole("listitem")).toHaveCount(1);
-  await expect(page.getByText(/ONE-P · Fas 1 av 8 · Steg 2 av 7/)).toBeVisible();
+  await expect(page.getByText(/ONE-P · .*Fas 1 av 8 · Steg 2 av 6/)).toBeVisible();
   await expect(page.getByText(/obligatorisk punkt kvar för att flytta anbudet till arkivet/)).toBeVisible();
 
   // Utan orsak går anbudet inte att skapa.
-  await gaTillSteg(page, 7, "Granska och skapa");
+  await gaTillSteg(page, 6, "Granska och skapa");
   await expect(page.getByRole("button", { name: "Skapa projekt" })).toBeDisabled();
   await gaTillSteg(page, 2, "Avropsacceptans");
   await page.getByLabel(/^Orsak till ej vunnet anbud/).selectOption("kvalitet");
   await page.getByLabel(/^Kommentar till orsaken/).fill("Sämre referenser");
   await expect(page.getByText("Förlorat anbud: flyttas till arkivet")).toBeVisible();
 
-  await gaTillSteg(page, 7, "Granska och skapa");
+  await gaTillSteg(page, 6, "Granska och skapa");
   await page.getByRole("button", { name: "Skapa projekt" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Översikt");
   const rad = page.getByRole("region", { name: "Förlorade anbud" }).getByRole("row", { name: /Förlorat testanbud/ });

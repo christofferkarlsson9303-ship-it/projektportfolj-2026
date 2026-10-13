@@ -1,6 +1,6 @@
 # Projektstart: åtta faser, fyra statusar, låsning och PDF
 
-Gäller fliken Projektstart (`src/sections/Projektstart/`). Skrivet 2026-10-09, omskrivet 2026-10-10 för åtta faser och förlorade anbud.
+Gäller fliken Projektstart (`src/sections/Projektstart/`). Skrivet 2026-10-09, omskrivet 2026-10-10 för åtta faser och förlorade anbud. Uppdaterat 2026-10-12: uppstarten flyttad till fas 2, PDF för upplåsta faser och fasmätare på projektkortet.
 
 ## Statusar
 
@@ -22,8 +22,8 @@ Fasen styr statusen: när fasen ändras i guiden sätts statusen efter den. Byte
 
 | Fas | Namn | Status | Guidesidor |
 |---|---|---|---|
-| 1 | Anbud | Planering och uppstart | Projektkort, Avropsacceptans, Projektdirektiv, Intressenter, Kontrakt och kassaflöde, Organisation och uppstart |
-| 2 | Planering | Planering och uppstart | Riskregister, Tidplan och kritisk linje, Godkänd lösning, Tillstånd och nätägare |
+| 1 | Anbud | Planering och uppstart | Projektkort, Avropsacceptans, Projektdirektiv, Intressenter, Kontrakt och kassaflöde |
+| 2 | Planering | Planering och uppstart | Organisation och uppstart, Riskregister, Tidplan och kritisk linje, Godkänd lösning, Tillstånd och nätägare |
 | 3 | Etablering | Produktion | HSEQ och etablering |
 | 4 | Mark och betong | Produktion | Mark och betong (cBoP) |
 | 5 | Montage | Produktion | Leveranser, lyft och montage (eBoP) |
@@ -41,7 +41,7 @@ Allt detta ska vara klart för att en fas ska vara godkänd (`fasKrav` i `src/li
 - tabeller med `obligatorisk: [kolumn-id]`: minst en rad där alla de kolumnerna är ifyllda (mallens startrader räknas alltså inte för riskerna, där ägare krävs)
 - alla kontrollpunkter med `kritisk: true`
 
-Fas 1 är stor: kontrakt (betalvillkor, bankgaranti, milstolpe med datum) och organisation (projektledare, uppstartsavstämningen genomförd) ingår, utöver projektkort, avrop och signerat direktiv.
+Fas 1 är anbudet: projektkort, avrop, signerat direktiv, intressenter och kontrakt (betalvillkor, bankgaranti, milstolpe med datum). **Organisation och uppstart (projektledare, uppstartsavstämningen genomförd) hör till fas 2**: den görs när anbudet är vunnet och är inget krav för att lämna anbudet.
 
 ## Låsning
 
@@ -97,14 +97,24 @@ ONE Nordics extra regel finns kvar: ett extremvärde (5) på en axel är aldrig 
 
 ## PDF
 
-`projektstartDokument` är ackumulerande och omfattar de godkända faserna: fas 1 till `rapportFas` (`projektfas.js`). För ett projekt som redan är igång räknas även faserna före golvet. Risker med `fas` högre än det som omfattas utelämnas. Huvudet visar projektets aktuella fas ("Fas N av 8"), statusens etikett och vilka faser rapporten omfattar. Fältet orsak till ej vunnet anbud tas bara med när avropsbeslutet är Tacka nej.
+`projektstartDokument` är ackumulerande och omfattar **de upplåsta faserna**: fas 1 till `rapportFas` (projektets aktuella fas, och för ett projekt som redan är igång även faserna före golvet). Risker med `fas` högre än det som omfattas utelämnas. Huvudet visar projektets aktuella fas ("Fas N av 8"), statusens etikett och vilka faser rapporten omfattar.
 
-PDF för inlämning är spärrad (`pdfSparr`) bara när ingen fas är godkänd än. Då listas det som återstår i fas 1. Att nästa fas har tomma fält spärrar alltså inte PDF:en.
+PDF:en **spärras aldrig** (annat än att projektnamn måste vara ifyllt). Är aktuell fas inte godkänd märks den **UTKAST** i huvudet och sammanfattningen, med antalet obligatoriska punkter som återstår (`fas.utkast`, `fas.kvar`). Så går den att ladda ned redan under anbudet för genomgång med ledningen, och den växer med fas 2, 3 och så vidare så fort de låses upp. `pdfKvar` listar vad som återstår i aktuell fas (knappar till sidorna i guiden), och `pdfArUtkast` är sant tills den är godkänd. När projektet skapas laddas PDF:en ned automatiskt bara om fas 1 är godkänd.
+
+## Fasmätaren och projektets status
+
+Projektets status ändras på två ställen:
+
+- **Fasmätaren på projektkortet i Översikt** (`components/projekt/FasMatare.jsx`): åtta steg med ett fyllt spår. Klick på ett steg flyttar projektet till den fasen (med bekräftelse, och extra varning om faser hoppas över). Statusen följer fasen. Åtgärden är `SATT_PROJEKTFAS`, som loggas i ändringsloggen och avvisar ogiltiga faser och förlorade anbud.
+- **Knappen "Anbudet vunnet: gå till fas 2"** på kort i fas 1 gör samma sak i ett steg.
+- Rullgardinen Status på kortet finns kvar. Byter man status där sätts fasen till statusens första fas.
+
+När anbudet är vunnet går projektet alltså vidare till fas 2 (Planering) och Organisation och uppstart blir första sidan där. Guiden följer projektets fas: en sparad projektstart öppnas med fasen som golv.
 
 ## Metodens delar i guiden
 
 - **Signering av projektdirektivet** (fas 1): projektledare, intern beställare och datum är obligatoriska fält. Fas 2 låses inte upp utan dem.
-- **Uppstartsavstämning** (fas 1, sidan Organisation och uppstart): katalogen `kickoff` med punkterna ur metoden 6.3. Den genomförda avstämningen är kritisk, alltså en grind innan fasen godkänns.
+- **Uppstartsavstämning** (fas 2, sidan Organisation och uppstart): katalogen `kickoff` med punkterna ur metoden 6.3. Den genomförda avstämningen är kritisk, alltså en grind innan fasen godkänns.
 - **Interface-lista** (fas 2, sidan Godkänd lösning): tabellen `interface` med de fem gränssnitten som startrader, ägare, veckostatus och senast avstämd.
 - **Kick-out och slutrapport** (fas 8, sidan Ekonomiskt avslut och lärdomar): fälten `kickout*`, `lardomar`, `slutrapportResultat` och `avslutAta` enligt metoden 6.9.
 - **Trafikljus per fas**: projektledarens egen bedömning (grön, gul, röd) med kommentar, satt på sista sidan under Faserna och bara för upplåsta faser. Det sparas i utkastet (`trafikljus`) och visas i PDF-huvudet. Det räknas inte fram, eftersom metoden låter projektledaren bedöma.

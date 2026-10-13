@@ -10,6 +10,7 @@ import { nyDagboksrad } from "../../lib/nyaPoster.js";
 import { hamtaNamn } from "../../state/portfolj-reducer.js";
 import { flagga } from "./flode.js";
 import { registerStatus } from "../../lib/status.js";
+import { allaModellObjekt, arKopplad, byggKoppling } from "../../lib/modellKoppling.js";
 
 import { Callout, StatusBadge } from "../../components/ds/index.js";
 /* Ärendepanelen — glider in från höger och låter tavlan ligga kvar bakom.
@@ -88,6 +89,65 @@ function Sparindikator() {
   if (/^Sparar/i.test(txt)) return <span className="atasparad sparar">Sparar…</span>;
   if (/sparad|uppdaterad|hämtad/i.test(txt)) return <span className="atasparad">Sparat</span>;
   return null;
+}
+
+const vek = (v) => (Array.isArray(v) ? v.map((n) => String(Math.round(n * 10) / 10).replace(".", ",")).join(" · ") : "—");
+
+/** Koppling mellan ärendet och ett objekt i 3D-modellen (objectGuid, kameravy, låda, modellversion). */
+function Koppling3D({ u }) {
+  const { state, dispatch } = usePortfolj();
+  const { siteVal, visaISite, visaToast } = useUi();
+  const o = arKopplad(u) ? allaModellObjekt(state, u.projektId).find((x) => x.id === u.objectGuid) : null;
+  const markerat = siteVal ? allaModellObjekt(state, u.projektId).find((x) => x.id === siteVal) : null;
+
+  const kopplaTillMarkerat = () => {
+    dispatch({ type: "ATA_KOPPLA_OBJEKT", id: u.id, koppling: byggKoppling(markerat, { modelVersionId: (state.modellVersioner || []).filter((v) => v.projektId === u.projektId).at(-1)?.id || "" }) });
+    visaToast(`${u.nr} kopplat till ${markerat.namn || "objektet"}.`);
+  };
+
+  return (
+    <section aria-labelledby={`k3d-${u.id}`} className="mt-4 flex flex-col gap-2 rounded-lg border border-solid border-hairline bg-sunken p-3">
+      <h4 id={`k3d-${u.id}`} className="m-0 font-head text-[13px] font-bold text-ink">
+        Koppling till 3D-modellen
+      </h4>
+      {arKopplad(u) ? (
+        <>
+          <p className="m-0 text-[13px] text-ink">
+            {o ? <>Objekt: <b>{o.namn || o.typ}</b></> : <>Objektet finns inte längre i modellen. Kopplingen ligger kvar tills du tar bort den.</>}
+          </p>
+          <dl className="m-0 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[12px]">
+            <dt className="text-ink-soft">Objekt-ID (GUID)</dt>
+            <dd className="m-0 break-all font-mono text-ink">{u.objectGuid}</dd>
+            <dt className="text-ink-soft">Modellversion</dt>
+            <dd className="m-0 text-ink">{u.modelVersionId || "—"}</dd>
+            <dt className="text-ink-soft">Kamera</dt>
+            <dd className="m-0 tabular-nums text-ink">{u.viewpoint ? `${vek(u.viewpoint.cameraPosition)} → ${vek(u.viewpoint.target)}` : "—"}</dd>
+            <dt className="text-ink-soft">Låda (min – max)</dt>
+            <dd className="m-0 tabular-nums text-ink">{u.boundingBox ? `${vek(u.boundingBox.min)} – ${vek(u.boundingBox.max)}` : "—"}</dd>
+          </dl>
+        </>
+      ) : (
+        <p className="m-0 text-[13px] text-ink-soft">Ärendet är inte kopplat till något objekt. Markera ett objekt i Siten i 3D för att koppla det hit.</p>
+      )}
+      <div className="flex flex-wrap gap-2">
+        {o ? (
+          <button type="button" className="btn sec mini" onClick={() => visaISite(o.id)}>
+            Visa i 3D
+          </button>
+        ) : null}
+        {markerat && u.objectGuid !== markerat.id ? (
+          <button type="button" className="btn sec mini" onClick={kopplaTillMarkerat}>
+            Koppla till {markerat.namn || "markerat objekt"}
+          </button>
+        ) : null}
+        {arKopplad(u) ? (
+          <button type="button" className="btn sec mini" onClick={() => dispatch({ type: "ATA_LOSS_OBJEKT", id: u.id })}>
+            Ta bort koppling
+          </button>
+        ) : null}
+      </div>
+    </section>
+  );
 }
 
 export function AtaDrawerDetails({ u, onStang, onKalkyl }) {
@@ -333,6 +393,8 @@ export function AtaDrawerDetails({ u, onStang, onKalkyl }) {
         >
           Arbetet är påbörjat på plats
         </Kryss>
+
+        <Koppling3D u={u} />
 
         <Callout ton="info" className="mt-4">
           <b>Dagboksunderlag.</b>{" "}

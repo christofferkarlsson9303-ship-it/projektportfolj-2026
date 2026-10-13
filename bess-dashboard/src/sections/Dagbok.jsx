@@ -348,7 +348,7 @@ export function Dagbok() {
                 render: (d) => (
                   <button
                     type="button"
-                    className="border-0 bg-transparent p-0 font-bold text-one-bla underline decoration-dotted"
+                    className="border-0 bg-transparent p-0 font-bold text-text-bla underline decoration-dotted"
                     onClick={() => setOppen(oppen === d.id ? null : d.id)}
                     aria-expanded={oppen === d.id}
                   >

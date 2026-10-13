@@ -9,8 +9,8 @@ import { defineConfig, devices } from "@playwright/test";
    utan i hur den serverades.
 
    Med `vite build` följt av `vite preview` är allt färdigkompilerat innan
-   första testet startar. Vi testar dessutom exakt den singlefile-artefakt
-   som deployas till Vercel, inte en dev-variant av den.
+   första testet startar. Vi testar dessutom exakt det produktionsbygge
+   (med koddelning) som deployas, inte en dev-variant av det.
 
    Porten är 4173 (previews standard) och inte 5173 med flit: kör du
    `npm run dev` i en egen terminal ska den inte plockas upp av misstag

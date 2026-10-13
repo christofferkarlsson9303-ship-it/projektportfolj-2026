@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:single": "SINGLEFILE=1 vite build --outDir dist-single",
     "lint": "oxlint",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
@@ -20,12 +21,14 @@
     "@react-pdf/renderer": "4.9.0",
     "@supabase/supabase-js": "^2.116.0",
     "exceljs": "4.4.0",
+    "jszip": "3.10.2",
     "lucide-react": "^1.47.0",
     "pdfjs-dist": "4.10.38",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "recharts": "^3.10.1",
-    "three": "^0.186.1"
+    "three": "^0.186.1",
+    "web-ifc": "0.0.78"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

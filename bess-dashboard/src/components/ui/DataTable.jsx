@@ -312,7 +312,7 @@ export function DataTable({
                         style={{ justifyContent: k.typ === "num" || k.typ === "sek" ? "flex-end" : "flex-start" }}
                       >
                         <span>{k.rubrik}</span>
-                        <span aria-hidden="true" className={aktiv ? "text-one-bla" : "opacity-35"}>
+                        <span aria-hidden="true" className={aktiv ? "text-text-bla" : "opacity-35"}>
                           {aktiv ? (sortering.riktning === "asc" ? "▲" : "▼") : "↕"}
                         </span>
                         <span className="sr-only">

@@ -83,6 +83,7 @@ const s = StyleSheet.create({
   fasTopp: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 },
   fasRubrik: { fontFamily: RUBRIK, fontSize: 15, fontWeight: 700, color: "#fff" },
   fasUnder: { fontSize: 9.5, color: F.himmel, marginTop: 2 },
+  fasUtkast: { fontSize: 9.5, color: F.orange, marginTop: 3, fontFamily: RUBRIK, fontWeight: 700 },
   fasStatus: { fontSize: 8.5, fontWeight: 700, color: F.djup, backgroundColor: F.himmel, borderRadius: 8, paddingVertical: 3, paddingHorizontal: 8, letterSpacing: 0.8 },
   fasRad: { flexDirection: "row" },
   fasSegment: { flex: 1, marginRight: 4 },
@@ -272,7 +273,8 @@ function FasRuta({ fas }) {
         <View style={{ flex: 1, paddingRight: 10 }}>
           <Text style={s.fasRubrik}>Fas {fas.nr} av {fas.antal} · {fas.kort}</Text>
           <Text style={s.fasUnder}>{fas.titel}</Text>
-          <Text style={s.fasUnder}>Rapporten omfattar fas 1{fas.omfattar > 1 ? `–${fas.omfattar}` : ""}, de godkända faserna. Senare faser ingår inte.</Text>
+          <Text style={s.fasUnder}>Rapporten omfattar fas 1{fas.omfattar > 1 ? `–${fas.omfattar}` : ""}, de upplåsta faserna. Senare faser ingår inte.</Text>
+          {fas.utkast ? <Text style={s.fasUtkast}>UTKAST: fas {fas.nr} är inte godkänd än ({fas.kvar} {fas.kvar === 1 ? "obligatorisk punkt" : "obligatoriska punkter"} återstår).</Text> : null}
         </View>
         <Text style={s.fasStatus}>STATUS: {fas.status.toUpperCase()}</Text>
       </View>
@@ -683,7 +685,7 @@ export function ProjektstartPdf({ dokument: d }) {
         <View wrap={false}>
           <Text style={[s.h2, { fontSize: 16 }]}>Sammanfattning och godkännande</Text>
           <Text style={s.summaFet}>
-            Projektet är i fas {ps.fas.nr} av {ps.fas.antal} ({ps.fas.kort}), status {ps.fas.status}. {ps.klara} av {ps.totalt} kontrollpunkter i faserna som rapporten omfattar är avbockade. {ps.kritiskaOppna} av {ps.kritiskaTotalt} kritiska punkter är inte avbockade.
+            Projektet är i fas {ps.fas.nr} av {ps.fas.antal} ({ps.fas.kort}), status {ps.fas.status}. {ps.klara} av {ps.totalt} kontrollpunkter i faserna som rapporten omfattar är avbockade. {ps.kritiskaOppna} av {ps.kritiskaTotalt} kritiska punkter är inte avbockade.{ps.fas.utkast ? ` Rapporten är ett utkast: fas ${ps.fas.nr} är inte godkänd.` : ""}
           </Text>
           <Text style={s.summaText}>
             Underlaget är ett arbetsmaterial. Kontrollera kontraktsvillkor, betalplan och priser mot originalhandlingarna före användning.

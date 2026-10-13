@@ -82,7 +82,7 @@ function Kapitel({ r, pid, state, oppen, onVaxlaKapitel, onVaxlaPunkt, onGaTill 
               {g.namn ? <Overline as="h5">{g.namn}</Overline> : null}
               {g.info ? <p className="m-0 text-xs leading-snug text-ink-soft">{g.info}</p> : null}
               {g.text ? (
-                <ul className="m-0 flex list-disc flex-col gap-1 pl-5 text-[13px] leading-snug text-ink marker:text-one-bla">
+                <ul className="m-0 flex list-disc flex-col gap-1 pl-5 text-[13px] leading-snug text-ink marker:text-text-bla">
                   {g.text.map((t) => (
                     <li key={t}>{t}</li>
                   ))}

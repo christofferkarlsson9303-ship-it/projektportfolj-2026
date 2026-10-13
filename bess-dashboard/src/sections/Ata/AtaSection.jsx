@@ -15,6 +15,7 @@ import { AtaTableView } from "./AtaTableView.jsx";
 import { AtaTimelineView } from "./AtaTimelineView.jsx";
 import { AtaDrawerDetails } from "./AtaDrawerDetails.jsx";
 import { AtaKalkyl } from "./AtaKalkyl.jsx";
+import { allaModellObjekt } from "../../lib/modellKoppling.js";
 
 /* ÄTA och hinder.
 
@@ -40,7 +41,7 @@ const PROCESSEN = [
 
 export function Ata() {
   const { state, laggTill } = usePortfolj();
-  const { valtProjekt: pid, fraga, postFokus } = useUi();
+  const { valtProjekt: pid, fraga, postFokus, siteVal, setSiteVal, visaISite } = useUi();
   const [vy, setVy] = useAtaVy("board");
   const [oppen, setOppen] = useState(null);
   const [kalkylId, setKalkylId] = useState(null);
@@ -66,6 +67,11 @@ export function Ata() {
       ejFakt: rader.filter((u) => u.status === "godkand"),
     };
   }, [state, pid]);
+
+  /* Ett markerat objekt i 3D-vyn filtrerar registret till objektets ärenden. Finns objektet inte
+     (annat projekt, borttaget) gäller inget filter. */
+  const filterObjekt = siteVal ? allaModellObjekt(state, pid).find((o) => o.id === siteVal) || null : null;
+  const registerRader = filterObjekt ? n.rader.filter((u) => u.objectGuid === filterObjekt.id) : n.rader;
 
   const valdPost = n.rader.find((u) => u.id === oppen) || null;
   const kalkylPost = n.rader.find((u) => u.id === kalkylId) || null;
@@ -171,9 +177,23 @@ export function Ata() {
             </>
           }
         >
+          {filterObjekt ? (
+            <div role="status" className="flex flex-wrap items-center gap-2 rounded-lg border border-solid border-hairline bg-info-bg px-3 py-2 text-[13px] text-info-ink">
+              <span>
+                Visar ärenden på objektet <b>{filterObjekt.namn || filterObjekt.typ}</b> ({registerRader.length} av {n.rader.length}).
+              </span>
+              <button type="button" className="btn sec mini" onClick={() => visaISite(filterObjekt.id)}>
+                Visa i 3D
+              </button>
+              <button type="button" className="btn sec mini" onClick={() => setSiteVal(null)}>
+                Visa alla
+              </button>
+            </div>
+          ) : null}
+
           {vy === "board" ? (
             <AtaKanbanView
-              rader={n.rader}
+              rader={registerRader}
               projektNamn={projektNamn}
               vald={oppen}
               onOppna={setOppen}
@@ -183,8 +203,8 @@ export function Ata() {
 
           {vy === "table" ? (
             <AtaTableView
-              rader={n.rader}
-              tomText={`Inga poster registrerade för ${p.nr || p.namn}.`}
+              rader={registerRader}
+              tomText={filterObjekt ? `Inga ärenden är kopplade till ${filterObjekt.namn || "objektet"}.` : `Inga poster registrerade för ${p.nr || p.namn}.`}
               vald={oppen}
               onOppna={setOppen}
               onKalkyl={oppnaKalkyl}
@@ -192,7 +212,7 @@ export function Ata() {
             />
           ) : null}
 
-          {vy === "timeline" ? <AtaTimelineView rader={n.rader} onOppna={setOppen} /> : null}
+          {vy === "timeline" ? <AtaTimelineView rader={registerRader} onOppna={setOppen} /> : null}
         </Card>
 
         {kalkylPost ? <AtaKalkyl u={kalkylPost} onStang={() => setKalkylId(null)} /> : null}

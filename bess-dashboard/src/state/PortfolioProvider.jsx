@@ -6,6 +6,7 @@ import { skapaDb } from "./db-supabase.js";
 import { useUi } from "./hooks.js";
 import { arEkonomiAtgard, efterInlasning, normalisera, reducer } from "./portfolj-reducer.js";
 import { aktivVy, forlorade } from "../lib/arkiv.js";
+import { lokalFelText, skrivLokalt } from "../lib/lokalLagring.js";
 import { sammanfoga } from "../lib/sammanfoga.js";
 import { feltyp, loggNyckel, nyaLoggposter, sammanslagningsText } from "./synk.js";
 
@@ -120,17 +121,31 @@ export function PortfolioProvider({ children }) {
 
   /* ---------- Spara ---------- */
 
-  const sparaState = useCallback(async () => {
-    const s = stateRef.current;
-    try {
-      localStorage.setItem(CONFIG.storageKey, JSON.stringify(s));
-    } catch {
-      /* lagring full eller blockerad — delad lagring får bära */
-    }
-    if (!dbRef.current) {
+  /* Skriver lokalt och rapporterar. I lokalt läge är det enda lagringen, så ett fel visas i statusraden och
+     som en varning (en gång, tills det lyckas igen). I delat läge bär databasen, och felet ignoreras. */
+  const lokalFelVarnat = useRef(false);
+  const skrivLokaltOchRapportera = useCallback((s) => {
+    const r = skrivLokalt(CONFIG.storageKey, s);
+    if (dbRef.current) return;
+    if (r.ok) {
+      lokalFelVarnat.current = false;
       setConn({ kl: "", txt: "Lokalt läge · sparad " + nu() });
       return;
     }
+    setConn({ kl: "err", txt: lokalFelText(r.orsak) });
+    if (!lokalFelVarnat.current) {
+      lokalFelVarnat.current = true;
+      visaToast(lokalFelText(r.orsak), "warn");
+    }
+  }, [visaToast]);
+
+  const sparaState = useCallback(async () => {
+    const s = stateRef.current;
+    if (!dbRef.current) {
+      skrivLokaltOchRapportera(s);
+      return;
+    }
+    skrivLokalt(CONFIG.storageKey, s);
     try {
       setConn({ kl: "", txt: "Sparar…" });
       const payload = packaStatePayload(s);
@@ -159,7 +174,7 @@ export function PortfolioProvider({ children }) {
       }
       setConn({ kl: "err", txt: `Kunde inte spara delat (${e.code || e.message || "fel"}) — finns lokalt` });
     }
-  }, []);
+  }, [skrivLokaltOchRapportera]);
 
   /* Tar in en version av portföljen från databasen utan att tappa det som
      ändrats lokalt men inte sparats: tre-vägs-sammanslagning mot basen.
@@ -194,17 +209,13 @@ export function PortfolioProvider({ children }) {
 
   const sparaEkonomi = useCallback(async function sparaEkonomiNu() {
     const s = stateRef.current;
-    try {
-      localStorage.setItem(CONFIG.storageKey, JSON.stringify(s));
-    } catch {
-      /* se ovan */
-    }
     const forsok = packaEkonomi(s);
     if (!dbRef.current) {
       ekonomiLast.current = forsok;
-      setConn({ kl: "", txt: "Lokalt läge · sparad " + nu() });
+      skrivLokaltOchRapportera(s);
       return;
     }
+    skrivLokalt(CONFIG.storageKey, s);
     const doc = dbRef.current.doc(CONFIG.dbPathEkonomi);
     try {
       setConn({ kl: "", txt: "Sparar…" });
@@ -262,7 +273,7 @@ export function PortfolioProvider({ children }) {
       clearTimeout(sparTimerEk.current);
       sparTimerEk.current = setTimeout(sparaEkonomiNu, 10_000);
     }
-  }, []);
+  }, [skrivLokaltOchRapportera]);
 
   /** Dispatch som också schemalägger autospar på rätt kanal. */
   const dispatch = useCallback(

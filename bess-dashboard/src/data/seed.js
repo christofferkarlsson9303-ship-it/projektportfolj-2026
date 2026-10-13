@@ -248,6 +248,10 @@ export const SEED = {
      {id, projektId, typ, x, z, rotation, namn, bredd, djup, hojd} — en nål har
      punktId i stället för namn och mått. Situationsplanen ligger inte här. */
   siteObjekt: [],
+  /* Ögonblicksbilder av siteObjekt för jämförelseverktyget (lib/modellDiff.js). */
+  modellVersioner: [],
+  /* Importerade IFC-modeller: metadata per objekt (lib/ifcModell.js). Geometrin ligger i IndexedDB. */
+  ifcModeller: [],
 
   /* Ändringslogg — statusändringar m.fl. händelser, senaste ~150 posterna, nyast först. */
   andringslogg: []

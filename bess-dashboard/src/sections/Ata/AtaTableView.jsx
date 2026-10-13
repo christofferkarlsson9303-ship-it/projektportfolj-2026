@@ -35,7 +35,7 @@ export function AtaTableView({ rader, tomText, vald, onOppna, onKalkyl, verktyg 
           render: (u) => (
             <button
               type="button"
-              className="border-0 bg-transparent p-0 font-bold text-one-bla underline decoration-dotted"
+              className="border-0 bg-transparent p-0 font-bold text-text-bla underline decoration-dotted"
               onClick={() => onOppna(vald === u.id ? null : u.id)}
               aria-expanded={vald === u.id}
             >

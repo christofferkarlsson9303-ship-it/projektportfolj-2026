@@ -2,7 +2,7 @@
    kontrollpunkter ur projektstartKatalog.js som hör till steget.
 
    fas: 1–8, vilken av de åtta projektfaserna sidan hör till (se projektfaser.ts).
-   del: valfri undergrupp inom en fas. Fas 1 är stor och delas i Anbud och beslut, och Kontrakt och uppstart.
+   del: valfri undergrupp inom en fas. Fas 1 delas i Anbud och beslut, och Intressenter och kontrakt.
         Sista sidan, Granska och skapa, hör inte till någon fas (null).
    falt: { id, etikett, typ: text | textarea | select | date, alternativ?, placeholder?, bred?,
            obligatoriskt?, kravVarde?, visaNar? }
@@ -87,7 +87,7 @@ export const STEG = [
   {
     id: "intressenter",
     fas: 1,
-    del: "Kontrakt och uppstart",
+    del: "Intressenter och kontrakt",
     titel: "Intressenter",
     sammanfattning: "Vem påverkar projektet och hur ni kommunicerar.",
     tabell: {
@@ -105,7 +105,7 @@ export const STEG = [
   {
     id: "kontrakt",
     fas: 1,
-    del: "Kontrakt och uppstart",
+    del: "Intressenter och kontrakt",
     titel: "Kontrakt och kassaflöde",
     sammanfattning: "Viten, milstolpar, bankgaranti, ÄTA och fakturering.",
     falt: [
@@ -133,8 +133,7 @@ export const STEG = [
   },
   {
     id: "organisation",
-    fas: 1,
-    del: "Kontrakt och uppstart",
+    fas: 2,
     titel: "Organisation och uppstart",
     sammanfattning: "Namngivna roller, behörighet och startmöte enligt ONE-P.",
     falt: [

@@ -116,20 +116,18 @@ export function fasLage(u) {
   });
 }
 
-/** Hur många faser rapporten för ledningen omfattar: de godkända faserna, eller för ett
- *  projekt som redan är igång faserna före golvet. Fas 1 till och med det här talet ingår. */
+/** Hur många faser rapporten för ledningen omfattar: alla upplåsta faser, alltså fas 1 till och med
+ *  projektets aktuella fas (för ett projekt som redan är igång också faserna före golvet).
+ *  Rapporten visar det som står i guiden just nu, även om aktuell fas inte är godkänd än. */
 export function rapportFas(u) {
-  const golv = arFasNr(u.fasGolv) ? u.fasGolv : 1;
-  return Math.max(godkandaFaser(u), golv - 1);
+  return aktuellFas(u);
 }
 
-/** Det som spärrar PDF-export för inlämning. Rapporten omfattar godkända faser, så den
- *  spärras bara när ingen fas är godkänd än. Listan är det som återstår i fas 1: obligatoriska
- *  fält och tabeller, och de kritiska kontrollpunkterna samlade per sida. Tom lista betyder
- *  att PDF:en får exporteras. */
-export function pdfSparr(u) {
-  if (rapportFas(u) >= 1) return [];
-  const k = fasKrav(u, 1);
+/** Det som återstår för att godkänna aktuell fas: obligatoriska fält och tabeller, och de kritiska
+ *  kontrollpunkterna samlade per sida. Spärrar ingenting — PDF:en får alltid laddas ned — men visas
+ *  i guiden och gör att PDF:en märks som utkast. Tom lista betyder att aktuell fas är godkänd. */
+export function pdfKvar(u) {
+  const k = fasKrav(u, aktuellFas(u));
   const perSida = new Map();
   for (const p of k.punkter) perSida.set(p.stegId, { titel: p.stegTitel, antal: (perSida.get(p.stegId)?.antal ?? 0) + 1 });
   return [
@@ -138,5 +136,8 @@ export function pdfSparr(u) {
     ...[...perSida].map(([stegId, s]) => ({ stegId, id: `kp-${stegId}`, etikett: `${s.titel}: ${s.antal} ${s.antal === 1 ? "kritisk kontrollpunkt" : "kritiska kontrollpunkter"}` })),
   ];
 }
+
+/** PDF:en är ett utkast så länge aktuell fas inte är godkänd. */
+export const pdfArUtkast = (u) => pdfKvar(u).length > 0;
 
 export const fasTitel = (nr) => (nr === null || nr === undefined ? "Klart" : faseInfo(nr).kort);

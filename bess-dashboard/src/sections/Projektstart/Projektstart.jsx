@@ -13,7 +13,7 @@ import { FasIndikator } from "./FasIndikator.jsx";
 import { FasKrav } from "./FasKrav.jsx";
 import { FasNav } from "./FasNav.jsx";
 import { EJ_VUNNET_ORSAKER, FAS_ANTAL, FAS_MODELL, faseInfo, statusEtikett } from "../../data/projektfaser.ts";
-import { aktuellFas, arEjVunnetUtkast, faltSynligt, fasKrav, fasLage, pdfSparr, rapportFas, stegLast } from "../../lib/projektfas.js";
+import { aktuellFas, arEjVunnetUtkast, faltSynligt, fasKrav, fasLage, godkandaFaser, pdfKvar, rapportFas, stegLast } from "../../lib/projektfas.js";
 import { KATALOG_RUBRIK, STEG } from "../../data/projektstartSteg.js";
 import {
   SISTA_STEG,
@@ -350,9 +350,9 @@ function Sammanfattning({ utkast, faser, onLjus, fel, kanSkapa, skapar, redigera
       ) : null}
 
       {sparr.length ? (
-        <Callout ton="warn">
-          <b className="block">PDF för inlämning är spärrad: ingen fas är godkänd än</b>
-          PDF:en omfattar godkända faser. För att godkänna fas 1 ({faseInfo(1).kort}) återstår:
+        <Callout ton="info">
+          <b className="block">PDF:en är ett utkast tills fas {nuFas} ({faseInfo(nuFas).kort}) är godkänd</b>
+          Du kan ladda ned den redan nu för att visa ledningen. Den visar upplåsta faser och märks Utkast. För att godkänna fas {nuFas} återstår:
           <div className="mt-2 flex flex-wrap gap-2">
             {sparr.map((x) => (
               <button key={`${x.stegId}-${x.id}`} type="button" className="btn sec mini" onClick={() => onGaTill(x.stegId)}>{x.etikett}</button>
@@ -374,11 +374,11 @@ function Sammanfattning({ utkast, faser, onLjus, fel, kanSkapa, skapar, redigera
           typ="projektstart"
           label="Ladda ned PDF"
           className="btn sec"
-          disabled={!v.namn?.trim() || sparr.length > 0}
-          title={sparr.length ? "Spärrad: ingen fas är godkänd än. Godkänn fas 1 först." : undefined}
+          disabled={!v.namn?.trim()}
+          title={!v.namn?.trim() ? "Ange projektnamnet först." : sparr.length ? "Utkast: aktuell fas är inte godkänd än." : undefined}
         />
       </div>
-      <p className="m-0 text-[12.5px] text-ink-soft">{redigerar ? `PDF:en omfattar de godkända faserna (fas 1${rapportFas(utkast) > 1 ? `–${rapportFas(utkast)}` : ""}) och innehåller det som står i guiden just nu, även osparade ändringar. Spara först så kommer dagens rad med i uppdateringsloggen.` : "PDF:en omfattar de godkända faserna. Den laddas ned automatiskt när du skapar projektet, om minst en fas är godkänd. Du kan också ladda ned den separat här."}</p>
+      <p className="m-0 text-[12.5px] text-ink-soft">{redigerar ? `PDF:en omfattar de upplåsta faserna (fas 1${rapportFas(utkast) > 1 ? `–${rapportFas(utkast)}` : ""}) och innehåller det som står i guiden just nu, även osparade ändringar. Den märks Utkast tills aktuell fas är godkänd. Spara först så kommer dagens rad med i uppdateringsloggen.` : "PDF:en omfattar de upplåsta faserna och går att ladda ned när som helst, till exempel för genomgång med ledningen innan anbudet lämnas. Den märks Utkast tills aktuell fas är godkänd. När du skapar projektet laddas den ned automatiskt om fas 1 är godkänd."}</p>
     </div>
   );
 }
@@ -417,8 +417,8 @@ export function Projektstart() {
   /* Ett förlorat anbud har bara fas 1: fas 2–8 döljs. */
   const faser = useMemo(() => fasLage(utkast).filter((f) => !ejVunnet || f.nr === 1), [utkast, ejVunnet]);
   const krav = useMemo(() => fasKrav(utkast, nuFas), [utkast, nuFas]);
-  const sparr = useMemo(() => pdfSparr(utkast), [utkast]);
-  const sparrText = sparr.length ? "Spärrad: ingen fas är godkänd än. Godkänn fas 1 först." : undefined;
+  const sparr = useMemo(() => pdfKvar(utkast), [utkast]);
+  const sparrText = !utkast.v.namn?.trim() ? "Ange projektnamnet först." : sparr.length ? "Utkast: aktuell fas är inte godkänd än." : undefined;
   const sparadIndex = Math.max(0, stegLista.findIndex((s) => s.id === utkast.steg));
   const index = stegLast(utkast, stegLista[sparadIndex]) ? stegLista.findIndex((s) => s.fas === nuFas) : sparadIndex;
   const steg = stegLista[index];
@@ -550,8 +550,8 @@ export function Projektstart() {
     for (const r of risker) laggTill("risker", r);
     for (const m of milstolpar) laggTill("milstolpar", m);
     laggTill("projektstart", projektstartPost(id, utkast, undefined, [historikRad(utkast, { datum: idag(), av: hamtaNamn() || "" })]));
-    /* PDF:en för inlämning är spärrad tills minst en fas är godkänd. */
-    const pdfKlar = pdfSparr(utkast).length ? null : await laddaNerPdf(pdfUnderlag, "projektstart", visaToast);
+    /* PDF:en laddas ned automatiskt när fas 1 är godkänd. Ett utkast kan alltid laddas ned för hand. */
+    const pdfKlar = godkandaFaser(utkast) >= 1 ? await laddaNerPdf(pdfUnderlag, "projektstart", visaToast) : null;
     try {
       window.localStorage.removeItem(UTKAST_NYCKEL);
     } catch {
@@ -567,7 +567,7 @@ export function Projektstart() {
     }
     setValtProjekt(id);
     visa("metod");
-    visaToast(`Projektet är skapat i fas ${aktuellFas(utkast)} (${faseInfo(aktuellFas(utkast)).kort})${pdfKlar === null ? ". PDF:en är spärrad tills fas 1 är godkänd" : pdfKlar ? " och PDF:en är nedladdad" : ", men PDF:en kunde inte skapas"}. Kontrollera kontrakt, betalplan, priser och kontrollkrav före användning.`);
+    visaToast(`Projektet är skapat i fas ${aktuellFas(utkast)} (${faseInfo(aktuellFas(utkast)).kort})${pdfKlar === null ? ". PDF:en märks utkast tills fas 1 är godkänd, och går att ladda ned när du vill" : pdfKlar ? " och PDF:en är nedladdad" : ", men PDF:en kunde inte skapas"}. Kontrollera kontrakt, betalplan, priser och kontrollkrav före användning.`);
   };
 
   /* Alt + Skift + pil vänster/höger bläddrar mellan stegen utan att lämna tangentbordet. */
@@ -646,7 +646,7 @@ export function Projektstart() {
         <FasNav utkast={utkast} faser={faser} steg={stegLista} aktivtId={steg.id} onGaTill={gaTill} />
         <div className="flex flex-wrap gap-2">
           {sista ? null : (
-            <PdfExporter dokument={pdfDokument} typ="projektstart" label="Ladda ned PDF" className="btn sec mini" disabled={!utkast.v.namn?.trim() || sparr.length > 0} title={sparrText} />
+            <PdfExporter dokument={pdfDokument} typ="projektstart" label="Ladda ned PDF" className="btn sec mini" disabled={!utkast.v.namn?.trim()} title={sparrText} />
           )}
           {redigerar ? (
             <button type="button" className="btn sec mini" disabled={!andrat} onClick={angra}>Ångra ändringar</button>

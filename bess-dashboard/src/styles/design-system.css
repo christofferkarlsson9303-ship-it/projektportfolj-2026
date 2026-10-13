@@ -5,14 +5,14 @@
 :root{
   color-scheme:light dark;
   /* ONE Nordic-paletten — oförändrad */
-  --one-bla:#00b6de; --one-djup:#005f76; --turkos:#3cb8ba; --duvbla:#5b9bd5;
+  --one-bla:#00b6de; --knapp-bla:#00728f; --knapp-bla-hover:#005f76; --text-bla:#00728f; --one-djup:#005f76; --turkos:#3cb8ba; --duvbla:#5b9bd5;
   --himmel:#aee0e8; --rod:#ea5549; --orange:#f38d3d;
   --web1:#F5F7F9; --web2:#bdd5d7; --morkgra:#304047;
   --font-h:'Roboto Slab',Arial,serif; --font-b:'Open Sans',Arial,sans-serif;
 
   /* Semantiska ytor — styr ljust/mörkt */
   --surface:#ffffff; --ground:#F5F7F9; --sunken:#eef2f4; --raised:#ffffff;
-  --ink:#263840; --ink-soft:#61757e; --ink-faint:#8a9aa1;
+  --ink:#263840; --ink-soft:#4d6068; --ink-faint:#5a6e77;
   --hairline:#e6edf0; --hairline-stark:#d8e2e6;
   --sidebar-1:#005f76; --sidebar-2:#053f4c; --sidebar-3:#043540;
 
@@ -34,7 +34,7 @@
     --surface:#16272e; --ground:#0d1b21; --sunken:#11222a; --raised:#1b2f37;
     --ink:#e8f1f4; --ink-soft:#9ab0b9; --ink-faint:#7b929c;
     --hairline:#24404a; --hairline-stark:#2e4d58;
-    --web1:#11222a;
+    --web1:#11222a; --text-bla:#00b6de;
     --sidebar-1:#06323e; --sidebar-2:#042833; --sidebar-3:#03202a;
     --ok-bg:#10393b; --ok-ink:#6fd4d0;
     --warn-bg:#3d2a16; --warn-ink:#f0ac6a;
@@ -49,7 +49,7 @@
   --surface:#16272e; --ground:#0d1b21; --sunken:#11222a; --raised:#1b2f37;
   --ink:#e8f1f4; --ink-soft:#9ab0b9; --ink-faint:#7b929c;
   --hairline:#24404a; --hairline-stark:#2e4d58;
-  --web1:#11222a;
+  --web1:#11222a; --text-bla:#00b6de;
   --sidebar-1:#06323e; --sidebar-2:#042833; --sidebar-3:#03202a;
   --ok-bg:#10393b; --ok-ink:#6fd4d0;
   --warn-bg:#3d2a16; --warn-ink:#f0ac6a;
@@ -234,9 +234,9 @@ select,input[type=text],input[type=search],input[type=email],input[type=date],in
   border:1px solid var(--hairline-stark);border-radius:5px;padding:5px 7px;width:100%}
 select:focus,input:focus,textarea:focus{outline:2px solid var(--one-bla);outline-offset:-1px;border-color:var(--one-bla)}
 .btn{font-family:var(--font-b);font-weight:600;font-size:13px;border-radius:6px;padding:8px 15px;
-  cursor:pointer;border:none;background:var(--one-bla);color:#fff}
-.btn:hover{background:#00a3c7}
-.btn.sec{background:transparent;border:2px solid var(--one-bla);color:var(--one-bla);padding:6px 13px}
+  cursor:pointer;border:none;background:var(--knapp-bla);color:#fff}
+.btn:hover{background:var(--knapp-bla-hover)}
+.btn.sec{background:transparent;border:2px solid var(--knapp-bla);color:var(--text-bla);padding:6px 13px}
 .btn.sec:hover{background:var(--info-bg)}
 .btn.mini{font-size:12px;padding:5px 10px}
 .rowbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
@@ -292,7 +292,7 @@ footer{background:var(--morkgra);color:#cfd8dc;font-size:12px;padding:16px 24px;
 .q.ok{border-left:4px solid var(--turkos)}
 .qh{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
 .qt{font-weight:600;font-size:13.5px;flex:1;min-width:220px}
-.qn{font-family:var(--font-h);font-weight:700;color:var(--one-bla);margin-right:7px}
+.qn{font-family:var(--font-h);font-weight:700;color:var(--text-bla);margin-right:7px}
 .qa{margin-top:11px;font-size:12.5px;background:var(--sunken);border-radius:6px;padding:10px 12px;color:#3d5158}
 .q.flag .qa{background:var(--bad-bg);color:#8f2a22}
 .qa .ref{display:block;margin-top:6px;font-size:11px;color:var(--ink-soft);font-weight:600}
@@ -965,7 +965,7 @@ footer a{color:#fff}
   #aviseringutskrift{display:block!important}
   #aviseringutskrift .avisering{border:none;padding:0;max-width:none;background:#fff}
   #aviseringutskrift .avhuvud{border-bottom:3px solid #00b6de}
-  #aviseringutskrift .avavs{color:#00b6de}
+  #aviseringutskrift .avavs{color:#00728f}
   #aviseringutskrift .avhuvud h2{font-size:17pt;color:#141413}
   #aviseringutskrift .avrub{font-size:11pt;color:#005f76;border-bottom:1px solid #ccc;
     margin:14pt 0 6pt;page-break-after:avoid}
@@ -1105,7 +1105,7 @@ tr.lastrad:hover{opacity:.8}
   #rapportutskrift{display:block!important}
   #rapportutskrift .rapark{border:none;box-shadow:none;padding:0;max-width:none;background:#fff}
   #rapportutskrift .raphuvud{border-bottom:3px solid #00b6de}
-  #rapportutskrift .rapavs{color:#00b6de}
+  #rapportutskrift .rapavs{color:#00728f}
   #rapportutskrift .raphuvud h2{font-size:19pt;color:#141413}
   #rapportutskrift .rapdel{margin-bottom:18pt;page-break-inside:avoid}
   #rapportutskrift .rapdel h3{font-size:12.5pt;color:#005f76;border-bottom:1px solid #ccc}
@@ -1232,27 +1232,41 @@ tr.lastrad:hover{opacity:.8}
 .veckokort-rutnat{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:16px}
 @media(min-width:1024px){.veckokort-rutnat{gap:24px}}
 .veckokort{background:var(--surface);border:1px solid var(--hairline);box-shadow:var(--sh-sm);
-  border-left:3px solid var(--hairline-stark);border-radius:12px;padding:16px;
-  display:flex;flex-direction:column;gap:12px}
+  border-left:4px solid var(--hairline-stark);border-radius:12px;padding:16px;
+  display:flex;flex-direction:column;gap:12px;
+  transition:box-shadow .2s var(--ease),transform .2s var(--ease),border-color .2s var(--ease),background-color .2s var(--ease)}
+.veckokort:hover{box-shadow:var(--sh-md);transform:translateY(-1px)}
 .veckokort .ref{font-size:11px;color:var(--ink-soft);font-weight:600}
 .veckokort.ok{border-left-color:var(--turkos)}
-.veckokort.varning{border-left-color:var(--orange)}
-.veckokort.avvikelse{border-left-color:var(--rod)}
+.veckokort.varning{border-left-color:var(--orange);background:linear-gradient(90deg,var(--warn-bg),var(--surface) 38%)}
+.veckokort.avvikelse{border-left-color:var(--rod);background:linear-gradient(90deg,var(--bad-bg),var(--surface) 38%)}
 .veckokort-fraga{display:flex;gap:8px;font-size:13px;line-height:1.45;color:var(--ink)}
-.veckokort-nr{font-weight:700;color:var(--ink-faint);flex:0 0 auto}
-.veckokort-svar{display:flex;gap:6px;flex-wrap:wrap}
-.veckokort-svar button{font-family:var(--font-b);font-size:12px;font-weight:600;
+.veckokort-nr{font-weight:700;color:var(--ink-soft);flex:0 0 auto}
+/* Svaren som en toggle-grupp: ikon, allvarsgrad och svarsord, lika breda. */
+.veckokort-svar{display:flex;gap:6px}
+.veckokort-svar button{font-family:var(--font-b);font-size:12px;font-weight:600;flex:1 1 0;min-width:0;
   border:1px solid var(--hairline-stark);background:var(--surface);color:var(--ink-soft);
-  border-radius:999px;padding:5px 11px;cursor:pointer;display:inline-flex;gap:5px;align-items:baseline}
-.veckokort-svar button:hover{border-color:var(--ink-faint)}
-.veckokort-svar button .ord{font-weight:400;font-size:11px;color:var(--ink-faint)}
+  border-radius:10px;padding:7px 8px;cursor:pointer;display:inline-flex;flex-direction:column;gap:2px;align-items:center;
+  text-align:center;transition:transform .15s var(--ease),background-color .15s var(--ease),border-color .15s var(--ease),box-shadow .15s var(--ease)}
+.veckokort-svar button:hover{border-color:var(--ink-faint);background:var(--sunken)}
+.veckokort-svar button:active{transform:scale(.97)}
+.veckokort-svar button:focus-visible{outline:2px solid var(--one-bla);outline-offset:2px}
+.veckokort-svar button svg{flex:0 0 auto}
+.veckokort-svar button .ord{font-weight:400;font-size:11px;color:var(--ink-soft)}
+.veckokort-svar button[aria-pressed="true"]{box-shadow:var(--sh-sm)}
 .veckokort-svar button[aria-pressed="true"].ok{background:var(--ok-bg);border-color:var(--turkos);color:var(--ok-ink)}
 .veckokort-svar button[aria-pressed="true"].varning{background:var(--warn-bg);border-color:var(--orange);color:var(--warn-ink)}
 .veckokort-svar button[aria-pressed="true"].avvikelse{background:var(--bad-bg);border-color:var(--rod);color:var(--bad-ink)}
-.veckokort-svar button[aria-pressed="true"] .ord{color:inherit;opacity:.75}
+.veckokort-svar button[aria-pressed="true"] .ord{color:inherit;opacity:.8}
 .veckokort-rad{font-size:12.5px;line-height:1.5;color:var(--ink-soft)}
 .veckokort-fot{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.veckokort-kommentar{font-size:12px;color:var(--ink-faint)}
+.veckokort-kommentar{font-size:12px;color:var(--ink-soft)}
+/* Snabbfältet som fälls ut under ett kort med varning eller avvikelse. */
+.veckokort-snabb{display:flex;flex-direction:column;gap:10px;padding-top:12px;border-top:1px solid var(--hairline);
+  animation:veckoSnabbIn .22s var(--ease)}
+.veckokort-snabb textarea{min-height:64px}
+@keyframes veckoSnabbIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.veckokort,.veckokort-snabb{transition:none;animation:none}.veckokort:hover{transform:none}}
 
 /* ---------- Slutdokumentation ---------- */
 .slutdok-lista{list-style:none;margin:0;padding:0}
@@ -2090,3 +2104,12 @@ button.ov-gantt-rad:hover>:first-child,button.ov-gantt-rad:focus-visible>:first-
 .ps-puls{animation:psPuls .35s ease-out}
 .ps-byt{animation:psByt .28s ease-out both}
 @media (prefers-reduced-motion:reduce){.ps-rad-in,.ps-puls,.ps-byt{animation:none}}
+
+/* ---------- Interaktionstillstånd och laddning ---------- */
+.btn{transition:background-color .15s,transform .1s,box-shadow .15s}
+.btn:active:not(:disabled){transform:translateY(1px)}
+.btn:focus-visible{outline:2px solid var(--one-bla);outline-offset:2px}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn[aria-busy="true"]{cursor:progress}
+.skeleton{background:linear-gradient(90deg,var(--sunken,#eef3f5) 25%,var(--hairline-stark) 50%,var(--sunken,#eef3f5) 75%);background-size:200% 100%;animation:skeleton-skimmer 1.4s ease-in-out infinite}
+@keyframes skeleton-skimmer{from{background-position:200% 0}to{background-position:-200% 0}}
