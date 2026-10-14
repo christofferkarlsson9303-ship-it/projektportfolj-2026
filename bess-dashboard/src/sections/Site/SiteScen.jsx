@@ -171,6 +171,7 @@ export default function SiteScen({
   hogKvalitet = false,
   profil = "catl-pe",
   spokMatt = null,
+  ritningar = null,
   onKlar,
   onPlacera,
   onValj,
@@ -323,6 +324,9 @@ export default function SiteScen({
     scene.add(spok);
     const planGrupp = new THREE.Group();
     scene.add(planGrupp);
+    // Uppladdade ritningar (lib/ritningar.js): plan på marken, ovanpå gruset och situationsplanen.
+    const ritGrupp = new THREE.Group();
+    scene.add(ritGrupp);
     // Schematiska kabelvägar per filterlager.
     const kabelGrupp = new THREE.Group();
     scene.add(kabelGrupp);
@@ -346,7 +350,7 @@ export default function SiteScen({
     io.observe(el);
 
     const ga = { pos: { x: INGANG.x, y: INGANG.y, z: INGANG.z }, yaw: INGANG.yaw, pitch: INGANG.pitch, avsikt: {}, joy: { fram: 0, sid: 0 } };
-    s.current = { renderer, etiketter, scene, camera, controls, objektGrupp, ifcGrupp, planGrupp, kabelGrupp, tomt, mark, grus, ga, meshar: new Map(), markera, rutnatLinjer, spok, spokPunkt: null, matGrupp, sektionLinjer, flygning: null };
+    s.current = { renderer, etiketter, scene, camera, controls, objektGrupp, ifcGrupp, planGrupp, ritGrupp, ritTexturer: new Map(), kabelGrupp, tomt, mark, grus, ga, meshar: new Map(), markera, rutnatLinjer, spok, spokPunkt: null, matGrupp, sektionLinjer, flygning: null };
 
     /* ---------- Pekare: välja, placera, dra, titta ---------- */
     const ray = new THREE.Raycaster();
@@ -1054,6 +1058,53 @@ export default function SiteScen({
       avbruten = true;
     };
   }, [plan]);
+
+  /* ---------- Ritningar på marken ----------
+     En plan per synlig ritning, i meter, centrerad på (x, z) och vriden `rotation` grader
+     medurs sett uppifrån. Texturen skapas en gång per canvas och återanvänds när bara
+     placeringen ändras; den frigörs när ritningen försvinner. */
+  useEffect(() => {
+    const { ritGrupp, ritTexturer, renderer } = s.current;
+    if (!ritGrupp) return;
+    for (const barn of [...ritGrupp.children]) {
+      ritGrupp.remove(barn);
+      barn.traverse((o) => {
+        o.geometry?.dispose?.();
+        o.material?.dispose?.();
+      });
+    }
+    const kvar = new Set();
+    for (const [k, r] of (ritningar || []).entries()) {
+      if (!r.canvas) continue;
+      kvar.add(r.canvas);
+      let tex = ritTexturer.get(r.canvas);
+      if (!tex) {
+        tex = new THREE.CanvasTexture(r.canvas);
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.anisotropy = renderer?.capabilities.getMaxAnisotropy?.() || 1;
+        ritTexturer.set(r.canvas, tex);
+      }
+      if (!r.synlig) continue;
+      const yta = new THREE.Mesh(
+        new THREE.PlaneGeometry(r.bredd, r.djup),
+        new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: r.opacitet ?? 0.85, depthWrite: false, ...djupLager(4 + k) })
+      );
+      yta.rotation.x = -Math.PI / 2;
+      yta.userData.ritning = r.id;
+      const g = new THREE.Group();
+      g.position.set(Number(r.x) || 0, 0.04 + k * 0.005, Number(r.z) || 0);
+      g.rotation.y = -rad(Number(r.rotation) || 0);
+      g.add(yta);
+      ritGrupp.add(g);
+    }
+    for (const [canvas, tex] of ritTexturer) {
+      if (!kvar.has(canvas)) {
+        tex.dispose();
+        ritTexturer.delete(canvas);
+      }
+    }
+    s.current.markera?.();
+  }, [ritningar]);
 
   /* ---------- Läge ---------- */
   useEffect(() => {

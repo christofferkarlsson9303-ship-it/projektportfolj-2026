@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { HARDVARUPROFILER, profilIdFor, vardeText } from "../data/hardvaruprofiler.js";
-import { LAGER, kabelvagar, kameravinklar, mattFor, profilKpi, standardlayout, tredjeSkid } from "./siteLager.js";
+import { LAGER, kabelvagar, kameravinklar, mattFor, profilKpi, ritningslayout, standardlayout, tredjeSkid } from "./siteLager.js";
 import { TOMT, objektFel, provaPlacering } from "./site.js";
 import { flygBana, flygTid } from "./modellKoppling.js";
 import { SEED } from "../data/seed.js";
@@ -157,5 +157,28 @@ describe("kameraflygning", () => {
   it("använder vinkelns egen flygtid", () => {
     expect(flygTid(fran, till)).toBe(1800);
     expect(flygTid(fran, { ...till, tid: undefined })).toBeLessThanOrEqual(1400);
+  });
+});
+
+describe("layout efter ritningen", () => {
+  it("ger Växjö fem skid och nio batterienheter efter E-63-1-100, inom tomten och utan krockar", () => {
+    const l = ritningslayout("36037");
+    expect(l.ritning).toBe("E-63-1-100");
+    expect(l.rader.filter((r) => r.typ === "skid").map((r) => r.namn)).toEqual(["SKID 1", "SKID 2", "SKID 3", "SKID 4", "SKID 5"]);
+    expect(l.rader.filter((r) => r.typ === "container")).toHaveLength(9);
+    for (const r of l.rader) {
+      expect(objektFel(r, [])).toBeNull();
+      expect(Math.abs(r.x)).toBeLessThan(TOMT.bredd / 2);
+      expect(Math.abs(r.z)).toBeLessThan(TOMT.djup / 2);
+      expect(provaPlacering(r, { x: r.x, z: r.z }, l.rader, { ignorera: r.id, rutnat: 0 }).ok, `${r.namn} krockar`).toBe(true);
+    }
+    // SKID 1 ligger i öster, avståndet mellan skid är ungefär 8 m (91–94 pt × 0,088 m).
+    const skid = l.rader.filter((r) => r.typ === "skid");
+    expect(skid[0].x).toBeGreaterThan(skid[4].x);
+    expect(skid[0].x - skid[1].x).toBeCloseTo(8.3, 0);
+  });
+
+  it("saknas för projekt utan ritning", () => {
+    expect(ritningslayout("36038")).toBeNull();
   });
 });

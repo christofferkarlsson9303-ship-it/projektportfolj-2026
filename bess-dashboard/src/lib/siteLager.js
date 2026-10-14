@@ -210,6 +210,58 @@ export function standardlayout(profilId, projektId) {
   return rader;
 }
 
+/* ---------- Layout efter projektets ritning ----------
+   Växjö 36037 efter situationsplanen E-63-1-100 (Ellehammar/ONE, bygghandling 2026-05-22,
+   A3 1:250). Lägena är etiketternas lägen på ritningen i punkter (pdfjs), omräknade till meter
+   med skalan: 1 pt = 0,0254/72 × 250 m. Fem skid och nio batterienheter (+B1a–+B5) står med
+   långsidan i nord–sydlig riktning (rotation 90°), ställverket (+H01–H06, +LSP) och
+   transformatorn i öster. Etiketten sitter inte exakt i enhetens mitt, så lägena är ungefärliga
+   (inom någon meter) — ritningen är underlaget. */
+const RITNINGSLAYOUTER = {
+  36037: {
+    ritning: "E-63-1-100",
+    profil: "catl-pe",
+    mitt: [655, 380],
+    skala: 250,
+    // [typ, x_pt, y_pt, rotation, namn]
+    enheter: [
+      ["skid", 759, 386, 90, "SKID 1"],
+      ["skid", 665, 383, 90, "SKID 2"],
+      ["skid", 574, 382, 90, "SKID 3"],
+      ["skid", 482, 384, 90, "SKID 4"],
+      ["skid", 389, 384, 90, "SKID 5"],
+      ["container", 773, 252, 90, "+B1a"],
+      ["container", 742, 252, 90, "+B1b"],
+      ["container", 680, 252, 90, "+B2a"],
+      ["container", 649, 252, 90, "+B2b"],
+      ["container", 590, 252, 90, "+B3a"],
+      ["container", 559, 252, 90, "+B3b"],
+      ["container", 497, 252, 90, "+B4a"],
+      ["container", 466, 252, 90, "+B4b"],
+      ["container", 403, 250, 90, "+B5"],
+      ["ehouse", 927, 405, 90, "Ställverk +H01–H06 / +LSP"],
+      ["trafo", 922, 496, 0, "Trafo T1"],
+    ],
+  },
+};
+
+/** Layouten efter projektets ritning, eller null om appen inte har någon för projektet. */
+export function ritningslayout(projektId) {
+  const l = RITNINGSLAYOUTER[projektId];
+  if (!l) return null;
+  const m = (0.0254 / 72) * l.skala;
+  const profil = HARDVARUPROFILER[l.profil];
+  const rader = [];
+  for (const [typ, xp, yp, rotation, namn] of l.enheter) {
+    const x = Math.round((xp - l.mitt[0]) * m * 100) / 100;
+    const z = Math.round((yp - l.mitt[1]) * m * 100) / 100;
+    const o = nyttObjekt(typ, projektId, { x, z }, rader, { exakt: true, rotation, namn });
+    const del = typ === "container" ? profil.container : typ === "skid" ? profil.skid : null;
+    rader.push(del ? { ...o, ...del.matt } : o);
+  }
+  return { ritning: l.ritning, profil: l.profil, rader };
+}
+
 /** Mått för en ny volym: profilens för container och skid, annars mallens. */
 export function mattFor(profilId, typ) {
   const profil = HARDVARUPROFILER[profilId] || HARDVARUPROFILER[STANDARDPROFIL];

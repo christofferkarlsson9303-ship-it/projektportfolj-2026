@@ -24,8 +24,10 @@ import { useSnabbUtskrift } from "../../components/field/SnabbUtskrift.jsx";
 import { datumKort } from "../../lib/datum.js";
 import { SiteFilterrad, SiteKameror, SiteProfilData } from "../../components/site/SiteVisning.jsx";
 import { Kraftkurva } from "../../components/oversikt/Hero.jsx";
+import { RitningsKnapp, SiteRitningar, laddaUppRitning, placeringText, useRitningsCanvas } from "../../components/site/SiteRitningar.jsx";
 import { HARDVARUPROFILER, profilIdFor } from "../../data/hardvaruprofiler.js";
-import { STANDARDLAGER, kameravinklar, mattFor, profilKpi, standardlayout } from "../../lib/siteLager.js";
+import { ritningsText } from "../../lib/ritningar.js";
+import { STANDARDLAGER, kameravinklar, mattFor, profilKpi, ritningslayout, standardlayout } from "../../lib/siteLager.js";
 import {
   BESS_FALT,
   MALLAR,
@@ -154,6 +156,23 @@ export function Site() {
   const ifcObjekt = useMemo(() => (pid ? ifcObjektForProjekt(state, pid) : []), [state, pid]);
   const ifcObjektById = useMemo(() => new Map(ifcObjekt.map((o) => [o.id, o])), [ifcObjekt]);
   const oppnaPunkter = punkter.filter(arOppenPunkt);
+  /* Ritningar på marken (lib/ritningar.js): metadata i state, filen i arkivet. */
+  const ritningsRader = useMemo(() => (state.siteRitningar || []).filter((r) => r.projektId === pid), [state.siteRitningar, pid]);
+  const ritningar = useRitningsCanvas(ritningsRader);
+  const [laddarRitning, setLaddarRitning] = useState(false);
+  const laddaRitning = async (fil) => {
+    if (!fil || !pid) return;
+    setLaddarRitning(true);
+    try {
+      const rad = await laddaUppRitning(fil, { projektId: pid, objekt });
+      dispatch({ type: "SITE_RITNING_LAGG_TILL", rad });
+      visaToast(`${rad.namn} ligger på siten: ${ritningsText(rad)}. ${placeringText(rad)}`);
+    } catch (e) {
+      visaToast(e?.message || "Ritningen kunde inte laddas upp.", "warn");
+    } finally {
+      setLaddarRitning(false);
+    }
+  };
 
   const [lage, setLage] = useState("orbit");
   const [laddad, setLaddad] = useState(null);
@@ -534,6 +553,21 @@ export function Site() {
     setValtId(null);
   };
 
+  /* Layouten efter projektets ritning (lib/siteLager.js), när appen har en för projektet. */
+  const ritLayout = pid ? ritningslayout(pid) : null;
+  const laggRitningslayout = async () => {
+    if (!ritLayout) return;
+    const skid = ritLayout.rader.filter((r) => r.typ === "skid").length;
+    const bess = ritLayout.rader.filter((r) => r.typ === "container").length;
+    const ja = await bekrafta(
+      `Enheterna läggs på tomten för ${p.nr || p.namn} efter situationsplanen ${ritLayout.ritning}: ${skid} skid, ${bess} batterienheter, ställverk och transformator. Lägena är lästa ur ritningen (inom någon meter) och kan justeras efteråt.`,
+      { titel: `Lägg in layout enligt ${ritLayout.ritning}`, ok: "Lägg in" }
+    );
+    if (!ja) return;
+    dispatch({ type: "SITE_STANDARDLAYOUT", projektId: pid, rader: ritningslayout(pid).rader, profil: ritLayout.ritning });
+    setValtId(null);
+  };
+
   const bytProfil = (id) => {
     if (id === profilId) return;
     dispatch({ type: "UPPDATERA", lista: "projekt", id: pid, falt: "hardvaruprofil", varde: id });
@@ -728,6 +762,7 @@ export function Site() {
             onHogKvalitet={(hogKvalitet) => andraVisning({ hogKvalitet })}
             profilId={profilId}
             onProfil={bytProfil}
+            extra={<RitningsKnapp onFil={laddaRitning} upptagen={laddarRitning} />}
           />
           {visning.lager.dc || visning.lager.hsp || visning.lager.lsp || visning.lager.fiber || visning.lager.jord ? (
             <p className="m-0 text-[12px] text-ink-soft">Kabelvägarna är schematiska, räknade ur enheternas lägen. De är inte en kabel- eller relationsritning.</p>
@@ -735,6 +770,11 @@ export function Site() {
           {!volymAntal ? (
             <Callout ton="info">
               <b>Inga enheter på tomten.</b> Placera enheter med menyn, eller lägg in en standardlayout för {profil.namn}.{" "}
+              {ritLayout ? (
+                <button type="button" className="btn sec mini ml-1" onClick={laggRitningslayout}>
+                  Lägg in layout enligt {ritLayout.ritning}
+                </button>
+              ) : null}
               <button type="button" className="btn sec mini ml-1" onClick={laggStandardlayout}>
                 Lägg in standardlayout
               </button>
@@ -814,6 +854,7 @@ export function Site() {
                     hogKvalitet={visning.hogKvalitet}
                     profil={profilId}
                     spokMatt={laddad ? mattFor(profilId, laddad) : null}
+                    ritningar={ritningar}
                     onPlacera={placera}
                     onValj={setValtId}
                     onMatt={setMatt}
@@ -924,6 +965,8 @@ export function Site() {
             </p>
           )}
         </Card>
+
+        <SiteRitningar ritningar={ritningar} objekt={objekt} onLaddaUpp={laddaRitning} upptagen={laddarRitning} />
 
         <Card
           id="site-situationsplan"

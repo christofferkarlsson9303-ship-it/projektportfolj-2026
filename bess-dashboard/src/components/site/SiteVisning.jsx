@@ -13,7 +13,7 @@ const chip = (pa) =>
     pa ? "border-one-djup bg-one-djup text-white" : "border-hairline-stark bg-surface text-ink hover:bg-sunken"
   }`;
 
-export function SiteFilterrad({ lager, onLager, hogKvalitet, onHogKvalitet, profilId, onProfil, kallor }) {
+export function SiteFilterrad({ lager, onLager, hogKvalitet, onHogKvalitet, profilId, onProfil, kallor, extra = null }) {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
       <div role="group" aria-label="Lager i 3D-vyn" className="flex flex-wrap items-center gap-1.5">
@@ -34,6 +34,7 @@ export function SiteFilterrad({ lager, onLager, hogKvalitet, onHogKvalitet, prof
         <Sparkles size={14} aria-hidden="true" />
         Hög kvalitet
       </button>
+      {extra}
       <label className="ml-auto flex items-center gap-2 text-[12.5px] text-ink-soft">
         Hårdvaruprofil
         <select value={profilId} onChange={(e) => onProfil(e.target.value)} className="min-h-[32px] rounded-md border border-solid border-hairline-stark bg-surface px-2 text-[12.5px] text-ink">
