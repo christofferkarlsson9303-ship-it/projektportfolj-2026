@@ -1398,6 +1398,20 @@ button.ov-chip:hover{border-color:var(--one-bla);color:var(--ink)}
 .ov-valj{margin-left:auto;font-size:12.5px;line-height:1.4;color:var(--ink-faint)}
 .ov-valj b{color:var(--ink-soft)}
 
+/* Sitens sidhuvud: flygbild över en BESS-park (Artlist) som rör sig långsamt, under en ton i
+   profilfärgen som är tät till vänster där texten står. Ingen ny färg: tonen är --one-djup. */
+.site-hero>*{position:relative}
+.site-hero>.site-hero-bild,.site-hero>.site-hero-ton,.site-hero>.ov-kurva{position:absolute}
+.site-hero-bild{inset:-6% -4%;background-size:cover;background-position:70% 55%;opacity:0;
+  animation:siteHeroIn 1.2s var(--ease) .1s forwards,siteHeroDrift 38s ease-in-out 1.3s infinite alternate}
+.site-hero-ton{inset:0;background:linear-gradient(90deg,var(--one-djup) 0%,color-mix(in srgb,var(--one-djup) 88%,transparent) 32%,
+  color-mix(in srgb,var(--one-djup) 35%,transparent) 70%,color-mix(in srgb,var(--one-djup) 55%,transparent) 100%)}
+@keyframes siteHeroIn{to{opacity:1}}
+@keyframes siteHeroDrift{from{transform:scale(1.02) translate3d(0,0,0)}to{transform:scale(1.08) translate3d(-2%,-1.5%,0)}}
+@media(max-width:767px){.site-hero-ton{background:color-mix(in srgb,var(--one-djup) 78%,transparent)}}
+@media(prefers-reduced-motion:reduce){.site-hero-bild{opacity:1;animation:none}}
+@media print{.site-hero-bild{display:none}}
+
 /* Kraftkurvan — signaturelementet, tunna linjer i fem av profilfärgerna. */
 .ov-kurva{position:absolute;right:-8px;bottom:-4px;width:min(48%,540px);height:auto;pointer-events:none;opacity:.9}
 .ov-kurva path{fill:none;stroke-width:2;stroke-linecap:round;stroke-dasharray:1000;stroke-dashoffset:1000;
