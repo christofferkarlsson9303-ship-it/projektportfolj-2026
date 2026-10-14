@@ -252,6 +252,8 @@ export const SEED = {
   modellVersioner: [],
   /* Importerade IFC-modeller: metadata per objekt (lib/ifcModell.js). Geometrin ligger i IndexedDB. */
   ifcModeller: [],
+  // Ritningar i 3D-vyn: bara metadata och placering. Filen ligger i Storage/IndexedDB (lib/ritningar.js).
+  siteRitningar: [],
 
   /* Ändringslogg — statusändringar m.fl. händelser, senaste ~150 posterna, nyast först. */
   andringslogg: []

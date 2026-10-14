@@ -6,7 +6,7 @@ import { PdfExporter } from "../../components/print/PdfExporter.jsx";
 import { laddaNerPdf } from "../../components/print/laddaNerPdf.jsx";
 import { hamtaNamn } from "../../state/portfolj-reducer.js";
 import { idag } from "../../lib/datum.js";
-import { Kraftkurva } from "../../components/oversikt/Hero.jsx";
+import { HeroBild, Kraftkurva } from "../../components/oversikt/Hero.jsx";
 import { TON_KLASS } from "../../lib/status.js";
 import { RiskDonut } from "./RiskDonut.jsx";
 import { FasIndikator } from "./FasIndikator.jsx";
@@ -591,7 +591,8 @@ export function Projektstart() {
 
   return (
     <div className="flex flex-col gap-4 lg:gap-6">
-      <section aria-label="Projektstart" className="relative overflow-hidden rounded-xl bg-one-djup px-4 py-4 text-white md:px-6 md:py-5">
+      <section aria-label="Projektstart" className="hero-med-bild relative overflow-hidden rounded-xl bg-one-djup px-4 py-4 text-white md:px-6 md:py-5">
+        <HeroBild fil="hero-batterigata.jpg" video="hero-batterigata.mp4" position="80% 60%" />
         <Kraftkurva />
         <div className="relative flex max-w-[44rem] flex-col gap-3">
           <span aria-live="polite" className="text-[11px] font-bold uppercase tracking-wider opacity-80">ONE-P · {redigerar ? `${projektet?.nr || ""} ${projektet?.namn || ""} · ` : ""}Fas {nuFas} av {FAS_ANTAL} · Steg {index + 1} av {stegLista.length}</span>

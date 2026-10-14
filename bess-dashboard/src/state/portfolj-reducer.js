@@ -3,6 +3,7 @@
    som gör att React kan rendera om rätt delar av trädet. */
 
 import { SEED } from "../data/seed.js";
+import { ritningsFel } from "../lib/ritningar.js";
 import { ATA_KLASS, ATA_STATUS, KANDA_MAPPAR, PILL, SLUTDOK_MALL } from "../data/konstanter.js";
 import { LEDTIDER, PUNKT_FOR_ID } from "../data/bessChecklistData.ts";
 import { migreraUr } from "../lib/berakningar.js";
@@ -680,6 +681,31 @@ export function reducer(state, action) {
       if (!o) return state;
       const ut = { ...state, siteObjekt: state.siteObjekt.filter((r) => r.id !== o.id) };
       return loggat(ut, o.projektId, `Site: ${siteEtikett(state, o)} borttagen`);
+    }
+
+    /* Ritningar i 3D-vyn: metadata och placering (lib/ritningar.js). Filen ligger i Storage
+       eller IndexedDB och kommer aldrig in här. Uppladdning och borttagning loggas, flytt inte. */
+    case "SITE_RITNING_LAGG_TILL": {
+      const r = action.rad;
+      if (!r?.id || !r.projektId || !r.sokvag || !state.projekt.some((p) => p.id === r.projektId)) return state;
+      if ((state.siteRitningar || []).some((x) => x.id === r.id)) return state;
+      if (/^data:/i.test(r.sokvag)) return state;
+      return loggat({ ...state, siteRitningar: [...(state.siteRitningar || []), { ...r }] }, r.projektId, `Ritning uppladdad till siten: ${r.namn}`);
+    }
+
+    case "SITE_RITNING_ANDRA": {
+      const { id, andring } = action;
+      const r = (state.siteRitningar || []).find((x) => x.id === id);
+      if (!r || ritningsFel(andring) !== null) return state;
+      const tvatt = (k, v) => (k === "namn" ? String(v).trim() : k === "synlig" || k === "placering" ? v : Number(v));
+      const tal = Object.fromEntries(Object.entries(andring).map(([k, v]) => [k, tvatt(k, v)]));
+      return { ...state, siteRitningar: state.siteRitningar.map((x) => (x.id === id ? { ...x, ...tal } : x)) };
+    }
+
+    case "SITE_RITNING_TA_BORT": {
+      const r = (state.siteRitningar || []).find((x) => x.id === action.id);
+      if (!r) return state;
+      return loggat({ ...state, siteRitningar: state.siteRitningar.filter((x) => x.id !== r.id) }, r.projektId, `Ritning borttagen från siten: ${r.namn}`);
     }
 
     /* Återställ = tomt läge för projektet. Andra projekts objekt lämnas. */

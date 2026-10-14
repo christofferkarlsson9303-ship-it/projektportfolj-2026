@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { FilePlus2, HardHat, NotebookPen, Upload } from "lucide-react";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { hamtaNamn } from "../../state/portfolj-reducer.js";
@@ -52,6 +53,31 @@ export function Kraftkurva({ className = "ov-kurva" }) {
   );
 }
 
+/* Videoloopar (Artlist) som finns i public/assets/. Bara filer som står här används, så att en
+   saknad fil aldrig ger ett nätverksfel; bilden visas då som förut. */
+const VIDEOR = new Set([]);
+
+/** Bakgrundsbild i ett sidhuvud (Artlist, public/assets/). Dekor, aria-hidden.
+ *  mork: under en ton i --one-djup (Projektstart, siten). ljus: tonar in från höger i ett
+ *  ljust kort (Översikt), så att kortets yta och text står kvar som förut.
+ *  `video`: en loop som spelas ovanpå bilden när filen finns och användaren inte valt
+ *  reducerad rörelse. Bilden är affisch och reserv. */
+export function HeroBild({ fil, video = null, lage = "mork", position = "70% 55%" }) {
+  const bas = import.meta.env.BASE_URL;
+  const [rorelse] = useState(() => typeof window === "undefined" || !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
+  const visaVideo = video && VIDEOR.has(video) && rorelse;
+  return (
+    <>
+      <div className={`hero-bild ${lage}`} aria-hidden="true" style={{ backgroundImage: `url(${bas}assets/${fil})`, backgroundPosition: position }}>
+        {visaVideo ? (
+          <video className="hero-video" src={`${bas}assets/${video}`} poster={`${bas}assets/${fil}`} autoPlay muted loop playsInline preload="metadata" style={{ objectPosition: position }} />
+        ) : null}
+      </div>
+      {lage === "mork" ? <div className="hero-ton" aria-hidden="true" /> : null}
+    </>
+  );
+}
+
 export function Hero({ akuta, bevaka, onVisaFlaggor }) {
   const { state, laggTill } = usePortfolj();
   const { valtProjekt, oppnaPost, visa, fraga, visaToast } = useUi();
@@ -98,6 +124,7 @@ export function Hero({ akuta, bevaka, onVisaFlaggor }) {
 
   return (
     <section className="ov-hero" aria-labelledby="ov-halsning">
+      <HeroBild fil="hero-batterigata.jpg" video="hero-batterigata.mp4" lage="ljus" position="75% 60%" />
       <Kraftkurva />
 
       <div className="ov-hero-topp">
