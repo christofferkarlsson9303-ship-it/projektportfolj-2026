@@ -23,6 +23,7 @@ import { Meter } from "../../components/ds/index.js";
 import { useSnabbUtskrift } from "../../components/field/SnabbUtskrift.jsx";
 import { datumKort } from "../../lib/datum.js";
 import { SiteFilterrad, SiteKameror, SiteProfilData } from "../../components/site/SiteVisning.jsx";
+import { Kraftkurva } from "../../components/oversikt/Hero.jsx";
 import { HARDVARUPROFILER, profilIdFor } from "../../data/hardvaruprofiler.js";
 import { STANDARDLAGER, kameravinklar, mattFor, profilKpi, standardlayout } from "../../lib/siteLager.js";
 import {
@@ -659,8 +660,28 @@ export function Site() {
             </Card>
   );
 
+  const kpi = profilKpi(profilId, objekt);
+  const enhetNamn = profil.skid.prefix === "SKID" ? "skid" : "MV-stationer";
+
   return (
     <div className="flex flex-col gap-4 lg:gap-6">
+      {/* Sidhuvud i profilfärgen med Kraftkurvan, samma grepp som Projektstart. Bara dekor och
+          en sammanfattning — reglagen ligger i kortet under. */}
+      <section aria-label="Sitöversikt" className="relative overflow-hidden rounded-xl bg-one-djup px-4 py-4 text-white md:px-6 md:py-5">
+        <Kraftkurva />
+        <div className="relative flex max-w-[44rem] flex-col gap-1.5">
+          <span className="text-[11px] font-bold uppercase tracking-wider opacity-80">Siten i 3D · {profil.kort}</span>
+          <h2 className="m-0 font-head text-[22px] leading-tight text-white">
+            {p.nr ? `${p.nr} ` : ""}
+            {p.namn}
+          </h2>
+          <p className="m-0 text-[12.5px] opacity-90">
+            {kpi.antalCont} batterienheter · {kpi.antalSkid} {enhetNamn}
+            {kpi.beraknadMwh !== null ? ` · ${String(kpi.beraknadMwh).replace(".", ",")} MWh beräknat` : " · kapacitet per enhet saknas"}
+            {` · ${profil.namn}`}
+          </p>
+        </div>
+      </section>
       <div className="flex flex-col gap-4 lg:gap-6">
         <Card
           id="site-scen"
@@ -855,7 +876,7 @@ export function Site() {
           subtitle={`${profil.anvands}. Värden med källa; det som inte är bekräftat mot datablad eller kontrakt är märkt.`}
           badge={<StatusBadge ton="neutral" label={profil.kort} />}
         >
-          <SiteProfilData profil={profil} kpi={profilKpi(profilId, objekt)} />
+          <SiteProfilData profil={profil} kpi={kpi} />
         </Card>
       </div>
 
