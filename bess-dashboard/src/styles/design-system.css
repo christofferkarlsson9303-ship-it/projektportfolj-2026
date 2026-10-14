@@ -1410,6 +1410,7 @@ button.ov-chip:hover{border-color:var(--one-bla);color:var(--ink)}
   --hero-max:.42}
 .hero-ton{inset:0;background:linear-gradient(90deg,var(--one-djup) 0%,color-mix(in srgb,var(--one-djup) 88%,transparent) 32%,
   color-mix(in srgb,var(--one-djup) 35%,transparent) 70%,color-mix(in srgb,var(--one-djup) 55%,transparent) 100%)}
+.hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 @keyframes heroIn{to{opacity:var(--hero-max,1)}}
 @keyframes heroDrift{from{transform:scale(1.02) translate3d(0,0,0)}to{transform:scale(1.08) translate3d(-2%,-1.5%,0)}}
 @media(max-width:767px){.hero-ton{background:color-mix(in srgb,var(--one-djup) 78%,transparent)}.hero-bild.ljus{left:0;--hero-max:.22}}

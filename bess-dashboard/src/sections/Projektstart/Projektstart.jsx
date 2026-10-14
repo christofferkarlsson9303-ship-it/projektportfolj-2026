@@ -592,7 +592,7 @@ export function Projektstart() {
   return (
     <div className="flex flex-col gap-4 lg:gap-6">
       <section aria-label="Projektstart" className="hero-med-bild relative overflow-hidden rounded-xl bg-one-djup px-4 py-4 text-white md:px-6 md:py-5">
-        <HeroBild fil="hero-batterigata.jpg" position="80% 60%" />
+        <HeroBild fil="hero-batterigata.jpg" video="hero-batterigata.mp4" position="80% 60%" />
         <Kraftkurva />
         <div className="relative flex max-w-[44rem] flex-col gap-3">
           <span aria-live="polite" className="text-[11px] font-bold uppercase tracking-wider opacity-80">ONE-P · {redigerar ? `${projektet?.nr || ""} ${projektet?.namn || ""} · ` : ""}Fas {nuFas} av {FAS_ANTAL} · Steg {index + 1} av {stegLista.length}</span>

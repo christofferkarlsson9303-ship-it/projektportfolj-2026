@@ -702,7 +702,7 @@ export function Site() {
       {/* Sidhuvud i profilfärgen med Kraftkurvan, samma grepp som Projektstart. Bara dekor och
           en sammanfattning — reglagen ligger i kortet under. */}
       <section aria-label="Sitöversikt" className="hero-med-bild relative overflow-hidden rounded-xl bg-one-djup px-4 py-4 text-white md:px-6 md:py-6">
-        <HeroBild fil="hero-bess.jpg" />
+        <HeroBild fil="hero-bess.jpg" video="hero-bess.mp4" />
         <Kraftkurva />
         <div className="relative flex max-w-[44rem] flex-col gap-1.5">
           <span className="text-[11px] font-bold uppercase tracking-wider opacity-80">Siten i 3D · {profil.kort}</span>
