@@ -52,6 +52,22 @@ export function Kraftkurva({ className = "ov-kurva" }) {
   );
 }
 
+/** Bakgrundsbild i ett sidhuvud (Artlist, public/assets/). Dekor, aria-hidden.
+ *  mork: under en ton i --one-djup (Projektstart, siten). ljus: tonar in från höger i ett
+ *  ljust kort (Översikt), så att kortets yta och text står kvar som förut. */
+export function HeroBild({ fil, lage = "mork", position = "70% 55%" }) {
+  return (
+    <>
+      <div
+        className={`hero-bild ${lage}`}
+        aria-hidden="true"
+        style={{ backgroundImage: `url(${import.meta.env.BASE_URL}assets/${fil})`, backgroundPosition: position }}
+      />
+      {lage === "mork" ? <div className="hero-ton" aria-hidden="true" /> : null}
+    </>
+  );
+}
+
 export function Hero({ akuta, bevaka, onVisaFlaggor }) {
   const { state, laggTill } = usePortfolj();
   const { valtProjekt, oppnaPost, visa, fraga, visaToast } = useUi();
@@ -98,6 +114,7 @@ export function Hero({ akuta, bevaka, onVisaFlaggor }) {
 
   return (
     <section className="ov-hero" aria-labelledby="ov-halsning">
+      <HeroBild fil="hero-batterigata.jpg" lage="ljus" position="75% 60%" />
       <Kraftkurva />
 
       <div className="ov-hero-topp">

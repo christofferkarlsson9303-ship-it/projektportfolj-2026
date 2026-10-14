@@ -23,7 +23,7 @@ import { Meter } from "../../components/ds/index.js";
 import { useSnabbUtskrift } from "../../components/field/SnabbUtskrift.jsx";
 import { datumKort } from "../../lib/datum.js";
 import { SiteFilterrad, SiteKameror, SiteProfilData } from "../../components/site/SiteVisning.jsx";
-import { Kraftkurva } from "../../components/oversikt/Hero.jsx";
+import { HeroBild, Kraftkurva } from "../../components/oversikt/Hero.jsx";
 import { RitningsKnapp, SiteRitningar, laddaUppRitning, placeringText, useRitningsCanvas } from "../../components/site/SiteRitningar.jsx";
 import { HARDVARUPROFILER, profilIdFor } from "../../data/hardvaruprofiler.js";
 import { ritningsText } from "../../lib/ritningar.js";
@@ -701,10 +701,8 @@ export function Site() {
     <div className="flex flex-col gap-4 lg:gap-6">
       {/* Sidhuvud i profilfärgen med Kraftkurvan, samma grepp som Projektstart. Bara dekor och
           en sammanfattning — reglagen ligger i kortet under. */}
-      <section aria-label="Sitöversikt" className="site-hero relative overflow-hidden rounded-xl bg-one-djup px-4 py-4 text-white md:px-6 md:py-6">
-        {/* Bakgrundsbild (Artlist, public/assets/hero-bess.jpg) under en ton i profilfärgen. Dekor. */}
-        <div className="site-hero-bild" aria-hidden="true" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}assets/hero-bess.jpg)` }} />
-        <div className="site-hero-ton" aria-hidden="true" />
+      <section aria-label="Sitöversikt" className="hero-med-bild relative overflow-hidden rounded-xl bg-one-djup px-4 py-4 text-white md:px-6 md:py-6">
+        <HeroBild fil="hero-bess.jpg" />
         <Kraftkurva />
         <div className="relative flex max-w-[44rem] flex-col gap-1.5">
           <span className="text-[11px] font-bold uppercase tracking-wider opacity-80">Siten i 3D · {profil.kort}</span>
