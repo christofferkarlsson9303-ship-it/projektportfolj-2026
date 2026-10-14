@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { GanttChart } from "lucide-react";
+import { ChevronDown, GanttChart } from "lucide-react";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { DatumFalt } from "../ui/Falt.jsx";
 import { FasLage, FasStatus } from "../epc/Delar.jsx";
@@ -11,6 +11,8 @@ import { StatusBadge } from "../ds/index.js";
 import { FasAvvikelse } from "../projekt/FasAvvikelse.jsx";
 import { faseInfo } from "../../data/projektfaser.ts";
 import { FASSTATUS, fasStatus, grupperaMoment, projektfasForMilstolpe } from "../../lib/fasmappning.js";
+import { antalVeckor, fasSammanfattning, flyttaVeckor, utfalldaFor, veckaText } from "../../lib/ganttMeny.js";
+import { Vyvaljare } from "../ui/Vyvaljare.jsx";
 
 /* Fasplanen som Gantt-schema: batteriparkens 16 moment (0–15) med grindarna
    G0–G15 och betalmilstolparna M1–M7 för valt projekt. Momenten står under
@@ -27,7 +29,12 @@ import { FASSTATUS, fasStatus, grupperaMoment, projektfasForMilstolpe } from "..
    fakturerad milstolpe eller en senare grind, eller saknar fasen verifierade
    egenkontroller, får stapeln en randig varningston och raden säger vad som
    saknas. Bara en godkänd fas (verifierade kontroller + angivet grinddatum)
-   får den fyllda klar-tonen. */
+   får den fyllda klar-tonen.
+
+   Klick på ett moment fäller ut en meny under raden (lib/ganttMeny.js): flytta start, slut
+   eller hela momentet en vecka i taget, markera grinden passerad eller öppna den igen, eller
+   öppna momentet i guiden. Inget dras med musen. Fasrubrikerna fäller ihop sina moment till en
+   samlad stapel, och nivåväljaren visar alla faser ihopfällda eller alla moment. */
 
 const GRIND_KALLA = { angiven: "angiven", betalplan: "härledd ur betalplanen", följd: "följer av senare grind" };
 const MS_TEXT = { fakturerad: "Fakturerad", pagaende: "Pågående", kvar: "Kvar" };
@@ -96,10 +103,104 @@ function Planfalt({ p }) {
   );
 }
 
+
+const STATUS_TEXT = { klar: "Klar", pagar: "Pågår", sen: "Försenad", kommande: "Kommande", odaterad: "Ej planerad" };
+
+/** Menyn under ett moment: veckor, status och genväg till guiden. */
+function Momentmeny({ p, f, id, onStang }) {
+  const { dispatch } = usePortfolj();
+  const { oppnaPost } = useUi();
+  const satt = (falt, varde) => dispatch({ type: "EPC_FAS", pid: p.id, fas: f.fas.nr, falt, varde });
+  const flytta = (vad, steg) => {
+    const ny = flyttaVeckor(f, vad, steg);
+    if (!ny) return;
+    if (ny.start !== f.start) satt("start", ny.start);
+    if (ny.slut !== f.slut) satt("slut", ny.slut);
+  };
+  const harDatum = f.start && f.slut;
+  const angiven = f.grind.passerad && f.grind.kalla === "angiven";
+  const harledd = f.grind.passerad && !angiven;
+  const steg = (vad, namn) => (
+    <div className="ov-gantt-steg" role="group" aria-label={namn}>
+      <span>{namn}</span>
+      <button type="button" className="btn sec mini" disabled={!harDatum} onClick={() => flytta(vad, -1)} aria-label={`${namn}: en vecka tidigare`}>
+        −1 v
+      </button>
+      <button type="button" className="btn sec mini" disabled={!harDatum} onClick={() => flytta(vad, 1)} aria-label={`${namn}: en vecka senare`}>
+        +1 v
+      </button>
+    </div>
+  );
+  return (
+    <div
+      id={id}
+      className="ov-gantt-meny"
+      role="group"
+      aria-label={`Moment ${f.fas.nr} ${f.fas.kort}: veckor och status`}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.stopPropagation();
+          onStang(true);
+        }
+      }}
+    >
+      <div className="ov-gantt-meny-del">
+        <b>Veckor</b>
+        <p className="m-0">
+          {harDatum ? (
+            <>
+              {veckaText(f.start)} – {veckaText(f.slut)} · {antalVeckor(f.start, f.slut)} v{f.egenPlan ? " · egna datum" : " · standardplan"}
+            </>
+          ) : (
+            "Momentet saknar datum. Ange projektets start och slut först."
+          )}
+        </p>
+        <div className="ov-gantt-stegrad">
+          {steg("hela", "Flytta momentet")}
+          {steg("start", "Start")}
+          {steg("slut", "Slut")}
+        </div>
+      </div>
+      <div className="ov-gantt-meny-del">
+        <b>Status</b>
+        <p className="m-0">
+          Nu: {STATUS_TEXT[f.status] || f.status}. Pågår, kommande och försenad följer datumen; klar betyder att grinden {f.fas.grind.kod} är passerad.
+        </p>
+        <div className="ov-gantt-stegrad" role="radiogroup" aria-label={`Grind ${f.fas.grind.kod}`}>
+          <label className="ov-gantt-val">
+            <input type="radio" name={`${id}-grind`} checked={!f.grind.passerad} disabled={harledd} onChange={() => satt("grindDatum", "")} />
+            Följer datumen
+          </label>
+          <label className="ov-gantt-val">
+            <input type="radio" name={`${id}-grind`} checked={f.grind.passerad} onChange={() => satt("grindDatum", f.grind.datum || idag())} />
+            Klar — {f.fas.grind.kod} passerad{angiven && f.grind.datum ? ` ${datumKort(f.grind.datum)}` : " i dag"}
+          </label>
+        </div>
+        {harledd ? (
+          <p className="m-0 text-xs">
+            Grinden {GRIND_KALLA[f.grind.kalla]}. Den öppnas inte härifrån — ändra i Bygga batteripark.
+          </p>
+        ) : null}
+      </div>
+      <div className="ov-gantt-meny-fot">
+        <button type="button" className="btn sec mini" onClick={() => oppnaPost("epc", `fas-${f.fas.nr}`)}>
+          Öppna i guiden
+        </button>
+        <button type="button" className="btn sec mini" onClick={() => onStang(true)}>
+          Stäng
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function Gantt({ i }) {
   const { state } = usePortfolj();
-  const { valtProjekt: pid, oppnaPost, visa } = useUi();
+  const { valtProjekt: pid, visa } = useUi();
   const [doljKlara, setDoljKlara] = useState(false);
+  const [niva, setNiva] = useState("moment");
+  const [utfallda, setUtfallda] = useState(null); // null = följer nivån
+  const [meny, setMeny] = useState(null); // momentnummer med öppen meny
   const p = state.projekt.find((x) => x.id === pid);
   const nu = idag();
 
@@ -118,6 +219,19 @@ export function Gantt({ i }) {
   const idagSynlig = min && nu >= min && nu <= max;
 
   const synliga = doljKlara ? faser.filter((f) => f.status !== "klar") : faser;
+  const grupper = grupperaMoment(synliga);
+  const oppna = utfallda ?? utfalldaFor(niva, grupper.map((g) => g.fas.nr));
+  const vaxlaFas = (nr) => {
+    const ny = new Set(oppna);
+    if (ny.has(nr)) ny.delete(nr);
+    else ny.add(nr);
+    setUtfallda(ny);
+  };
+  const stangMeny = (fokus) => {
+    const nr = meny;
+    setMeny(null);
+    if (fokus) requestAnimationFrame(() => document.getElementById(`gantt-moment-${nr}`)?.focus());
+  };
   const sena = faser.filter((f) => f.status === "sen");
   const passerade = faser.filter((f) => f.grind.passerad).length;
   const godkanda = faser.filter((f) => f.verifiering.lage === "godkand").length;
@@ -148,6 +262,21 @@ export function Gantt({ i }) {
     >
       <div className="ov-gantt-verktyg">
         <Projektflikar />
+        {daterade.length ? (
+          <Vyvaljare
+            etikett="Nivå i Gantt-schemat"
+            varde={niva}
+            onValj={(v) => {
+              setNiva(v);
+              setUtfallda(null);
+              setMeny(null);
+            }}
+            alternativ={[
+              ["moment", "Moment"],
+              ["fas", "Faser"],
+            ]}
+          />
+        ) : null}
         {daterade.length ? (
           <button
             type="button"
@@ -227,19 +356,42 @@ export function Gantt({ i }) {
                   />
                 ) : null}
 
-                {grupperaMoment(synliga).flatMap(({ fas, rader }) => [
-                  <div key={`fas-${fas.nr}`} className="ov-gantt-rad ov-gantt-fasrubrik">
+                {grupper.flatMap(({ fas, rader }) => {
+                  const utfalld = oppna.has(fas.nr);
+                  const sum = fasSammanfattning(rader);
+                  const sv = sum.start ? x(sum.start) : 0;
+                  const sb = sum.start ? Math.max(0.6, x(sum.slut) - sv) : 0;
+                  return [
+                  <button
+                    key={`fas-${fas.nr}`}
+                    type="button"
+                    className={`ov-gantt-rad ov-gantt-fasrubrik${utfalld ? "" : ` ov-gantt-samlad ${sum.status}`}`}
+                    aria-expanded={utfalld}
+                    aria-label={`Fas ${fas.nr} ${fas.kort}: ${FASSTATUS[fasStatus(fas.nr, p.fas)].text}, ${sum.klara} av ${sum.antal} moment klara${
+                      sum.start ? `, ${veckaText(sum.start)} till ${veckaText(sum.slut)}` : ""
+                    }. ${utfalld ? "Fäll ihop" : "Fäll ut"} momenten.`}
+                    onClick={() => {
+                      vaxlaFas(fas.nr);
+                      if (rader.some((f) => f.fas.nr === meny)) setMeny(null);
+                    }}
+                  >
                     <span className="ov-gantt-etikett">
+                      <ChevronDown size={14} aria-hidden="true" className={`ov-gantt-chevron${utfalld ? " oppen" : ""}`} />
                       <span className="ov-gantt-fasnamn">
                         Fas {fas.nr} · {fas.kort}
                       </span>
-                      {p ? (
-                        <StatusBadge ton={FASSTATUS[fasStatus(fas.nr, p.fas)].ton} label={FASSTATUS[fasStatus(fas.nr, p.fas)].text} />
-                      ) : null}
+                      <StatusBadge ton={FASSTATUS[fasStatus(fas.nr, p.fas)].ton} label={FASSTATUS[fasStatus(fas.nr, p.fas)].text} />
+                      {utfalld ? null : (
+                        <span className="ov-gantt-antal">
+                          {sum.klara}/{sum.antal}
+                        </span>
+                      )}
                     </span>
-                    <span className="ov-gantt-spar" aria-hidden="true" />
-                  </div>,
-                  ...rader.map((f) => {
+                    <span className="ov-gantt-spar" aria-hidden="true">
+                      {!utfalld && sum.start ? <span className="ov-gantt-stapel" style={{ left: sv + "%", width: sb + "%" }} /> : null}
+                    </span>
+                  </button>,
+                  ...(utfalld ? rader : []).flatMap((f) => {
                   const rad = synliga.indexOf(f);
                   const harDatum = f.start && f.slut;
                   const vanster = harDatum ? x(f.start) : 0;
@@ -253,17 +405,20 @@ export function Gantt({ i }) {
                   const grindText = f.grind.passerad
                     ? `${f.fas.grind.kod} passerad${f.grind.datum ? " " + f.grind.datum : ""} (${GRIND_KALLA[f.grind.kalla]})`
                     : `${f.fas.grind.kod} ej passerad`;
-                  return (
+                  return [
                     <button
                       key={f.fas.nr}
+                      id={`gantt-moment-${f.fas.nr}`}
                       type="button"
                       className={`ov-gantt-rad ov-gantt-fas ${f.status}${ostyrkt ? " ostyrkt" : ""}${kritiska.has(f.fas.nr) ? " kritisk" : ""}`}
-                      onClick={() => oppnaPost("epc", `fas-${f.fas.nr}`)}
+                      aria-expanded={meny === f.fas.nr}
+                      aria-controls={meny === f.fas.nr ? `gantt-meny-${f.fas.nr}` : undefined}
+                      onClick={() => setMeny((m) => (m === f.fas.nr ? null : f.fas.nr))}
                       aria-label={`Moment ${f.fas.nr} ${f.fas.titel}, fas ${f.fas.projektfas}: ${statusText}, ${
                         harDatum ? `${f.start} till ${f.slut}` : "ej planerad"
                       }, ${f.klara} av ${f.punkter} punkter klara, ${grindText}${lageText ? `, ${lageText}` : ""}${
                         saknasText ? `. ${saknasText}` : ""
-                      }${kritiska.has(f.fas.nr) ? ", styr slutdatumet" : ""}. Öppna i guiden.`}
+                      }${kritiska.has(f.fas.nr) ? ", styr slutdatumet" : ""}. Visa veckor och status.`}
                     >
                       <span className="ov-gantt-etikett">
                         <span className="ov-gantt-nr">{f.fas.nr}</span>
@@ -317,10 +472,12 @@ export function Gantt({ i }) {
                           </>
                         ) : null}
                       </span>
-                    </button>
-                  );
+                    </button>,
+                    meny === f.fas.nr ? <Momentmeny key={`meny-${f.fas.nr}`} id={`gantt-meny-${f.fas.nr}`} p={p} f={f} onStang={stangMeny} /> : null,
+                  ];
                   }),
-                ])}
+                ];
+                })}
               </div>
             </div>
           </div>
