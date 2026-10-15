@@ -315,7 +315,7 @@ function Sammanfattning({ utkast, faser, onLjus, fel, kanSkapa, skapar, redigera
         </div>
       </Card>
 
-      <Card id="ps-faser" title="Faserna" subtitle="Status och obligatoriska punkter per fas. Nästa fas låses upp när allt obligatoriskt i den förra är godkänt.">
+      <Card id="ps-faser" title="Faserna" subtitle="Status och obligatoriska punkter per fas. Nästa fas låses upp när allt obligatoriskt i den förra är godkänt. Fas 2 kräver dessutom vunnet anbud.">
         <ul className="m-0 flex list-none flex-col p-0">
           {faser.map((f) => {
             const forst = STEG.find((s) => s.fas === f.nr);
@@ -378,7 +378,7 @@ function Sammanfattning({ utkast, faser, onLjus, fel, kanSkapa, skapar, redigera
           title={!v.namn?.trim() ? "Ange projektnamnet först." : sparr.length ? "Utkast: aktuell fas är inte godkänd än." : undefined}
         />
       </div>
-      <p className="m-0 text-[12.5px] text-ink-soft">{redigerar ? `PDF:en omfattar de upplåsta faserna (fas 1${rapportFas(utkast) > 1 ? `–${rapportFas(utkast)}` : ""}) och innehåller det som står i guiden just nu, även osparade ändringar. Den märks Utkast tills aktuell fas är godkänd. Spara först så kommer dagens rad med i uppdateringsloggen.` : "PDF:en omfattar de upplåsta faserna och går att ladda ned när som helst, till exempel för genomgång med ledningen innan anbudet lämnas. Den märks Utkast tills aktuell fas är godkänd. När du skapar projektet laddas den ned automatiskt om fas 1 är godkänd."}</p>
+      <p className="m-0 text-[12.5px] text-ink-soft">{redigerar ? `PDF:en omfattar de upplåsta faserna (fas 1${rapportFas(utkast) > 1 ? `–${rapportFas(utkast)}` : ""}) och innehåller det som står i guiden just nu, även osparade ändringar. Den märks Utkast tills aktuell fas är godkänd. Spara först så kommer dagens rad med i uppdateringsloggen.` : "PDF:en omfattar de upplåsta faserna och går att ladda ned när som helst, till exempel för genomgång med ledningen innan anbudet lämnas. Den märks Utkast tills aktuell fas är godkänd. När anbudsunderlaget är genomgånget kan det visas för ledningen även medan ni inväntar tilldelning."}</p>
     </div>
   );
 }
@@ -464,7 +464,7 @@ export function Projektstart() {
 
   const pdfDokument = projektstartDokument(utkast, { datum: idag(), skapadAv: hamtaNamn() || "", historik: post?.historik || [], sparad: post?.uppdaterad?.slice(0, 10) || "" });
 
-  const sattFalt = (id, v) => setUtkast((u) => ({ ...u, v: { ...u.v, [id]: v } }));
+  const sattFalt = (id, v) => setUtkast((u) => ({ ...u, v: { ...u.v, [id]: v, ...(id === "anbudsutfall" ? { rapporteringsskede: "" } : {}) } }));
   const sattRader = (id, rader) => setUtkast((u) => ({ ...u, rader: { ...u.rader, [id]: rader } }));
   /** Sätter eller rensar projektledarens trafikljus för en fas. Samma ljus igen rensar det. */
   const sattLjus = (nr, ljus, kommentar) =>
@@ -672,6 +672,7 @@ export function Projektstart() {
           </Callout>
         ) : null}
         <FasKrav krav={krav} onGaTill={gaTill} ejVunnet={ejVunnet} />
+        {nuFas === 1 && !ejVunnet ? <Callout ton="info"><b className="block">Anbudsunderlag till ledningen</b>Fyll i Projektkort och Projektdirektiv med det ni vet. PDF:en kan laddas ned redan nu och följer ONE-P-projektdirektivet. Fas 2 och dess kontroller kommer med först efter vunnet anbud och genomgången fas 1. {krav.klar ? <button type="button" className="btn sec mini mt-2" onClick={() => gaTill("avrop")}>Ange anbudsutfall</button> : null}</Callout> : null}
         <Card
           id="ps-steg"
           title={`${index + 1}. ${steg.titel}`}
@@ -692,6 +693,10 @@ export function Projektstart() {
         </Card>
 
         {steg.tabell ? <Tabell tabell={steg.tabell} rader={utkast.rader[steg.tabell.id] || []} onChange={(r) => sattRader(steg.tabell.id, r)} standardRad={steg.id === "risker" ? { fas: String(nuFas) } : undefined} /> : null}
+        {steg.id === "direktiv" ? <>
+          <p className="m-0 text-[13px] text-ink-soft">Risker och tidplan nedan är samma uppgifter som används i senare faser. Ange även kända framtida risker redan i anbudet.</p>
+          {["risker", "tidplan"].map((id) => { const t = STEG.find((x) => x.id === id).tabell; return <Tabell key={id} tabell={{ ...t, obligatorisk: undefined }} rader={utkast.rader[t.id] || []} onChange={(r) => sattRader(t.id, r)} standardRad={id === "risker" ? { fas: "1" } : undefined} />; })}
+        </> : null}
         {steg.id === "risker" ? <RiskDonut rader={utkast.rader.risker || []} /> : null}
         {steg.katalog ? <Kontrollpunkter steg={steg} utkast={utkast} onToggle={kryssa} /> : null}
         {sista ? <Sammanfattning utkast={utkast} faser={faser} fel={fel} kanSkapa={!fel} skapar={skapar} redigerar={redigerar} andrat={andrat} ejSparad={redigerar && !post} pdfDokument={pdfDokument} sparr={sparr} onLjus={sattLjus} onSkapa={skapa} onSpara={sparaAndringar} onGaTill={gaTill} /> : null}
@@ -712,3 +717,4 @@ export function Projektstart() {
     </div>
   );
 }
+

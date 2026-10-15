@@ -209,7 +209,7 @@ export function nyaRaderForProjekt(u, projektId, state, nu = Date.now()) {
 export function historikRad(u, { datum, av = "" }) {
   const l = luckor(u);
   const fas = aktuellFas(u);
-  return { datum, av, fas, skede: statusEtikett(faseInfo(fas).status), nulage: (u.v.nulage || "").trim(), klara: l.klara, totalt: l.totalt, kritiskaOppna: l.kritiskaOppna.length };
+  return { datum, av, fas, skede: rapporteringsSkede(u), nulage: (u.v.nulage || "").trim(), klara: l.klara, totalt: l.totalt, kritiskaOppna: l.kritiskaOppna.length };
 }
 
 /** Lägger till en loggrad. Samma dag ersätts den senaste raden i stället för att logga varje klick. */
@@ -270,6 +270,43 @@ const riskvardeText = (r) => String((Math.max(1, Math.min(5, Number(r.sannolikhe
 /** Underlaget till PDF:en. Rapporten är ackumulerande och omfattar de upplåsta faserna, alltså
  *  fas 1 till `rapportFas` (projektets aktuella fas). Är aktuell fas inte godkänd märks rapporten
  *  som utkast (`fas.utkast`), så att den går att visa för ledningen innan anbudet lämnas. */
+/** Standardrubriken följer affärsbeslut och upplåst fas. Ett manuellt valt skede kan precisera den. */
+export function rapporteringsSkede(u) {
+  const fas = aktuellFas(u);
+  if (arEjVunnetUtkast(u)) return "Ej vunnet / avbrutet";
+  if (fas === 1) {
+    if (u.v.anbudsutfall === "Anbud inlämnat") return "Anbud inlämnat - inväntar tilldelning";
+    if (u.v.anbudsutfall === "Vunnet anbud") return "Vunnet anbud - inför uppstart";
+  }
+  const valt = u.v.rapporteringsskede;
+  if (valt && valt !== "Ej angivet") return valt;
+  return { 1: "Inför anbudsinlämning", 2: "Uppstart", 3: "Etablering", 4: "Genomförande", 5: "Genomförande", 6: "Provning och driftsättning", 7: "Överlämning", 8: "Avslut och garanti" }[fas];
+}
+
+/** Ledningsunderlag enligt ONE-P. Anbudsantaganden och gemensamma register är
+ *  tillgängliga redan i fas 1, utan krav på färdig etablering eller inköpslösning. */
+export function anbudsDirektiv(u) {
+  const v = u.v;
+  const falt = (poster) => poster.filter(([, val]) => varde(val)).map(([k, val]) => [k, val.trim(), textstycken(val)]);
+  const tabell = (titel, kolumner, vikter, rader) => rader.length ? { titel, kolumner, vikter, rader } : null;
+  const risks = (u.rader.risker || []).filter((r) => r.titel?.trim()).map((r) => [r.titel.trim(), riskvardeText(r), varde(r.agare), varde(r.atgard)]);
+  const tider = (u.rader.faser || []).filter((r) => r.namn?.trim() && (r.start || r.slut)).map((r) => [r.namn, r.start || "Ej angivet", r.slut || "Ej angivet", r.kritisk || "Nej"]);
+  const intressenter = (u.rader.intressenter || []).filter((r) => r.namn?.trim()).map((r) => [r.namn, r.roll || "", r.organisation || "", r.kommunikation || ""]);
+  const prio = [v.prioritetKostnad, v.prioritetKvalitet, v.prioritetTid];
+  const tal = prio.map((x) => x?.trim() ? Number(x.replace(",", ".")) : NaN);
+  const giltig = tal.every((n) => Number.isFinite(n) && n >= 0 && n <= 100) && Math.abs(tal.reduce((a, b) => a + b, 0) - 100) < 0.01;
+  const prioritering = prio.some((x) => x?.trim()) ? `Kostnad: ${prio[0] || "ej angivet"} %, kvalitet: ${prio[1] || "ej angivet"} %, tid: ${prio[2] || "ej angivet"} %.${giltig ? "" : " Kontrollera fördelningen: tre tal mellan 0 och 100 ska summera till 100 %."}` : "";
+  const delar = [
+    ["Bakgrund, syfte, mål och avgränsningar", falt([["Bakgrund", v.bakgrund], ["Syfte", v.syfte], ["Mål och förväntningar", v.mal], ["Ingår", v.ingar], ["Avgränsningar - ingår inte", v.ingarEj], ["Anbudsbeslut", v.beslut], ["Motivering till anbudsbeslut", v.motivering], ["Betalvillkor inför anbud", v.betalvillkor], ["Bankgaranti inför anbud", v.bankgaranti], ["Viten och milstolpar", v.viten], ["Kassaflödesbedömning", v.kassaflode]])],
+    ["Identifierade risker", falt([["Riskbild inför anbud", v.anbudRiskbild]]), tabell("Riskregister - preliminära bedömningar", ["Risk", "S × K", "Ägare", "Åtgärdsplan"], [3, 0.8, 1.5, 3], risks)],
+    ["Tidplan och prioriteringar", falt([["Övergripande tidplan och kontraktsdatum", v.anbudTidplan], ["Planerad start", v.startdatum], ["Planerat färdigställande", v.fardigdatum], ["Kritisk linje", v.kritiskLinje], ["Prioritering kostnad, kvalitet och tid", prioritering], ["Vad får ge vika först?", v.offra]]), tabell("Kända datum", ["Aktivitet", "Start", "Slut", "Kritisk"], [3, 1.5, 1.5, 1], tider)],
+    ["Nulägesanalys och intressenter", falt([["Nuläge", v.nulage], ["Öppna frågor", v.oppnaFragor]]), tabell("Intressenter", ["Namn", "Roll", "Organisation", "Kommunikation"], [2, 2, 2, 3], intressenter)],
+    ["HSEQ och arbetsmiljö", falt([["Förutsättningar inför anbud", v.anbudHseq], ["Planerad BAS-P", v.roll_basP], ["Planerad BAS-U", v.roll_basU]])],
+    ["Organisation, rapportering och överlämning", falt([["Planerad organisation och överlämning", v.anbudOrganisation], ["Intern beställare", v.roll_internalClient], ["Projektledare", v.roll_pl], ["Rapportering till kund", v.rapporteringKund], ["Intern rapportering", v.rapporteringIntern]])],
+  ];
+  return delar.map(([titel, innehall, t], i) => ({ id: `direktiv-${i + 1}`, nr: i + 1, titel, sammanfattning: "", falt: innehall, tabell: t || null, tomma: [], tomTabell: "", kontroll: null }));
+}
+
 export function projektstartDokument(u, { datum, skapadAv = "", historik = [], sparad = "" }) {
   const v = u.v;
   const nuFas = aktuellFas(u);
@@ -293,7 +330,7 @@ export function projektstartDokument(u, { datum, skapadAv = "", historik = [], s
     const tabell = s.tabell
       ? {
           titel: s.tabell.titel,
-          kolumner: [...s.tabell.kolumner.map((k) => k.etikett), ...(arRisker ? ["Värde"] : [])],
+          kolumner: [...s.tabell.kolumner.map((k) => arRisker && k.id === "sannolikhet" ? "S (1-5)" : arRisker && k.id === "konsekvens" ? "K (1-5)" : k.etikett), ...(arRisker ? ["Värde"] : [])],
           vikter: [...s.tabell.kolumner.map(kolumnVikt), ...(arRisker ? [0.8] : [])],
           rader: (u.rader[s.tabell.id] || [])
             .filter((r) => s.tabell.kolumner.some((k) => (r[k.id] || "").trim() && (k.typ === "text" || k.typ === "date")))
@@ -346,6 +383,8 @@ export function projektstartDokument(u, { datum, skapadAv = "", historik = [], s
     skapadAv,
     projektstart: {
       sektioner,
+      direktiv: anbudsDirektiv(u),
+      anbudsutfall: v.anbudsutfall || "Anbudsarbete pågår",
       klara: l.klara,
       totalt: l.totalt,
       kritiskaOppna: l.kritiskaOppna.length,
@@ -366,7 +405,7 @@ export function projektstartDokument(u, { datum, skapadAv = "", historik = [], s
         klarAllt: lager.every((f) => f.status === "klar"),
         faser: lager.map((f) => ({ nr: f.nr, kort: f.kort, status: f.status, klara: f.klara, totalt: f.totalt, ljus: u.trafikljus?.[f.nr]?.ljus || "", kommentar: (u.trafikljus?.[f.nr]?.kommentar || "").trim() })),
       },
-      lage: { skede: statusEtikett(fasInfo.status), nulage: (v.nulage || "").trim(), beslut: (v.beslutLedning || "").trim() },
+      lage: { skede: rapporteringsSkede(u), nastaSteg: (v.nastaStegLedning || "").trim(), beslutSenast: varde(v.beslutSenast), nulage: (v.nulage || "").trim(), beslut: (v.beslutLedning || "").trim() },
       kort: {
         plats: varde(v.plats),
         start: varde(v.startdatum),
@@ -451,3 +490,4 @@ export function utkastFranProjekt(projekt, state) {
   }
   return u;
 }
+

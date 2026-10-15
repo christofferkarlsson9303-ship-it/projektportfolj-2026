@@ -245,8 +245,7 @@ const stegLage = (sek) => {
 
 function Sidfot({ d }) {
   const p = d.projekt;
-  const f = d.projektstart.fas;
-  const vanster = `Projektstart · ${p.namn || "Projekt utan namn"} · ${p.nr ? `Projektnr ${p.nr}` : "Projektnr ej skapat"} · Fas ${f.nr} av ${f.antal} (${f.kort}) · Upprättad ${d.datum}`;
+  const vanster = `Ledningsrapport · ${p.namn || "Projekt utan namn"} · ${p.nr ? `Projektnr ${p.nr}` : "Projektnr ej skapat"} · ${d.projektstart.lage.skede} · ${d.datum}`;
   return (
     <>
       <View fixed style={s.footLinje} />
@@ -261,45 +260,20 @@ function Sidfot({ d }) {
   );
 }
 
-const LJUSFARG = { gron: "#3cb8ba", gul: F.orange, rod: F.rod };
 const LJUSTEXT = { gron: "Grön, enligt plan", gul: "Gul, avvikelse som hanteras i projektet", rod: "Röd, kräver hjälp eller beslut" };
-const FASFARG = { klar: F.bla, upplast: F.himmel, aktuell: "#fff", last: "#4f8d9d" };
-
-/** Projektets nuvarande fas och status, med de åtta faserna som en rad. */
-function FasRuta({ fas }) {
+/** Affärsläget anges av projektledaren, oberoende av metodens upplåsta faser. */
+function FasRuta({ fas, lage }) {
   return (
     <View style={s.fasBox} wrap={false}>
-      <View style={s.fasTopp}>
-        <View style={{ flex: 1, paddingRight: 10 }}>
-          <Text style={s.fasRubrik}>Fas {fas.nr} av {fas.antal} · {fas.kort}</Text>
-          <Text style={s.fasUnder}>{fas.titel}</Text>
-          <Text style={s.fasUnder}>Rapporten omfattar fas 1{fas.omfattar > 1 ? `–${fas.omfattar}` : ""}, de upplåsta faserna. Senare faser ingår inte.</Text>
-          {fas.utkast ? <Text style={s.fasUtkast}>UTKAST: fas {fas.nr} är inte godkänd än ({fas.kvar} {fas.kvar === 1 ? "obligatorisk punkt" : "obligatoriska punkter"} återstår).</Text> : null}
-        </View>
-        <Text style={s.fasStatus}>STATUS: {fas.status.toUpperCase()}</Text>
-      </View>
-      <View style={s.fasRad}>
-        {fas.faser.map((f) => (
-          <View key={f.nr} style={s.fasSegment}>
-            <View style={[s.fasStapel, { backgroundColor: FASFARG[f.status] }]} />
-            <Text style={[s.fasEtikett, { color: f.status === "last" ? "#7fb0bd" : "#fff", fontWeight: f.status === "aktuell" ? 700 : 400 }]}>
-              {f.nr}. {f.kort}
-            </Text>
-          </View>
-        ))}
-      </View>
-      {fas.faser.some((f) => f.ljus) ? (
-        <View style={{ marginTop: 8 }}>
-          {fas.faser.filter((f) => f.ljus).map((f) => (
-            <View key={f.nr} style={{ flexDirection: "row", alignItems: "center", marginTop: 3 }}>
-              <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: LJUSFARG[f.ljus], marginRight: 6 }} />
-              <Text style={{ fontSize: 8.5, color: "#fff" }}>
-                Fas {f.nr} · {f.kort}: {LJUSTEXT[f.ljus]}{f.kommentar ? `. ${f.kommentar}` : ""}
-              </Text>
-            </View>
-          ))}
-        </View>
-      ) : null}
+      <Text style={[s.fasUnder, { letterSpacing: 1, marginBottom: 5 }]}>AKTUELLT PROJEKTSKEDE</Text>
+      <Text style={[s.fasRubrik, { fontSize: 21 }]}>{lage.skede}</Text>
+      <Text style={[s.fasUnder, { marginTop: 9 }]}>ONE-P: fas {fas.nr} av {fas.antal} - {fas.kort}</Text>
+      {fas.nr > 1 ? <Text style={s.fasUnder}>{fas.utkast ? `Genomgång av fasen återstår: ${fas.kvar} obligatoriska punkter.` : "Fasens obligatoriska krav är uppfyllda."}</Text> : null}
+      {fas.faser.filter((f) => f.nr === fas.nr && f.ljus).map((f) => (
+        <Text key={f.nr} style={[s.fasUnder, { color: "#fff", marginTop: 6 }]}>Projektledarens bedömning: {LJUSTEXT[f.ljus]}{f.kommentar ? `. ${f.kommentar}` : ""}</Text>
+      ))}
+      {fas.nr === 1 ? <Text style={s.fasUnder}>Anbudsgenomgång. Uppstart och genomförandekontroller tillkommer efter vunnet anbud.</Text> : null}
+      {!fas.faser.some((f) => f.nr === fas.nr && f.ljus) ? <Text style={s.fasUnder}>Projektledarens statusbedömning: ej angiven.</Text> : null}
     </View>
   );
 }
@@ -308,7 +282,6 @@ function Forsattsblad({ d }) {
   const p = d.projekt;
   const ps = d.projektstart;
   const k = ps.kort;
-  const stegKlara = ps.sektioner.filter((x) => x.besokt).length;
   return (
     <View>
       <View style={s.omslagTopp}>
@@ -323,10 +296,10 @@ function Forsattsblad({ d }) {
         </View>
       </View>
 
-      <Text style={s.overrubrik}>PROJEKTSTART OCH LÄGESBILD ENLIGT ONE-P</Text>
+      <Text style={s.overrubrik}>{ps.fas.nr === 1 ? "ANBUDSGENOMGÅNG ENLIGT ONE-P" : "PROJEKTSTATUS OCH BESLUTSUNDERLAG"}</Text>
       <Text style={s.titel}>{p.namn || "Projekt utan namn"}</Text>
 
-      <FasRuta fas={ps.fas} />
+      <FasRuta fas={ps.fas} lage={ps.lage} />
 
       <View style={s.meta} wrap={false}>
         <View style={s.metaCell}>
@@ -339,7 +312,7 @@ function Forsattsblad({ d }) {
         </View>
         <View style={s.metaCell}>
           <Text style={s.metaEtikett}>Period</Text>
-          <Text style={s.metaVarde}>{k.start || k.slut ? `${k.start || "?"} – ${k.slut || "?"}` : "Ej satt"}</Text>
+          <Text style={s.metaVarde}>{k.start || k.slut ? `${k.start || "Start ej angiven"} – ${k.slut || "Slut ej angivet"}` : "Ej satt"}</Text>
         </View>
         <View style={s.metaCellBred}>
           <Text style={s.metaEtikett}>Plats / anläggning</Text>
@@ -358,18 +331,23 @@ function Forsattsblad({ d }) {
       <View style={s.lage} wrap={false}>
         <View style={s.lageTopp}>
           <Text style={s.lageTitelRad}>Läget just nu{ps.sparad ? ` · senast sparad ${ps.sparad}` : ""}</Text>
-          {ps.lage.skede ? <Text style={s.skede}>{ps.lage.skede.toUpperCase()}</Text> : null}
         </View>
         <Text style={s.lageRubrik}>Nuläge till ledningen</Text>
         <Text style={s.lageText}>{ps.lage.nulage || "Inget nuläge skrivet."}</Text>
-        {ps.lage.beslut ? (
-          <View style={s.beslut}>
+        <View style={s.beslut}>
             <Text style={[s.lageRubrik, { fontSize: 12 }]}>Beslut som behövs från ledningen</Text>
-            <Text style={s.lageText}>{ps.lage.beslut}</Text>
+            <Text style={s.lageText}>{ps.lage.beslut || "Inget beslutsbehov angivet."}</Text>
+            {ps.lage.beslutSenast ? <Text style={[s.lageText, { marginTop: 4 }]}>Beslut senast: {ps.lage.beslutSenast}</Text> : null}
           </View>
-        ) : null}
+        <View style={s.beslut}>
+          <Text style={[s.lageRubrik, { fontSize: 12 }]}>Nästa steg och ansvarig</Text>
+          <Text style={s.lageText}>{ps.lage.nastaSteg || "Ej angivet."}</Text>
+        </View>
       </View>
 
+      {ps.fas.nr > 1 ? <View break>
+      <Text style={s.h2}>Bilaga - dokumentation och kontrollpunkter</Text>
+      <Text style={s.stycke}>Omfattning: ONE-P fas 1{ps.fas.omfattar > 1 ? `-${ps.fas.omfattar}` : ""}. Avbockningarna visar dokumenterad egenkontroll, inte projektets färdigställandegrad. En öppnad sida innebär inte att innehållet är granskat eller godkänt.</Text>
       <View style={s.tiles} wrap={false}>
         <View style={s.tile}>
           <Text style={[s.tileTal, { color: F.bla }]}>
@@ -383,9 +361,9 @@ function Forsattsblad({ d }) {
         </View>
         <View style={s.tile}>
           <Text style={[s.tileTal, { color: F.djup }]}>
-            {stegKlara} / {ps.sektioner.length}
+            {ps.sektioner.length}
           </Text>
-          <Text style={s.tileEtikett}>Steg genomgångna (omfattade faser)</Text>
+          <Text style={s.tileEtikett}>Avsnitt i bilagan</Text>
         </View>
       </View>
 
@@ -415,12 +393,13 @@ function Forsattsblad({ d }) {
                   </Text>
                 </>
               ) : (
-                <Text style={{ fontSize: 9.5 }}>{stegLage(x) || (x.besokt ? "Genomgånget" : "Ej genomgånget")}</Text>
+                <Text style={{ fontSize: 9.5 }}>{stegLage(x) || (x.besokt ? "Öppnat i guiden" : "Ej öppnat i guiden")}</Text>
               )}
             </View>
           </View>
         );
       })}
+      </View> : null}
     </View>
   );
 }
@@ -558,6 +537,7 @@ function Steg({ sek, fasBand }) {
   const tabellHuvud = sek.tabell ? (
     <View wrap={false}>
       <Text style={s.tabellTitel}>{sek.tabell.titel}</Text>
+      {(sek.id === "risker" || sek.id === "direktiv-2") ? <Text style={[s.stycke, { fontSize: 9 }]}>S = sannolikhet, K = konsekvens. Värde = S × K.</Text> : null}
       <View style={s.th}>
         {sek.tabell.kolumner.map((k, i) => (
           <Text key={k} style={[s.thText, { width: bredd(i) }]}>
@@ -585,10 +565,9 @@ function Steg({ sek, fasBand }) {
               <Text style={s.stegTitel}>{sek.titel}</Text>
               {sek.sammanfattning ? <Text style={s.stegSammanfattning}>{sek.sammanfattning}</Text> : null}
             </View>
-            <View style={[s.piller, sek.besokt ? null : s.pillerGra]}>
-              {sek.besokt ? <Bock farg={F.djup} storlek={6.5} /> : null}
-              <Text style={[s.pillerText, { marginLeft: sek.besokt ? 3 : 0 }]}>{sek.besokt ? "Genomgånget" : "Ej genomgånget"}</Text>
-            </View>
+            {!sek.id.startsWith("direktiv-") ? <View style={[s.piller, s.pillerGra]}>
+              <Text style={s.pillerText}>{sek.kontroll ? `${sek.kontroll.klara}/${sek.kontroll.totalt} avbockade` : stegLage(sek) || "Ej ifyllt"}</Text>
+            </View> : null}
           </View>
           {forstaArRad ? (
             <View style={{ borderTop: `0.6pt solid ${F.linje}` }}>
@@ -675,17 +654,18 @@ export function ProjektstartPdf({ dokument: d }) {
         <Sidfot d={d} />
         <Forsattsblad d={d} />
 
-        {ps.sektioner.map((sek, i) => (
-          <Steg key={sek.id} sek={sek} fasBand={ps.sektioner[i - 1]?.fas !== sek.fas ? <FasBand text={`Fas ${sek.fasNr} av ${ps.fas.antal} · ${sek.fasTitel}`} /> : null} />
+        {(ps.direktiv || []).map((sek) => <View key={sek.id} break><Steg sek={sek} /></View>)}
+        {ps.sektioner.filter((sek) => sek.fasNr > 1).map((sek, i, lista) => (
+          <View key={sek.id} break><Steg sek={sek} fasBand={lista[i - 1]?.fas !== sek.fas ? <FasBand text={`Fas ${sek.fasNr} av ${ps.fas.antal} · ${sek.fasTitel}`} /> : null} /></View>
         ))}
 
         <Logg historik={ps.historik} />
         {ps.historik.length ? <View style={s.stegLuft} /> : null}
 
-        <View wrap={false}>
-          <Text style={[s.h2, { fontSize: 16 }]}>Sammanfattning och godkännande</Text>
+        <View break wrap={false}>
+          <Text style={[s.h2, { fontSize: 16 }]}>Granskning och godkännande</Text>
           <Text style={s.summaFet}>
-            Projektet är i fas {ps.fas.nr} av {ps.fas.antal} ({ps.fas.kort}), status {ps.fas.status}. {ps.klara} av {ps.totalt} kontrollpunkter i faserna som rapporten omfattar är avbockade. {ps.kritiskaOppna} av {ps.kritiskaTotalt} kritiska punkter är inte avbockade.{ps.fas.utkast ? ` Rapporten är ett utkast: fas ${ps.fas.nr} är inte godkänd.` : ""}
+            Aktuellt projektskede: {ps.lage.skede}. Rapporten omfattar projektdirektivet{ps.fas.nr > 1 ? ` och upplåsta faser till och med fas ${ps.fas.nr} (${ps.fas.kort})` : " inför anbudsgenomgång"}. {ps.fas.nr === 1 ? `Anbudsutfall: ${ps.anbudsutfall}. Genomgång av anbudsunderlaget innebär inte vunnet anbud eller tillstånd att starta genomförandet.` : `${ps.klara} av ${ps.totalt} kontrollpunkter är avbockade.`}
           </Text>
           <Text style={s.summaText}>
             Underlaget är ett arbetsmaterial. Kontrollera kontraktsvillkor, betalplan och priser mot originalhandlingarna före användning.
@@ -708,3 +688,4 @@ export function ProjektstartPdf({ dokument: d }) {
     </Document>
   );
 }
+

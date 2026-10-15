@@ -148,7 +148,7 @@ describe("Återanvändbar projektmetod", () => {
     const u = tomtUtkast();
     Object.assign(u.v, { skede: "Anbud", nulage: "Anbud in 23/10" });
     const r1 = historikRad(u, { datum: "2026-10-06", av: "CK" });
-    expect(r1).toMatchObject({ skede: "Planering och uppstart", nulage: "Anbud in 23/10", klara: 0 });
+    expect(r1).toMatchObject({ skede: "Inför anbudsinlämning", nulage: "Anbud in 23/10", klara: 0 });
     let h = medHistorik([], r1);
     h = medHistorik(h, { ...r1, nulage: "Ändrat samma dag" });
     expect(h).toHaveLength(1);
@@ -157,7 +157,7 @@ describe("Återanvändbar projektmetod", () => {
     expect(h).toHaveLength(2);
     const d = projektstartDokument(u, { datum: "2026-10-07", historik: h, sparad: "2026-10-07" });
     expect(d.projektstart.historik).toHaveLength(2);
-    expect(d.projektstart.lage).toMatchObject({ skede: "Planering och uppstart", nulage: "Anbud in 23/10" });
+    expect(d.projektstart.lage).toMatchObject({ skede: "Inför anbudsinlämning", nulage: "Anbud in 23/10" });
   });
   it("delar långa texter i stycken, milstolpskort och fetstilta nycklar", () => {
     const t = "Förslag:\n\nMilstolpe 3 (Kablering, Förläggning & Station - 20–25 %):\nBetalas när kablarna är förlagda.\n\nAvtalsform: Totalentreprenad.\nKvalitet & Säkerhet: Enligt ESA.";
@@ -230,3 +230,4 @@ describe("Riskvärde och fördelning i guiden", () => {
     expect(riskFordelning(undefined)).toEqual({ lag: 0, medel: 0, hog: 0, totalt: 0 });
   });
 });
+

@@ -6,7 +6,7 @@ export const KATALOG = {
   {
    "id": "signed",
    "grupp": "Innan ni tackar ja",
-   "text": "Kontrakt och samtliga bilagor är lästa",
+   "text": "Förfrågningsunderlag, avtalsutkast och bilagor är genomgångna",
    "kritisk": true
   },
   {
@@ -167,7 +167,7 @@ export const KATALOG = {
   {
    "id": "price",
    "grupp": "Kontraktssanning",
-   "text": "Kontraktspris och index är bekräftade",
+   "text": "Anbudspris och indexförutsättningar är genomgångna",
    "kritisk": true
   },
   {
@@ -178,7 +178,7 @@ export const KATALOG = {
   {
    "id": "guaranteeCheck",
    "grupp": "Kontraktssanning",
-   "text": "Bankgaranti är verifierad: belopp, tid, utfärdare",
+   "text": "Bankgaranti är bedömd inför anbud: belopp, tid och utfärdare",
    "kritisk": true
   },
   {
@@ -1261,3 +1261,4 @@ export const ROLLER = [
   "tips": "Kontrollera att fullmakten stämmer."
  }
 ];
+
