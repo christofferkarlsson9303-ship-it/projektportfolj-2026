@@ -44,7 +44,7 @@ export const STEG = [
       { id: "niva", etikett: "Projektnivå", typ: "select", alternativ: NIVA, obligatoriskt: true },
       { id: "startdatum", etikett: "Start", typ: "date" },
       { id: "fardigdatum", etikett: "Slut", typ: "date" },
-      { id: "rapporteringsskede", etikett: "Aktuellt projektskede i ledningsrapporten", typ: "select", standard: "", alternativ: [["", "Ej angivet"], "Inför anbudsinlämning", "Anbud inlämnat - inväntar tilldelning", "Kontraktsförhandling", "Uppstart", "Genomförande", "Provning och driftsättning", "Överlämning och avslut", "Garanti", "Pausat", "Ej vunnet / avbrutet"], tips: "Välj verkligt affärs- och produktionsläge. Detta visas tydligt i PDF:en och ändrar inte ONE-P-fasen." },
+      { id: "rapporteringsskede", etikett: "Aktuellt projektskede i ledningsrapporten", typ: "select", standard: "", alternativ: [["", "Automatiskt från fas och anbudsutfall"], "Inför anbudsinlämning", "Anbud inlämnat - inväntar tilldelning", "Kontraktsförhandling", "Uppstart", "Genomförande", "Provning och driftsättning", "Överlämning och avslut", "Garanti", "Pausat", "Ej vunnet / avbrutet"], tips: "Lämna på Automatiskt för att följa fas och anbudsutfall, eller precisera skedet. Ändrar inte ONE-P-fasen." },
       { id: "nastaStegLedning", etikett: "Nästa steg och ansvarig", typ: "textarea", bred: true, tips: "Beskriv nästa aktivitet och vem som ansvarar." },
       { id: "beslutSenast", etikett: "Ledningsbeslut behövs senast", typ: "date" },
       { id: "nulage", etikett: "Nuläge till ledningen", typ: "textarea", bred: true, tips: "Skriv om inför varje rapport. Det här står först i PDF:en." },
@@ -58,6 +58,7 @@ export const STEG = [
     titel: "Avropsacceptans",
     sammanfattning: "Ska vi ta uppdraget? Lönsamhet, risk och resurser innan start.",
     falt: [
+      { id: "anbudsutfall", etikett: "Anbudsutfall", typ: "select", alternativ: ["Anbudsarbete pågår", "Anbud inlämnat", "Vunnet anbud"], tips: "Fas 2 öppnas först när fas 1 är genomgången och Vunnet anbud är valt. Gå vidare betyder endast att vi vill lämna anbud." },
       { id: "beslut", etikett: "Beslut", typ: "select", alternativ: BESLUT, obligatoriskt: true, kravVarde: "Gå vidare", tips: "Fasen godkänns bara vid Gå vidare." },
       { id: "motivering", etikett: "Motivering", typ: "textarea", bred: true },
       { id: "oppnaFragor", etikett: "Öppna frågor till intern beställare", typ: "textarea", bred: true },
@@ -72,7 +73,7 @@ export const STEG = [
     fas: 1,
     del: "Anbud och beslut",
     titel: "Projektdirektiv",
-    sammanfattning: "Bakgrund, mål, avgränsning och vad som får ge vika om det blir trångt.",
+    sammanfattning: "Anbudsgenomgång enligt ONE-P: fyll i det ni vet, ange antaganden och komplettera efter tilldelning.",
     falt: [
       { id: "bakgrund", etikett: "Bakgrund", typ: "textarea", bred: true },
       { id: "syfte", etikett: "Syfte", typ: "textarea", bred: true },
@@ -80,6 +81,16 @@ export const STEG = [
       { id: "ingar", etikett: "Ingår", typ: "textarea" },
       { id: "ingarEj", etikett: "Ingår inte", typ: "textarea" },
       { id: "offra", etikett: "Vad får ge vika först?", typ: "select", alternativ: ["Kostnad", "Kvalitet", "Tid"], obligatoriskt: true },
+      { id: "anbudRiskbild", etikett: "Identifierade risker inför anbud", typ: "textarea", bred: true, tips: "Sammanfatta kalkylrisker, osäkerheter och planerade åtgärder. Riskregistret nedanför följer med till senare faser." },
+      { id: "anbudTidplan", etikett: "Övergripande tidplan och kontraktsdatum", typ: "textarea", bred: true, tips: "Anbudsdag, tilldelning, planerad start, leveranser och färdigställande. Märk antagna datum." },
+      { id: "prioritetKostnad", etikett: "Prioritering kostnad (%)", typ: "text", tips: "Kostnad, kvalitet och tid ska tillsammans vara 100 %." },
+      { id: "prioritetKvalitet", etikett: "Prioritering kvalitet (%)", typ: "text" },
+      { id: "prioritetTid", etikett: "Prioritering tid (%)", typ: "text" },
+      { id: "anbudHseq", etikett: "HSEQ och arbetsmiljö inför anbud", typ: "textarea", bred: true, tips: "Förutsättningar, arbetsmiljörisker och tänkt BAS-P/BAS-U-ansvar. Etableringskontroller kommer senare." },
+      { id: "anbudOrganisation", etikett: "Planerad organisation och överlämning", typ: "textarea", bred: true, tips: "Planerade resurser, ansvar och överlämning från anbud till projekt." },
+      ...ROLLER.filter((r) => ["pl", "internalClient", "basU", "basP"].includes(r.id)).map((r) => ({ id: `roll_${r.id}`, etikett: `Planerad ${r.namn.toLowerCase()}`, typ: "text", tips: "Samma uppgift återanvänds i Organisation och uppstart." })),
+      { id: "rapporteringKund", etikett: "Rapportering till kund", typ: "textarea", standard: "Skriftlig månadsrapport: progress och status till kund." },
+      { id: "rapporteringIntern", etikett: "Intern rapportering", typ: "textarea", standard: "Månadsavstämning internt. Styrgrupp kallas vid avvikelse." },
       /* Direktivet signeras av intern beställare och projektledare (metoden 6.1). Signeringen är en
          grind: fas 2 låses inte upp förrän båda har signerat. */
       { id: "signPL", etikett: "Signerat av projektledare", typ: "text", placeholder: "Namn", obligatoriskt: true },
@@ -130,9 +141,9 @@ export const STEG = [
         { id: "datum", etikett: "Datum", typ: "date" },
       ],
       start: [{ namn: "M1 Uppstart" }, { namn: "Färdigställande" }],
-      obligatorisk: ["namn", "datum"],
     },
     katalog: ["contract"],
+    grupper: { contract: ["Kontraktssanning"] },
   },
   {
     id: "organisation",
@@ -147,7 +158,8 @@ export const STEG = [
       { id: "rapporteringKund", etikett: "Rapportering till kund", typ: "textarea", standard: "Skriftlig månadsrapport: progress och status till kund." },
       { id: "rapporteringIntern", etikett: "Intern rapportering", typ: "textarea", standard: "Månadsavstämning internt. Styrgrupp kallas vid avvikelse." },
     ],
-    katalog: ["org", "kickoff"],
+    katalog: ["org", "kickoff", "contract"],
+    grupper: { contract: ["System", "ÄTA och störning", "Fakturering"] },
   },
   {
     id: "risker",

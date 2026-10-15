@@ -88,7 +88,7 @@ export function stegKrav(u, steg) {
 /** Antal faser i följd, från fas 1, som är godkända. */
 export function godkandaFaser(u) {
   let n = 0;
-  while (n < FAS_ANTAL && fasKrav(u, n + 1).klar) n += 1;
+  while (n < FAS_ANTAL && fasKrav(u, n + 1).klar && (n > 0 || arEjVunnetUtkast(u) || u.fasGolv >= 2 || u.v?.anbudsutfall === "Vunnet anbud")) n += 1;
   return n;
 }
 
@@ -141,3 +141,4 @@ export function pdfKvar(u) {
 export const pdfArUtkast = (u) => pdfKvar(u).length > 0;
 
 export const fasTitel = (nr) => (nr === null || nr === undefined ? "Klart" : faseInfo(nr).kort);
+

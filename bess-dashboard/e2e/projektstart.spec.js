@@ -51,7 +51,7 @@ async function bockaKontrakt(page) {
 
 /** Fyller i de obligatoriska fälten i fas 1. Med `checklista` bockas också alla kontrollpunkter,
  *  och då är fasen godkänd och fas 2 upplåst. */
-async function fyllFas1(page, { checklista = true, namn = "Fas-test", nr } = {}) {
+async function fyllFas1(page, { checklista = true, namn = "Fas-test", nr, vunnet = true } = {}) {
   await gaTillSteg(page, 1, "Projektkort");
   await page.getByLabel(/^Projektnamn/).fill(namn);
   if (nr) await page.getByLabel(/^Projektnummer/).fill(nr);
@@ -59,6 +59,7 @@ async function fyllFas1(page, { checklista = true, namn = "Fas-test", nr } = {})
   await page.getByLabel(/^Projektnivå/).selectOption("Nivå 2");
   await gaTillSteg(page, 2, "Avropsacceptans");
   await page.locator("#ps-beslut").selectOption("Gå vidare");
+  if (vunnet) await page.getByLabel("Anbudsutfall", { exact: true }).selectOption("Vunnet anbud");
   if (checklista) await bockaAlla(page);
   await gaTillSteg(page, 3, "Projektdirektiv");
   await page.getByLabel(/^Mål/).fill("Ett mätbart mål");
@@ -456,5 +457,31 @@ test("direktivet måste signeras, och uppstartsavstämning och interface-lista (
   await gaTillSteg(page, 9, "Godkänd lösning");
   await expect(page.getByRole("region", { name: "Interface-lista" })).toBeVisible();
   await expect(page.getByLabel(/^Interface-lista, rad \d+: Gränssnitt$/)).toHaveCount(5);
+  expect(fel).toEqual([]);
+});
+
+
+
+test("anbudsgenomgång stannar i fas 1 tills anbudet är vunnet", async ({ page }) => {
+  const { fel } = await oppna(page, "Projektstart");
+  await fyllFas1(page, { vunnet: false, namn: "Anbudsgenomgång" });
+  await expect(page.getByText(/ONE-P · Fas 1 av 8/)).toBeVisible();
+  await forvantaLast(page, 6, "Organisation och uppstart");
+  await gaTillSteg(page, 3, "Projektdirektiv");
+  await page.getByLabel("Identifierade risker inför anbud").fill("Leveransfönstret måste bekräftas.");
+  await page.getByLabel("Övergripande tidplan och kontraktsdatum").fill("Anbud i oktober, tilldelning i december.");
+  await page.getByLabel("HSEQ och arbetsmiljö inför anbud").fill("BAS-U-ansvar planeras efter kontrakt.");
+  await page.getByLabel("Risker, rad 1: Risk", { exact: true }).fill("Gemensam risk från anbudet");
+  await gaTillSteg(page, SISTA, "Granska och skapa");
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Ladda ned PDF" }).click();
+  expect((await download).suggestedFilename()).toMatch(/\.pdf$/);
+  await gaTillSteg(page, 2, "Avropsacceptans");
+  await page.getByLabel("Anbudsutfall", { exact: true }).selectOption("Anbud inlämnat");
+  await forvantaLast(page, 6, "Organisation och uppstart");
+  await page.getByLabel("Anbudsutfall", { exact: true }).selectOption("Vunnet anbud");
+  await expect(page.getByText(/ONE-P · Fas 2 av 8/)).toBeVisible();
+  await gaTillSteg(page, 7, "Riskregister");
+  await expect(page.getByLabel("Risker, rad 1: Risk", { exact: true })).toHaveValue("Gemensam risk från anbudet");
   expect(fel).toEqual([]);
 });

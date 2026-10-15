@@ -11,6 +11,7 @@ import { stegPunkter } from "./stegpunkter.js";
 
 /** Fyller i allt obligatoriskt i en fas: fält, tabellrader och kritiska kontrollpunkter. */
 function godkannFas(u, nr, { bara = ["falt", "tabeller", "punkter"] } = {}) {
+  if (nr === 1 && bara.includes("falt")) u.v.anbudsutfall = "Vunnet anbud";
   for (const s of stegIFas(nr)) {
     if (bara.includes("falt")) {
       for (const f of s.falt || []) {
@@ -190,7 +191,7 @@ describe("PDF för ledningen följer de upplåsta faserna", () => {
     const ps = d.projektstart;
     // Fas 1 och 2 är godkända och fas 3 är aktuell (upplåst, inte godkänd): de tre ingår, fas 4 och uppåt inte.
     expect(ps.fas).toMatchObject({ nr: 3, omfattar: 3, utkast: true, antal: 8, kort: "Etablering", status: "Produktion", statusId: "PRODUKTION" });
-    expect(ps.lage.skede).toBe(skede || "Projektskede ej angivet");
+    expect(ps.lage.skede).toBe(skede || "Etablering");
     expect(new Set(ps.sektioner.map((x) => x.fasNr))).toEqual(new Set([1, 2, 3]));
     expect(ps.sektioner.some((x) => x.id === "hseq")).toBe(true);
     expect(ps.sektioner.some((x) => x.id === "cbop")).toBe(false);
@@ -367,5 +368,43 @@ describe("Omräkning från sexfasmodellen", () => {
     expect(igen.fasGolv).toBe(7);
     expect(igen.rader.risker.map((r) => r.fas)).toEqual(["4", "5", "7"]);
     expect(igen.besokta).toEqual(u.besokta);
+  });
+});
+
+
+
+describe("Anbudsgenomgång och vunnet anbud", () => {
+  it.each(["Anbudsarbete pågår", "Anbud inlämnat", ""])("öppnar inte uppstarten vid %s även om anbudsunderlaget är komplett", (utfall) => {
+    const u = godkannFas(tomtUtkast(), 1);
+    u.v.anbudsutfall = utfall;
+    expect(fasKrav(u, 1).klar).toBe(true);
+    expect(aktuellFas(u)).toBe(1);
+    expect(stegLast(u, STEG.find((x) => x.id === "organisation"))).toBe(true);
+    expect(pdfArUtkast(u)).toBe(false);
+    const d = projektstartDokument(u, { datum: "2026-10-15" });
+    expect(d.projektstart.sektioner.every((x) => x.fasNr === 1)).toBe(true);
+    expect(d.projektstart.direktiv.map((x) => x.titel)).toContain("HSEQ och arbetsmiljö");
+    u.v.anbudsutfall = "Vunnet anbud";
+    expect(aktuellFas(u)).toBe(2);
+    expect(projektstartDokument(u, { datum: "2026-10-15" }).projektstart.sektioner.some((x) => x.id === "organisation")).toBe(true);
+  });
+  it("lägger kontroller för system och fakturering i uppstarten utan att tappa avbockningar", () => {
+    const tidigt = stegPunkter(STEG.find((x) => x.id === "kontrakt"));
+    const senare = stegPunkter(STEG.find((x) => x.id === "organisation"));
+    expect(tidigt.some((p) => p.grupp === "System")).toBe(false);
+    expect(senare.some((p) => p.grupp === "System")).toBe(true);
+    const alla = [...tidigt, ...senare.filter((p) => p.bucket === "contract")];
+    expect(new Set(alla.map((p) => p.id)).size).toBe(17);
+  });
+  it("bevarar anbudsutfall, planerade roller och gemensamma risker vid sparning", () => {
+    const u = tomtUtkast();
+    Object.assign(u.v, { anbudsutfall: "Anbud inlämnat", roll_pl: "Christoffer", anbudHseq: "Planerad BAS-U" });
+    u.rader.risker = [{ id: "r1", titel: "Känd framtida risk", fas: "5", agare: "PL", atgard: "Bevaka" }];
+    const p = projektstartPost("p1", u);
+    const laddat = utkastFranPost(p);
+    expect(laddat.v.anbudsutfall).toBe("Anbud inlämnat");
+    const d = projektstartDokument(laddat, { datum: "2026-10-15" });
+    expect(d.projektstart.direktiv[1].tabell.rader[0][0]).toBe("Känd framtida risk");
+    expect(d.projektstart.direktiv[5].falt.some(([k, v]) => k === "Projektledare" && v === "Christoffer")).toBe(true);
   });
 });
