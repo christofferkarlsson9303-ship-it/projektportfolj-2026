@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 37129)
-Total output lines: 2210
-
 /* ONE Nordic designsystem — porterat oförändrat från standalone-filen
    (tokens, ljust/mörkt läge, komponentklasser och A4-utskrift).
    Tokens exponeras mot Tailwind i tailwind.config.js. */
@@ -1176,7 +1173,128 @@ tr.lastrad:hover{opacity:.8}
   padding:10px 12px 8px;border-bottom:1px solid var(--hairline)}
 .atakolumn-topp h4{margin:0;font-size:12px;font-weight:700;letter-spacing:.03em;
   text-transform:uppercase;color:var(--ink-soft)}
-.atakolumn-antal{display:inline-flex;align…2129 tokens truncated…lex-end}
+.atakolumn-antal{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;
+  color:var(--ink-faint)}
+.atakolumn-larm{width:7px;height:7px;border-radius:50%;background:var(--rod)}
+.atakolumn-kropp{display:flex;flex-direction:column;gap:8px;padding:10px;flex:1}
+.atakolumn-tom{margin:0;padding:10px 2px;font-size:12px;color:var(--ink-faint)}
+
+.atakort{background:var(--surface);border:1px solid var(--hairline-stark);border-radius:var(--r-sm);
+  box-shadow:var(--sh-sm);cursor:grab}
+.atakort:active{cursor:grabbing}
+.atakort.vald{border-color:var(--one-bla);box-shadow:0 0 0 2px rgba(0,182,222,.25)}
+.atakort-yta{display:flex;flex-direction:column;gap:6px;width:100%;padding:10px 11px;
+  background:none;border:0;text-align:left;font:inherit;color:inherit;cursor:inherit}
+.atakort-yta:focus-visible{outline:2px solid var(--one-bla);outline-offset:-2px;border-radius:var(--r-sm)}
+.atakort-topp{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.atakort-nr{font-size:11.5px;font-weight:700;color:var(--one-djup);letter-spacing:.03em}
+.atakort-titel{font-size:13px;line-height:1.4;color:var(--ink)}
+.atakort-fot{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  font-size:11.5px;color:var(--ink-faint)}
+.atakort-belopp{font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-soft)}
+
+.atabadge{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;
+  border-radius:50%;font-size:11px;flex:0 0 auto}
+.atabadge.gron{background:var(--ok-bg);color:var(--ok-ink)}
+.atabadge.gul{background:var(--warn-bg);color:var(--warn-ink)}
+.atabadge.rod{background:var(--bad-bg);color:var(--bad-ink)}
+
+.atatavla-fot{margin:0;font-size:12px}
+.lankknapp{background:none;border:0;padding:0;font:inherit;color:var(--one-djup);
+  text-decoration:underline;text-decoration-style:dotted;cursor:pointer}
+
+/* Slide-over. Medvetet utan overlay — tavlan bakom ska gå att läsa. */
+.atadrawer,.slideover{position:fixed;top:0;right:0;bottom:0;width:min(460px,100vw);z-index:40;
+  background:var(--surface);border-left:1px solid var(--hairline-stark);
+  box-shadow:-12px 0 32px rgba(13,45,54,.14);display:flex;flex-direction:column;
+  animation:atadrawer-in .18s ease-out}
+@keyframes atadrawer-in{from{transform:translateX(24px);opacity:.6}to{transform:none;opacity:1}}
+@media(prefers-reduced-motion:reduce){.atadrawer,.slideover{animation:none}}
+.atadrawer:focus,.slideover:focus{outline:none}
+
+.atadrawer-topp,.slideover-topp{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+  padding:14px 16px;border-bottom:1px solid var(--hairline)}
+.atadrawer-rubrik{min-width:0;display:flex;flex-direction:column;gap:6px}
+.atadrawer-meta{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.atadrawer-titel{margin:0;font-size:15px;line-height:1.35;display:flex;align-items:baseline;
+  gap:4px;flex-wrap:wrap;color:var(--one-djup)}
+.atadrawer-verktyg,.slideover-verktyg{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.atadrawer-kropp,.slideover-kropp{padding:14px 16px 28px;overflow-y:auto;flex:1;display:flex;
+  flex-direction:column;gap:14px}
+.atadrawer-kropp .atagrindar{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+
+/* Rubriken ser ut som text tills man klickar eller tabbar dit. */
+.atainline-rubrik{background:none;border:0;padding:2px 4px;margin-left:-4px;text-align:left;
+  font-family:var(--font-h);font-size:16px;font-weight:700;color:var(--ink);
+  border-radius:5px;cursor:text;width:100%}
+.atainline-rubrik:hover{background:var(--sunken)}
+.atainline-rubrik:focus-visible{outline:2px solid var(--one-bla);outline-offset:0}
+
+.atasparad{font-size:11.5px;font-weight:600;color:var(--ok-ink);white-space:nowrap}
+.atasparad.sparar{color:var(--ink-faint)}
+
+@media print{.atadrawer,.slideover{display:none}}
+
+/* ---------- Veckokollen ---------- */
+.slideover-titel{margin:0;font-size:15px;line-height:1.35;color:var(--one-djup)}
+
+/* Frågekorten har samma form som designsystemets Card (12 px radie, tunn
+   ram, liten skugga) och bär svaret i den smala vänsterkanten. */
+.veckokort-rutnat{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:16px}
+@media(min-width:1024px){.veckokort-rutnat{gap:24px}}
+.veckokort{background:var(--surface);border:1px solid var(--hairline);box-shadow:var(--sh-sm);
+  border-left:4px solid var(--hairline-stark);border-radius:12px;padding:16px;
+  display:flex;flex-direction:column;gap:12px;
+  transition:box-shadow .2s var(--ease),transform .2s var(--ease),border-color .2s var(--ease),background-color .2s var(--ease)}
+.veckokort:hover{box-shadow:var(--sh-md);transform:translateY(-1px)}
+.veckokort .ref{font-size:11px;color:var(--ink-soft);font-weight:600}
+.veckokort.ok{border-left-color:var(--turkos)}
+.veckokort.varning{border-left-color:var(--orange);background:linear-gradient(90deg,var(--warn-bg),var(--surface) 38%)}
+.veckokort.avvikelse{border-left-color:var(--rod);background:linear-gradient(90deg,var(--bad-bg),var(--surface) 38%)}
+.veckokort-fraga{display:flex;gap:8px;font-size:13px;line-height:1.45;color:var(--ink)}
+.veckokort-nr{font-weight:700;color:var(--ink-soft);flex:0 0 auto}
+/* Svaren som en toggle-grupp: ikon, allvarsgrad och svarsord, lika breda. */
+.veckokort-svar{display:flex;gap:6px}
+.veckokort-svar button{font-family:var(--font-b);font-size:12px;font-weight:600;flex:1 1 0;min-width:0;
+  border:1px solid var(--hairline-stark);background:var(--surface);color:var(--ink-soft);
+  border-radius:10px;padding:7px 8px;cursor:pointer;display:inline-flex;flex-direction:column;gap:2px;align-items:center;
+  text-align:center;transition:transform .15s var(--ease),background-color .15s var(--ease),border-color .15s var(--ease),box-shadow .15s var(--ease)}
+.veckokort-svar button:hover{border-color:var(--ink-faint);background:var(--sunken)}
+.veckokort-svar button:active{transform:scale(.97)}
+.veckokort-svar button:focus-visible{outline:2px solid var(--one-bla);outline-offset:2px}
+.veckokort-svar button svg{flex:0 0 auto}
+.veckokort-svar button .ord{font-weight:400;font-size:11px;color:var(--ink-soft)}
+.veckokort-svar button[aria-pressed="true"]{box-shadow:var(--sh-sm)}
+.veckokort-svar button[aria-pressed="true"].ok{background:var(--ok-bg);border-color:var(--turkos);color:var(--ok-ink)}
+.veckokort-svar button[aria-pressed="true"].varning{background:var(--warn-bg);border-color:var(--orange);color:var(--warn-ink)}
+.veckokort-svar button[aria-pressed="true"].avvikelse{background:var(--bad-bg);border-color:var(--rod);color:var(--bad-ink)}
+.veckokort-svar button[aria-pressed="true"] .ord{color:inherit;opacity:.8}
+.veckokort-rad{font-size:12.5px;line-height:1.5;color:var(--ink-soft)}
+.veckokort-fot{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.veckokort-kommentar{font-size:12px;color:var(--ink-soft)}
+/* Snabbfältet som fälls ut under ett kort med varning eller avvikelse. */
+.veckokort-snabb{display:flex;flex-direction:column;gap:10px;padding-top:12px;border-top:1px solid var(--hairline);
+  animation:veckoSnabbIn .22s var(--ease)}
+.veckokort-snabb textarea{min-height:64px}
+@keyframes veckoSnabbIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.veckokort,.veckokort-snabb{transition:none;animation:none}.veckokort:hover{transform:none}}
+
+/* ---------- Slutdokumentation ---------- */
+.slutdok-lista{list-style:none;margin:0;padding:0}
+.slutdok-rad{display:flex;align-items:center;gap:12px;padding:10px 4px;border-top:1px solid var(--hairline)}
+.slutdok-rad:first-child{border-top:none}
+.slutdok-rad.godkand .slutdok-krav{color:var(--ink-soft)}
+.slutdok-bock{flex:0 0 auto;width:24px;height:24px;border-radius:7px;border:2px solid var(--hairline-stark);
+  background:var(--surface);color:#fff;font-size:14px;font-weight:700;line-height:1;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;transition:background .15s var(--ease),border-color .15s var(--ease)}
+.slutdok-bock:hover:not(:disabled){border-color:var(--turkos)}
+.slutdok-bock[aria-pressed="true"]{background:var(--turkos);border-color:var(--turkos)}
+.slutdok-bock:disabled{cursor:not-allowed;opacity:.45}
+.slutdok-text{flex:1;min-width:0}
+.slutdok-krav{font-size:13.5px;line-height:1.4;color:var(--ink)}
+.slutdok-meta{font-size:12px;color:var(--ink-soft);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap}
+.slutdok-kommenterad{color:var(--ink-faint)}
+.slutdok-atgard{display:flex;align-items:center;gap:8px;flex:0 0 auto;flex-wrap:wrap;justify-content:flex-end}
 .slutdok-status{display:flex;gap:4px;flex-wrap:wrap}
 .slutdok-status button{font-family:var(--font-b);font-size:11.5px;font-weight:600;
   border:1px solid var(--hairline-stark);background:var(--surface);color:var(--ink-soft);
