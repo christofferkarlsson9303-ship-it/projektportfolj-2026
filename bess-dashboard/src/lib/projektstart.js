@@ -293,7 +293,7 @@ export function projektstartDokument(u, { datum, skapadAv = "", historik = [], s
     const tabell = s.tabell
       ? {
           titel: s.tabell.titel,
-          kolumner: [...s.tabell.kolumner.map((k) => k.etikett), ...(arRisker ? ["Värde"] : [])],
+          kolumner: [...s.tabell.kolumner.map((k) => arRisker && k.id === "sannolikhet" ? "S (1-5)" : arRisker && k.id === "konsekvens" ? "K (1-5)" : k.etikett), ...(arRisker ? ["Värde"] : [])],
           vikter: [...s.tabell.kolumner.map(kolumnVikt), ...(arRisker ? [0.8] : [])],
           rader: (u.rader[s.tabell.id] || [])
             .filter((r) => s.tabell.kolumner.some((k) => (r[k.id] || "").trim() && (k.typ === "text" || k.typ === "date")))
@@ -366,7 +366,7 @@ export function projektstartDokument(u, { datum, skapadAv = "", historik = [], s
         klarAllt: lager.every((f) => f.status === "klar"),
         faser: lager.map((f) => ({ nr: f.nr, kort: f.kort, status: f.status, klara: f.klara, totalt: f.totalt, ljus: u.trafikljus?.[f.nr]?.ljus || "", kommentar: (u.trafikljus?.[f.nr]?.kommentar || "").trim() })),
       },
-      lage: { skede: statusEtikett(fasInfo.status), nulage: (v.nulage || "").trim(), beslut: (v.beslutLedning || "").trim() },
+      lage: { skede: v.rapporteringsskede && v.rapporteringsskede !== "Ej angivet" ? v.rapporteringsskede : "Projektskede ej angivet", nastaSteg: (v.nastaStegLedning || "").trim(), beslutSenast: varde(v.beslutSenast), nulage: (v.nulage || "").trim(), beslut: (v.beslutLedning || "").trim() },
       kort: {
         plats: varde(v.plats),
         start: varde(v.startdatum),
@@ -451,3 +451,4 @@ export function utkastFranProjekt(projekt, state) {
   }
   return u;
 }
+

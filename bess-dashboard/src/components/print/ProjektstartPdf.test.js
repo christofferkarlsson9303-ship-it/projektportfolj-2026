@@ -46,3 +46,24 @@ describe("ProjektstartPdf", () => {
     expect(buf.subarray(0, 5).toString()).toBe("%PDF-");
   }, 60_000);
 });
+
+
+it("bevarar valt affärsskede oberoende av metodfas och renderar ledningsrapporten", async () => {
+  const u = tomtUtkast();
+  u.fasGolv = 2;
+  Object.assign(u.v, { namn: "Svea Solar Fjällskär 50MW", bestallare: "Svea Solar", plats: "Nyköping, Fastighet Fjällskär 3:7", rapporteringsskede: "Inför anbudsinlämning", startdatum: "2027-01-15", nulage: "ONE Nordic räknar på en BoP-totalentreprenad för ett batterilager om 50 MW / 200 MWh. FFU har skickats till underleverantörer. Anbudsingång senast 21 oktober 2026. Tilldelning väntas i december 2026.", beslutLedning: "Godkännande av slutligt anbud till beställaren.", beslutSenast: "2026-10-30", nastaStegLedning: "Sammanställ UE-anbud och slutför kalkylen. Ansvarig: projektledaren." });
+  const d = projektstartDokument(u, { datum: "2026-10-15", skapadAv: "Christoffer Karlsson" });
+  expect(d.projektstart.lage).toMatchObject({ skede: "Inför anbudsinlämning", beslutSenast: "2026-10-30" });
+  expect(d.projektstart.fas.nr).toBe(2);
+  const { lasUtkast } = await import("../../lib/projektstart.js");
+  expect(lasUtkast(JSON.stringify(u)).v.rapporteringsskede).toBe("Inför anbudsinlämning");
+  const buf = await renderToBuffer(createElement(ProjektstartPdf, { dokument: d }));
+  const { writeFileSync } = await import("node:fs");
+  if (process.env.PDF_PREVIEW) writeFileSync(process.env.PDF_PREVIEW, buf);
+  expect(buf.subarray(0, 5).toString()).toBe("%PDF-");
+}, 60_000);
+
+it("gissar inte projektskede för äldre projektstarter", () => {
+  const d = projektstartDokument(tomtUtkast(), { datum: "2026-10-15" });
+  expect(d.projektstart.lage.skede).toBe("Projektskede ej angivet");
+});

@@ -44,6 +44,9 @@ export const STEG = [
       { id: "niva", etikett: "Projektnivå", typ: "select", alternativ: NIVA, obligatoriskt: true },
       { id: "startdatum", etikett: "Start", typ: "date" },
       { id: "fardigdatum", etikett: "Slut", typ: "date" },
+      { id: "rapporteringsskede", etikett: "Aktuellt projektskede i ledningsrapporten", typ: "select", standard: "", alternativ: [["", "Ej angivet"], "Inför anbudsinlämning", "Anbud inlämnat - inväntar tilldelning", "Kontraktsförhandling", "Uppstart", "Genomförande", "Provning och driftsättning", "Överlämning och avslut", "Garanti", "Pausat", "Ej vunnet / avbrutet"], tips: "Välj verkligt affärs- och produktionsläge. Detta visas tydligt i PDF:en och ändrar inte ONE-P-fasen." },
+      { id: "nastaStegLedning", etikett: "Nästa steg och ansvarig", typ: "textarea", bred: true, tips: "Beskriv nästa aktivitet och vem som ansvarar." },
+      { id: "beslutSenast", etikett: "Ledningsbeslut behövs senast", typ: "date" },
       { id: "nulage", etikett: "Nuläge till ledningen", typ: "textarea", bred: true, tips: "Skriv om inför varje rapport. Det här står först i PDF:en." },
       { id: "beslutLedning", etikett: "Beslut som behövs från ledningen", typ: "textarea", bred: true, tips: "Vad, och senast när. Lämna tomt om inget behövs." },
     ],
@@ -329,3 +332,4 @@ export const KATALOG_RUBRIK = {
   closeout: "Avslut",
   kickoff: "Uppstartsavstämning",
 };
+
