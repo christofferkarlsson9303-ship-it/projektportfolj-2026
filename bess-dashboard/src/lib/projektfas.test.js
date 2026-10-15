@@ -179,8 +179,9 @@ describe("Progressiv upplåsning", () => {
 });
 
 describe("PDF för ledningen följer de upplåsta faserna", () => {
-  it("är ackumulerande: sidor och risker för upplåsta faser (godkända och aktuell), huvudet visar aktuell fas", () => {
+  it.each(["", "Inför anbudsinlämning", "Genomförande"])("är ackumulerande och skiljer metodfas från valt rapporteringsskede (%s)", (skede) => {
     const u = godkannFas(godkannFas(tomtUtkast(), 1), 2);
+    u.v.rapporteringsskede = skede;
     u.rader.risker = [
       { id: "a", titel: "Tidig risk", fas: "2", kategori: "kma", sannolikhet: "2", konsekvens: "2", agare: "PL", atgard: "" },
       { id: "b", titel: "Sen risk", fas: "4", kategori: "tid", sannolikhet: "5", konsekvens: "5", agare: "PL", atgard: "" },
@@ -189,7 +190,7 @@ describe("PDF för ledningen följer de upplåsta faserna", () => {
     const ps = d.projektstart;
     // Fas 1 och 2 är godkända och fas 3 är aktuell (upplåst, inte godkänd): de tre ingår, fas 4 och uppåt inte.
     expect(ps.fas).toMatchObject({ nr: 3, omfattar: 3, utkast: true, antal: 8, kort: "Etablering", status: "Produktion", statusId: "PRODUKTION" });
-    expect(ps.lage.skede).toBe("Produktion");
+    expect(ps.lage.skede).toBe(skede || "Projektskede ej angivet");
     expect(new Set(ps.sektioner.map((x) => x.fasNr))).toEqual(new Set([1, 2, 3]));
     expect(ps.sektioner.some((x) => x.id === "hseq")).toBe(true);
     expect(ps.sektioner.some((x) => x.id === "cbop")).toBe(false);
