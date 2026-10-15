@@ -588,11 +588,16 @@ export function Tidslinje({ rader, etikett = "Tidslinje", onValjPost, redigera, 
                     {!rymsInne ? (
                       <span
                         className="pointer-events-none absolute flex items-center gap-1.5 whitespace-nowrap text-[11.5px] text-ink-soft"
-                        style={{
-                          left: arSpann ? vanster + bredd + 8 : vanster + modell.px / 2 + 14,
-                          top: 0,
-                          height: RAD_H,
-                        }}
+                        style={(() => {
+                          /* Etiketten står efter stapeln. Skulle den gå utanför tidsaxelns slut
+                             (poster nära högerkanten) läggs den före stapeln i stället. */
+                          const hoger = arSpann ? vanster + bredd + 8 : vanster + modell.px / 2 + 14;
+                          const uppskattad = (p.titel.length + 22) * 6.8;
+                          const fore = hoger + uppskattad > tidsbredd && vanster - uppskattad > 0;
+                          return fore
+                            ? { left: (arSpann ? vanster : vanster + modell.px / 2 - 14) - 8, transform: "translateX(-100%)", top: 0, height: RAD_H }
+                            : { left: hoger, top: 0, height: RAD_H };
+                        })()}
                         aria-hidden="true"
                       >
                         <b className="font-semibold text-ink">{p.titel}</b>

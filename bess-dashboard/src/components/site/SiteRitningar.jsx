@@ -117,7 +117,7 @@ export function RitningsKnapp({ onFil, upptagen, etikett = "Ladda upp ritning" }
           e.target.value = "";
         }}
       />
-      <button type="button" className="btn sec mini" disabled={upptagen} aria-busy={upptagen || undefined} onClick={() => ref.current?.click()}>
+      <button type="button" className="btn sec mini inline-flex items-center gap-1.5" disabled={upptagen} aria-busy={upptagen || undefined} onClick={() => ref.current?.click()}>
         <FileUp size={14} aria-hidden="true" />
         {upptagen ? "Laddar upp…" : etikett}
       </button>
@@ -222,10 +222,10 @@ export function SiteRitningar({ ritningar, objekt, onLaddaUpp, upptagen }) {
                 <TalRuta id={`rit-${r.id}-rot`} etikett="Vridning (°)" varde={r.rotation} steg={1} enhet="°" onAndra={(v) => andra(r, { rotation: ((v % 360) + 360) % 360 })} />
               </div>
               <div className="flex flex-wrap items-center gap-3">
-                <button type="button" className="btn sec mini" onClick={() => andra(r, { rotation: (((Number(r.rotation) || 0) - 90) % 360 + 360) % 360 })}>
+                <button type="button" className="btn sec mini inline-flex items-center gap-1.5" onClick={() => andra(r, { rotation: (((Number(r.rotation) || 0) - 90) % 360 + 360) % 360 })}>
                   <RotateCcw size={14} aria-hidden="true" /> −90°
                 </button>
-                <button type="button" className="btn sec mini" onClick={() => andra(r, { rotation: ((Number(r.rotation) || 0) + 90) % 360 })}>
+                <button type="button" className="btn sec mini inline-flex items-center gap-1.5" onClick={() => andra(r, { rotation: ((Number(r.rotation) || 0) + 90) % 360 })}>
                   <RotateCw size={14} aria-hidden="true" /> +90°
                 </button>
                 <button
