@@ -3,6 +3,7 @@
    Varje "dokument" är en rad i app_state med nyckeln som primärnyckel. */
 
 import { supabase } from "../lib/supabase.js";
+import { loggKlientNyckel } from "./synk.js";
 
 function fel(kod, meddelande) {
   const e = new Error(meddelande);
@@ -134,6 +135,10 @@ const franRad = (r) => ({
   text: r.text,
 });
 
+/** Felet när kolumnen eller det unika indexet ännu inte finns i databasen. */
+const saknarKlientNyckel = (e) =>
+  ["PGRST204", "42703", "42P10"].includes(e?.code) || /klient_nyckel/.test(e?.message || "");
+
 const logg = {
   async las(antal = 150) {
     const { data, error } = await supabase
@@ -146,15 +151,25 @@ const logg = {
     return (data || []).map(franRad);
   },
 
+  /* Varje post har en stabil klient_nyckel med unikt index (anvandare,
+     klient_nyckel). Ett återförsök efter ett tappat svar blir då ON CONFLICT
+     DO NOTHING i stället för en dubblett. Saknas kolumnen (migrationen
+     20261016190000 ej körd) skrivs posten som förut, utan nyckel. */
   async skriv(poster) {
     if (!poster.length) return;
     const rader = poster.map((p) => ({
       ts: p.ts,
       projekt_id: p.projektId || null,
       text: p.text,
+      klient_nyckel: loggKlientNyckel(p),
     }));
-    const { error } = await supabase.from("andringslogg").insert(rader);
-    if (error) throw fel(error.code, error.message);
+    const { error } = await supabase
+      .from("andringslogg")
+      .upsert(rader, { onConflict: "anvandare,klient_nyckel", ignoreDuplicates: true });
+    if (!error) return;
+    if (!saknarKlientNyckel(error)) throw fel(error.code, error.message);
+    const { error: e2 } = await supabase.from("andringslogg").insert(rader.map(({ klient_nyckel: _, ...r }) => r));
+    if (e2) throw fel(e2.code, e2.message);
   },
 
   lyssna(vidPost) {

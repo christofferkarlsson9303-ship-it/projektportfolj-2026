@@ -23,7 +23,7 @@ Granskningen (commit `0e7f85961c8a`, fynd F01–F15) ligger till grund för GitH
 - **Datum** i kontroller valideras med `arGiltigtDatum()` i `src/lib/datum.js`. Använd den, inte `Date.parse`.
 - **Inga ärenden är ingen driftstatus.** `komponentLage()` ger ton `ingen`, aldrig `ok`. Grönt får inte betyda "inget registrerat".
 - **SoC** är manuellt inmatad. `parkSumma()` ger `soc = null` vid delvis underlag och `socUnderlag` med metod och täckning. Visa grunden, aldrig en viktad siffra som tappat containrar.
-- **Ändringsloggen** markeras skickad först efter svar från tabellen.
+- **Ändringsloggen** markeras skickad först efter svar från tabellen. Varje post skrivs med `klient_nyckel` (`loggKlientNyckel()`) och `ON CONFLICT DO NOTHING`, så återförsök ger inga dubbletter.
 - **Projekt-ID** hårdkodas aldrig i SQL. `public.projekt` fylls från `portfolj/state` av en trigger.
 - **Krantext och kontrollintervall:** skriv aldrig kranklass som villkor ("≥ 45 t kran"). Kran väljs i lyftplanen mot bruttolast och lastdiagram. Kontrollintervall är riskbaserade enligt anläggningens kontrollprogram, inga generella år.
 

@@ -57,3 +57,32 @@ describe("db-supabase — optimistisk låsning", () => {
     av();
   });
 });
+
+describe("db-supabase — ändringsloggen (granskning F04, idempotens)", () => {
+  beforeEach(() => falsk.nollstall());
+  const post = { ts: "2026-10-16T18:00:00.000Z", projektId: "36037", text: "Status ändrad" };
+
+  it("samma post två gånger ger en rad — svaret tappades efter lyckad skrivning", async () => {
+    const { logg } = skapaDb();
+    falsk.sattFelEfterSkrivning((t) => (t === "andringslogg" ? { code: "PGRST000", message: "nät" } : null));
+    await expect(logg.skriv([post])).rejects.toBeTruthy();
+    falsk.sattFelEfterSkrivning(null);
+    await logg.skriv([post]);
+    expect(falsk.logg).toHaveLength(1);
+    expect(falsk.logg[0].klient_nyckel).toBeTruthy();
+  });
+
+  it("olika poster med samma tid får olika nycklar", async () => {
+    const { logg } = skapaDb();
+    await logg.skriv([post, { ...post, text: "Annan text" }]);
+    expect(falsk.logg).toHaveLength(2);
+  });
+
+  it("fungerar innan migrationen är körd: utan kolumnen skrivs posten utan nyckel", async () => {
+    const { logg } = skapaDb();
+    falsk.sattFel((t, op) => (t === "andringslogg" && op === "upsert" ? { code: "PGRST204", message: "Could not find the 'klient_nyckel' column" } : null));
+    await logg.skriv([post]);
+    expect(falsk.logg).toHaveLength(1);
+    expect(falsk.logg[0].klient_nyckel).toBeUndefined();
+  });
+});
