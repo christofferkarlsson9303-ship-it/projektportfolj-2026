@@ -19,6 +19,7 @@ const SUNGROW_SIDA = "Sungrow produktsida ST6900UX-4H (sungrowpower.com), hämta
 const ENF = "ENF Solar databladssammanställning ST6900UX-4H (enfsolar.com/pv/storage-system-datasheet/16907), hämtad 2026-10-13";
 const NYCKEL = "Appens nyckelvärden (Bygga batteripark), CATL-manual och Batch C";
 const MALL = "Appens standardmall för siten (inte ur datablad)";
+const LYFT = "Väljs i lyftplanen: kranens lastdiagram vid aktuell radie och bomkonfiguration mot bruttolast (OEM-intygad vikt + lyftredskap). Kranklass är inte tillåten last.";
 
 const v = (varde, enhet, kalla, verifierad) => ({ varde, enhet, kalla, verifierad });
 
@@ -38,7 +39,7 @@ export const HARDVARUPROFILER = {
         ["Fundament dimensioneras för", v("45", "t", NYCKEL, true)],
         ["Kapacitet per container", v(null, "MWh", "Saknas i appens underlag", false)],
         ["Fritt mellan containrar (sida)", v("≥ 3,0 (rek. 3,5)", "m", NYCKEL, true)],
-        ["Kran vid lyft", v("≥ 45", "t", NYCKEL, true)],
+        ["Kran vid lyft", v("Enligt lyftplan", "", LYFT, false)],
       ],
       mwh: null,
     },
@@ -50,7 +51,7 @@ export const HARDVARUPROFILER = {
       data: [
         ["Vikt", v("13", "t", NYCKEL, true)],
         ["Platta", v("9 700 × 6 020", "mm", NYCKEL, true)],
-        ["Kran vid lyft", v("≥ 40", "t", NYCKEL, true)],
+        ["Kran vid lyft", v("Enligt lyftplan", "", LYFT, false)],
         ["Lutning platta", v("≤ 0,25", "%", NYCKEL, true)],
         ["Effekt per skid", v(null, "MW", "Saknas i appens underlag", false)],
       ],
