@@ -22,6 +22,16 @@ export function lokaltDatum(d) {
   return `${d.getFullYear()}-${m}-${dag}`;
 }
 
+/** Är strängen ett riktigt kalenderdatum på formen YYYY-MM-DD? Date.parse
+ *  normaliserar t.ex. 2026-02-31 till 3 mars, så datumet byggs om och jämförs
+ *  fält för fält. Skottår följer den gregorianska regeln. */
+export function arGiltigtDatum(s) {
+  if (typeof s !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const [ar, man, dag] = s.split("-").map(Number);
+  const d = new Date(Date.UTC(ar, man - 1, dag));
+  return d.getUTCFullYear() === ar && d.getUTCMonth() === man - 1 && d.getUTCDate() === dag;
+}
+
 /** Antal dagar från idag till ett ISO-datum. Negativt = passerat. null om datum saknas. */
 export function dagarTill(iso) {
   if (!iso) return null;
