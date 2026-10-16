@@ -325,6 +325,27 @@ describe("BESS-data på volymer", () => {
     expect(s.driftsatta).toBe(1);
   });
 
+  it("SoC flaggar delvis underlag när en container saknar MWh (granskning F08)", () => {
+    const s = parkSumma([
+      container({ id: "1", mwh: 10, soc: 20 }),
+      container({ id: "2", soc: 80 }), // okänd kapacitet
+    ]);
+    expect(s.socUnderlag).toMatchObject({ medSoc: 2, viktade: 1, utanKapacitet: 1, containrar: 2, metod: "delvis" });
+    expect(s.soc).toBeNull(); // ingen totalsiffra som ser energiviktad ut men tappat en container
+  });
+
+  it("SoC utan någon kapacitet är ett aritmetiskt medel och säger det", () => {
+    const s = parkSumma([container({ id: "1", soc: 20 }), container({ id: "2", soc: 80 })]);
+    expect(s.soc).toBe(50);
+    expect(s.socUnderlag.metod).toBe("medel");
+  });
+
+  it("SoC är energiviktad bara när alla containrar med SoC har MWh, och flaggar containrar utan SoC", () => {
+    const s = parkSumma([container({ id: "1", mwh: 4, soc: 80 }), container({ id: "2", mwh: 1, soc: 30 }), container({ id: "3", mwh: 5 })]);
+    expect(s.soc).toBeCloseTo(70, 9);
+    expect(s.socUnderlag).toMatchObject({ metod: "energiviktad", medSoc: 2, containrar: 3 });
+  });
+
   it("SoC är null när ingen container har angett den — inte 0", () => {
     expect(parkSumma([container({ id: "1", mwh: 4 })]).soc).toBeNull();
     expect(parkSumma([]).soc).toBeNull();
