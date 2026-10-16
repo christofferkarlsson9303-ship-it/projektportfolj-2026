@@ -170,6 +170,25 @@ describe("ändringsloggen", () => {
   });
 });
 
+describe("ändringsloggen vid fel (granskning F04)", () => {
+  it("en misslyckad skrivning markeras inte som skickad och skickas igen", async () => {
+    await montera();
+    CONFIG.loggAterforsokMs = 40;
+    let nekaLogg = true;
+    falsk.sattFel((tabell, op) => (nekaLogg && tabell === "andringslogg" && op === "insert" ? { code: "PGRST000", message: "nät" } : null));
+
+    await act(async () => api.uppdStatus("risker", "r1", "status", "stangd"));
+    await vantaTills(() => api.conn.txt.includes("Loggposten"));
+    expect(falsk.logg).toHaveLength(0);
+
+    nekaLogg = false;
+    await vantaTills(() => falsk.logg.length === 1);
+    await act(async () => new Promise((r) => setTimeout(r, 120)));
+    expect(falsk.logg).toHaveLength(1); // ingen dubblett efter återförsöket
+    CONFIG.loggAterforsokMs = 15000;
+  });
+});
+
 describe("ekonomin", () => {
   it("ett nätverksfel rullar inte tillbaka ändringen", async () => {
     await montera();

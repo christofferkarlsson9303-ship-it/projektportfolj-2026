@@ -12,6 +12,7 @@ import { feltyp, loggNyckel, nyaLoggposter, sammanslagningsText } from "./synk.j
 
 export const CONFIG = {
   autosaveMs: 1200,
+  loggAterforsokMs: 15000, // nytt försök när en loggpost inte nådde tabellen
   storageKey: "batchc-portfolj-v1",
   dbPath: "portfolj/state", // huvuddokument — alla med länken kan ändra
   dbPathEkonomi: "portfolj/ekonomi", // kontraktsvärde + betalplan, write:admin
@@ -95,6 +96,9 @@ export function PortfolioProvider({ children }) {
   const vantar = useRef(false);
   // Loggposter som redan finns i tabellen — de ska aldrig skickas upp igen.
   const kandaLogg = useRef(new Set());
+  const loggPagar = useRef(false); // en skrivning till loggtabellen är på väg
+  const loggTimer = useRef(null);
+  const [loggForsok, setLoggForsok] = useState(0);
   const tillampaFjarr = useRef(null); // sätts nedan, efter sparaState
 
   /* Håll en färsk referens till state för de asynkrona callbackerna (autospar
@@ -491,21 +495,38 @@ export function PortfolioProvider({ children }) {
     const granse = senastLogg.current;
     if (!db?.logg || granse === null) return;
 
+    if (loggPagar.current) return; // körs om när skrivningen är klar
+
     const nya = nyaLoggposter(state.andringslogg, granse, kandaLogg.current);
     if (!nya.length) return;
 
-    nya.forEach((p) => kandaLogg.current.add(loggNyckel(p)));
-    senastLogg.current = nya[0].ts;
-    db.logg.skriv([...nya].reverse()).catch(() => {
-      setConn({ kl: "err", txt: "Loggposten sparades lokalt men inte delat" });
-    });
-  }, [state.andringslogg]);
+    /* Posterna räknas som skickade först när tabellen har kvitterat dem.
+       Tidigare markerades de före skrivningen, och ett nätfel gjorde att de
+       aldrig skickades igen (granskning F04). */
+    loggPagar.current = true;
+    clearTimeout(loggTimer.current);
+    db.logg
+      .skriv([...nya].reverse())
+      .then(
+        () => {
+          nya.forEach((p) => kandaLogg.current.add(loggNyckel(p)));
+          if (senastLogg.current !== null && nya[0].ts > senastLogg.current) senastLogg.current = nya[0].ts;
+          loggPagar.current = false;
+          setLoggForsok((n) => n + 1); // poster som kom under skrivningen
+        },
+        () => {
+          loggPagar.current = false;
+          setConn({ kl: "err", txt: "Loggposten sparades lokalt men inte delat — nytt försök strax" });
+          loggTimer.current = setTimeout(() => setLoggForsok((n) => n + 1), CONFIG.loggAterforsokMs);
+        }
+      );
+  }, [state.andringslogg, loggForsok]);
 
   // Avbryt köade spar när providern plockas ner. Egen effekt — tidigare låg det
   // i db-effektens cleanup, vilket kopplade ihop två orelaterade livscykler.
   // (Lintern varnar för .current i cleanup; regeln gäller DOM-refs, inte timer-id.)
   useEffect(() => {
-    const timers = [sparTimer, sparTimerEk];
+    const timers = [sparTimer, sparTimerEk, loggTimer];
     return () => timers.forEach((t) => clearTimeout(t.current));
   }, []);
 
