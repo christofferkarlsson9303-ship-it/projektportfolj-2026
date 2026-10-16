@@ -205,11 +205,18 @@ function rakna(punkter, pl) {
 /* ---------- Verkliga egenkontroller ---------- */
 
 /** Fasens egenkontroller ur fältmaterialet (state.faltkontroller), räknade
- *  mot fasens projektmall. En kontrollpunkt är verifierad när minst en
- *  kontrollomfattning har ett komplett resultat — resultat, datum,
- *  kontrollant, bevis och aktuell mallrevision — och ingen omfattning har
- *  en öppen avvikelse (Ej OK). Det är samma krav som egenkontrollrapporten
- *  ställer, så siffran här och rapporten kan inte säga emot varandra. */
+ *  mot fasens projektmall. En kontrollpunkt är verifierad först när VARJE
+ *  omfattning i fasen har ett komplett resultat för punkten — resultat, datum,
+ *  kontrollant, bevis och aktuell mallrevision — och ingen omfattning har en
+ *  öppen avvikelse (Ej OK). Det är samma krav som egenkontrollrapporten
+ *  ställer per rad.
+ *
+ *  Omfattningarna är de som registrerats i fasen för projektet (t.ex.
+ *  "Hela anläggningen", "Container 3"). Har en enhet kontrollerats på en punkt
+ *  i fasen förväntas den på fasens alla punkter. Tidigare räckte en komplett
+ *  omfattning, så en fas kunde se verifierad ut fast andra enheter saknade
+ *  underlag (granskning F12). En punkt som inte gäller en enhet registreras
+ *  som "Ej tillämplig" med motivering. */
 export function kontrollage(state, pid) {
   const perPunkt = new Map();
   for (const r of state.faltkontroller || []) {
@@ -217,16 +224,22 @@ export function kontrollage(state, pid) {
     if (!perPunkt.has(r.punktId)) perPunkt.set(r.punktId, []);
     perPunkt.get(r.punktId).push(r);
   }
+  const omfattningAv = (r) => (r.omfattning || "").trim() || "Hela anläggningen";
   return FASER.map((f, i) => {
     const punkter = PROJEKTMALLAR[i]?.punkter || [];
+    const omfattningar = [...new Set(punkter.flatMap((p) => (perPunkt.get(p.id) || []).map(omfattningAv)))].sort((a, b) => a.localeCompare(b, "sv"));
     let verifierade = 0;
     let avvikelser = 0;
     for (const p of punkter) {
       const rader = perPunkt.get(p.id) || [];
-      if (rader.some((r) => r.resultat === "ej-ok")) avvikelser++;
-      else if (rader.some((r) => !kontrollBrister(r, PROJEKTKONTROLL_REVISION).length)) verifierade++;
+      if (rader.some((r) => r.resultat === "ej-ok")) {
+        avvikelser++;
+        continue;
+      }
+      const komplett = new Set(rader.filter((r) => !kontrollBrister(r, PROJEKTKONTROLL_REVISION).length).map(omfattningAv));
+      if (omfattningar.length && omfattningar.every((o) => komplett.has(o))) verifierade++;
     }
-    return { totalt: punkter.length, verifierade, avvikelser, kvar: punkter.length - verifierade };
+    return { totalt: punkter.length, verifierade, avvikelser, kvar: punkter.length - verifierade, omfattningar };
   });
 }
 
