@@ -9,6 +9,7 @@ import { idag } from "../../lib/datum.js";
 import { HeroBild, Kraftkurva } from "../../components/oversikt/Hero.jsx";
 import { TON_KLASS } from "../../lib/status.js";
 import { RiskDonut } from "./RiskDonut.jsx";
+import { Styrtriangel } from "./Styrtriangel.jsx";
 import { FasIndikator } from "./FasIndikator.jsx";
 import { FasKrav } from "./FasKrav.jsx";
 import { FasNav } from "./FasNav.jsx";
@@ -72,7 +73,7 @@ function Faltruta({ f, varde, onChange }) {
         <textarea id={id} rows={3} value={varde} aria-required={f.obligatoriskt || undefined} onChange={(e) => onChange(e.target.value)} />
       ) : f.typ === "select" ? (
         <select id={id} value={varde} aria-required={f.obligatoriskt || undefined} onChange={(e) => onChange(e.target.value)}>
-          {["beslut", "niva", "offra", "orsakEjVunnet"].includes(f.id) ? <option value="">Välj …</option> : null}
+          {["beslut", "niva", "offra", "orsakEjVunnet", "ersattningsform"].includes(f.id) ? <option value="">Välj …</option> : null}
           {f.alternativ.map(altPar).map(([v, n]) => (
             <option key={v} value={v}>
               {n}
@@ -672,7 +673,7 @@ export function Projektstart() {
           </Callout>
         ) : null}
         <FasKrav krav={krav} onGaTill={gaTill} ejVunnet={ejVunnet} />
-        {nuFas === 1 && !ejVunnet ? <Callout ton="info"><b className="block">Anbudsunderlag till ledningen</b>Fyll i Projektkort och Projektdirektiv med det ni vet. PDF:en kan laddas ned redan nu och följer ONE-P-projektdirektivet. Fas 2 och dess kontroller kommer med först efter vunnet anbud och genomgången fas 1. {krav.klar ? <button type="button" className="btn sec mini mt-2" onClick={() => gaTill("avrop")}>Ange anbudsutfall</button> : null}</Callout> : null}
+        {nuFas === 1 && !ejVunnet ? <Callout ton="info"><b className="block">Beslutsunderlag till ledningen</b>Fas 1 har två delar: Anbud (projektkort, avropsacceptans, anbudsfrågor, kontrakt) och Planering (projektdirektiv, intressenter). Fyll i det ni vet och ladda ned PDF:en på sista steget. Ledningen tar ställning till om anbudet ska lämnas in. Fas 2 och dess kontroller kommer med först efter vunnet anbud och genomgången fas 1. {krav.klar ? <button type="button" className="btn sec mini mt-2" onClick={() => gaTill("avrop")}>Ange anbudsutfall</button> : null}</Callout> : null}
         <Card
           id="ps-steg"
           title={`${index + 1}. ${steg.titel}`}
@@ -693,6 +694,7 @@ export function Projektstart() {
         </Card>
 
         {steg.tabell ? <Tabell tabell={steg.tabell} rader={utkast.rader[steg.tabell.id] || []} onChange={(r) => sattRader(steg.tabell.id, r)} standardRad={steg.id === "risker" ? { fas: String(nuFas) } : undefined} /> : null}
+        {steg.id === "direktiv" ? <Styrtriangel v={utkast.v} /> : null}
         {steg.id === "direktiv" ? <>
           <p className="m-0 text-[13px] text-ink-soft">Risker och tidplan nedan är samma uppgifter som används i senare faser. Ange även kända framtida risker redan i anbudet.</p>
           {["risker", "tidplan"].map((id) => { const t = STEG.find((x) => x.id === id).tabell; return <Tabell key={id} tabell={{ ...t, obligatorisk: undefined }} rader={utkast.rader[t.id] || []} onChange={(r) => sattRader(t.id, r)} standardRad={id === "risker" ? { fas: "1" } : undefined} />; })}
