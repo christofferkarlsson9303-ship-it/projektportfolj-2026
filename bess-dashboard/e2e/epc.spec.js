@@ -20,7 +20,7 @@ async function oppnaFas(page, nr) {
 const status = (page) => page.getByRole("region", { name: /^Status — / });
 const erfarenhetslista = (page) => page.getByRole("region", { name: "Erfarenhetsåterföring — topp 10" });
 
-test("guiden har 16 faser, de löpande punkterna och alla 288 kontrollpunkter att bocka av", async ({ page }) => {
+test("guiden har 16 moment, de löpande punkterna och alla 288 kontrollpunkter att bocka av", async ({ page }) => {
   await expect(page.locator("details.epc-fas")).toHaveCount(17);
   await expect(page.locator(".epc-rad")).toHaveCount(288);
   await expect(page.locator(".epc-rad.hp")).toHaveCount(48);
@@ -30,7 +30,7 @@ test("guiden har 16 faser, de löpande punkterna och alla 288 kontrollpunkter at
 });
 
 test("summeringen visar exakt status per fas och följer avbockningen", async ({ page }) => {
-  // Fas 0–9 är passerade i Växjö: 166 punkter klara via grindarna.
+  // Moment 0–9 är passerade i Växjö: 166 punkter klara via grindarna.
   await expect(status(page)).toContainText("166/288");
   await expect(status(page).getByRole("row", { name: /^10 · Stationshus/ })).toContainText("0/15");
 
@@ -102,7 +102,7 @@ test("ett annat projekt väljs i lägesbilden och guiden följer med", async ({ 
   await projektrad(page, /^36038 Alvesta/).click();
   await expect(projektrad(page, /^36038 Alvesta/)).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByLabel("Startdatum för Alvesta Batteripark")).toBeVisible();
-  // Faserna är stängda <details>, så rutan söks på attributet.
+  // Momenten är stängda <details>, så rutan söks på attributet.
   await expect(page.locator('aside[aria-label="Moment 0 i 36038 Alvesta"]')).toBeAttached();
 });
 

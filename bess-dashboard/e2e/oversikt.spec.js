@@ -41,7 +41,7 @@ test("nästa uppgift tar en kommentar direkt på punkten", async ({ page }) => {
   await expect(ruta.getByRole("button", { name: /^Kommentera \(1\)/ })).toBeVisible();
 });
 
-test("Gantt-schemat visar 16 faser, grindar och M1–M7 för valt projekt", async ({ page }) => {
+test("Gantt-schemat visar 16 moment, grindar och M1–M7 för valt projekt", async ({ page }) => {
   const gantt = page.getByRole("region", { name: "Fasplan, grindar och betalningar" });
   await expect(gantt.locator("button.ov-gantt-fas")).toHaveCount(16);
   await expect(gantt.locator(".ov-gantt-grind")).toHaveCount(16);

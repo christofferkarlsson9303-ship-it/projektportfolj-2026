@@ -83,7 +83,7 @@ export function Ledtidstabell({ pid, onMarkera }) {
                 {l.ank ? (
                   <>
                     {l.ank.namn} {l.ank.datum ? datumKort(l.ank.datum) : "—"}
-                    <small className="epc-punktref">ur {l.ank.kalla}</small>
+                    <small className="epc-punktref">ur {l.ank.kalla === "fasplan" ? "momentplanen" : l.ank.kalla}</small>
                   </>
                 ) : (
                   "—"

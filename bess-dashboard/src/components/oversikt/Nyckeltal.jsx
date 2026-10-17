@@ -163,7 +163,7 @@ function Hallpunkter() {
       under={
         h.projekt.length
           ? `${h.klara} av ${h.totalt} klara i ${h.projekt.length} projekt — stopp tills godkänt`
-          : "Inga projekt med fasplan ännu"
+          : "Inga projekt med momentplan ännu"
       }
       fot={h.kommande.length > 3 ? `+ ${h.kommande.length - 3} till` : null}
       lank={["Bygga batteripark", "epc"]}
@@ -177,7 +177,7 @@ function Hallpunkter() {
                 <span className="ov-hptext" title={k.punkt.text}>
                   {kortaAv(k.punkt.text)}
                   <small>
-                    {namn(k.projektId)} · fas {k.fas.fas.nr}{" "}
+                    {namn(k.projektId)} · moment {k.fas.fas.nr}{" "}
                     {k.fas.status === "kommande" ? `startar ${datumKort(k.fas.start)}` : k.fas.status === "sen" ? "försenad" : "pågår"}
                   </small>
                 </span>

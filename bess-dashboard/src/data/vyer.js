@@ -35,7 +35,7 @@ const INSKJUTNA = [
     [
       "epc",
       "Bygga batteripark",
-      "16 faser med grind från anbud till garantitid — steg för steg, och var varje projekt står just nu.",
+      "16 moment med grind från anbud till garantitid — steg för steg, och var varje projekt står just nu.",
     ],
   ],
   [
@@ -88,7 +88,7 @@ const ENKLA_LEADS = {
   kontrakt: "Frister, betalningar och viten ur avtalet, med paragraf att slå upp.",
   idag: "Vad behöver du ta hand om först? Öppna en rad för att komma till rätt ärende.",
   oversikt: "Se läget i dina projekt, nästa arbete och frågor som behöver hjälp.",
-  epc: "Följ batteriparken genom 16 faser. En grind är ett klartecken för nästa steg.",
+  epc: "Följ batteriparken genom 16 moment. En grind är ett klartecken för nästa moment.",
   site: "Placera skid, containrar och E-House på tomten och gå runt bland dem. Nålar visar öppna punkter.",
   tavla: "Se uppgifter och ärenden som kort. Flytta dem när arbetsläget ändras.",
   tidplan: "Se när arbeten och leveranser ska ske. Öppna en rad för detaljer.",
