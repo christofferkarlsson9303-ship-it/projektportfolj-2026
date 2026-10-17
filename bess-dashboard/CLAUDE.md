@@ -48,6 +48,12 @@ Fyll i datum och beslut i tabellen när det är fattat. Migrationer i `supabase/
 - Döp inte om `SnabbUtskrift`, `KritiskLinje`, `DataTable` eller `byggFaltmaterial`.
 - `npm run dev` är Vite på port 5173 här. Blanda inte ihop det med någon annan förhandsvisning.
 
+## Fas och moment
+
+- **Fas** betyder alltid ONE-P fas 1–8 (`data/projektfaser.ts`): Projektstart, projektkort, milstolpar, statushuvud.
+- **Moment** betyder alltid EPC-checklistans steg 0–15 med grind G0–G15 (`data/bessChecklistData.ts`): Bygga batteripark, Gantt-raderna, egenkontrollerna.
+- Skriv "Moment 11 · Leverans, lyft & montage", aldrig "Fas 11". När båda behövs: "Moment 11, fas 5". Variabelnamn som `fas`, `faslage` och ankare som `fas-11` ligger kvar; det är bara texten användaren ser som följer regeln.
+
 ## Om användaren vill ha ”den coolare siten” i den här appen
 
 Tre inkrement, i den ordningen, var och en en egen commit. Specen har detaljerna.

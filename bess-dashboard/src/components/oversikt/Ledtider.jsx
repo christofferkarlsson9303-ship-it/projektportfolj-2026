@@ -82,7 +82,7 @@ export function Ledtider({ i }) {
             ),
             title: l.arende,
             meta: `${langd(l.dagar)} ${l.riktning === "fore" ? "före" : "efter"} ${l.ank.namn} ${datumKort(l.ank.datum)}${
-              l.ank.kalla === "fasplan" ? " enligt fasplanen" : ""
+              l.ank.kalla === "fasplan" ? " enligt momentplanen" : ""
             }`,
             dueDate: `${l.riktning === "fore" ? "Starta" : "Klart"} ${datumKort(l.senast)}`,
             delayText: dagarText(l.dagarKvar),

@@ -10,7 +10,7 @@ import { FASER } from "../../data/bessChecklistData.ts";
 import { datumKort, dagarText } from "../../lib/datum.js";
 import { FAS_STATUS, LEDTID_STATUS, lagesbild, ledtidslage, planAnkare } from "../../lib/epc.js";
 
-/* Lägesbilden: var varje projekt står i de 16 faserna, och för valt projekt
+/* Lägesbilden: var varje projekt står i de 16 momenten, och för valt projekt
    vad som pågår, vilken grind och betalning som står näst på tur och vilka
    ledtider som ska startas. Spåret med 16 rutor är samma statusfärger som
    Gantt-schemat; texten bredvid säger samma sak i ord. */
@@ -66,7 +66,7 @@ export function Portfoljlage({ valt, onValj }) {
                 <span className="epc-lage-tom">Datum saknas</span>
               ) : nu ? (
                 <>
-                  Fas {nu.fas.nr} {nu.fas.kort}
+                  Moment {nu.fas.nr} {nu.fas.kort}
                   {l.sena.length ? <span className="epc-lage-sen"> · försenad</span> : null}
                 </>
               ) : l.nastaGrind ? (
@@ -129,7 +129,7 @@ export function NuLage({ pid, onVisaFas }) {
                     className="epc-textknapp text-left text-sm"
                     onClick={() => onVisaFas(f.fas.nr)}
                   >
-                    Fas {f.fas.nr} · {f.fas.titel}
+                    Moment {f.fas.nr} · {f.fas.titel}
                   </button>
                   <span className="text-xs text-ink-soft tabular-nums">
                     {f.klara} av {f.punkter - f.ejAktuella} klara{f.hp ? ` · HP ${f.hpKlara}/${f.hp}` : ""}
@@ -184,7 +184,7 @@ export function NuLage({ pid, onVisaFas }) {
         </Card>
       </div>
 
-      <Card id={`epc-projektdatum-${pid}`} title="Projektets datum" subtitle="Styr fasplanen, Gantt-schemat och ledtiderna.">
+      <Card id={`epc-projektdatum-${pid}`} title="Projektets datum" subtitle="Styr momentplanen, Gantt-schemat och ledtiderna.">
         <div className="epc-projektplan">
           <div className="epc-falt">
             <label htmlFor={`epc-start-${pid}`}>
@@ -213,8 +213,8 @@ export function NuLage({ pid, onVisaFas }) {
           <p className="epc-plantext">
             {a ? (
               <>
-                Faserna räknas från start, {a.mittKalla === "leverans" ? "BESS-leveransen" : "en antagen leverans"}{" "}
-                {datumKort(a.mitt)} och slutbesiktningen. Varje fas kan få egna datum i guiden.
+                Momenten räknas från start, {a.mittKalla === "leverans" ? "BESS-leveransen" : "en antagen leverans"}{" "}
+                {datumKort(a.mitt)} och slutbesiktningen. Varje moment kan få egna datum i guiden.
                 {a.startAntagande ? " Startdatumet är antaget ur kontraktets milstolpar (feb–sep 2026) — ange det rätta." : ""}
               </>
             ) : (

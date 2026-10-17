@@ -15,7 +15,7 @@ import { Erfarenhetslista } from "../components/epc/Erfarenheter.jsx";
 /* Bygga batteripark — hur en BESS-anläggning byggs som totalentreprenad
    (ABT 06), steg för steg, och var portföljens projekt står.
 
-   Guiden är densamma för alla projekt: 16 faser som var och en avslutas med
+   Guiden är densamma för alla projekt: 16 moment som vart och ett avslutas med
    en grind. Per projekt bockas varje punkt av (eller sätts som ej aktuell),
    och en passerad grind gör fasens punkter klara. Kommentarer på punkterna
    blir erfarenhetslistan, och andra projekts erfarenheter visas på samma
@@ -324,7 +324,7 @@ export function EpcChecklista() {
       <Card
         id="epc-ledtider"
         title="Ligg steget före – ledtider"
-        subtitle={`Sista startdatum för ${projektnamn}, räknat mot projektets datum. Kända datum ur leveranslistan och tidplanen går före fasplanen. Röd = startdatumet har passerat, orange = inom två veckor. En ledtid är klar när dess punkt är klar, eller när du markerar den.`}
+        subtitle={`Sista startdatum för ${projektnamn}, räknat mot projektets datum. Kända datum ur leveranslistan och tidplanen går före momentplanen. Röd = startdatumet har passerat, orange = inom två veckor. En ledtid är klar när dess punkt är klar, eller när du markerar den.`}
       >
         <Ledtidstabell pid={pid} onMarkera={(ledtid, klar) => dispatch({ type: "EPC_LEDTID", pid, ledtid, klar })} />
       </Card>
