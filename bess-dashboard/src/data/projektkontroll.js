@@ -1,8 +1,8 @@
 import { FASER } from "./bessChecklistData.ts";
 import { FALTMALLAR } from "./faltmaterial.js";
 import { LAGMALLAR } from "./lagplan.js";
-export const PROJEKTKONTROLL_REVISION = "2026-10-01.3";
-export const PROJEKTKONTROLL_INLEDNING = "Följ projektet från första förberedelse till garantiuppföljning. Kontrollera arbetet mot rätt kontrakt, ritning, kontrollplan och tillverkarmanual. Skriv verkligt resultat, datum, kontrollant och bevis. STOPP betyder att utsedd ansvarig måste ge klartecken. En ifylld lista ersätter inte provprotokoll, tillstånd eller underskrift.";
+export const PROJEKTKONTROLL_REVISION = "2026-10-17.1";
+export const PROJEKTKONTROLL_INLEDNING = "Följ projektet från första förberedelse till garantiuppföljning. Kontrollera arbetet mot rätt kontrakt, ritning, kontrollplan och tillverkarmanual. Skriv verkligt resultat, datum, kontrollant och bevis. För leverantörspunkter avser ONE:s kvittens mottaget/granskat underlag; leverantörens utförare och protokoll ska framgå. Öppna ansvarsgränser måste först fastställas skriftligt. STOPP betyder att utsedd ansvarig måste ge klartecken. En ifylld lista ersätter inte provprotokoll, tillstånd eller underskrift.";
 const steg = [
   ["Förstudie och krav", [
     ["Bestäm anläggningens mål", "Bekräfta effekt, energimängd, användning och beställarens funktionskrav. Ange kravspecifikationens revision.", "Projektledare"],
@@ -12,7 +12,7 @@ const steg = [
   ]],
   ["Kontrakt och ansvar", [
     ["Kontrollera kontraktshandlingarna", "Samla undertecknat kontrakt, handlingarnas ordning och projektets avtalade regler. Anteckna vilka ändringar och reservationer som gäller.", "Projektledare"],
-    ["Skriv vem som gör vad", "Bekräfta gränser mellan oss, markentreprenör, CATL/PE, ställverksleverantör, beställare och nätägare. Fördela mark, fundament, oljegrop, kablar, jordning, stängsel och idrifttagning.", "Projektledare"],
+    ["Skriv vem som gör vad", "Bekräfta AC2C-gränser mellan ONE/UE, CATL, PE, stationsleverantör, Techinova, FlexGen, IC, Sweco och nätägare. Aktivitetslistans workshopantaganden, IF05 och Customer-ledda prov kräver skriftlig bekräftelse. Fördela mark, fundament, oljegrop, kablar, jordning, stängsel och idrifttagning.", "Projektledare"],
     ["Bestäm kontaktvägar och beslut", "Utse ansvariga för projektering, BAS-P/BAS-U, elarbete, lyft, provning och beställarens beslut. Skriv vem som får beställa ändringar.", "Projektledare"],
     ["Bestäm kontrollplan och tidplan", "Gå igenom kontrollpunkter, stoppunkter, bevittnade prov och leveranser med beställaren. Ange godkänd kontrollplan och planerad överlämning.", "Projektledare / beställare"],
   ]],
@@ -68,7 +68,7 @@ const steg = [
   ["Stationshus, transformator och ställverk", [
     ["Kontrollera stationens placering", "Kontrollera hus, ventilation, kabelvägar, åtkomst, hjälpkraft och fuktskydd mot bygghandlingarna. Dokumentera färdigt utförande.", "Stationsentreprenör / kontrollant"],
     ["Kontrollera AC och mellanspänning", "Kontrollera kabelavslut, anslutningar, moment och märkning. Låt utsedd kompetent personal utföra och dokumentera arbetet enligt anvisningar.", "Utsedd elpersonal"],
-    ["Kontrollera transformator och skydd", "Granska transformatorprov, ställverksprov, reläskydd, förreglingar och inställningar mot projekteringen och nätägarens villkor.", "Skydds-/provtekniker"],
+    ["Ta emot stationsleverantörens prov", "Ta emot leverantörens transformator-, ställverks- och skyddsprotokoll via IC:s SAT-samordning. Granska gränssnitt mot ONE:s externa BoP-anslutningar och dokumentera öppna fel.", "ONE mottagningskontroll / stationsleverantör"],
     ["STOPP – lämna stationen till provledaren", "Samla protokoll, aktuellt enlinjeschema och lista över öppna fel. Utsedd ansvarig ger klartecken för nästa kontrollsteg.", "Provledare / arbetsledare"],
   ]],
   ["Leverans, lyft och placering", [
