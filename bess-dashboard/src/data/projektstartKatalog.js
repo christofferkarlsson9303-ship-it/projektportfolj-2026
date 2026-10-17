@@ -45,6 +45,24 @@ export const KATALOG = {
    "text": "Krav på personalliggare, dagbok och rapportering är noterade"
   },
   {
+   "id": "contractForm",
+   "grupp": "Anbud och upphandling",
+   "text": "Entreprenad- och ersättningsform är klarlagd: totalentreprenad (ABT 06) eller utförandeentreprenad (AB 04), fast pris eller löpande räkning",
+   "kritisk": true
+  },
+  {
+   "id": "tenderDocs",
+   "grupp": "Anbud och upphandling",
+   "text": "Förfrågningsunderlaget är tydligt innan förfrågan går ut: tekniska specifikationer, kvalitets- och miljökrav, tidsramar och administrativa föreskrifter (AF-del)",
+   "kritisk": true
+  },
+  {
+   "id": "tenderReview",
+   "grupp": "Anbud och upphandling",
+   "text": "Anbud utvärderas mot bestämda kriterier (lägsta pris eller ekonomiskt mest fördelaktigt), och ingående omfattning stäms av vid anbudsgenomgång",
+   "kritisk": true
+  },
+  {
    "id": "profit",
    "grupp": "Beslut",
    "text": "Lönsamheten är bedömd mot risk och resurser",
@@ -185,6 +203,12 @@ export const KATALOG = {
    "id": "payLinked",
    "grupp": "Kontraktssanning",
    "text": "Betalningsplanen är kopplad till rätt milstolpsutlösare"
+  },
+  {
+   "id": "tenderBasis",
+   "grupp": "Kontraktssanning",
+   "text": "Vinnande anbud och kontraktshandlingar är underlag för projektets moment och egenkontroller",
+   "kritisk": true
   },
   {
    "id": "ifs",

@@ -394,7 +394,16 @@ describe("Anbudsgenomgång och vunnet anbud", () => {
     expect(tidigt.some((p) => p.grupp === "System")).toBe(false);
     expect(senare.some((p) => p.grupp === "System")).toBe(true);
     const alla = [...tidigt, ...senare.filter((p) => p.bucket === "contract")];
-    expect(new Set(alla.map((p) => p.id)).size).toBe(17);
+    expect(new Set(alla.map((p) => p.id)).size).toBe(18);
+  });
+  it("fas 1 kräver entreprenadform, förfrågningsunderlag, anbudsutvärdering och anbudet som underlag", () => {
+    const avrop = stegPunkter(STEG.find((x) => x.id === "avrop"));
+    const kontrakt = stegPunkter(STEG.find((x) => x.id === "kontrakt"));
+    const nya = [...avrop.filter((p) => p.grupp === "Anbud och upphandling"), ...kontrakt.filter((p) => p.id === "tenderBasis")];
+    expect(nya.map((p) => p.id)).toEqual(["contractForm", "tenderDocs", "tenderReview", "tenderBasis"]);
+    expect(nya.every((p) => p.kritisk)).toBe(true);
+    const oppna = fasKrav(tomtUtkast(), 1).punkter.map((p) => p.id);
+    expect(oppna).toEqual(expect.arrayContaining(["contractForm", "tenderDocs", "tenderReview", "tenderBasis"]));
   });
   it("bevarar anbudsutfall, planerade roller och gemensamma risker vid sparning", () => {
     const u = tomtUtkast();
