@@ -1,5 +1,5 @@
 import { Meter, StatTile } from "../ds/index.js";
-import { fmtTal, parkSumma } from "../../lib/site.js";
+import { fmtTal, parkSumma, socHint } from "../../lib/site.js";
 
 /* Parkens BESS-siffror, summerade ur objekten på siten. Fält som inte är
    angivna räknas som "ej angivet", aldrig som 0 — en tom park visar ett
@@ -16,7 +16,7 @@ export function ParkSumma({ objekt, className = "" }) {
         value={streck(s.mw, "MW", 1)}
         hint={s.inverterMw > 0 || s.trafoMva > 0 ? `Inverter ${fmtTal(s.inverterMw, 1)} MW · Trafo ${fmtTal(s.trafoMva, 1)} MVA` : "Summa containrar"}
       />
-      <StatTile label="Laddstatus (SoC)" value={s.soc === null ? "—" : `${fmtTal(s.soc, 0)} %`} hint="Medel, viktat på energi">
+      <StatTile label="Laddstatus (SoC)" value={s.soc === null ? "—" : `${fmtTal(s.soc, 0)} %`} hint={socHint(s.socUnderlag)}>
         {s.soc === null ? null : <Meter value={s.soc} label="Medel-SoC" />}
       </StatTile>
       <StatTile label="Driftsatta" value={s.antal ? `${s.driftsatta} av ${s.antal}` : "—"} hint="Enheter med BESS-data" />

@@ -360,21 +360,35 @@ export const fmtTal = (n, d = 1) => new Intl.NumberFormat("sv-SE", { maximumFrac
 
 /**
  * Sammanställning av parken. Energi och effekt räknas på containrarna
- * (batterierna); inverter och trafo summeras för sig. SoC är medel viktat på
- * energi där MWh finns, annars ett vanligt medel. Saknade fält räknas som
+ * (batterierna); inverter och trafo summeras för sig. Saknade fält räknas som
  * "ej angivet", inte som 0.
+ *
+ * SoC (granskning F08): energiviktad bara när ALLA containrar med SoC har MWh.
+ * Saknar någon av dem kapacitet blir `soc` null och `socUnderlag.metod`
+ * "delvis" — en viktad siffra som tyst tappat en container ser tillförlitlig
+ * ut men är fel. Har ingen container MWh blir det ett aritmetiskt medel
+ * ("medel"). SoC är manuellt inmatad, inte telemetri; `socUnderlag` säger hur
+ * stor del av parken siffran bygger på.
  */
 export function parkSumma(objekt) {
   const v = objekt.filter(arVolym);
   const cont = v.filter((o) => o.typ === "container");
   const summa = (lista, falt) => lista.reduce((a, o) => a + (num(o[falt]) ?? 0), 0);
   const medSoc = cont.filter((o) => num(o.soc) !== null);
-  const vikt = medSoc.reduce((a, o) => a + (num(o.mwh) ?? 0), 0);
-  const soc = medSoc.length
-    ? vikt > 0
-      ? medSoc.reduce((a, o) => a + (num(o.mwh) ?? 0) * num(o.soc), 0) / vikt
-      : medSoc.reduce((a, o) => a + num(o.soc), 0) / medSoc.length
-    : null;
+  const viktade = medSoc.filter((o) => (num(o.mwh) ?? 0) > 0);
+  const utanKapacitet = medSoc.length - viktade.length;
+  let metod = null;
+  let soc = null;
+  if (medSoc.length && !viktade.length) {
+    metod = "medel";
+    soc = medSoc.reduce((a, o) => a + num(o.soc), 0) / medSoc.length;
+  } else if (medSoc.length && utanKapacitet) {
+    metod = "delvis";
+  } else if (medSoc.length) {
+    metod = "energiviktad";
+    const vikt = viktade.reduce((a, o) => a + num(o.mwh), 0);
+    soc = viktade.reduce((a, o) => a + num(o.mwh) * num(o.soc), 0) / vikt;
+  }
   const bess = v.filter((o) => harBessData(o.typ));
   return {
     mwh: summa(cont, "mwh"),
@@ -382,9 +396,19 @@ export function parkSumma(objekt) {
     inverterMw: summa(v.filter((o) => o.typ === "skid" || o.typ === "ehouse"), "mw"),
     trafoMva: summa(v.filter((o) => o.typ === "trafo"), "mva"),
     soc,
+    socUnderlag: { metod, medSoc: medSoc.length, viktade: viktade.length, utanKapacitet, containrar: cont.length, kalla: "manuell" },
     antal: bess.length,
     driftsatta: bess.filter((o) => o.status === "driftsatt").length,
   };
+}
+
+/** Text under SoC-siffran: beräkningsgrund, täckning och att värdet är manuellt. */
+export function socHint(u) {
+  if (!u?.medSoc) return "Ingen container har SoC angiven";
+  const tackning = u.medSoc < u.containrar ? ` · ${u.medSoc} av ${u.containrar} containrar` : "";
+  if (u.metod === "delvis") return `Delvis underlag: ${u.utanKapacitet} av ${u.medSoc} saknar MWh · manuellt värde`;
+  if (u.metod === "medel") return `Aritmetiskt medel (MWh saknas)${tackning} · manuellt värde`;
+  return `Energiviktat medel${tackning} · manuellt värde`;
 }
 
 /* ---------- Objekt i state ---------- */

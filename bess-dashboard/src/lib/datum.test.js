@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { dagarTill, idag, isoVecka, timmarSedan, veckaForskjut, veckansDagar } from "./datum.js";
+import { arGiltigtDatum, dagarTill, idag, isoVecka, timmarSedan, veckaForskjut, veckansDagar } from "./datum.js";
 
 /* Klockan står still under testen. Utan det blir varje fristberäkning ett
    test som går sönder i morgon. */
@@ -92,5 +92,24 @@ describe("ISO-veckor", () => {
     expect(dagar).toHaveLength(7);
     expect(dagar[0]).toBe("2026-09-21");
     expect(dagar[6]).toBe("2026-09-27");
+  });
+});
+
+describe("arGiltigtDatum (granskning F13)", () => {
+  it("godtar riktiga kalenderdatum, även skottdag", () => {
+    expect(arGiltigtDatum("2026-10-16")).toBe(true);
+    expect(arGiltigtDatum("2024-02-29")).toBe(true);
+    expect(arGiltigtDatum("2000-02-29")).toBe(true);
+  });
+  it("avvisar datum som inte finns och fel format", () => {
+    expect(arGiltigtDatum("2026-02-31")).toBe(false);
+    expect(arGiltigtDatum("2026-02-29")).toBe(false);
+    expect(arGiltigtDatum("1900-02-29")).toBe(false);
+    expect(arGiltigtDatum("2026-04-31")).toBe(false);
+    expect(arGiltigtDatum("2026-13-01")).toBe(false);
+    expect(arGiltigtDatum("2026-00-10")).toBe(false);
+    expect(arGiltigtDatum("2026-1-5")).toBe(false);
+    expect(arGiltigtDatum("")).toBe(false);
+    expect(arGiltigtDatum(null)).toBe(false);
   });
 });

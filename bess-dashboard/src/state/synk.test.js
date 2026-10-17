@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { loggKlientNyckel } from "./synk.js";
 import { feltyp, loggNyckel, nyaLoggposter } from "./synk.js";
 
 describe("nyaLoggposter", () => {
@@ -31,5 +32,14 @@ describe("feltyp", () => {
     expect(feltyp(new TypeError("Failed to fetch"))).toBe("annat");
     expect(feltyp({ code: "PGRST301" })).toBe("annat");
     expect(feltyp(undefined)).toBe("annat");
+  });
+});
+
+describe("loggKlientNyckel", () => {
+  it("är stabil för samma post och skiljer olika texter åt", () => {
+    const p = { ts: "2026-10-16T18:00:00.000Z", text: "Status ändrad" };
+    expect(loggKlientNyckel(p)).toBe(loggKlientNyckel({ ...p }));
+    expect(loggKlientNyckel(p)).not.toBe(loggKlientNyckel({ ...p, text: "Status ändrat" }));
+    expect(loggKlientNyckel(p)).toMatch(/^2026-10-16T18:00:00\.000Z\|[0-9a-z]+$/);
   });
 });

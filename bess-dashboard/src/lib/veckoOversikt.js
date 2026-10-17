@@ -90,12 +90,13 @@ const STATUS_TEXT = Object.fromEntries(SITE_STATUS);
 
 /**
  * Läge för en komponent på siten: "varning" om ett öppet ärende är kopplat till den (objectGuid),
- * annars "ok". Texten säger vad som ligger bakom. `oppnaArenden` är de öppna ärendena på objektet.
+ * annars "ingen". Inga ärenden är inte detsamma som fungerande drift, så tonen är neutral och
+ * aldrig "ok" (granskning F14). `oppnaArenden` är de öppna ärendena på objektet.
  */
 export function komponentLage(o, ur) {
   const oppna = (ur || []).filter((u) => arKopplad(u) && u.objectGuid === o.id && !["stangd", "utgar", "fakturerad"].includes(u.status));
   return {
-    ton: oppna.length ? "varning" : "ok",
+    ton: oppna.length ? "varning" : "ingen",
     text: oppna.length ? (oppna.length === 1 ? "1 öppet ärende" : `${oppna.length} öppna ärenden`) : "Inga öppna ärenden",
     oppnaArenden: oppna,
     status: o.status || "",

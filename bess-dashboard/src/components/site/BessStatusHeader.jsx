@@ -229,14 +229,14 @@ export function BessStatusHeader({ projekt, effekt, siffror, ata, stadier, kompo
                       onClick={() => setValdKomp(vald ? null : k.id)}
                       className={`${RUTA} relative flex w-full flex-col gap-1 overflow-hidden bg-surface p-3 ${vald ? "border-one-bla shadow-md ring-2 ring-one-bla/25" : "border-hairline hover:border-hairline-stark"}`}
                     >
-                      <span aria-hidden="true" className={`absolute right-0 top-0 h-3 w-3 rounded-bl-lg ${l.ton === "varning" ? "bg-orange" : "bg-turkos"}`} />
+                      <span aria-hidden="true" className={`absolute right-0 top-0 h-3 w-3 rounded-bl-lg ${l.ton === "varning" ? "bg-orange" : "bg-hairline-stark"}`} />
                       <span className="flex items-center gap-2 pr-3">
                         <Ikon size={16} aria-hidden="true" className="shrink-0 text-text-bla" />
                         <span className="truncate text-[12.5px] font-bold text-ink">{k.namn || MALLAR[k.typ]?.namn}</span>
                       </span>
                       <span className="flex items-center justify-between gap-2 text-[11.5px] text-ink-soft">
                         <span className="truncate">{TYPNAMN[k.typ] || MALLAR[k.typ]?.namn}</span>
-                        <span className={`shrink-0 font-semibold ${l.ton === "varning" ? "text-warn-ink" : "text-ok-ink"}`}>{l.ton === "varning" ? "Ärende" : "OK"}</span>
+                        <span className={`shrink-0 font-semibold ${l.ton === "varning" ? "text-warn-ink" : "text-ink-soft"}`}>{l.ton === "varning" ? "Ärende" : "Inga ärenden"}</span>
                       </span>
                       {k.soc !== undefined && k.soc !== null && k.soc !== "" ? (
                         <>

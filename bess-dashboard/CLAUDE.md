@@ -11,7 +11,33 @@ En visuell prototyp byggdes 2026-10-04 i ett annat verktyg (Grok). Den ligger **
 - **Designsystemet** är `src/components/ds/` (`Card`, `StatTile`, `StatusBadge`, `Callout`). Nya ytor använder det. Inga nya hex-färger, inget parallellt tema.
 - **ÄTA-kalkylen finns på två ställen med samma kod.** Kortet i vy `ata` (”Öppna i kalkyl”) och egen flik `atakalkyl` (`AtaKalkylVy.jsx`). Logiken ligger i `src/sections/Ata/useAtaKalkyl.jsx` och tabellen i `KalkylTabell.jsx`. Ändra där, inte i två kopior.
 - **Ärenden på siten.** UR/ÄTA-poster kan kopplas till ett `siteObjekt` (`objectGuid`, `viewpoint`, `boundingBox`, `modelVersionId`) och 3D-vyn kan jämföra modellversioner. Läs [`docs/modellarenden.md`](docs/modellarenden.md) innan du ändrar det. IFC-import (web-ifc, metadata i state, geometri i IndexedDB) och BCF-export finns; läs avsnitten där. Ingen egen backend.
-- **Data** är två JSONB-rader: `portfolj/state` och `portfolj/ekonomi`. RLS skyddar. Ändra inte schemat för en kalkylator eller en bild.
+- **Data** är två JSONB-rader: `portfolj/state` och `portfolj/ekonomi`. RLS skyddar. Ändra inte schemat för en kalkylator eller en bild. Undantag och beslut om schema står under *Teknisk granskning 2026-10-16* nedan.
+
+## Teknisk granskning 2026-10-16
+
+Granskningen (commit `0e7f85961c8a`, fynd F01–F15) ligger till grund för GitHub-issues märkta `granskning`. Etapp A finns på grenen `granskning/etapp-a`.
+
+**Regler som gäller nu:**
+
+- **Kontrolltäckning.** `kontrollage()` räknar en punkt som verifierad först när varje omfattning som registrerats i fasen är komplett. Gör inte tillbaka till "minst en rad".
+- **Datum** i kontroller valideras med `arGiltigtDatum()` i `src/lib/datum.js`. Använd den, inte `Date.parse`.
+- **Inga ärenden är ingen driftstatus.** `komponentLage()` ger ton `ingen`, aldrig `ok`. Grönt får inte betyda "inget registrerat".
+- **SoC** är manuellt inmatad. `parkSumma()` ger `soc = null` vid delvis underlag och `socUnderlag` med metod och täckning. Visa grunden, aldrig en viktad siffra som tappat containrar.
+- **Ändringsloggen** markeras skickad först efter svar från tabellen. Varje post skrivs med `klient_nyckel` (`loggKlientNyckel()`) och `ON CONFLICT DO NOTHING`, så återförsök ger inga dubbletter.
+- **Projekt-ID** hårdkodas aldrig i SQL. `public.projekt` fylls från `portfolj/state` av en trigger.
+- **Krantext och kontrollintervall:** skriv aldrig kranklass som villkor ("≥ 45 t kran"). Kran väljs i lyftplanen mot bruttolast och lastdiagram. Kontrollintervall är riskbaserade enligt anläggningens kontrollprogram, inga generella år.
+
+**Beslut som styr schema och server.** F01 (projektbehörighet), F05 (serverkvitterade godkännanden) och F15 (dela upp datamodellen) kräver nya tabeller och Postgres-funktioner (`security definer`, anropade som RPC) i Supabase. Det är **inte** "egen backend" i den här filens mening, men det är schemaändringar. Gör dem först när beslutet nedan är ifyllt.
+
+| Beslut | Status | Påverkar |
+| --- | --- | --- |
+| Ska beställare/UE få åtkomst till appen? | Ej beslutat | F01, F15 |
+| Synkkö: full operationskö eller förenklad variant i Etapp A? | Ej beslutat | F03 |
+| Formella godkännanden i egen tabell med `auth.uid()` och servertid | Ej beslutat | F05 |
+| Påminnelser: räcker en kanal eller måste alla lyckas? | Ej beslutat | F07 |
+| Frys nya vyer tills Etapp A är mergad | Ej beslutat | Alla |
+
+Fyll i datum och beslut i tabellen när det är fattat. Migrationer i `supabase/migrations/` appliceras manuellt efter granskning; skriv i filens huvud om den är applicerad.
 
 ## Gör inte
 

@@ -51,3 +51,13 @@ describe("Projektets egenkontroll", () => {
     expect(reducer(saved, { type: "FALT_KONTROLL", rad: row("P0.01", { projektId: "saknas" }) })).toBe(saved);
   });
 });
+
+describe("kontrollBrister: kalenderdatum (granskning F13)", () => {
+  const rad = (datum) => ({ resultat: "ok", datum, kontrollant: "A", referens: "R", mallrevision: PROJEKTKONTROLL_REVISION });
+  it("avvisar ett datum som inte finns", () => {
+    expect(kontrollBrister(rad("2026-02-31"), PROJEKTKONTROLL_REVISION)).toContain("Datum är ogiltigt eller ligger i framtiden");
+  });
+  it("godtar skottdag", () => {
+    expect(kontrollBrister(rad("2024-02-29"), PROJEKTKONTROLL_REVISION)).toEqual([]);
+  });
+});

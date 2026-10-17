@@ -4,6 +4,18 @@
 /** Samma nyckel som reducern använder för att känna igen en loggpost. */
 export const loggNyckel = (p) => `${p.ts}|${p.text}`;
 
+/** Stabil nyckel för en loggpost i databasen: tid + FNV-1a av texten. Samma
+ *  post ger alltid samma nyckel, så ett återförsök efter ett tappat svar blir
+ *  ON CONFLICT DO NOTHING i stället för en dubblett (granskning F04). */
+export function loggKlientNyckel(p) {
+  let h = 0x811c9dc5;
+  for (const c of String(p.text ?? "")) {
+    h ^= c.codePointAt(0);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return `${p.ts}|${h.toString(36)}`;
+}
+
 /**
  * Loggposter som ska skickas upp: skapade här, nyare än gränsen och inte
  * redan kända från servern.

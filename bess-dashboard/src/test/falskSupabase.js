@@ -16,6 +16,7 @@ export function skapaFalskSupabase() {
   const lyssnare = new Set(); // { tabell, filter, fn }
   let inloggad = "jag@one-nordic.se";
   let fel = null; // (tabell, op, rad) => {code, message} | null
+  let felEfter = null; // som fel, men skrivningen genomförs först (svaret tappas)
 
   const sand = (tabell, rad, typ = "UPDATE") => {
     for (const l of [...lyssnare]) {
@@ -31,6 +32,7 @@ export function skapaFalskSupabase() {
     let op = "select";
     let data = null;
     let gräns = null;
+    let upsertOpt = {};
     const q = {
       update(v) {
         op = "update";
@@ -40,6 +42,12 @@ export function skapaFalskSupabase() {
       insert(v) {
         op = "insert";
         data = v;
+        return q;
+      },
+      upsert(v, opt = {}) {
+        op = "upsert";
+        data = v;
+        upsertOpt = opt;
         return q;
       },
       select() {
@@ -71,10 +79,16 @@ export function skapaFalskSupabase() {
       if (f) return { data: null, error: f };
 
       if (tabell === "andringslogg") {
-        if (op === "insert") {
-          const rader = (Array.isArray(data) ? data : [data]).map((r) => ({ ...r, anvandare: inloggad }));
+        if (op === "insert" || op === "upsert") {
+          let rader = (Array.isArray(data) ? data : [data]).map((r) => ({ ...r, anvandare: inloggad }));
+          // ON CONFLICT (anvandare, klient_nyckel) DO NOTHING, som det unika indexet i databasen.
+          if (op === "upsert" && upsertOpt.ignoreDuplicates) {
+            rader = rader.filter((r) => !r.klient_nyckel || !logg.some((x) => x.anvandare === r.anvandare && x.klient_nyckel === r.klient_nyckel));
+          }
           logg.push(...rader);
           rader.forEach((r) => sand("andringslogg", r, "INSERT"));
+          const efter = felEfter && felEfter(tabell, op, data);
+          if (efter) return { data: null, error: efter };
           return { data: rader, error: null };
         }
         const sorterad = [...logg].sort((a, b) => (a.ts < b.ts ? 1 : -1));
@@ -130,9 +144,14 @@ export function skapaFalskSupabase() {
       logg = [];
       lyssnare.clear();
       fel = null;
+      felEfter = null;
     },
     sattFel(fn) {
       fel = fn;
+    },
+    /** Skrivningen genomförs men klienten får ett fel — svaret tappades. */
+    sattFelEfterSkrivning(fn) {
+      felEfter = fn;
     },
     /** Någon annan sparar ett dokument. */
     annanSkriver(key, value) {

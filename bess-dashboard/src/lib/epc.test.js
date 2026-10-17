@@ -406,8 +406,40 @@ describe("verifiering", () => {
         mallrevision: PROJEKTKONTROLL_REVISION },
     });
     const k = kontrollage(s, "36037")[7];
-    expect(k).toMatchObject({ avvikelser: 1, kvar: 1 });
+    // Container 3 är nu en omfattning i fasen, så alla punkter saknar den utom den avvikande.
+    expect(k).toMatchObject({ avvikelser: 1, verifierade: 0 });
     expect(faslage(s, "36037", NU)[7].verifiering.saknas.join(" ")).toMatch(/1 avvikelse öppen/);
+  });
+
+  it("en komplett omfattning döljer inte en ofullständig (granskning F12/T07)", () => {
+    let s = kontrollera(seed(), "36037", 7);
+    const forsta = PROJEKTMALLAR[7].punkter[0];
+    s = reducer(s, {
+      type: "FALT_KONTROLL",
+      rad: { id: kontrollId("36037", "Container 3", forsta.id), projektId: "36037", omfattning: "Container 3",
+        punktId: forsta.id, resultat: "ok", datum: "2026-09-20", kontrollant: "B", referens: "R",
+        mallrevision: PROJEKTKONTROLL_REVISION },
+    });
+    const k = kontrollage(s, "36037")[7];
+    // Bara första punkten har både helheten och Container 3; resten saknar Container 3.
+    expect(k).toMatchObject({ verifierade: 1, kvar: k.totalt - 1, avvikelser: 0 });
+    expect(k.omfattningar).toEqual(["Container 3", "Hela anläggningen"]);
+    expect(faslage(s, "36037", NU)[7].verifiering.verifierad).toBe(false);
+  });
+
+  it("en ofullständig rad i en omfattning gör punkten overifierad även om en annan är komplett", () => {
+    let s = kontrollera(seed(), "36037", 7);
+    const forsta = PROJEKTMALLAR[7].punkter[0];
+    for (const p of PROJEKTMALLAR[7].punkter) {
+      s = reducer(s, {
+        type: "FALT_KONTROLL",
+        rad: { id: kontrollId("36037", "Container 1", p.id), projektId: "36037", omfattning: "Container 1",
+          punktId: p.id, resultat: "ok", datum: "2026-09-20", kontrollant: p.id === forsta.id ? "" : "B", referens: "R",
+          mallrevision: PROJEKTKONTROLL_REVISION },
+      });
+    }
+    const k = kontrollage(s, "36037")[7];
+    expect(k).toMatchObject({ verifierade: k.totalt - 1, kvar: 1 });
   });
 
   it("håller kontrollerna per projekt och lämnar faser som inte kommit så långt utan läge", () => {
