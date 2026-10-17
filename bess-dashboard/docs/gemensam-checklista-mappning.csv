@@ -302,6 +302,10 @@
 ;projektstart;contract.viteExposure;Alla deltidsmilstolpar med vitesexponering är listade;1;;;;;;;
 ;projektstart;contract.guaranteeCheck;Bankgaranti är bedömd inför anbud: belopp, tid och utfärdare;1;;kritisk;;;;;
 ;projektstart;contract.payLinked;Betalningsplanen är kopplad till rätt milstolpsutlösare;1;;;;;;;
+;projektstart;calloff.contractForm;Entreprenad- och ersättningsform är klarlagd: totalentreprenad (ABT 06) eller utförandeentreprenad (AB 04), fast pris eller löpande räkning;1;;kritisk;;;ny i PR #79;;
+;projektstart;calloff.tenderDocs;Förfrågningsunderlaget är tydligt innan förfrågan går ut: tekniska specifikationer, kvalitets- och miljökrav, tidsramar och administrativa föreskrifter (AF-del);1;;kritisk;;;ny i PR #79;;
+;projektstart;calloff.tenderReview;Anbud utvärderas mot bestämda kriterier (lägsta pris eller ekonomiskt mest fördelaktigt), och ingående omfattning stäms av vid anbudsgenomgång;1;;kritisk;;;ny i PR #79;;
+;projektstart;contract.tenderBasis;Vinnande anbud och kontraktshandlingar är underlag för projektets moment och egenkontroller;1;;kritisk;;;ny i PR #79;;
 ;projektstart;org.rolesWritten;Rollerna är namngivna skriftligt;2;;kritisk;;;;;
 ;projektstart;org.customerKeys;Kunden har godkänt nyckelpersoner där kontraktet kräver det;2;;;;;;;
 ;projektstart;org.backtoback;UE-roller speglar huvudavtalet (back-to-back);2;;;;;;;

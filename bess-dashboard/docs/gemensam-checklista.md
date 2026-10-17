@@ -112,11 +112,11 @@ Varje etapp är en egen PR med tester. Ingen etapp ändrar vad användaren ser f
 
 ### Etapp 0 – Beslut och sammanslagningslista (PL + el/OEM)
 
-- Gå igenom [`gemensam-checklista-mappning.csv`](gemensam-checklista-mappning.csv). Den har alla 619 punkter. Förslag i kolumnen `foreslagen_relation`: 41 `verifierar` (från koden) och 11 `möjlig sammanslagning` (automatisk textlikhet, ska granskas).
+- Gå igenom [`gemensam-checklista-mappning.csv`](gemensam-checklista-mappning.csv). Den har alla 623 punkter (inklusive de fyra anbudspunkterna i fas 1 från PR #79). Förslag i kolumnen `foreslagen_relation`: 41 `verifierar` (från koden) och 11 `möjlig sammanslagning` (automatisk textlikhet, ska granskas).
 - Fyll i `beslut`: `egen` (ny KP), `slå ihop med <id>` eller `verifierar <id>`. Det som inte beslutas blir en egen punkt.
-- Fatta besluten i avsnitt 5.
+- Fyll i `beslutad_av`.
 
-**Klart när:** varje rad har ett beslut och listan är godkänd av PL.
+**Klart när:** varje rad har ett beslut och listan är godkänd av projektledare/lyftansvarig och el/OEM-ansvarig.
 
 ### Etapp 1 – Katalogen i kod (ingen beteendeändring)
 
@@ -164,12 +164,14 @@ Varje etapp är en egen PR med tester. Ingen etapp ändrar vad användaren ser f
 | Större JSONB-rad | Långsammare synk (F15) | Spara bara rader med värde. Uppskattat ca 100–300 kB per aktivt projekt (antagande, ska mätas). |
 | Samtidig ändring av samma punkt | Lokalt värde vinner tyst | Konfliktvyn (issue #70) prioriteras före etapp 3. |
 
-## 5. Beslut som behövs
+## 5. Beslut (fattade 2026-10-17, Christoffer Karlsson)
 
-1. Får en bock i Projektstart räknas som klar för en punkt av typ `kontroll`, eller ska den alltid kräva egenkontroll med bevis? **Förslag:** kräv bevis.
-2. Ska en passerad grind fortsätta att göra punkterna klara? **Förslag:** nej, visa dem som "ej registrerade".
-3. Vem godkänner sammanslagningslistan (etapp 0)? **Förslag:** PL för kontrakt och ekonomi, elansvarig för el och provning, lyftansvarig för lyft.
-4. Ska Projektstartens fasgodkännande (kritiska punkter) räknas på samma status, så att ONE-P-fasen och momenten inte kan säga emot varandra? **Förslag:** ja, i etapp 3.
+1. **Kontroll kräver alltid bevis, i alla vyer.** En `kontroll`-punkt har samma krav på verifiering oavsett var den bockas. Från Projektstart öppnas en uppmaning med länk till egenkontrollen eller bilagan. Regel 2 i avsnitt 2.3 gäller.
+2. **En passerad grind bockar inte längre av punkter.** Varje punkt bockas manuellt eller verifieras via kopplad egenkontroll. Regel 4 i avsnitt 2.3 gäller.
+3. **Mappningen godkänns gemensamt** av projektledare/lyftansvarig och el/OEM-ansvarig (etapp 0).
+4. **Fas- och projektstatus räknas på samma status i alla vyer.** Projektstartens fasgodkännande, Bygga batteripark, Tidplan, projektkort och nyckeltal läser samma data (etapp 3).
+
+Ordning: PR #76 → #78 → #79 → #77. Etapp 0 (mappningsfilen) startar när #77 är mergad och avslutas innan etapp 1.
 
 ## 6. Ordning mot annat arbete
 
