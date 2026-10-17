@@ -94,3 +94,27 @@ test("alla sidor går att öppna och har enkel vägledning", async ({ page }) =>
   }
   utanKonsolfel(fel);
 });
+
+
+test("metoden visar projektval och sex fasgrindsmätare utan horisontell rullning", async ({ page }, info) => {
+  const { fel } = await oppna(page, "Min projektmetod");
+  const val = page.getByRole("group", { name: "Välj projekt", exact: true });
+  const andra = val.getByRole("button").nth(1);
+  const namn = await andra.innerText();
+  await andra.click();
+  await expect(andra).toHaveAttribute("aria-pressed", "true");
+  await expect(val.getByRole("button").first()).toHaveAttribute("aria-pressed", "false");
+  await expect(page.locator(".metod-projekt-identitet")).toContainText(namn.replace(/\s+/g, " ").split(" ").slice(1).join(" "));
+  const matare = page.getByRole("progressbar", { name: /^Fasgrindar för / });
+  await expect(matare).toHaveCount(6);
+  const varden = await matare.evaluateAll((els) => els.map((e) => Number(e.getAttribute("aria-valuenow"))));
+  expect(varden.every((n) => n >= 0 && n <= 100)).toBe(true);
+  await expect(page.getByRole("button", { name: "Visa stegets byggmoment", exact: true })).toHaveCount(6);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: info.outputPath("metod-ljust.png"), fullPage: true });
+  await page.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.screenshot({ path: info.outputPath("metod-morkt.png"), fullPage: true });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  utanKonsolfel(fel);
+});

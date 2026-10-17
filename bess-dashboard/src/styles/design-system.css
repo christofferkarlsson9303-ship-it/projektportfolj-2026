@@ -2163,3 +2163,48 @@ button.ov-gantt-rad:hover>:first-child,button.ov-gantt-rad:focus-visible>:first-
 .btn[aria-busy="true"]{cursor:progress}
 .skeleton{background:linear-gradient(90deg,var(--sunken,#eef3f5) 25%,var(--hairline-stark) 50%,var(--sunken,#eef3f5) 75%);background-size:200% 100%;animation:skeleton-skimmer 1.4s ease-in-out infinite}
 @keyframes skeleton-skimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+
+
+/* Projektmetoden: tydlig riktning, verkliga statusvärden och lugna arbetsytor. */
+.projektvaljare{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px}
+.projektvaljare .projektval{display:inline-flex;align-items:center;justify-content:center;gap:8px;max-width:100%;min-height:42px;white-space:normal;text-align:left;line-height:1.4}
+.projektvaljare .projektval span{min-width:0;overflow-wrap:anywhere}
+.projektvaljare .projektval svg{flex-shrink:0}
+.projektvaljare .projektval.valt{background:var(--one-djup);border:1.5px solid var(--one-djup);color:#fff;box-shadow:0 3px 8px rgba(0,95,118,.16)}
+.projektvaljare .projektval.sec{border-color:var(--hairline-stark);color:var(--ink-soft);background:var(--surface)}
+.projektvaljare .projektval.sec:hover{border-color:var(--text-bla);background:var(--info-bg);color:var(--ink)}
+.sidenav .nav-grupp+.nav-grupp{border-top:1px solid rgba(255,255,255,.16);margin-top:10px;padding-top:10px}
+.sidenav .navsek{color:rgba(255,255,255,.72);margin-top:4px;margin-bottom:8px}
+.sidenav button.on{background:#0a7389;color:#fff;box-shadow:inset 0 0 0 1px rgba(174,224,232,.18);padding-left:16px}
+.sidenav button.on:hover{background:#0a7389}
+.sidenav button.on::before{left:3px;top:10px;bottom:10px;width:3px;border-radius:999px;background:var(--himmel)}
+.sidenav button.on svg{stroke:#fff}
+.projektmetod .ds-card{border-color:var(--hairline);border-radius:18px;box-shadow:0 4px 6px -1px rgba(13,45,54,.04),0 12px 28px -12px rgba(13,45,54,.1);gap:20px;padding:24px;transform:none}
+.projektmetod .ds-card:hover{transform:none;box-shadow:var(--sh-md)}
+.projektmetod .ds-card>header h3{font-size:18px;line-height:1.4;letter-spacing:-.02em}
+.projektmetod .metod-intro>header h3{font-size:24px}
+.projektmetod .ov-ikon{background:var(--info-bg);color:var(--text-bla);width:36px;height:36px;border-radius:11px}
+.projektmetod .ds-card>header{gap:12px}
+.projektmetod .metod-stegkort{height:100%;border-top:3px solid var(--hairline-stark)}
+.projektmetod .metod-stegkort>header>div:first-of-type{min-width:0}
+.metod-sektionshuvud{margin:8px 0 22px}
+.metod-sektionshuvud h2{font-size:clamp(24px,2.4vw,30px);font-weight:700;line-height:1.3;letter-spacing:-.025em;margin:6px 0 8px}
+.metod-sektionshuvud p{margin:0;color:var(--ink-soft);font-size:14px}
+.metod-overline{display:block;font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--text-bla)}
+.metod-projekt{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(180px,1fr);gap:20px;padding:22px;border-radius:14px;background:var(--sunken);border:1px solid var(--hairline)}
+.metod-projekt-identitet{display:flex;flex-direction:column;align-items:flex-start;gap:9px;min-width:0}
+.metod-projekt-identitet>b{font-size:17px;line-height:1.5;overflow-wrap:anywhere}
+.metod-projekt-framdrift{align-self:center;min-width:0}
+.metod-projekt-framdrift small{display:block;color:var(--ink-soft);font-size:11px;margin-top:8px;line-height:1.5}
+.metod-projekt-under{grid-column:1/-1;border-top:1px solid var(--hairline-stark);padding-top:16px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.metod-matar-rad{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;font-size:12px;color:var(--ink-soft)}
+.metod-matar-rad b{color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.metod-procent{margin-left:12px;color:var(--ink-soft);font-weight:400}
+.metod-steg-framdrift{margin-top:auto;padding:14px 0 0;border-top:1px solid var(--hairline)}
+.projektmetod .metod-verktyg,.projektmetod .metod-byggknapp{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:36px}
+.projektmetod .metod-byggknapp{width:100%;justify-content:space-between;margin-top:4px;border-color:var(--hairline-stark);color:var(--ink)}
+.projektmetod .metod-byggknapp:hover{border-color:var(--text-bla);color:var(--text-bla)}
+.projektmetod [role="progressbar"]>span{transition:width .3s var(--ease)}
+@media(max-width:640px){.projektmetod .ds-card{padding:20px;border-radius:14px}.metod-projekt{grid-template-columns:minmax(0,1fr);padding:16px}.projektmetod .metod-intro>header h3{font-size:21px}.metod-sektionshuvud{margin-bottom:18px}.metod-projekt-under .btn{width:100%}.projektmetod .ds-card>header h3{font-size:17px}}
+@media(prefers-reduced-motion:reduce){.projektmetod [role="progressbar"]>span{transition:none}}
+@media print{.projektmetod .ds-card{box-shadow:none;border-radius:0}.projektvaljare{display:none}}
