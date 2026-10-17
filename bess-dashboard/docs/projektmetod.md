@@ -150,6 +150,10 @@ Osäker på 2, 5–8 → kontrollera med övrig personal, rådfråga jurist.
 
 ### Fas 1 – Initiering
 - [ ] Avropsacceptans: lönsamhet, risker och resurser bedömda. Frågetecken → intern beställare (tacka nej/skjuta?).
+- [ ] Entreprenad- och ersättningsform klarlagd: totalentreprenad (ABT 06) eller utförandeentreprenad (AB 04), fast pris eller löpande räkning.
+- [ ] Förfrågningsunderlag tydligt innan förfrågan går ut: tekniska specifikationer, kvalitets- och miljökrav, tidsramar och AF-del.
+- [ ] Anbudsutvärdering med bestämda kriterier (lägsta pris eller ekonomiskt mest fördelaktigt); ingående omfattning stämd vid anbudsgenomgång.
+- [ ] Vinnande anbud och kontraktshandlingar är underlag för projektets moment och egenkontroller.
 - [ ] Kontrakt + samtliga bilagor lästa; 1-sidig "projektsanning" klar (se 5.1).
 - [ ] Kontrakt signerat. **[K]**
 - [ ] Kontraktsöverlämning sälj → PL, juridiska risker överförda ("Checklista för kontraktsöverlämning").
