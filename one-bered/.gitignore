@@ -1,0 +1,4 @@
+# Full KLG-katalog (licensierat EBR-material) checkas inte in – generera lokalt med tools/parse_klg.py
+*.csv
+klg*.json
+!src/klg_urval_p2.json
