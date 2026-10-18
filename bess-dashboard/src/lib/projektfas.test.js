@@ -18,6 +18,8 @@ function godkannFas(u, nr, { bara = ["falt", "tabeller", "punkter"] } = {}) {
         if (!f.obligatoriskt) continue;
         u.v[f.id] = f.kravVarde ?? (f.typ === "select" ? (Array.isArray(f.alternativ[0]) ? f.alternativ[0][0] : f.alternativ[0]) : "Ifyllt");
       }
+      // Projektdirektivets regel: kostnad, kvalitet och tid ska summera till 100 %.
+      if (s.regler?.some((r) => r.id === "styrparametrar100")) Object.assign(u.v, { prioritetKostnad: "60", prioritetKvalitet: "10", prioritetTid: "30" });
     }
     if (bara.includes("tabeller") && s.tabell?.obligatorisk) {
       const rad = { id: `rad-${s.tabell.id}` };
@@ -58,10 +60,10 @@ describe("Faserna som data", () => {
     expect(new Set(alla).size).toBe(alla.length);
     expect(alla.length).toBe(stegPunkter({ katalog: ["closeout"] }).length);
   });
-  it("har 18 sidor över åtta faser: mark och betong, montage och ekonomiskt avslut är egna sidor", () => {
-    expect(STEG).toHaveLength(18);
+  it("har 19 sidor över åtta faser: mark och betong, montage och ekonomiskt avslut är egna sidor", () => {
+    expect(STEG).toHaveLength(19);
     expect(STEG.map((s) => [s.id, s.fas])).toEqual([
-      ["projekt", 1], ["avrop", 1], ["direktiv", 1], ["intressenter", 1], ["kontrakt", 1],
+      ["projekt", 1], ["avrop", 1], ["anbudsfragor", 1], ["kontrakt", 1], ["direktiv", 1], ["intressenter", 1],
       ["organisation", 2], ["risker", 2], ["tidplan", 2], ["losning", 2], ["tillstand", 2],
       ["hseq", 3], ["cbop", 4], ["ebop", 5], ["provning", 6], ["avslut", 7], ["ekonomi", 8], ["garanti", 8], ["sammanfattning", null],
     ]);

@@ -20,17 +20,21 @@
 import { ROLLER } from "./projektstartKatalog.js";
 import { EJ_VUNNET_ORSAKER, FASER } from "./projektfaser.ts";
 import { RISKKATEGORI_KORT, RISKKATEGORIER } from "./riskTyper.ts";
+import { ANBUDSFRAGOR, anbudsfragaId } from "./anbudsfragor.js";
+import { styrparametrar } from "../lib/styrparametrar.js";
 
 const FORM = ["ABT 06", "ABT-U 07", "AB 04", "ABT 06 med särskilda villkor", "Annan"];
 const NIVA = ["Ej klassad", "Nivå 1", "Nivå 2", "Nivå 3", "Nivå 4"];
 const BESLUT = ["Gå vidare", "Skjut upp", "Tacka nej"];
+const ERSATTNING = ["Fast pris", "Löpande räkning", "Fast pris med á-prislista för ÄTA", "Kombination", "Annan"];
+const roll = (id) => { const r = ROLLER.find((x) => x.id === id); return { id: `roll_${id}`, etikett: `Planerad ${r.namn.toLowerCase()}`, typ: "text", tips: "Samma uppgift återanvänds i Organisation och uppstart." }; };
 const TAL = ["1", "2", "3", "4", "5"];
 
 export const STEG = [
   {
     id: "projekt",
     fas: 1,
-    del: "Anbud och beslut",
+    del: "Anbud",
     titel: "Projektkort",
     sammanfattning: "Identitet, klassning och nuläge. Det här blir projektet i portföljen.",
     grund: ["Tid som läggs tidigt är billig tid.", "Det som inte är skriftligt finns inte.", "Dagbok och underrättelser är det ekonomiska skyddet."],
@@ -40,7 +44,7 @@ export const STEG = [
       { id: "nr", etikett: "Projektnummer", typ: "text" },
       { id: "bestallare", etikett: "Beställare", typ: "text", obligatoriskt: true },
       { id: "plats", etikett: "Plats / anläggning", typ: "text" },
-      { id: "kontraktsform", etikett: "Kontraktsform", typ: "select", alternativ: FORM, obligatoriskt: true },
+      { id: "kontraktsform", etikett: "Kontraktsform", typ: "select", alternativ: FORM, obligatoriskt: true, tips: "Entreprenadform: ABT 06 är totalentreprenad, AB 04 är utförandeentreprenad." },
       { id: "niva", etikett: "Projektnivå", typ: "select", alternativ: NIVA, obligatoriskt: true },
       { id: "startdatum", etikett: "Start", typ: "date" },
       { id: "fardigdatum", etikett: "Slut", typ: "date" },
@@ -54,10 +58,16 @@ export const STEG = [
   {
     id: "avrop",
     fas: 1,
-    del: "Anbud och beslut",
+    del: "Anbud",
     titel: "Avropsacceptans",
-    sammanfattning: "Ska vi ta uppdraget? Lönsamhet, risk och resurser innan start.",
+    sammanfattning: "Ska vi lämna anbud? Ersättningsform, anbudsprocessen, lönsamhet, risk och resurser.",
     falt: [
+      { id: "ersattningsform", etikett: "Ersättningsform", typ: "select", alternativ: ERSATTNING, obligatoriskt: true, tips: "Fast pris eller löpande räkning. Entreprenadformen väljs i Projektkort (kontraktsform)." },
+      { id: "anbudsprocess", etikett: "Anbudsprocessen just nu", typ: "textarea", bred: true, tips: "Var står anbudet: frågetid, kalkyl, intern granskning, inlämnat. Vad händer härnäst?" },
+      { id: "sistaFragedag", etikett: "Sista dag för frågor", typ: "date" },
+      { id: "anbudsdag", etikett: "Anbudet lämnas senast", typ: "date" },
+      { id: "anbudGiltigt", etikett: "Anbudet giltigt till", typ: "date" },
+      { id: "tilldelning", etikett: "Tilldelning väntas", typ: "date" },
       { id: "anbudsutfall", etikett: "Anbudsutfall", typ: "select", alternativ: ["Anbudsarbete pågår", "Anbud inlämnat", "Vunnet anbud"], tips: "Fas 2 öppnas först när fas 1 är genomgången och Vunnet anbud är valt. Gå vidare betyder endast att vi vill lämna anbud." },
       { id: "beslut", etikett: "Beslut", typ: "select", alternativ: BESLUT, obligatoriskt: true, kravVarde: "Gå vidare", tips: "Fasen godkänns bara vid Gå vidare." },
       { id: "motivering", etikett: "Motivering", typ: "textarea", bred: true },
@@ -69,57 +79,17 @@ export const STEG = [
     katalog: ["calloff"],
   },
   {
-    id: "direktiv",
+    id: "anbudsfragor",
     fas: 1,
-    del: "Anbud och beslut",
-    titel: "Projektdirektiv",
-    sammanfattning: "Anbudsgenomgång enligt ONE-P: fyll i det ni vet, ange antaganden och komplettera efter tilldelning.",
-    falt: [
-      { id: "bakgrund", etikett: "Bakgrund", typ: "textarea", bred: true },
-      { id: "syfte", etikett: "Syfte", typ: "textarea", bred: true },
-      { id: "mal", etikett: "Mål", typ: "textarea", bred: true, obligatoriskt: true },
-      { id: "ingar", etikett: "Ingår", typ: "textarea" },
-      { id: "ingarEj", etikett: "Ingår inte", typ: "textarea" },
-      { id: "offra", etikett: "Vad får ge vika först?", typ: "select", alternativ: ["Kostnad", "Kvalitet", "Tid"], obligatoriskt: true },
-      { id: "anbudRiskbild", etikett: "Identifierade risker inför anbud", typ: "textarea", bred: true, tips: "Sammanfatta kalkylrisker, osäkerheter och planerade åtgärder. Riskregistret nedanför följer med till senare faser." },
-      { id: "anbudTidplan", etikett: "Övergripande tidplan och kontraktsdatum", typ: "textarea", bred: true, tips: "Anbudsdag, tilldelning, planerad start, leveranser och färdigställande. Märk antagna datum." },
-      { id: "prioritetKostnad", etikett: "Prioritering kostnad (%)", typ: "text", tips: "Kostnad, kvalitet och tid ska tillsammans vara 100 %." },
-      { id: "prioritetKvalitet", etikett: "Prioritering kvalitet (%)", typ: "text" },
-      { id: "prioritetTid", etikett: "Prioritering tid (%)", typ: "text" },
-      { id: "anbudHseq", etikett: "HSEQ och arbetsmiljö inför anbud", typ: "textarea", bred: true, tips: "Förutsättningar, arbetsmiljörisker och tänkt BAS-P/BAS-U-ansvar. Etableringskontroller kommer senare." },
-      { id: "anbudOrganisation", etikett: "Planerad organisation och överlämning", typ: "textarea", bred: true, tips: "Planerade resurser, ansvar och överlämning från anbud till projekt." },
-      ...ROLLER.filter((r) => ["pl", "internalClient", "basU", "basP"].includes(r.id)).map((r) => ({ id: `roll_${r.id}`, etikett: `Planerad ${r.namn.toLowerCase()}`, typ: "text", tips: "Samma uppgift återanvänds i Organisation och uppstart." })),
-      { id: "rapporteringKund", etikett: "Rapportering till kund", typ: "textarea", standard: "Skriftlig månadsrapport: progress och status till kund." },
-      { id: "rapporteringIntern", etikett: "Intern rapportering", typ: "textarea", standard: "Månadsavstämning internt. Styrgrupp kallas vid avvikelse." },
-      /* Direktivet signeras av intern beställare och projektledare (metoden 6.1). Signeringen är en
-         grind: fas 2 låses inte upp förrän båda har signerat. */
-      { id: "signPL", etikett: "Signerat av projektledare", typ: "text", placeholder: "Namn", obligatoriskt: true },
-      { id: "signBestallare", etikett: "Signerat av intern beställare", typ: "text", placeholder: "Namn", obligatoriskt: true },
-      { id: "signDatum", etikett: "Signeringsdatum", typ: "date", obligatoriskt: true, tips: "Projektdirektivet signeras av båda innan fasen godkänns." },
-    ],
-  },
-  {
-    id: "intressenter",
-    fas: 1,
-    del: "Intressenter och kontrakt",
-    titel: "Intressenter",
-    sammanfattning: "Vem påverkar projektet och hur ni kommunicerar.",
-    tabell: {
-      id: "intressenter",
-      titel: "Intressenter",
-      kolumner: [
-        { id: "namn", etikett: "Namn", typ: "text" },
-        { id: "roll", etikett: "Roll", typ: "text" },
-        { id: "organisation", etikett: "Organisation", typ: "text" },
-        { id: "intresse", etikett: "Intresse", typ: "text" },
-        { id: "kommunikation", etikett: "Hur vi kommunicerar", typ: "text" },
-      ],
-    },
+    del: "Anbud",
+    titel: "Anbudsfrågor",
+    sammanfattning: "Fast frågelista inför anbudsbeslutet. Svara kort, ange antaganden och var svaret kommer ifrån.",
+    falt: ANBUDSFRAGOR.map((f) => ({ id: anbudsfragaId(f), etikett: f.fraga, typ: "textarea", bred: true, obligatoriskt: true })),
   },
   {
     id: "kontrakt",
     fas: 1,
-    del: "Intressenter och kontrakt",
+    del: "Anbud",
     titel: "Kontrakt och kassaflöde",
     sammanfattning: "Viten, milstolpar, bankgaranti, ÄTA och fakturering.",
     falt: [
@@ -144,6 +114,61 @@ export const STEG = [
     },
     katalog: ["contract"],
     grupper: { contract: ["Kontraktssanning"] },
+  },
+  {
+    id: "direktiv",
+    fas: 1,
+    del: "Planering – projektdirektiv",
+    titel: "Projektdirektiv",
+    sammanfattning: "ONE-P-projektdirektivet: fyll i det ni vet, ange antaganden och komplettera efter tilldelning. Signeras av intern beställare och projektledare.",
+    falt: [
+      { id: "bakgrund", etikett: "Bakgrund", typ: "textarea", bred: true },
+      { id: "syfte", etikett: "Syfte", typ: "textarea", bred: true },
+      { id: "mal", etikett: "Mål", typ: "textarea", bred: true, obligatoriskt: true, tips: "SMART: specifikt, mätbart, accepterat, realistiskt och tidsatt." },
+      { id: "ingar", etikett: "Ingår", typ: "textarea" },
+      { id: "ingarEj", etikett: "Avgränsningar – ingår inte", typ: "textarea" },
+      { id: "anbudRiskbild", etikett: "Identifierade risker", typ: "textarea", bred: true, tips: "Sammanfatta kalkylrisker, osäkerheter och planerade åtgärder. Riskregistret nedanför följer med till senare faser." },
+      { id: "anbudTidplan", etikett: "Övergripande tidplan och kontraktsdatum", typ: "textarea", bred: true, tips: "Anbudsdag, tilldelning, planerad start, leveranser och färdigställande. Märk antagna datum." },
+      { id: "nulagesanalys", etikett: "Nulägesanalys", typ: "textarea", bred: true, tips: "Var står projektet och omvärlden i dag: beställarens läge, tillstånd, nät, marknad, egna resurser." },
+      { id: "anbudHseq", etikett: "HSEQ och BAS-U", typ: "textarea", bred: true, tips: "Förutsättningar, arbetsmiljörisker och tänkt BAS-P/BAS-U-ansvar. Etableringskontroller kommer senare." },
+      roll("basP"),
+      roll("basU"),
+      { id: "anbudOrganisation", etikett: "Organisation och överlämning", typ: "textarea", bred: true, tips: "Planerade resurser, ansvar och överlämning från anbud till projekt." },
+      roll("pl"),
+      roll("internalClient"),
+      { id: "rapporteringKund", etikett: "Rapportering till kund", typ: "textarea", standard: "Skriftlig månadsrapport: progress och status till kund." },
+      { id: "rapporteringIntern", etikett: "Intern rapportering", typ: "textarea", standard: "Månadsavstämning internt. Styrgrupp kallas vid avvikelse." },
+      /* Styrparametertriangeln: kostnad, kvalitet och tid i procent. Summan ska vara 100 (regeln nedan). */
+      { id: "prioritetKostnad", etikett: "Kostnad (%)", typ: "number", tips: "Kostnad, kvalitet och tid ska tillsammans vara 100 %." },
+      { id: "prioritetKvalitet", etikett: "Kvalitet (%)", typ: "number" },
+      { id: "prioritetTid", etikett: "Tid (%)", typ: "number" },
+      { id: "offra", etikett: "Vad får ge vika först?", typ: "select", alternativ: ["Kostnad", "Kvalitet", "Tid"], obligatoriskt: true },
+      /* Direktivet signeras av intern beställare och projektledare (metoden 6.1). Signeringen är en
+         grind: fas 2 låses inte upp förrän båda har signerat. */
+      { id: "signPL", etikett: "Signerat av projektledare", typ: "text", placeholder: "Namn", obligatoriskt: true },
+      { id: "signBestallare", etikett: "Signerat av intern beställare", typ: "text", placeholder: "Namn", obligatoriskt: true },
+      { id: "signDatum", etikett: "Signeringsdatum", typ: "date", obligatoriskt: true, tips: "Projektdirektivet signeras av båda innan fasen godkänns." },
+    ],
+    /* Regler som inte är ett enskilt fält. Räknas som obligatoriska punkter i fasen. */
+    regler: [{ id: "styrparametrar100", etikett: "Kostnad, kvalitet och tid summerar till 100 %", ok: (v) => styrparametrar(v).giltig }],
+  },
+  {
+    id: "intressenter",
+    fas: 1,
+    del: "Planering – projektdirektiv",
+    titel: "Intressenter",
+    sammanfattning: "Vem påverkar projektet och hur ni kommunicerar.",
+    tabell: {
+      id: "intressenter",
+      titel: "Intressenter",
+      kolumner: [
+        { id: "namn", etikett: "Namn", typ: "text" },
+        { id: "roll", etikett: "Roll", typ: "text" },
+        { id: "organisation", etikett: "Organisation", typ: "text" },
+        { id: "intresse", etikett: "Intresse", typ: "text" },
+        { id: "kommunikation", etikett: "Hur vi kommunicerar", typ: "text" },
+      ],
+    },
   },
   {
     id: "organisation",

@@ -43,6 +43,11 @@ export function fasKrav(u, nr) {
         tabeller.push({ stegId: s.id, stegTitel: s.titel, id: s.tabell.id, etikett: `${s.tabell.titel}: minst en ifylld rad` });
       }
     }
+    /* Regler som gäller flera fält, t.ex. att styrparametrarna summerar till 100 %. */
+    for (const r of s.regler || []) {
+      totalt += 1;
+      if (!r.ok(u.v || {})) falt.push({ stegId: s.id, stegTitel: s.titel, id: r.id, etikett: r.etikett });
+    }
   }
   const kritiska = stegIFas(nr).flatMap((s) => stegPunkter(s).filter((p) => p.kritisk).map((p) => ({ ...p, stegId: s.id, stegTitel: s.titel })));
   const punkter = kritiska.filter((p) => !arAvbockad(u, p));
@@ -78,6 +83,10 @@ export function stegKrav(u, steg) {
     totalt += 1;
     const rader = u.rader?.[steg.tabell.id] || [];
     if (!rader.some((r) => steg.tabell.obligatorisk.every((k) => (r[k] || "").trim()))) oppna += 1;
+  }
+  for (const r of steg.regler || []) {
+    totalt += 1;
+    if (!r.ok(u.v || {})) oppna += 1;
   }
   const kritiska = stegPunkter(steg).filter((p) => p.kritisk);
   totalt += kritiska.length;
