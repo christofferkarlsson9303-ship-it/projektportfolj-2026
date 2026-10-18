@@ -1,0 +1,755 @@
+<title>ONE Bered</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@500;700&family=Open+Sans:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: arbetsyta i tre band – sticky projektlist-header, modulflikar, arbetsyta med listor/tabeller (Guru-logik: urval → arbeta vidare med) */
+:root{
+  --one:#00b6de; --deep:#005f76; --turkos:#3cb8ba; --himmel:#aee0e8; --red:#ea5549; --orange:#f38d3d; --green:#2e9e6a;
+  --bg:#f5f7f9; --panel:#ffffff; --ink:#304047; --muted:#5f7178; --line:#d6e2e6; --soft:#e8f3f6; --head:#005f76; --headink:#ffffff;
+  --code:#e9f6fa; --codeink:#005f76;
+  --f-head:'Roboto Slab',Georgia,serif; --f-body:'Open Sans',Arial,sans-serif; --f-mono:'Roboto Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1b20; --panel:#16252b; --ink:#dbe7ea; --muted:#93a8ae; --line:#28404a; --soft:#1b3138; --head:#0a3a48; --headink:#e6f6fa;
+  --code:#12343f; --codeink:#8fdcf0; color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1b20; --panel:#16252b; --ink:#dbe7ea; --muted:#93a8ae; --line:#28404a; --soft:#1b3138; --head:#0a3a48; --headink:#e6f6fa;
+  --code:#12343f; --codeink:#8fdcf0; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--head)}
+h1,h2,h3{font-family:var(--f-head);font-weight:700;margin:0;text-wrap:balance;color:var(--ink)}
+h1{font-size:1.45rem} h2{font-size:1.15rem} h3{font-size:1rem;font-weight:500}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--head);color:var(--headink)}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-block:10px}
+.brand{display:flex;align-items:baseline;gap:8px;font-family:var(--f-head);font-weight:700;font-size:1.15rem;color:var(--headink)}
+.brand b{color:var(--one);font-size:1.3rem}
+.brand small{font-family:var(--f-body);font-weight:400;font-size:.75rem;opacity:.8}
+.bar .sp{flex:1}
+.bar select{max-width:340px}
+.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.tabs button{background:none;border:0;color:var(--headink);opacity:.78;font:600 .86rem var(--f-body);padding:9px 12px 10px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
+.tabs button[aria-current="true"]{opacity:1;border-bottom-color:var(--one)}
+.tabs button:hover{opacity:1}
+main{padding-block:20px 60px;display:flex;flex-direction:column;gap:18px;max-width:1360px;margin:0 auto}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.ph{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.ph .sp{flex:1}
+.muted{color:var(--muted)} .small{font-size:.8rem}
+.grid{display:grid;gap:18px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:12px}
+@media (max-width:520px){.kpis{grid-template-columns:1fr 1fr}.kpi .v{font-size:1.1rem}}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.kpi .l{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+.kpi .v{font-family:var(--f-head);font-size:1.35rem;font-variant-numeric:tabular-nums;margin-top:2px}
+.kpi .s{font-size:.78rem;color:var(--muted)}
+.tw{overflow-x:auto;min-width:0}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;text-align:left;padding:7px 8px;border-bottom:2px solid var(--line);white-space:nowrap}
+td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr.sum td{font-weight:700;border-top:2px solid var(--line);border-bottom:0}
+tr.grp td{background:var(--soft);font-weight:600;font-size:.82rem}
+tbody tr:hover td{background:color-mix(in srgb,var(--soft) 55%,transparent)}
+.r{text-align:right} .nw{white-space:nowrap}
+.code{font-family:var(--f-mono);font-size:.8rem;background:var(--code);color:var(--codeink);padding:1px 6px;border-radius:4px;white-space:nowrap}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 8px;min-width:0}
+.top select{background:color-mix(in srgb,var(--headink) 12%,transparent);color:var(--headink);border-color:color-mix(in srgb,var(--headink) 30%,transparent)}
+.top select option{color:#304047;background:#fff}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--one);outline-offset:1px}
+input.n{width:84px;text-align:right;font-variant-numeric:tabular-nums}
+input.nn{width:64px;text-align:right}
+td input,td select{padding:4px 6px}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:10px 14px}
+.form label{display:flex;flex-direction:column;gap:3px;font-size:.75rem;font-weight:600;color:var(--muted);letter-spacing:.02em}
+.form label input,.form label select,.form label textarea{font-size:.9rem;font-weight:400}
+.btn{font:600 .84rem var(--f-body);border-radius:6px;padding:7px 12px;cursor:pointer;border:2px solid var(--one);background:var(--one);color:#fff;white-space:nowrap}
+.btn.s{background:transparent;color:var(--deep)} :root[data-theme="dark"] .btn.s{color:var(--one)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn.s{color:var(--one)}}
+.btn.g{border-color:transparent;background:transparent;color:var(--muted);padding:4px 8px}
+.btn.g:hover{color:var(--red)}
+.btn.sm{padding:4px 9px;font-size:.78rem}
+.btn:hover{filter:brightness(1.06)}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:.74rem;font-weight:600;padding:2px 9px;border-radius:99px;white-space:nowrap;border:1px solid}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.p-blue{color:var(--deep);border-color:var(--himmel);background:color-mix(in srgb,var(--himmel) 35%,transparent)}
+.p-green{color:var(--green);border-color:color-mix(in srgb,var(--green) 40%,transparent);background:color-mix(in srgb,var(--green) 10%,transparent)}
+.p-orange{color:#b35d14;border-color:color-mix(in srgb,var(--orange) 50%,transparent);background:color-mix(in srgb,var(--orange) 12%,transparent)}
+.p-red{color:var(--red);border-color:color-mix(in srgb,var(--red) 45%,transparent);background:color-mix(in srgb,var(--red) 9%,transparent)}
+.p-grey{color:var(--muted);border-color:var(--line)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .p-blue{color:var(--himmel)} :root:not([data-theme="light"]) .p-orange{color:var(--orange)}}
+:root[data-theme="dark"] .p-blue{color:var(--himmel)} :root[data-theme="dark"] .p-orange{color:var(--orange)}
+.ex{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#b35d14;border:1px dashed var(--orange);border-radius:4px;padding:1px 6px}
+.meter{height:8px;border-radius:99px;background:var(--soft);overflow:hidden;min-width:80px}
+.meter i{display:block;height:100%;background:var(--one);border-radius:99px}
+.cmp{display:grid;grid-template-columns:120px 1fr;gap:4px 10px;align-items:center;font-size:.82rem}
+.cmp .bars{display:flex;flex-direction:column;gap:3px}
+.cmp .b{height:9px;border-radius:3px}
+.b.k{background:var(--himmel)} .b.u{background:var(--deep)} .b.u.over{background:var(--red)}
+:root[data-theme="dark"] .b.u{background:var(--one)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .b.u{background:var(--one)}}
+.legend{display:flex;gap:14px;font-size:.76rem;color:var(--muted)} .legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.legend .lk::before{background:var(--himmel)} .legend .lu::before{background:var(--deep)}
+.konst{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px}
+@media (max-width:900px){.konst{grid-template-columns:1fr}}
+.desk tr.sel td{background:color-mix(in srgb,var(--one) 14%,transparent)}
+.desk tr{cursor:pointer}
+.gul td:first-child{box-shadow:inset 3px 0 0 #e6b800}
+.lib{display:flex;flex-wrap:wrap;gap:8px}
+.lib button{text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:8px 10px;cursor:pointer;font:inherit;color:var(--ink);max-width:100%}
+.lib button:hover{border-color:var(--one)}
+.lib button b{display:block;font-size:.84rem} .lib button span{font-size:.74rem;color:var(--muted)}
+.ov{position:fixed;inset:0;background:rgba(10,25,30,.55);z-index:50;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:max(24px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+.modal{background:var(--panel);border-radius:12px;width:min(860px,100%);padding:20px;display:flex;flex-direction:column;gap:14px;border:1px solid var(--line)}
+.modal .ph{margin:0}
+.inv{border:1px solid var(--line);border-radius:8px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.inv .ih{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;border-bottom:3px solid var(--one);padding-bottom:12px}
+.inv .logo{font-family:var(--f-head);font-weight:700;color:var(--deep);font-size:1.3rem}
+:root[data-theme="dark"] .inv .logo{color:var(--one)}
+.toast{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--deep);color:#fff;padding:9px 14px;border-radius:8px;z-index:60;font-weight:600;font-size:.85rem}
+.empty{padding:22px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:8px}
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:.78rem;color:var(--muted)}
+.flow span{border:1px solid var(--line);border-radius:99px;padding:2px 9px;background:var(--panel)}
+.flow span.on{border-color:var(--one);color:var(--deep);font-weight:600}
+:root[data-theme="dark"] .flow span.on{color:var(--one)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:99px;padding:3px 11px;font:600 .78rem var(--f-body);cursor:pointer}
+.chips button[aria-pressed="true"]{background:var(--deep);border-color:var(--deep);color:#fff}
+textarea.json{width:100%;min-height:160px;font-family:var(--f-mono);font-size:.74rem}
+footer{font-size:.75rem;color:var(--muted);text-align:center;padding-block:10px 24px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="top"><div class="wrap">
+  <div class="bar">
+    <div class="brand"><b>one</b> Bered <small>BESS · beredning · kalkyl · fakturering</small></div>
+    <div class="sp"></div>
+    <label class="small" for="projSel" style="opacity:.8">Projekt</label>
+    <select id="projSel" data-a="selproj"></select>
+  </div>
+  <nav class="tabs" id="tabs"></nav>
+</div></div>
+<main class="wrap" id="main"></main>
+<footer class="wrap">ONE Nordic AB · one-nordic.se · Prototyp – data sparas endast i din webbläsare. Kalkylkoder: EBR KLG 1:26 (urval) och BESS-schablon. Kabeldata: Prysmian Kabelkatalogen 2024, Nexans Kabelboken 2026.</footer>
+<div id="ovl"></div>
+
+<script>
+"use strict";
+/* ============ KATALOG (urval ur EBR KLG 1:26) ============
+   [katalog, kod, grupp, benämning, enhet, bered_h, mont_h, maskin_h, arbete_kr, material_kr, maskin_kr, övrigt_kr, summa_kr] */
+const DEMO_CATALOG = [["P2","133.11","Jordning","Jordtag i LL-nät","st",0.31,1.21,1.2,1527.0,1262.0,1472.0,null,4260.0],["P2","133.20","Jordning","Lina Cu 25 JK-nät","km",0.34,3.36,3.0,3668.0,34373.0,3570.0,null,41611.0],["P2","133.21","Jordning","Lina Cu 35 JK-nät","km",0.34,3.36,3.0,3668.0,49612.0,3570.0,null,56850.0],["P2","133.22","Jordning","Lina Cu 50 JK-nät","km",0.34,3.36,3.0,3668.0,65940.0,3570.0,null,73178.0],["P2","133.23","Jordning","Lina Cu 95 JK-nät","km",0.34,3.36,3.0,3668.0,141536.0,3570.0,null,148774.0],["P2","133.27","Jordning","Isolerad följelina, tillägg","m",null,null,null,null,25.0,null,null,25.0],["P2","133.31","Jordning","Jordtagsstång","m",0.01,0.06,0.06,66.0,113.0,73.0,null,253.0],["P2","133.41","Jordning","Jordförbindelsemätning/Skärmmätning","st",0.2,0.52,null,727.0,null,null,null,727.0],["P2","135.20","Avstängningar","Trafikavstängning vid schaktning. City","km",1.7,33.1,18.63,34356.0,null,22169.0,27964.0,84489.0],["P2","135.21","Avstängningar","Trafikavstängning skyddsklassad väg med TMA vid schaktning","km",0.9,7.44,3.72,8284.0,null,4429.0,62615.0,75328.0],["P2","135.22","Avstängningar","Trafikavstängning skyddsklassad väg med TMA vid plöjning","km",0.9,7.54,3.8,8376.0,null,4525.0,17709.0,30610.0],["P2","135.24","Avstängningar","Trafikavstängning normal och lågklassad väg och gata vid plöjning","km",0.9,8.13,4.81,8963.0,null,5730.0,5937.0,20629.0],["P2","135.26","Avstängningar","Trafikavstängning övrig väg och GC-väg vid schaktning/plöjning","km",0.4,5.18,2.46,5526.0,null,2922.0,2632.0,11080.0],["P2","135.30","Avstängningar","Trafikavstängning av gata samt omledning av trafik. City/tätort","st",1.5,6.28,3.71,7788.0,null,4419.0,11623.0,23829.0],["P2","135.31","Avstängningar","Trafikavstängning, punktavstängning. City","st",1.5,5.63,3.04,7143.0,null,3616.0,8845.0,19604.0],["P2","135.32","Avstängningar","Trafikavstängning skyddsklassad väg med TMA, punktavstängning","st",0.9,3.64,1.65,4545.0,null,1963.0,13621.0,20129.0],["P2","135.35","Avstängningar","Trafikavstängning övrig väg och GC-väg, punktavstängning","st",0.4,2.83,1.06,3211.0,null,1267.0,1040.0,5518.0],["P2","135.40","Avstängningar","Tillägg för omledning av gångtrafik till motsatt sida. City/tätort","st",0.3,2.42,0.94,2698.0,null,1119.0,3426.0,7243.0],["P2","135.41","Avstängningar","Tillägg hastighetsdämpande åtgärd, separering av körfält vid schakt","km",0.4,19.0,8.77,19102.0,null,10440.0,10789.0,40331.0],["P2","135.43","Avstängningar","42 punktavstängning","st",0.3,9.26,4.34,9422.0,null,5169.0,2861.0,17452.0],["P2","135.44","Avstängningar","Tillägg hastighetsbegränsning vid schakt","km",0.4,5.34,3.12,5679.0,null,3716.0,5357.0,14752.0],["P2","135.45","Avstängningar","Tillägg hastighetsbegränsning vid plöjning","km",0.4,5.34,3.12,5679.0,null,3716.0,2574.0,11970.0],["P2","135.46","Avstängningar","Tillägg hastighetsbegränsning, punktavstängning","st",0.3,3.51,1.57,3774.0,null,1863.0,2369.0,8006.0],["P2","135.47","Avstängningar","schakt","km",0.4,15.93,5.39,16089.0,null,6412.0,17565.0,40066.0],["P2","135.48","Avstängningar","schakt plöjning","km",0.4,15.93,5.39,16089.0,null,6412.0,5366.0,27867.0],["P2","135.49","Avstängningar","plöjning punktavstängning","st",0.3,7.05,2.72,7247.0,null,3234.0,4469.0,14951.0],["P2","135.50","Avstängningar","Etablering / Punktavstängning skyddsbarriär i plåt eller betong","st",0.5,0.92,0.35,1441.0,null,418.0,4457.0,6316.0],["P2","135.51","Avstängningar","Tillägg skyddsbarriär i plåt eller betong","m",0.01,0.03,null,38.0,null,null,189.0,227.0],["P2","135.52","Avstängningar","Tillägg tillkommande tungt påkörningsskydd","dag",0.1,1.01,0.87,1094.0,null,1037.0,1462.0,3592.0],["P2","135.53","Avstängningar","Tillägg tillkommande skyltvagn","dag",0.1,0.6,null,695.0,null,null,946.0,1641.0],["P2","135.54","Avstängningar","Tillägg gångbro med skyddsräcke","st",0.05,0.2,0.17,249.0,null,204.0,1486.0,1938.0],["P2","135.55","Avstängningar","Tillägg körplåt","st",0.05,0.7,0.61,745.0,null,722.0,1177.0,2644.0],["P2","135.56","Avstängningar","Tillägg staket höjd, 1 m","m",0.01,0.03,null,41.0,null,2.0,45.0,88.0],["P2","135.57","Avstängningar","Tillägg byggstängsel höjd 2 m","m",0.01,0.08,null,86.0,null,2.0,36.0,123.0],["P2","135.58","Avstängningar","Tillägg TA balk","m",0.01,0.03,0.03,40.0,null,36.0,118.0,194.0],["P2","135.90","Avstängningar","TMA bil inkl. förare","tim",null,null,null,null,null,null,1197.0,1197.0],["P2","135.91","Avstängningar","TMA bil exkl. förare","dag",null,null,null,null,null,null,4248.0,4248.0],["P2","135.92","Avstängningar","Trafiklots inkl. fordon","tim",null,null,null,null,null,null,810.0,810.0],["P2","135.93","Avstängningar","Trafikvakt","tim",null,null,null,null,null,null,490.0,490.0],["P2","136.10","Uppbrytning och återställning","Asfalt uppbrytning mindre yta ≤5 m²","st",0.05,0.16,0.28,210.0,null,332.0,null,542.0],["P2","136.11","Uppbrytning och återställning","Asfalt uppbrytning rullkniv, hydraulspett två spår","km",9.09,9.1,26.86,18732.0,null,31961.0,7938.0,58631.0],["P2","136.12","Uppbrytning och återställning","Asfalt uppbrytning såg, kantspett, två spår","km",9.09,95.86,9.09,103995.0,null,10816.0,7938.0,122749.0],["P2","136.13","Uppbrytning och återställning","Uppbrytning gatsten, plattor, transport till upplag","m²",0.01,0.21,0.07,211.0,null,78.0,null,289.0],["P2","136.14","Uppbrytning och återställning","Uppbrytning kantsten, transport till upplag","km",1.01,62.52,25.4,62532.0,null,30226.0,null,92758.0],["P2","136.15","Uppbrytning och återställning","Uppbrytning och återställning grästorv","m",null,0.19,null,192.0,null,null,null,192.0],["P2","136.22","Uppbrytning och återställning","Återställning kantsten","m",null,null,null,null,null,null,1266.0,1266.0],["P2","136.23","Uppbrytning och återställning","Återställning gatsten, plattor, trädgårdssten","m²",null,null,null,null,null,null,1259.0,1259.0],["P2","136.24","Uppbrytning och återställning","Återställning grusgång","m²",null,null,null,null,null,null,196.0,196.0],["P2","136.28","Uppbrytning och återställning","Återställning körbana, asfalt 8 cm ≤100 m²","m²",null,null,null,null,null,null,790.0,790.0],["P2","136.29","Uppbrytning och återställning","Återställning körbana, asfalt 8 cm ≥101 m²","m²",null,null,null,null,null,null,661.0,661.0],["P2","136.30","Uppbrytning och återställning","Återställning körbana, asfalt 12 cm ≤100 m²","m²",null,null,null,null,null,null,1093.0,1093.0],["P2","136.31","Uppbrytning och återställning","Återställning körbana, asfalt 12 cm ≥101 m²","m²",null,null,null,null,null,null,964.0,964.0],["P2","136.35","Uppbrytning och återställning","Återställning av grusväg/yta strängspridning","ha",0.12,null,null,132.0,73613.0,null,10854.0,84599.0],["P2","136.36","Uppbrytning och återställning","Återställning grusväg/yta","m²",null,null,0.01,4.0,7.0,16.0,null,26.0],["P2","136.40","Uppbrytning och återställning","Återställning av gräsmatta. schaktytan","m²",null,0.08,0.02,79.0,48.0,27.0,3.0,156.0],["P2","136.41","Uppbrytning och återställning","Återställning av gräsmatta i sidoområdet från schaktytan","m²",null,0.06,0.02,62.0,34.0,19.0,2.0,117.0],["P2","136.42","Uppbrytning och återställning","Enklare återställning av gräsyta","m²",null,0.03,0.01,32.0,25.0,15.0,1.0,74.0],["P2","136.43","Uppbrytning och återställning","Återställning gång- och cykelbana, asfalt 3-5 cm ≤100 m²","m²",null,null,null,null,null,null,532.0,532.0],["P2","136.44","Uppbrytning och återställning","Återställning gång- och cykelbana, asfalt 3-5 cm >100 m²","m²",null,null,null,null,null,null,402.0,402.0],["P2","136.45","Uppbrytning och återställning","Återställning gång- och cykelbana, asfalt 6-8 cm ≤100 m²","m²",null,null,null,null,null,null,665.0,665.0],["P2","136.46","Uppbrytning och återställning","Återställning gång- och cykelbana, asfalt 6-8 cm >100 m²","m²",null,null,null,null,null,null,536.0,536.0],["P2","136.47","Uppbrytning och återställning","Asfaltering mindre yta ≤5 m²","m²",null,null,null,null,null,null,989.0,989.0],["P2","137.01","Kabelgrav","N025 0,3-0,7 m Schakt, återfyllning, Normal","km",4.25,31.04,34.94,35080.0,4832.0,41581.0,null,81493.0],["P2","137.03","Kabelgrav","N035-N055 0,3-0,5 m Schakt, återfyllning, Normal","km",2.65,29.85,60.25,32186.0,5960.0,71106.0,null,109253.0],["P2","137.04","Kabelgrav","N035-N055 >0,5-0,7 m Schakt, återfyllning, Normal","km",3.5,39.04,72.05,42137.0,9934.0,85032.0,null,137103.0],["P2","137.05","Kabelgrav","N035-N055 >0,7-0,9 m Schakt, återfyllning, Normal","km",4.15,46.55,84.11,50218.0,11303.0,99269.0,null,160789.0],["P2","137.06","Kabelgrav","N035-N055 >0,9-1,1 m Schakt, återfyllning, Normal","km",4.75,64.67,96.57,68672.0,11783.0,113978.0,null,194432.0],["P2","137.07","Kabelgrav","N035-N055 0,3-0,5 m Schakt, återfyllning, Svår","km",2.65,33.91,86.77,36177.0,5960.0,102417.0,null,144554.0],["P2","137.08","Kabelgrav","N035-N055 >0,5-0,7 m Schakt, återfyllning, Svår","km",3.5,45.22,107.45,48206.0,9934.0,126812.0,null,184952.0],["P2","137.09","Kabelgrav","N035-N055 >0,7-0,9 m Schakt, återfyllning, Svår","km",4.15,54.27,127.77,57799.0,11303.0,150791.0,null,219893.0],["P2","137.10","Kabelgrav","N035-N055 >0,9-1,1 m Schakt, återfyllning, Svår","km",4.75,62.43,149.07,66467.0,11783.0,175944.0,null,254193.0],["P2","137.13","Kabelgrav","N075 0,4-0,9 m Schakt, återfyllning, Normal","km",4.65,50.17,107.59,54316.0,11303.0,126958.0,null,192576.0],["P2","137.14","Kabelgrav","N075 >0,9-1,3 m Schakt, återfyllning, Normal","km",5.5,64.47,151.91,69283.0,11783.0,179275.0,null,260341.0],["P2","137.15","Kabelgrav","N090 0,4-0,9 m Schakt, återfyllning, Normal","km",4.65,55.85,140.62,59895.0,11303.0,165957.0,null,237155.0],["P2","137.16","Kabelgrav","N090 >0,9-1,3 m Schakt, återfyllning, Normal","km",5.5,69.53,183.2,74251.0,11783.0,216197.0,null,302231.0],["P2","137.17","Kabelgrav","N090 0,4-0,9 m Schakt, återfyllning, Svår","km",4.65,66.14,223.99,70011.0,11303.0,264326.0,null,345640.0],["P2","137.18","Kabelgrav","N090 >0,9-1,3 m Schakt, återfyllning, Svår","km",5.5,85.17,293.63,89621.0,11783.0,346515.0,null,447918.0],["P2","137.20","Kabelgrav","Schakta skarvgrop","st",0.03,0.1,0.2,130.0,null,243.0,null,373.0],["P2","137.21","Kabelgrav","Schakta och sätta kabelskåp","st",0.8,0.93,0.93,1771.0,null,1111.0,null,2883.0],["P2","137.23","Kabelgrav","Schakta och sätta teleplint","st",0.1,0.17,0.01,275.0,null,12.0,null,287.0],["P2","137.24","Kabelgrav","Schakta pressgrop","m³",0.01,0.13,0.15,137.0,null,179.0,null,315.0],["P2","137.29","Kabelgrav","Schakt och återfyllning invid befintlig nätstation","m²",0.03,0.77,0.62,785.0,19.0,736.0,8.0,1548.0],["P2","137.30","Kabelgrav","Stationsbädd. Landsbygd. Normal","st",0.53,4.64,4.88,5133.0,6126.0,5756.0,83.0,17098.0],["P2","137.31","Kabelgrav","Stationsbädd. Landsbygd. Stor","st",0.63,6.62,7.01,7187.0,8896.0,8267.0,117.0,24468.0],["P2","137.32","Kabelgrav","Stationsbädd. Tätort. Samtliga storlekar","st",1.13,6.21,5.7,7324.0,4718.0,6676.0,65.0,18784.0],["P2","137.33","Kabelgrav","Schakta och sätta VB-fundament ≤1000 mm","st",0.3,0.31,0.39,623.0,587.0,465.0,null,1675.0],["P2","137.34","Kabelgrav","Schakta och sätta VB-fundament >1000 mm ≤1300 mm","st",0.3,0.38,0.52,695.0,1371.0,617.0,null,2684.0],["P2","137.35","Kabelgrav","Schakta och sätta VB-fundament >1300 mm","st",0.3,0.43,0.62,750.0,3144.0,733.0,null,4627.0],["P2","137.36","Kabelgrav","Tillägg fundament för eftergivliga VB-stolpar","st",null,null,null,null,1296.0,null,null,1296.0],["P2","137.40","Kabelgrav","Sandning 0,3-0,7 m, Normal","km",0.5,7.1,12.31,7518.0,19829.0,14558.0,null,41905.0],["P2","137.41","Kabelgrav","Sandning >0,7-1,1 m, Normal","km",0.5,11.09,18.87,11442.0,35692.0,22283.0,null,69416.0],["P2","137.42","Kabelgrav","Sandning 0,3-0,7 m, Svår","km",0.5,10.01,17.33,10375.0,24786.0,20471.0,null,55631.0],["P2","137.43","Kabelgrav","Sandning >0,7-1,1 m, Svår","km",0.5,15.9,27.08,16169.0,44615.0,31944.0,null,92728.0],["P2","137.44","Kabelgrav","Placera markduk i kabelschakt 0,3-0,7 m","km",1.0,15.62,4.32,16427.0,11221.0,5144.0,null,32792.0],["P2","137.45","Kabelgrav","Placera markduk i kabelschakt >0,7-1,1 m","km",1.0,28.11,7.78,28707.0,20198.0,9260.0,null,58165.0],["P2","137.49","Kabelgrav","Passage över mindre vattendrag","st",1.13,1.88,1.35,3064.0,9504.0,1601.0,null,14169.0],["P2","137.50","Kabelgrav","Korsande hinder","st",0.5,2.0,0.5,2504.0,null,595.0,null,3099.0],["P2","137.51","Kabelgrav","Tillägg schakt invid befintlig kabel, Normal","km",0.1,15.46,13.1,15297.0,null,15484.0,null,30782.0],["P2","137.52","Kabelgrav","Tillägg schakt invid befintlig kabel, Svår","km",0.1,22.5,19.13,22224.0,null,22594.0,null,44818.0],["P2","137.53","Kabelgrav","Tillägg blottläggning befintlig kabel","km",0.1,38.01,34.87,37460.0,null,41455.0,null,78915.0],["P2","137.54","Kabelgrav","Tillägg schakt befintlig bebyggelse","km",3.0,2.45,8.13,5632.0,null,9672.0,null,15304.0],["P2","137.56","Kabelgrav","Schakta och återfylla skarvgrop vid plöjning av SRS 110","st",0.03,0.37,0.88,394.0,null,1033.0,null,1427.0],["P2","137.57","Kabelgrav","Tillägg city hantering massor","km",0.5,null,17.7,538.0,null,21067.0,15615.0,37220.0],["P2","137.58","Kabelgrav","Utbyte av massor","m³",0.01,0.04,0.05,46.0,245.0,58.0,161.0,511.0],["P2","137.59","Kabelgrav","Deponiavgift","m³",null,null,null,null,null,null,300.0,300.0],["P2","137.61","Kabelgrav","Packning med handmanövrerad vibratorplatta","m³",0.03,0.1,null,127.0,null,6.0,12.0,145.0],["P2","137.62","Kabelgrav","Packning av kabelschakt med vibroplatta monterad på maskin","km",0.5,0.23,2.94,766.0,3190.0,3440.0,582.0,7977.0],["P2","137.65","Kabelgrav","Manuell schakt djup 0,65 bredd <0,3 m","km",15.5,225.86,null,238655.0,null,null,null,238655.0],["P2","137.68","Kabelgrav","Tjältining","km",1.0,108.89,108.89,108096.0,56416.0,129582.0,null,294094.0],["P2","137.70","Kabelgrav","Alla typer av berg","m",0.01,null,0.28,11.0,null,322.0,143.0,476.0],["P2","137.71","Kabelgrav","Alla typer av berg Per 0,1 m. bredd 0.7 m. Alla typer av berg","m",0.01,null,0.08,5.0,null,95.0,42.0,143.0],["P2","137.72","Kabelgrav","Etablering sprängning","st",null,null,null,null,null,null,8924.0,8924.0],["P2","137.73","Kabelgrav","Sprängning, bredd 0,3-0,5 m","m",null,null,null,null,null,null,1846.0,1846.0],["P2","137.76","Kabelgrav","Uppsättning distanspåle","st",0.01,0.29,null,296.0,397.0,null,null,693.0],["P2","137.80","Kabelgrav","Grundetablering Jordraket","st",0.46,null,null,495.0,null,null,3639.0,4135.0],["P2","137.81","Kabelgrav","Rör 110, Jordraket","m",0.1,null,null,108.0,null,null,679.0,786.0],["P2","137.82","Kabelgrav","Flyttning inom arbetsområdet Jordraket","st",0.02,null,null,22.0,null,null,1148.0,1169.0],["P2","137.84","Kabelgrav","Etablering Hammarborrning","st",0.52,null,null,560.0,null,null,15759.0,16318.0],["P2","137.85","Kabelgrav","Rör 140 Hammarborrning","m",0.1,null,null,108.0,null,null,2615.0,2723.0],["P2","137.86","Kabelgrav","Grundetablering styrd borrning","st",0.46,null,null,495.0,null,null,6655.0,7150.0],["P2","137.87","Kabelgrav","Flyttning inom arbetsområdet styrd borrning eller SBR/AT","st",0.02,null,null,22.0,null,null,2571.0,2593.0],["P2","137.88","Kabelgrav","Rör 110, styrd borrning","m",0.1,null,null,108.0,null,null,912.0,1020.0],["P2","137.89","Kabelgrav","Tillkommande rör 110, styrd borrning","m",0.02,null,null,22.0,null,null,425.0,446.0],["P2","137.90","Kabelgrav","Etablering SBR borrning (berg)","st",0.52,null,null,560.0,null,null,13310.0,13869.0],["P2","137.91","Kabelgrav","Rör 110, SBR borrning (stenbunden mark)","m",0.1,null,null,108.0,null,null,2872.0,2980.0],["P2","137.92","Kabelgrav","Tillägg där berg och block passeras, Rör 110, SBR borrning (berg)","m",0.1,null,null,108.0,null,null,2311.0,2418.0],["P2","140.01","Kabelförläggning","Utdragning kabel <1 kg/m","km",1.05,2.58,2.57,3665.0,14.0,3031.0,null,6710.0],["P2","140.02","Kabelförläggning","Utdragning kabel >1,0 ≤2,5 kg/m","km",1.05,3.6,3.66,4670.0,18.0,4315.0,null,9003.0],["P2","140.03","Kabelförläggning","Utdragning kabel >2,5 ≤4,5 kg/m","km",1.05,5.0,5.18,6048.0,33.0,6112.0,null,12193.0],["P2","140.04","Kabelförläggning","Utdragning kabel >4,5 ≤7,0 kg/m","km",1.05,6.77,7.09,7779.0,50.0,8372.0,null,16202.0],["P2","140.05","Kabelförläggning","Applicera delningsbara rör runt kabel i schakt 1 m SRN","km",1.0,20.69,null,21408.0,123974.0,null,null,145382.0],["P2","140.06","Kabelförläggning","Applicera delningsbara rör runt kabel i schakt 1 m SRS","km",1.0,20.69,null,21408.0,192947.0,null,null,214355.0],["P2","140.07","Kabelförläggning","Applicera delningsbara rör runt kabel i schakt 3 m (slitsade) SRN","km",1.0,16.25,null,17044.0,141469.0,null,null,158513.0],["P2","140.08","Kabelförläggning","Applicera delningsbara rör runt kabel i schakt 3 m (slitsade) SRS","km",1.0,16.25,null,17044.0,205222.0,null,null,222265.0],["P2","140.09","Kabelförläggning","Applicera delningsbara rör SRE-P på mark, i vatten","km",1.0,20.69,null,21408.0,328320.0,null,null,349728.0],["P2","140.10","Kabelförläggning","Tillägg kabelförläggning vid markvärme","m²",0.15,1.81,null,1940.0,null,null,null,1940.0],["P2","140.15","Kabelförläggning","Mantelprovning, förenklad metod","st",null,0.26,null,260.0,null,null,null,260.0],["P2","140.16","Kabelförläggning","Buntning 1-ledarkabel","km",1.0,1.5,null,2551.0,1532.0,null,null,4083.0],["P2","140.17","Kabelförläggning","Mantelprovning 3-ledarkabel","st",0.1,0.91,null,1005.0,null,null,null,1005.0],["P2","140.18","Kabelförläggning","Mantelprovning 3x1-ledarkabel","st",0.2,1.44,null,1634.0,null,null,null,1634.0],["P2","140.19","Kabelförläggning","Klamring kabelrör på berg","km",3.2,32.04,null,34936.0,36068.0,null,null,71004.0],["P2","140.20","Kabelförläggning","Förläggning av rör SRN 50","km",1.0,7.11,3.49,8065.0,11912.0,4150.0,null,24127.0],["P2","140.21","Kabelförläggning","Förläggning av rör SRN 110","km",1.0,10.67,5.23,11558.0,26212.0,6225.0,null,43994.0],["P2","140.22","Kabelförläggning","Förläggning av rör SRN 160","km",1.0,13.48,6.61,14326.0,49540.0,7868.0,null,71734.0],["P2","140.23","Kabelförläggning","Förläggning av rör SRS 50","km",1.0,8.96,4.4,9884.0,32692.0,5230.0,null,47806.0],["P2","140.24","Kabelförläggning","Förläggning av rör SRS 110","km",1.0,18.66,9.15,19416.0,60296.0,10891.0,null,90603.0],["P2","140.25","Kabelförläggning","Förläggning av rör SRS 160","km",1.0,30.5,14.96,31047.0,164441.0,17798.0,null,213285.0],["P2","140.29","Kabelförläggning","Kabelurskiljning och fjärrkapning","st",0.03,1.41,null,1412.0,35.0,null,601.0,2048.0],["P2","140.30","Kabelförläggning","Skarv 12-24 kV PEX 3x10-50","st",0.4,2.57,null,2961.0,2403.0,null,null,5364.0],["P2","140.31","Kabelförläggning","Skarv 12-24 kV PEX 3x95-240","st",0.4,3.01,null,3391.0,3008.0,null,null,6399.0],["P2","140.32","Kabelförläggning","Skarv 12-24 kV PEX 3x300","st",0.4,3.82,null,4186.0,4110.0,null,null,8296.0],["P2","140.33","Kabelförläggning","Skarv 12-24 kV PEX 1x50-95","st",0.4,1.34,null,1743.0,1338.0,null,null,3081.0],["P2","140.34","Kabelförläggning","Skarv 12-24 kV PEX 1x150-240","st",0.4,1.56,null,1968.0,1635.0,null,null,3603.0],["P2","140.35","Kabelförläggning","Skarv 12-24 kV PEX 1x300-400","st",0.4,1.92,null,2322.0,2456.0,null,null,4778.0],["P2","140.36","Kabelförläggning","Skarv 12-24 kV PEX 1x500-630","st",0.4,2.28,null,2667.0,2541.0,null,null,5209.0],["P2","140.38","Kabelförläggning","Skarv 12 kV PEX-papper 3x50-240","st",0.8,4.61,null,5391.0,5355.0,null,null,10746.0],["P2","140.39","Kabelförläggning","Tillägg för skarv/avgrening i stolpe 12-24 kV","st",0.15,null,3.9,161.0,2061.0,4778.0,null,7000.0],["P2","140.40","Kabelförläggning","Skarv 0,4 kV N1XV(E) 10-16","st",0.1,0.32,null,422.0,117.0,null,null,539.0],["P2","140.41","Kabelförläggning","Skarv 0,4 kV N1XV(E) 25-50","st",0.1,0.44,null,536.0,226.0,null,null,762.0],["P2","140.42","Kabelförläggning","Skarv 0,4 kV N1XV(E) 95-150","st",0.1,0.68,null,779.0,495.0,null,null,1274.0],["P2","140.43","Kabelförläggning","Skarv 0.4 kV N1XV(E) 240","st",0.1,1.18,null,1265.0,532.0,null,null,1797.0],["P2","140.44","Kabelförläggning","Skarv 0,4 kV papper-plast 10-35","st",0.15,1.01,null,1156.0,520.0,null,null,1676.0],["P2","140.45","Kabelförläggning","Skarv 0,4 kV papper-plast 50-150","st",0.15,1.27,null,1411.0,915.0,null,null,2326.0],["P2","140.46","Kabelförläggning","Skarv 0,4 kV papper-plast 185-240","st",0.15,1.72,null,1851.0,1232.0,null,null,3083.0],["P2","140.47","Kabelförläggning","Montera nedledningssats och kabelskydd till mark 12-24 kV","st",0.18,1.42,null,1589.0,1627.0,null,null,3216.0],["P2","140.48","Kabelförläggning","Tillägg skarv 5-ledare 0,4 kV","st",0.05,0.13,null,177.0,95.0,null,null,272.0],["P2","140.50","Kabelförläggning","Avslut 12-24 kV, i.hus, PEX 3x10-50","st",0.4,2.27,null,2658.0,1424.0,null,null,4083.0],["P2","140.51","Kabelförläggning","Avslut 12-24 kV, i.hus, PEX 3x95-240","st",0.4,2.59,null,2974.0,1591.0,null,null,4565.0],["P2","140.52","Kabelförläggning","Avslut 12-24 kV, i.hus, PEX 3x300","st",0.4,3.1,null,3475.0,2473.0,null,null,5948.0],["P2","140.53","Kabelförläggning","Avslut 12-24 kV, i.hus, PEX 3x1x50-95","st",0.4,2.24,null,2629.0,1691.0,null,null,4320.0],["P2","140.54","Kabelförläggning","Avslut 12-24 kV, i.hus, PEX 3x1x150-240","st",0.4,2.62,null,3002.0,1962.0,null,null,4964.0],["P2","140.55","Kabelförläggning","Avslut 12-24 kV, i.hus, PEX 3x1x300-400","st",0.4,3.22,null,3595.0,3928.0,null,null,7523.0],["P2","140.56","Kabelförläggning","Avslut 12-24 kV, i.hus, PEX, 3x1x500-630","st",0.4,3.36,null,3731.0,3947.0,null,null,7678.0],["P2","140.57","Kabelförläggning","Tillägg beröringsskyddat avslut 50-240 mm²","st",0.1,0.71,null,810.0,3709.0,null,null,4520.0],["P2","140.58","Kabelförläggning","Tillägg beröringsskyddat avslut 300-630 mm²","st",0.1,0.71,null,810.0,5075.0,null,null,5885.0],["P2","140.59","Kabelförläggning","Avslut 12-24 kV u.hus PEX 3x10-25","st",0.22,2.65,null,2840.0,4306.0,null,null,7146.0],["P2","140.60","Kabelförläggning","Avslut 12-24 kV u.hus PEX 3x50-240","st",0.22,2.65,null,2840.0,5448.0,null,null,8288.0],["P2","140.63","Kabelförläggning","Ventilavledarsats 24 kV i stolpe","st",0.3,1.8,null,2092.0,7467.0,null,null,9559.0],["P2","140.64","Kabelförläggning","Ventilavledarsats 12 kV i stolpe","st",0.3,1.8,null,2092.0,5725.0,null,null,7817.0],["P2","140.65","Kabelförläggning","Avslut 12-24 kV u.hus PEX 3x1x50-240","st",0.4,4.26,null,4614.0,7876.0,null,null,12490.0],["P2","140.68","Kabelförläggning","Ansluta kabel 0,4 kV N1XV(E) 10-50","st",0.1,0.4,null,503.0,43.0,null,null,546.0],["P2","140.69","Kabelförläggning","Ansluta kabel 0,4 kV N1XV(E) 95-150","st",0.1,0.67,null,766.0,43.0,null,null,808.0],["P2","140.70","Kabelförläggning","Ansluta kabel 0,4 kV N1XV(E) 240","st",0.1,1.09,null,1178.0,43.0,null,null,1221.0],["P2","140.71","Kabelförläggning","Tillägg ansluta 5-ledare 0,4 kV","st",0.05,0.04,null,97.0,null,null,null,97.0],["P2","140.72","Kabelförläggning","Ansluta EQLR 5x2x1,5","st",0.1,0.33,null,432.0,19.0,null,null,451.0],["P2","140.73","Kabelförläggning","Ansluta EQLR 15x2x1,5","st",0.1,0.93,null,1022.0,19.0,null,null,1041.0],["P2","140.74","Kabelförläggning","Ansluta EQLR 36x2x1,5","st",0.1,2.19,null,2260.0,19.0,null,null,2279.0],["P2","140.75","Kabelförläggning","Skarva styrkabel EQLR 5x2x1,5","st",0.1,0.46,null,560.0,322.0,null,null,882.0],["P2","140.76","Kabelförläggning","Skarva styrkabel EQLR 15x2x1,5","st",0.1,1.26,null,1346.0,575.0,null,null,1921.0],["P2","140.77","Kabelförläggning","Skarva styrkabel EQLR 36x2x1,5","st",0.1,2.94,null,2997.0,920.0,null,null,3918.0],["P2","140.78","Kabelförläggning","Dra in enstaka kabel i befintlig nätstation","st",0.3,0.19,null,509.0,224.0,null,null,733.0],["P2","140.80","Kabelförläggning","Utsättning kabelgrav","km",null,1.67,null,1641.0,null,null,null,1641.0],["P2","140.81","Kabelförläggning","Inmätning kabelgrav, city","km",null,7.96,null,7825.0,158.0,null,644.0,8627.0],["P2","140.82","Kabelförläggning","Inmätning kabelgrav, tätort","km",null,6.01,null,5906.0,138.0,null,883.0,6927.0],["P2","140.83","Kabelförläggning","Inmätning kabelgrav, landsbygd","km",null,4.28,null,4203.0,119.0,null,710.0,5032.0],["P2","140.85","Kabelförläggning","Lägg ut slang/rör och plac. i ytlig schakt (kabelstr.) SRE 32","km",2.18,17.65,5.28,19696.0,34101.0,6281.0,null,60078.0],["P2","140.86","Kabelförläggning","Lägg ut slang/rör och plac. i ytlig schakt (kabelstr.) SRE 50","km",2.18,20.0,5.93,22002.0,72403.0,7060.0,null,101465.0],["P2","140.87","Kabelförläggning","Lägg ut slang/rör och plac. i ytlig schakt (kabelstr.) SRE 75","km",2.18,22.35,6.59,24312.0,114599.0,7839.0,null,146750.0],["P2","140.88","Kabelförläggning","Lägg ut slang/rör och plac. i ytlig schakt (kabelstr.) SRE 110","km",2.18,27.04,7.9,28919.0,214920.0,9396.0,null,253235.0],["P2","140.89","Kabelförläggning","maskin. SRS 110-125","km",1.0,3.83,4.13,4844.0,89505.0,4826.0,null,99176.0],["P2","140.90","Kabelförläggning","Dra i kabel i slang eller rör upp t.o.m. 1 kg/m","km",0.7,17.09,8.55,17546.0,57.0,10172.0,null,27775.0],["P2","140.91","Kabelförläggning","Dra i kabel i slang eller rör, >1 ≤2,5 kg/m","km",0.7,19.95,10.08,20359.0,71.0,12001.0,null,32431.0],["P2","140.92","Kabelförläggning","Dra i kabel i slang eller rör, >2,5 ≤4,5 kg/m","km",0.7,22.98,11.85,23333.0,134.0,14106.0,null,37573.0],["P2","140.93","Kabelförläggning","Dra i kabel i slang eller rör, >4,5 ≤7,0 kg/m","km",0.7,26.13,13.78,26433.0,202.0,16399.0,null,43034.0],["P2","140.94","Kabelförläggning","Dra i kabel i slang eller rör, >7,0 ≤11,0 kg/m","km",0.7,29.53,16.02,29777.0,221.0,19063.0,null,49062.0],["P2","140.95","Kabelförläggning","Tryck kabel 95-300 i slang 110-125 SRS","km",0.13,5.19,5.36,5244.0,1665.0,6270.0,5969.0,19148.0],["P2","140.96","Kabelförläggning","110-125 SRS","km",0.13,3.59,3.76,3671.0,1665.0,4397.0,4310.0,14042.0],["P2","140.97","Kabelförläggning","Tillägg förlängt och partskärmat avslut 10-50","st",0.1,1.1,null,1189.0,1288.0,null,null,2477.0],["P2","140.98","Kabelförläggning","Tillägg förlängt och partskärmat avslut 95-240","st",0.1,1.37,null,1458.0,1498.0,null,null,2956.0],["P2","140.99","Kabelförläggning","Tillägg övergång 3-ledare till 1-ledare, PEX","st",0.3,1.21,null,1511.0,396.0,null,null,1907.0],["P2","153.01","JK 24 kV","PEX 3x300","km",null,null,null,null,319054.0,null,13078.0,332131.0],["P2","153.02","JK 24 kV","PEX 3x1x300","km",null,null,null,null,573998.0,null,8565.0,582564.0],["P2","153.03","JK 24 kV","PEX 3x1x400","km",null,null,null,null,659308.0,null,8565.0,667873.0],["P2","153.04","JK 24 kV","PEX 3x1x500","km",null,null,null,null,742446.0,null,19617.0,762063.0],["P2","153.05","JK 24 kV","PEX 3x1x630","km",null,null,null,null,774846.0,null,19617.0,794463.0],["P2","153.11","JK 24 kV","PEX 3x10","km",null,null,null,null,201637.0,null,1490.0,203127.0],["P2","153.12","JK 24 kV","PEX 3x25","km",null,null,null,null,136307.0,null,2940.0,139247.0],["P2","153.13","JK 24 kV","PEX 3x50","km",null,null,null,null,146740.0,null,3948.0,150688.0],["P2","153.14","JK 24 kV","PEX 3x95","km",null,null,null,null,182412.0,null,4218.0,186630.0],["P2","153.15","JK 24 kV","PEX 3x150","km",null,null,null,null,247892.0,null,5950.0,253842.0],["P2","153.16","JK 24 kV","PEX 3x240","km",null,null,null,null,302962.0,null,13078.0,316039.0],["P2","153.17","JK 24 kV","PEX 3x1x50","km",null,null,null,null,226541.0,null,3417.0,229958.0],["P2","153.18","JK 24 kV","PEX 3x1x95","km",null,null,null,null,296557.0,null,4410.0,300967.0],["P2","153.19","JK 24 kV","PEX 3x1x150","km",null,null,null,null,322412.0,null,5922.0,328334.0],["P2","153.20","JK 24 kV","PEX 3x1x240","km",null,null,null,null,451915.0,null,6327.0,458242.0],["P2","153.21","JK 24 kV","PEX 3x10 Ståltrådsarmerad sjökabel","km",null,null,null,null,406080.0,null,4463.0,410543.0],["P2","153.22","JK 24 kV","PEX 3x25 Ståltrådsarmerad sjökabel","km",null,null,null,null,406080.0,null,4463.0,410543.0],["P2","153.23","JK 24 kV","PEX 3x50 Ståltrådsarmerad sjökabel","km",null,null,null,null,462650.0,null,9809.0,472459.0],["P2","153.24","JK 24 kV","PEX 3x95 Ståltrådsarmerad sjökabel","km",null,null,null,null,559337.0,null,11841.0,571179.0],["P2","153.25","JK 24 kV","PEX 3x150 Ståltrådsarmerad sjökabel","km",null,null,null,null,774166.0,null,13261.0,787427.0],["P2","153.26","JK 24 kV","PEX 3x240 Ståltrådsarmerad sjökabel","km",null,null,null,null,869530.0,null,13261.0,882791.0],["P2","155.01","JK 0,4 kV","N1XV(E) 4x16-Al","km",null,null,null,null,28361.0,null,766.0,29127.0],["P2","155.02","JK 0,4 kV","N1XV(E) 5x16-Al","km",null,null,null,null,37865.0,null,766.0,38631.0],["P2","155.03","JK 0,4 kV","N1XV(E) 4x25-Al","km",null,null,null,null,35500.0,null,868.0,36368.0],["P2","155.04","JK 0,4 kV","N1XV(E) 5x25-Al","km",null,null,null,null,46829.0,null,868.0,47697.0],["P2","155.11","JK 0,4 kV","N1XV(E) 4x10-CU","km",null,null,null,null,62640.0,null,510.0,63150.0],["P2","155.12","JK 0,4 kV","N1XV(E) 5x10-CU","km",null,null,null,null,80252.0,null,510.0,80762.0],["P2","155.13","JK 0,4 kV","N1XV(E) 4x16-CU","km",null,null,null,null,105263.0,null,510.0,105772.0],["P2","155.14","JK 0,4 kV","N1XV(E) 5x16-CU","km",null,null,null,null,135766.0,null,766.0,136531.0],["P2","155.15","JK 0,4 kV","N1XV(E) 4x50","km",null,null,null,null,47492.0,null,1170.0,48662.0],["P2","155.16","JK 0,4 kV","N1XV(E) 4x95","km",null,null,null,null,85994.0,null,1490.0,87484.0],["P2","155.17","JK 0,4 kV","N1XV(E) 4x150","km",null,null,null,null,132300.0,null,2940.0,135240.0],["P2","155.18","JK 0,4 kV","N1XV(E) 4x240","km",null,null,null,null,196099.0,null,4218.0,200317.0],["P2","155.20","JK 0,4 kV","AXQJ 4x50/29","km",null,null,null,null,115056.0,null,1170.0,116225.0],["P2","155.21","JK 0,4 kV","AXQJ 4x95/57","km",null,null,null,null,186262.0,null,2278.0,188540.0],["P2","155.22","JK 0,4 kV","AXQJ 4x150/88","km",null,null,null,null,345181.0,null,3948.0,349129.0],["P2","155.23","JK 0,4 kV","AXQJ 4x240/146","km",null,null,null,null,450538.0,null,4218.0,454757.0],["P2","156.11","Styrkabel/Optokabel","EQLR 5x2x1,5","km",null,null,null,null,54572.0,null,null,54572.0],["P2","156.12","Styrkabel/Optokabel","EQLR 15x2x1,5","km",null,null,null,null,139050.0,null,null,139050.0],["P2","156.13","Styrkabel/Optokabel","EQLR 36x2x1,5","km",null,null,null,null,280368.0,null,null,280368.0],["P2","156.51","Styrkabel/Optokabel","Opto, jordkabel 4 fiber","km",null,null,null,null,4439.0,null,null,4439.0],["P2","156.52","Styrkabel/Optokabel","Opto, jordkabel 12 fiber","km",null,null,null,null,11281.0,null,null,11281.0],["P2","156.53","Styrkabel/Optokabel","Opto, jordkabel 48 fiber","km",null,null,null,null,17269.0,null,null,17269.0],["P2","156.54","Styrkabel/Optokabel","Opto, jordkabel 96 fiber","km",null,null,null,null,27275.0,null,null,27275.0],["P2","156.55","Styrkabel/Optokabel","Opto, jordkabel 192 fiber","km",null,null,null,null,52677.0,null,null,52677.0],["P2","156.56","Styrkabel/Optokabel","Opto, mikrokabel 4 fiber","km",null,null,null,null,2354.0,null,null,2354.0],["P2","156.57","Styrkabel/Optokabel","Opto, mikrokabel 12 fiber","km",null,null,null,null,6232.0,null,null,6232.0],["P2","156.58","Styrkabel/Optokabel","Opto, mikrokabel 48 fiber","km",null,null,null,null,9720.0,null,null,9720.0],["P2","156.59","Styrkabel/Optokabel","Opto, mikrokabel 96 fiber","km",null,null,null,null,17140.0,null,null,17140.0],["P2","156.60","Styrkabel/Optokabel","Opto, mikrokabel 192 fiber","km",null,null,null,null,40738.0,null,null,40738.0],["P2","156.61","Styrkabel/Optokabel","Blåsfiber 2","km",null,null,null,null,1539.0,null,null,1539.0],["P2","156.62","Styrkabel/Optokabel","Blåsfiber 4","km",null,null,null,null,1831.0,null,null,1831.0],["P2","156.63","Styrkabel/Optokabel","Blåsfiber 8","km",null,null,null,null,3202.0,null,null,3202.0],["P2","156.64","Styrkabel/Optokabel","Blåsfiber 12","km",null,null,null,null,4849.0,null,null,4849.0],["P2","173.02","Optoförläggning","Utdragning av slang med mikrorör ≤0,3 kg/m","km",1.0,2.65,null,3681.0,6566.0,null,null,10247.0],["P2","173.03","Optoförläggning","Utdragning av slang med mikrorör >0,3 ≤1,0 kg/m","km",1.0,2.65,2.65,3681.0,46810.0,3153.0,null,53645.0],["P2","173.04","Optoförläggning","Utdragning av optoslang ≤0,3 kg/m","km",1.0,2.65,null,3681.0,5206.0,null,null,8886.0],["P2","173.05","Optoförläggning","Utdragning av optoslang >0,3 ≤1,0 kg/m","km",1.0,2.65,2.65,3681.0,16932.0,3153.0,null,23767.0],["P2","173.06","Optoförläggning","Skarv optoslang 33 mm","st",0.05,0.03,null,86.0,49.0,null,null,136.0],["P2","173.07","Optoförläggning","Skarv/avgrening av mikrorör 1 till 1-7","st",0.25,0.35,null,613.0,997.0,null,null,1610.0],["P2","173.08","Optoförläggning","Skarv/avgrening av mikrorör 1 till 8-24","st",1.0,1.4,null,2452.0,1928.0,null,null,4381.0],["P2","173.09","Optoförläggning","Montage av mikrorör i skåp, bod, kund","st",0.1,0.06,null,167.0,null,null,null,167.0],["P2","173.11","Optoförläggning","Schakta och sätta kabelbrunn, plast Ø 1000 mm","st",0.5,0.49,0.55,1020.0,4973.0,655.0,null,6647.0],["P2","173.12","Optoförläggning","Schakta och sätta skarvbrunn, plast","st",0.8,0.93,0.93,1775.0,12390.0,1107.0,null,15271.0],["P2","173.13","Optoförläggning","Schakta och sätta skarvbrunn, betong","st",0.8,1.86,1.86,2689.0,22430.0,2213.0,null,27333.0],["P2","173.14","Optoförläggning","Tillägg för flytande täckning","st",0.05,0.44,0.38,486.0,5288.0,452.0,null,6227.0],["P2","173.15","Optoförläggning","Ändtätning optoslang","st",null,0.02,null,17.0,26.0,null,null,42.0],["P2","173.18","Optoförläggning","Håltagning betong ≤110 mm","st",0.8,3.0,null,3810.0,null,null,null,3810.0],["P2","173.19","Optoförläggning","Håltagning sten ≤110 mm","st",0.8,5.0,null,5775.0,null,null,null,5775.0],["P2","173.68","Optoförläggning","Mät borra och trä in optokabel eller dukt i fastighet","st",0.1,0.3,null,402.0,24.0,null,null,425.0],["P2","173.69","Optoförläggning","Montera kabelskydd typ plåtränna över optokabel/mikrodukt","st",0.1,0.19,null,296.0,125.0,null,null,421.0],["P2","173.70","Optoförläggning","Klamra optokabel/mikrodukt oavsett underlag","m",0.05,0.1,null,152.0,5.0,null,null,157.0],["P2","173.73","Optoförläggning","Blåsning av mikrofiber (blåsfiber)","km",0.4,2.67,null,3055.0,137.0,null,null,3191.0],["P2","173.74","Optoförläggning","Blåsning av fiber 4-192","km",0.53,4.88,0.03,5363.0,165.0,39.0,null,5567.0],["P2","173.75","Optoförläggning","Blåsning av 5 dukter i slang","km",0.65,7.8,0.16,8366.0,24987.0,194.0,null,33547.0],["P2","173.76","Optoförläggning","Tillägg för trycksättning av dukter inför blåsning i kanalisation","km",null,0.76,null,743.0,null,null,null,743.0],["P2","173.77","Optoförläggning","Tillägg/avdrag vid tillkommande eller avgående dukt i blåsningen","km",null,0.41,0.03,398.0,5066.0,39.0,null,5503.0],["P2","173.81","Optoförläggning","Skarva slang 30-50 mm inkl. dukter","st",0.1,0.19,null,296.0,607.0,null,null,903.0],["P2","173.84","Optoförläggning","Fast tid vid skarv/svetsning av optofiber i ny skarvbox","st",0.1,0.64,null,735.0,4488.0,null,null,5223.0],["P2","173.85","Optoförläggning","Fast tid vid skarv/svetsning av optofiber i befintlig skarvbox","st",0.1,0.64,null,735.0,71.0,null,null,805.0],["P2","173.86","Optoförläggning","befintlig skarvbox","st",0.1,0.43,null,526.0,71.0,null,null,597.0],["P2","173.87","Optoförläggning","Skarv/svetsning enkel (per fiber)","st",null,0.06,null,60.0,20.0,null,null,80.0],["P2","173.88","Optoförläggning","Skarv/svetsning ribbon/4 (per fiber)","st",null,0.03,null,32.0,21.0,null,null,53.0],["P2","174.21","Terminering opto","Montage av distributionsstativ","st",0.35,1.18,null,1536.0,4210.0,null,null,5747.0],["P2","174.22","Terminering opto","Montage av ODF-modul i distributionsstativ","st",0.2,0.11,null,328.0,1403.0,null,null,1731.0],["P2","174.23","Terminering opto","Montage av switch i distributionsstativ (≤24 utgångar)","st",0.2,0.11,null,328.0,9342.0,null,null,9670.0],["P2","174.25","Terminering opto","Montera fiberuttag / CPE i fastighet","st",0.2,0.3,null,505.0,1858.0,null,null,2364.0],["P2","174.26","Terminering opto","Fast tid vid ODF-anslutning i ny eller befintlig termineringsbox","st",0.2,0.56,null,762.0,71.0,null,null,832.0],["P2","174.27","Terminering opto","termineringsbox","st",0.05,0.41,null,458.0,71.0,null,null,528.0],["P2","174.28","Terminering opto","ODF anslutning 1 fiber enkel","st",0.01,0.07,null,75.0,36.0,null,null,111.0],["P2","174.29","Terminering opto","ODF anslutning 1 fiber ribbon","st",0.01,0.04,null,48.0,37.0,null,null,85.0],["P2","175.30","Drifttagning opto","Fast tid vid OTDR och dB-mätning","st",0.25,1.19,null,1439.0,null,null,null,1439.0],["P2","175.31","Drifttagning opto","OTDR-mätning","st",null,0.05,null,50.0,null,null,null,50.0],["P2","175.32","Drifttagning opto","dB-mätning","st",null,0.03,null,32.0,null,null,null,32.0],["P2","175.35","Drifttagning opto","Korskoppling/patchning (per fiberpar)","st",0.15,0.16,null,314.0,99.0,null,null,414.0],["P2","175.36","Drifttagning opto","fiberpar)","st",0.1,0.08,null,189.0,99.0,null,null,289.0],["P2","175.40","Drifttagning opto","Montera SFP i switch och mät utgående effekt","st",0.1,0.09,null,194.0,458.0,null,null,652.0],["P2","175.41","Drifttagning opto","Drifttagning av ny kund i optonät","st",null,0.17,null,167.0,null,null,null,167.0],["P2","410.30","Övriga kostnader","Etablering och avveckling, litet elaggregat","st",0.5,3.84,null,4313.0,null,null,null,4313.0],["P2","410.31","Övriga kostnader","Etablering och avveckling, stort elaggregat","st",0.5,6.81,null,7228.0,null,null,3177.0,10406.0],["P2","410.32","Övriga kostnader","Tillsyn av elaggregat","dag",0.05,0.5,null,544.0,null,null,null,544.0],["P2","410.33","Övriga kostnader","Driftkostnad/kVA och timme för elaggregat 25-1800 kVA","tim",null,null,null,null,null,null,6.0,6.0],["P2","410.41","Övriga kostnader","Lastbil","tim",0.01,null,null,11.0,null,null,882.0,893.0],["P2","410.50","Övriga kostnader","Shuntkabel, utrullning samt inrullning","km",3.92,14.58,12.98,18548.0,19461.0,15899.0,65.0,53973.0],["P2","410.51","Övriga kostnader","Provisorisk korsning av väg för shuntkabel","st",1.4,2.97,3.16,4431.0,4231.0,3843.0,null,12505.0],["P2","410.52","Övriga kostnader","In- och urkoppling befintligt nät","st",0.4,0.99,0.24,1404.0,3199.0,292.0,null,4895.0],["P2","410.53","Övriga kostnader","Skarv av shuntkabel i stolpe","st",0.2,0.32,1.03,534.0,1505.0,1261.0,null,3299.0],["P2","410.55","Övriga kostnader","Tillfällig frånskiljare","st",0.6,2.98,2.05,3571.0,3635.0,2505.0,null,9712.0],["P2","410.56","Övriga kostnader","Tillfällig station för shuntkabel inkl. inkoppling Lsp","st",1.0,1.43,0.7,2481.0,1725.0,863.0,null,5069.0],["P2","411.20","Flyttning, etablering","Flyttning och etablering. 1 montör","st",0.42,3.09,null,3491.0,null,null,null,3491.0],["P2","411.21","Flyttning, etablering","Flyttning och etablering av ledningsbyggnadsmaskin","st",0.5,null,3.09,538.0,null,3785.0,null,4323.0],["P2","411.22","Flyttning, etablering","Flyttning och etablering av kabelschaktmaskin","st",0.5,null,3.09,538.0,null,3677.0,null,4215.0],["P2","411.23","Flyttning, etablering","Flyttning och etablering av runtomsvängande maskin","st",0.5,null,3.21,538.0,null,3756.0,3160.0,7454.0],["P2","411.24","Flyttning, etablering","Tillägg vid flyttning av maskin med trailer för sträckor över 50 km","km",null,null,null,null,null,null,37.0,37.0],["P2","411.25","Flyttning, etablering","Flyttning vid mindre arbeten. 1 montör","st",0.4,0.9,null,1318.0,null,null,null,1318.0],["P2","411.26","Flyttning, etablering","Flyttning vid mindre arbeten. Kabelschaktmaskin alt. ledningsbyggnadsmaskin","st",0.4,null,1.56,431.0,null,1884.0,null,2314.0],["P2","411.27","Flyttning, etablering","Flyttning vid mindre arbeten. Runtomsvängande maskin","st",0.4,null,1.68,431.0,null,1966.0,3160.0,5556.0],["P2","510.01","Beredning","Grundläggande beredning. Fast tid/projekt","st",3.6,null,null,3875.0,null,null,null,3875.0],["P2","510.02","Beredning","Tillägg grundläggande beredning för projekt >1 km","km",3.6,null,null,3875.0,null,null,null,3875.0],["P2","510.03","Beredning","Fastighetsägarförteckning","km",0.9,null,null,969.0,null,null,null,969.0],["P2","510.04","Beredning","Samråd enligt miljöbalken. Fast tid för projekt","st",2.92,null,null,3140.0,null,null,null,3140.0],["P2","510.05","Beredning","Samråd enligt miljöbalken. Rörlig tid för projekt >1 km","km",1.67,null,null,1798.0,null,null,null,1798.0],["P2","510.06","Beredning","Upprätta markavtal","st",2.43,null,null,2612.0,null,null,null,2612.0],["P2","510.07","Beredning","Inskrivningsavgift","st",null,null,null,null,null,null,470.0,470.0],["P2","510.08","Beredning","Bygglov","st",3.37,null,null,3626.0,null,null,null,3626.0],["P2","510.09","Beredning","Ledningstillstånd. Trafikverket samt kommunala vägar","st",4.65,null,null,5005.0,null,null,null,5005.0],["P2","510.10","Beredning","Ledningstillstånd. Vägföreningar samt övriga privata vägar","st",2.24,null,null,2410.0,null,null,null,2410.0],["P2","510.11","Beredning","Ledningstillstånd. Trafikverket, järnvägar","st",7.67,null,null,8252.0,null,null,null,8252.0],["P2","510.12","Beredning","Stakningstillstånd","st",1.23,null,null,1321.0,null,null,null,1321.0],["P2","510.13","Beredning","TA-plan","st",1.05,null,null,1126.0,null,null,null,1126.0],["P2","510.14","Beredning","Upplagsplatser","st",1.03,null,null,1106.0,null,null,null,1106.0],["P2","510.15","Beredning","Upprätta arbetsmiljöplan","st",1.51,null,null,1627.0,null,null,null,1627.0],["P2","510.16","Beredning","Upprätta miljöplan","st",1.56,null,null,1674.0,null,null,null,1674.0],["P2","510.17","Beredning","Slutdokumentation av projektet ≤0,15 km. Fast tid","st",0.44,null,null,474.0,null,null,null,474.0],["P2","510.18","Beredning","Slutdokumentation av projektet >0,15 km","km",2.94,null,null,3160.0,null,null,null,3160.0]];
+
+/* ============ BESS-KATALOG (schablon ONE Bered – kalibreras mot utfall) ============
+   Arbetsmoment för BESS som saknas i KLG. Timmar = schablon, UE-poster har övrigt-pris 0 tills offert matas in (Register → Kalkylkatalog → BESS). */
+const BESS_CODES = [
+ ["B101","Battericontainer",[
+  ["01","Mottagning, lossning och lyft battericontainer (exkl. kran)","st",0.2,4,null],
+  ["02","Uppställning, inriktning och förankring battericontainer","st",0.1,3,null],
+  ["03","Mekanisk komplettering enl. leverantör (kylning, ventilation, tätning)","st",0,4,null],
+  ["10","DC-kabel, förläggning i kanalisation/rör","m",0,0.03,null],
+  ["11","DC-terminering 1500 V, per kabelände (press, krymp, moment)","st",0,0.6,null],
+  ["12","Märkning kabel enl. kabellista","st",0,0.15,null]]],
+ ["B110","MV-skid / PCS",[
+  ["01","Mottagning och lyft MV-skid (exkl. kran)","st",0.3,6,null],
+  ["02","Uppställning, inriktning och förankring MV-skid","st",0.2,5,null],
+  ["03","Oljeuppsamling: montage nivåvakt och kontroll","st",0,3,null],
+  ["04","Intern kontroll LV/AC PCS–transformator enl. leverantör","st",0,4,null],
+  ["05","Jordanslutning MV-skid (4 punkter)","st",0,2,null],
+  ["06","Kabelströmtransformator för jordfelsskydd, montage","st",0,1.5,null]]],
+ ["B120","Ställverk, kontroll & hjälpkraft",[
+  ["01","Ställverksfack 24 kV: uppställning, skena, kontroll","fack",0.5,10,null],
+  ["02","EMS/PPC-skåp: montage och anslutning","st",1,12,null],
+  ["03","Hjälpkraftcentral: montage och anslutning","st",1,16,null],
+  ["04","UPS: montage och anslutning","st",0,6,null],
+  ["05","Hjälpkrafttransformator: uppställning och anslutning","st",0.5,8,null]]],
+ ["B130","Installation LSP",[
+  ["01","LSP-kabel, förläggning i rör/kanal","m",0,0.04,null],
+  ["02","LSP-kabelanslutning ≤4x150, per ände","st",0,1,null],
+  ["03","Belysnings-/CCTV-stolpe inkl. armatur (exkl. fundament)","st",0,3,null]]],
+ ["B140","Kommunikation, brand & nödstopp",[
+  ["01","Signal-/brandlarmkabel, förläggning","m",0,0.03,null],
+  ["02","Anslutning brandlarm/FSS per battericontainer","st",0,2,null],
+  ["03","Nödstopp-slinga, anslutning per objekt","st",0,1,null],
+  ["04","Datakabel S/FTP: dra och terminera per länk","st",0,1.2,null]]],
+ ["B150","Jordning & åskskydd",[
+  ["02","Pressförband jordlina (C-press)","st",0,0.4,null],
+  ["03","Potentialutjämning staket/grind, per anslutning","st",0,0.5,null],
+  ["04","Åskskydd: uppfångare/nedledare per objekt (SS-EN 62305)","st",0,3,null]]],
+ ["B160","Mark & bygg (UE-pris)",[
+  ["01","Fundament battericontainer (UE)","st",0,0,0],
+  ["02","Fundament MV-skid inkl. oljeuppsamling (UE)","st",0,0,0],
+  ["03","Fundament ställverk/kontrollbyggnad (UE)","st",0,0,0],
+  ["04","Hårdgjord yta, bärlager/makadam (UE)","m²",0,0,0],
+  ["05","Kranuppställningsyta, förstärkt (UE)","m²",0,0,0],
+  ["06","Stängsel inkl. stolpar (UE)","m",0,0,0],
+  ["07","Grind (UE)","st",0,0,0],
+  ["08","Mobilkran inkl. förare (UE)","tim",0,0,0],
+  ["09","Etablering bodar/UC/belysning (hyra per vecka)","v",0,0,0]]],
+ ["B170","Provning & idrifttagning",[
+  ["01","VLF/Tan δ-provning MV-kabel per system (3 faser)","st",0.5,4,null],
+  ["02","Isolationsmätning DC-kabel, per kabel","st",0,0.2,null],
+  ["03","Cold commissioning, stöd per battericontainer","st",0.5,2,null],
+  ["04","Hot commissioning/provdrift","MW",1,2,null],
+  ["05","Egenkontroll enl. kontroll- och provningsprogram, per objekt","st",0.5,0.5,null]]],
+ ["B180","Projektgemensamt BESS",[
+  ["01","Elsäkerhetsledare/BAS-U på plats","v",8,0,null],
+  ["02","Slutdokumentation och relationshandlingar","MW",3,0,null]]]
+];
+const BESS_CATALOG = [];
+BESS_CODES.forEach(([ak,grp,rows])=>rows.forEach(([lop,ben,enh,b,m,ov])=>BESS_CATALOG.push(["BESS",ak+"."+lop,grp,ben,enh,b||null,m||null,null,null,null,null,ov,null])));
+
+/* ============ MATERIEL BESS ============
+   E-nr ur Prysmian Kabelkatalogen 2024 och Nexans Kabelboken 2026 (projektdokument).
+   Pris: "KLG" = härlett ur KLG 1:26 materielkostnad per enhet; "Saknas" = 0 kr tills pris läggs in; "BL" = beställarlevererat. */
+const M=(art,ben,enh,pris,kalla,o={})=>Object.assign({art,ben,enh,pris,kalla,lev:o.lev||"Huvudleverantör",lk:!!o.lk,bl:!!o.bl,typ:o.typ||""},{});
+const DEMO_MATERIEL = [
+ M("E00 079 85","AXQ 1 kV 1x240 Al (DC-kabel PCS–container)","m",49,"KLG 155.18 ÷4",{lk:1,typ:"DC"}),
+ M("E00 079 95","AXQ 1 kV 1x300 Al (DC-kabel PCS–container)","m",61,"KLG 155.18 ÷4 ×1,25",{lk:1,typ:"DC"}),
+ M("DC-KS240","Kabelsko Al 240 mm² M12 inkl. krympslang (DC)","st",0,"Saknas"),
+ M("E00 715 65","AXLJ-TTCL TSLF 1x150/25 24 kV","m",107,"KLG 153.19 ÷3",{lk:1,typ:"MV"}),
+ M("E00 715 85","AXLJ-TTCL TSLF 1x240/35 24 kV","m",151,"KLG 153.20 ÷3",{lk:1,typ:"MV"}),
+ M("E00 715 95","AXLJ-TTCL TSLF 1x400/35 24 kV","m",220,"KLG 153.03 ÷3",{lk:1,typ:"MV"}),
+ M("E00 720 55","AXLJ-TTCL TSLF 1x630/50 24 kV","m",258,"KLG 153.05 ÷3",{lk:1,typ:"MV"}),
+ M("E00 806 85","AXALJ-TT 3x150/35 ALCL 24 kV","m",248,"KLG 153.15",{lk:1,typ:"MV"}),
+ M("E00 806 95","AXALJ-TT 3x240/50 ALCL 24 kV","m",303,"KLG 153.16",{lk:1,typ:"MV"}),
+ M("MV-T240","Skärmad T-kontakt 24 kV 630 A, sats 3 faser ≤240","sats",1962,"KLG 140.54"),
+ M("MV-T400","Skärmad T-kontakt 24 kV 630 A, sats 3 faser 300–400","sats",3928,"KLG 140.55"),
+ M("MV-T630","Skärmad T-kontakt 24 kV, sats 3 faser 500–630","sats",3947,"KLG 140.56"),
+ M("MV-S240","Skarv 1-ledare 24 kV 150–240, per fas","st",1635,"KLG 140.34"),
+ M("MV-S400","Skarv 1-ledare 24 kV 300–400, per fas","st",2456,"KLG 140.35"),
+ M("MV-S630","Skarv 1-ledare 24 kV 500–630, per fas","st",2541,"KLG 140.36"),
+ M("KCT-JF","Kabelströmtransformator jordfelsskydd (kontrollera innerdiameter)","st",0,"Saknas"),
+ M("E00 046 55","AXQJ PURE 4x150/41 (hjälpkraft)","m",345,"KLG 155.22",{lk:1,typ:"LSP"}),
+ M("E00 046 15","AXQJ PURE 4x50/15 (hjälpkraft)","m",115,"KLG 155.20",{lk:1,typ:"LSP"}),
+ M("ACEFLEX-5G25","Aceflex Pure 5G25 (hjälpkraft container)","m",0,"Saknas",{lk:1,typ:"LSP"}),
+ M("OS2-48","Optokabel singlemode OS2 48 fiber, mark","m",17.27,"KLG 156.53",{lk:1,typ:"OPTO"}),
+ M("OPTOSLANG","Optoslang ≤0,3 kg/m","m",5.21,"KLG 173.04"),
+ M("ODF-24","Termineringsbox/ODF 24 fiber","st",0,"Saknas"),
+ M("ELAQBY-2x2x06","ELAQBY 2x2x0,6 brandlarm (enl. FSS-leverantör)","m",0,"Saknas",{lk:1,typ:"KONTROLL"}),
+ M("SFTP-CAT7","Datakabel S/FTP Cat 7","m",0,"Saknas",{lk:1,typ:"KONTROLL"}),
+ M("E06 228 55","Cu-lina glödgad 50 mm² (jordlina)","m",65.94,"KLG 133.22",{typ:"JORD"}),
+ M("E06 224 55","Kopparlina glödgad 95 mm² (jordlina)","m",141.54,"KLG 133.23",{typ:"JORD"}),
+ M("JORDSPETT","Jordtagsstång","m",113,"KLG 133.31"),
+ M("CPRESS-50","C-pressförband Cu 50/50","st",0,"Saknas"),
+ M("SRS110","Kabelskyddsrör SRS 110","m",60.3,"KLG 140.24"),
+ M("SRS160","Kabelskyddsrör SRS 160","m",164.44,"KLG 140.25"),
+ M("ROXTEC","Kabelgenomföring modulstätning (per genomföring)","st",0,"Saknas"),
+ M("VARNNAT","Markeringsnät/varningsband","m",0,"Saknas"),
+ M("BL-BATT","Battericontainer enl. hårdvaruprofil","st",0,"BL",{bl:1,lev:"Beställarlevererat (BL)"}),
+ M("BL-MVS","MV-skid/MVS inkl. PCS, transformator och RMU","st",0,"BL",{bl:1,lev:"Beställarlevererat (BL)"}),
+ M("BL-EMS","EMS/PPC-skåp","st",0,"BL",{bl:1,lev:"Beställarlevererat (BL)"}),
+ M("SV24-FACK","Ställverksfack 24 kV","st",0,"Offert",{lev:"Ställverksleverantör (UE)"}),
+ M("HKC","Hjälpkraftcentral 400/230 V","st",0,"Saknas"),
+ M("UPS","UPS för kontroll och kommunikation","st",0,"Saknas"),
+ M("HJ-TRAFO","Hjälpkrafttransformator","st",0,"Saknas")
+];
+
+/* ============ MV-DIMENSIONERING (Prysmian AXLJ-TTCL TSLF 24 kV, mark, treklöver, skärm jordad i båda ändar) ============ */
+const MVKABEL = {
+ "AXLJ-TTCL 1x150/25":{art:"E00 715 65",I:300,t:"MV-T240",s:"MV-S240",tri:true,dia:32},
+ "AXLJ-TTCL 1x240/35":{art:"E00 715 85",I:385,t:"MV-T240",s:"MV-S240",tri:true,dia:39},
+ "AXLJ-TTCL 1x400/35":{art:"E00 715 95",I:510,t:"MV-T400",s:"MV-S400",tri:true,dia:44},
+ "AXLJ-TTCL 1x630/50":{art:"E00 720 55",I:635,t:"MV-T630",s:"MV-S630",tri:true,dia:52},
+ "AXALJ-TT 3x150/35":{art:"E00 806 85",I:null,t:"MV-T240",s:"MV-S240",tri:false,dia:68},
+ "AXALJ-TT 3x240/50":{art:"E00 806 95",I:null,t:"MV-T240",s:"MV-S240",tri:false,dia:76}
+};
+/* Korrektionsfaktorer 12–24 kV, NKT Kraftkabelhandboken tabell 25–28 (bas: mark 15 °C, 1,0 K·m/W, 0,65 m), rör 0,8 enl. EBR KJ41 */
+const KF_TEMP={"10":1.03,"15":1.0,"17":0.984,"20":0.96,"25":0.93};
+const KF_RHO={"0,7":1.10,"1,0":1.00,"1,2":0.92,"1,5":0.85,"2,0":0.75,"2,5":0.69};
+const KF_DJUP={"0,25–0,70":1.0,"0,71–0,90":0.97,"0,91–1,10":0.95,"1,11–1,30":0.93};
+const KF_GRP={"0":[0.79,0.69,0.63,0.58,0.55,0.50,0.50,0.46],"70":[0.85,0.75,0.68,0.64,0.60,0.56,0.56,0.53],"250":[0.89,0.79,0.75,0.72,0.69,0.66,0.66,0.64],"500":[0.91,0.84,0.81,0.79,0.77,0.75,0.75,0.74],"1000":[0.95,0.91,0.89,0.88,0.87,0.87,0.87,0.86]};
+function kfMV(p){const n=Math.max(1,Math.round(+p.grupper||1));const g=n<2?1:KF_GRP[String(p.avst??250)][Math.min(n,9)-2]??KF_GRP[String(p.avst??250)][7];
+  const f={temp:KF_TEMP[String(p.marktemp??15)]??1,rho:KF_RHO[p.rho??"1,0"]??1,djup:KF_DJUP[p.djup??"0,25–0,70"]??1,grp:g,ror:p.ror==="Ja"?0.8:1};f.tot=f.temp*f.rho*f.djup*f.grp*f.ror;return f;}
+const KF_PARAMS=[{k:"marktemp",l:"Marktemperatur (°C)",o:Object.keys(KF_TEMP),d:"17"},{k:"rho",l:"Markens värmeresistivitet (K·m/W)",o:Object.keys(KF_RHO),d:"1,0"},{k:"djup",l:"Förläggningsdjup (m)",o:Object.keys(KF_DJUP),d:"0,71–0,90"},
+  {k:"grupper",l:"Kabelgrupper i samma schakt",n:true,d:1},{k:"avst",l:"Avstånd mellan grupper (mm)",o:Object.keys(KF_GRP),d:"250"},{k:"ror",l:"Förlagd i rör",o:["Nej","Ja"],d:"Nej"}];
+function mvStrom(mw,kv){return mw*1e6/(Math.sqrt(3)*kv*1e3);}
+function mvVal(mw,kv,red){red=typeof red==="object"?kfMV(red).tot:red;for(let sys=1;sys<=4;sys++){for(const k of Object.keys(MVKABEL)){const c=MVKABEL[k];if(c.I&&c.I*red>=mvStrom(mw,kv)/sys)return {kabel:k,sys};}}return {kabel:"AXLJ-TTCL 1x630/50",sys:4};}
+
+/* ============ KONSTRUKTIONSBIBLIOTEK BESS ============
+   build(p) → {m:[[art,antal]], k:[[kod,antal]], c:[kabellisterad]} */
+const KM = v=>v/1000;
+const DCKABEL={"AXQ 1x240 Al":"E00 079 85","AXQ 1x300 Al":"E00 079 95"};
+const cab=(serie,fran,till,art,antal,langd,forl,typ)=>({serie,fran,till,art,antal,langd,forl,typ});
+const LIB = [
+ {id:"batt",grupp:"Batterisystem",namn:"Battericontainer",post:"+B",
+  params:[{k:"skid",l:"Ansluts till MV-skid",t:"text",d:"+MV01"},{k:"dckabel",l:"DC-kabel",o:Object.keys(DCKABEL),d:"AXQ 1x240 Al"},{k:"dcn",l:"DC-kablar (+/− totalt)",n:true,d:4},{k:"dcl",l:"DC-längd per kabel (m)",n:true,d:25},
+          {k:"dcu",l:"DC-systemspänning (V)",n:true,d:1500},{k:"dcjord",l:"DC-systemets jordning",o:["Ojordat (IT) med isolationsövervakning","Mittpunktsjordat","En pol jordad"],d:"Ojordat (IT) med isolationsövervakning"},{k:"aux",l:"Hjälpkraft från central",o:["Nej – matas från skid","Ja – Aceflex 5G25"],d:"Nej – matas från skid"},{k:"auxl",l:"Hjälpkraftlängd (m)",n:true,d:60},{k:"jord",l:"Jordlina Cu 50 (m)",n:true,d:35}],
+  build(p){const L=+p.dcl||0,n=+p.dcn||0,m=[["BL-BATT",1],[DCKABEL[p.dckabel],Math.ceil(n*L*1.05)],["DC-KS240",n*2],["E06 228 55",+p.jord],["CPRESS-50",2],["ROXTEC",2],["ELAQBY-2x2x06",L+10]],
+    k=[["B101.01",1],["B101.02",1],["B101.03",1],["B101.10",n*L],["B101.11",n*2],["B101.12",n+2],["B140.01",L+10],["B140.02",1],["B140.03",1],["B170.02",n],["B170.03",1],["B170.05",1],["B160.01",1],["133.22",KM(+p.jord)]],
+    c=[cab("DC","{id}",p.skid,DCKABEL[p.dckabel],n,L,"Kabelrör SRS 110 i mark, 1 kabel/rör","DC 1500 V"),cab("KONTROLL","{id}",p.skid,"ELAQBY-2x2x06",1,L+10,"Rör i mark, skilt från kraft ≥0,3 m","Brand/FSS")];
+    if(p.aux.startsWith("Ja")){m.push(["ACEFLEX-5G25",Math.ceil(+p.auxl*1.05)]);k.push(["B130.01",+p.auxl],["B130.02",2]);c.push(cab("LSP","+HK",'{id}',"ACEFLEX-5G25",1,+p.auxl,"Rör i mark","Hjälpkraft 400 V"));}
+    m.push(["SRS110",Math.ceil(n*L*0.9)]);return {m,k,c};},
+  check(p){const U=(+p.dcu||0)/1000;const vo=p.dcjord==="Mittpunktsjordat"?U/2:U;const ll=U<=1.8;
+    if(!ll)return {ok:false,txt:`${fmt(U,2)} kV DC ledare–ledare > 1,8 kV för 0,6/1 kV-kabel`};
+    if(vo<=0.9)return {ok:true,txt:`${fmt(vo,2)} kV DC mot jord ≤ 0,9 kV och ${fmt(U,2)} kV ledare–ledare ≤ 1,8 kV för 0,6/1 kV-kabel (Kabelboken 2026, DC på standardkablar)`};
+    return {ok:p.dcjord==="En pol jordad"?false:null,txt:`${fmt(vo,2)} kV DC mot jord ${p.dcjord.startsWith("Ojordat")?"vid första jordfel ":""}> 0,9 kV tillåtet för 0,6/1 kV-kabel. Välj kabel med DC-märkning ≥ ${fmt(U,1)} kV mot jord (t.ex. 1,8/3 kV) eller få leverantörens skriftliga godkännande`};}},
+ {id:"skid",grupp:"Batterisystem",namn:"MV-skid / PCS",post:"+MV",
+  params:[{k:"mw",l:"Effekt (MW)",n:true,d:5},{k:"jord",l:"Jordlina Cu 50 (m)",n:true,d:30},{k:"kct",l:"Kabelströmtrafo jordfel (st)",n:true,d:1}],
+  build(p){return {m:[["BL-MVS",1],["E06 228 55",+p.jord],["CPRESS-50",4],["ROXTEC",4],["KCT-JF",+p.kct]],
+    k:[["B110.01",1],["B110.02",1],["B110.03",1],["B110.04",1],["B110.05",1],["B110.06",+p.kct],["B160.02",1],["B170.05",1],["133.22",KM(+p.jord)]],c:[]};}},
+ {id:"mv",grupp:"Mellanspänning 24 kV",namn:"MV-kabelsystem (radial)",post:"+W",
+  params:[{k:"fran",l:"Från",t:"text",d:"+MV02"},{k:"till",l:"Till",t:"text",d:"+SV01"},{k:"kabel",l:"Kabeltyp",o:Object.keys(MVKABEL),d:"AXLJ-TTCL 1x240/35"},{k:"langd",l:"Längd (m)",n:true,d:150},
+          {k:"sys",l:"Parallella system",n:true,d:1},{k:"mw",l:"Överförd effekt (MW)",n:true,d:10},{k:"kv",l:"Driftspänning (kV)",n:true,d:20},...KF_PARAMS,
+          {k:"skarv",l:"Skarvar per system",n:true,d:0},{k:"schakt",l:"Schakt",o:["N075 0,4–0,9 m normal (137.13)","N075 >0,9–1,3 m normal (137.14)","Samförlagd"],d:"N075 0,4–0,9 m normal (137.13)"}],
+  build(p){const c=MVKABEL[p.kabel],L=+p.langd||0,s=+p.sys||1,fas=c.tri?3:1,m=[],k=[];
+    m.push([c.art,Math.ceil(L*s*fas*1.03)],[c.t,2*s],["VARNNAT",L]); if(+p.skarv) m.push([c.s,+p.skarv*s*3]);
+    k.push(["140.92",KM(L*s*fas)],["140.80",KM(L)],["140.83",KM(L)],[c.tri?"140.18":"140.17",2*s],["B170.01",s],[c.t==="MV-T240"?"140.54":c.t==="MV-T400"?"140.55":"140.56",2*s]);
+    if(c.tri) k.push(["140.16",KM(L*s)]); if(p.schakt.includes("137.13")) k.push(["137.13",KM(L)]); if(p.schakt.includes("137.14")) k.push(["137.14",KM(L)]);
+    if(+p.skarv) k.push([c.s==="MV-S240"?"140.34":c.s==="MV-S400"?"140.35":"140.36",+p.skarv*s*3],["137.20",+p.skarv]);
+    return {m,k,c:[cab("HSP",p.fran,p.till,c.art,s*fas,L,c.tri?"Mark, treklöver, sand, varningsnät":"Mark, sand, varningsnät","AC MV 24 kV")]};},
+  check(p){const c=MVKABEL[p.kabel];const I=mvStrom(+p.mw,+p.kv)/(+p.sys||1);if(!c.I)return {ok:null,txt:`${fmt(I)} A per system – belastningsförmåga för 3-ledare saknas i underlaget, verifiera`};const f=kfMV(p);const cap=c.I*f.tot;
+    return {ok:I<=cap,txt:`${fmt(I)} A per system mot ${fmt(cap)} A = ${c.I} A × ${fmt(f.tot,2)} (temp ${fmt(f.temp,2)}, resistivitet ${fmt(f.rho,2)}, djup ${fmt(f.djup,2)}, anhopning ${fmt(f.grp,2)}, rör ${fmt(f.ror,2)})`};}},
+ {id:"sv",grupp:"Mellanspänning 24 kV",namn:"Ställverk 24 kV / kontrollbyggnad",post:"+SV",
+  params:[{k:"fack",l:"Antal fack",n:true,d:4},{k:"lev",l:"Leverans",o:["UE/ONE Nordic","Beställarlevererat"],d:"UE/ONE Nordic"},{k:"jord",l:"Jordlina Cu 95 (m)",n:true,d:40}],
+  build(p){const n=+p.fack||0;return {m:[...(p.lev.startsWith("UE")?[["SV24-FACK",n]]:[]),["E06 224 55",+p.jord],["CPRESS-50",6],["ROXTEC",n+2]],
+    k:[["B120.01",n],["B160.03",1],["B170.05",n],["133.23",KM(+p.jord)],["133.41",1]],c:[]};}},
+ {id:"poc",grupp:"Mellanspänning 24 kV",namn:"Anslutningskabel till nätägare (POC)",post:"+W",
+  params:[{k:"kabel",l:"Kabeltyp",o:Object.keys(MVKABEL),d:"AXLJ-TTCL 1x630/50"},{k:"langd",l:"Längd (m)",n:true,d:300},{k:"sys",l:"Parallella system",n:true,d:1},{k:"mw",l:"Effekt (MW)",n:true,d:20},{k:"kv",l:"Driftspänning (kV)",n:true,d:20},...KF_PARAMS],
+  build(p){const r=LIB.find(l=>l.id==="mv").build(Object.assign({fran:"+SV01",till:"POC nätägare",skarv:0,schakt:"N075 0,4–0,9 m normal (137.13)"},p));return r;},
+  check(p){return LIB.find(l=>l.id==="mv").check(p);}},
+ {id:"hk",grupp:"Hjälpkraft & kontroll",namn:"Hjälpkraft, UPS och EMS/PPC",post:"+HK",
+  params:[{k:"trafo",l:"Hjälpkrafttransformator",o:["Ja","Nej – matas från skid"],d:"Ja"},{k:"kabel",l:"Matning central",o:["AXQJ PURE 4x150/41","AXQJ PURE 4x50/15"],d:"AXQJ PURE 4x150/41"},{k:"langd",l:"Längd matning (m)",n:true,d:40},{k:"kw",l:"Hjälpkraftlast (kW)",n:true,d:60}],
+  check(p){const per1={"AXQJ PURE 4x150/41":95,"AXQJ PURE 4x50/15":34}[p.kabel];const I=(+p.kw||0)*1000/(Math.sqrt(3)*400*0.9);const du=I*(+p.langd||0)/100/per1;return {ok:du<=3?true:du<=5?null:false,txt:`Spänningsfall ${fmt(du,1)} % vid ${fmt(I)} A, cos φ 0,9 (NKT Kraftkabelhandboken tabell 42, Al)`};},
+  build(p){const a=p.kabel.includes("150")?"E00 046 55":"E00 046 15",L=+p.langd||0,m=[["HKC",1],["UPS",1],["BL-EMS",1],[a,Math.ceil(L*1.05)]],k=[["B120.02",1],["B120.03",1],["B120.04",1],["B130.01",L],["B130.02",2]];
+    if(p.trafo==="Ja"){m.push(["HJ-TRAFO",1]);k.push(["B120.05",1]);}
+    return {m,k,c:[cab("LSP",p.trafo==="Ja"?"Hjälpkrafttrafo":"+MV01","+HK",a,1,L,"Rör i mark","Hjälpkraft 400 V")]};}},
+ {id:"fiber",grupp:"Kommunikation",namn:"Fiberring OS2 och data",post:"+F",
+  params:[{k:"langd",l:"Total fiberlängd (m)",n:true,d:600},{k:"nod",l:"Antal noder (skid, SV, EMS)",n:true,d:6},{k:"data",l:"S/FTP-länkar (st)",n:true,d:6},{k:"datal",l:"Längd per länk (m)",n:true,d:30}],
+  build(p){const L=+p.langd||0,n=+p.nod||0,dl=+p.data||0;
+    return {m:[["OS2-48",Math.ceil(L*1.05)],["OPTOSLANG",L],["ODF-24",n],["SFTP-CAT7",dl*(+p.datal||0)]],
+     k:[["173.04",KM(L)],["173.74",KM(L)],["174.26",n],["174.28",n*12],["175.30",1],["175.31",n*12],["B140.04",dl]],
+     c:[cab("OPTO","+SV01","Ring via MV-skid","OS2-48",1,L,"Optoslang i mark, samförlagd med MV","Fiber OS2 48f"),...(dl?[cab("KONTROLL","+HK","Nätverksnoder","SFTP-CAT7",dl,+p.datal,"Kanal/rör","Data S/FTP")]:[])]};}},
+ {id:"jord",grupp:"Jordning",namn:"Jordnät, åskskydd och staketjordning",post:"+J",
+  params:[{k:"ring",l:"Ringjord Cu 50 (m)",n:true,d:400},{k:"spett",l:"Jordspett 1,5 m (st)",n:true,d:8},{k:"staket",l:"Anslutningar staket/grind (st)",n:true,d:12},{k:"ask",l:"Åskskyddade objekt (st)",n:true,d:0}],
+  build(p){const L=+p.ring||0;return {m:[["E06 228 55",L],["JORDSPETT",+p.spett*1.5],["CPRESS-50",+p.spett+ +p.staket+8]],
+    k:[["133.22",KM(L)],["133.31",+p.spett*1.5],["B150.02",+p.spett+8],["B150.03",+p.staket],["B150.04",+p.ask],["133.41",2]],c:[]};}},
+ {id:"mark",grupp:"Mark & bygg",namn:"Yta, stängsel och kranplats",post:"+M",
+  params:[{k:"yta",l:"Hårdgjord yta (m²)",n:true,d:2500},{k:"kran",l:"Kranuppställningsyta (m²)",n:true,d:200},{k:"stangsel",l:"Stängsel (m)",n:true,d:240},{k:"grind",l:"Grindar (st)",n:true,d:2},{k:"stolpe",l:"Belysnings-/CCTV-stolpar (st)",n:true,d:4},{k:"krantim",l:"Mobilkran (tim)",n:true,d:24}],
+  build(p){return {m:[],k:[["B160.04",+p.yta],["B160.05",+p.kran],["B160.06",+p.stangsel],["B160.07",+p.grind],["B130.03",+p.stolpe],["137.33",+p.stolpe],["B160.08",+p.krantim]],c:[]};}},
+ {id:"etab",grupp:"Projektgemensamt",namn:"Etablering, provning och dokumentation",post:"",
+  params:[{k:"veckor",l:"Entreprenadtid (veckor)",n:true,d:20},{k:"mw",l:"Anläggningseffekt (MW)",n:true,d:20}],
+  build(p){const v=+p.veckor||0,mw=+p.mw||0;return {m:[],k:[["510.01",1],["510.15",1],["510.13",1],["411.20",2],["411.22",1],["411.23",1],["B160.09",v],["B180.01",v],["B170.04",mw],["B180.02",mw]],c:[]};}}
+];
+const TIDLAGEN = ["Projektering","Beredning","Materiel beställt/levererat","Mark & fundament","Montage el","Cold commissioning","Hot commissioning","Slutbesiktning","Fakturering utsänd/betald"];
+const SERIE = {HSP:[1,"HSP 24 kV"],DC:[201,"DC (förslag 201–500)"],LSP:[2001,"Lokalkraft LS"],OPTO:[4001,"Opto"],KONTROLL:[5001,"Kontroll/signal"]};
+
+/* ============ BESS-GENERATOR ============ */
+function kfG(g){return {marktemp:String(g.marktemp),rho:g.rho,djup:g.djup,grupper:1,avst:String(g.avst),ror:g.ror};}
+function genBess(g){
+  const nB=Math.ceil(g.mwh/g.mwhC), nS=Math.ceil(g.mw/g.mwS), perS=Math.ceil(nB/nS), nR=Math.ceil(nS/g.sPerR);
+  const out=[]; const pad=n=>String(n).padStart(2,"0");
+  out.push({lib:"etab",ident:"Projekt",params:{veckor:g.veckor,mw:g.mw}});
+  out.push({lib:"mark",ident:"Område",params:{yta:Math.round(nB*60+nS*45+600),kran:200,stangsel:g.stangsel,grind:2,stolpe:4,krantim:Math.ceil((nB+nS)*1.5+8)}});
+  out.push({lib:"sv",ident:"+SV01",params:{fack:nR+3,lev:"UE/ONE Nordic",jord:40}});
+  out.push({lib:"hk",ident:"+HK01",params:{trafo:"Ja",kabel:"AXQJ PURE 4x150/41",langd:40}});
+  let b=0;
+  for(let s=1;s<=nS;s++){out.push({lib:"skid",ident:"+MV"+pad(s),params:{mw:g.mwS,jord:30,kct:1}});
+    for(let j=0;j<perS&&b<nB;j++){b++;out.push({lib:"batt",ident:"+B"+pad(b),params:{skid:"+MV"+pad(s),dckabel:"AXQ 1x240 Al",dcn:g.dcn,dcl:g.dcl,aux:"Nej – matas från skid",auxl:60,jord:35}});}}
+  for(let r=0;r<nR;r++){const skids=[];for(let s=r*g.sPerR+1;s<=Math.min(nS,(r+1)*g.sPerR);s++)skids.push(s);
+    skids.forEach((s,i)=>{const nedstr=skids.length-i; const mw=nedstr*g.mwS; const last=i===0;
+      out.push({lib:"mv",ident:`+W${pad(r+1)}${pad(i+1)}`,params:{fran:"+MV"+pad(s),till:last?"+SV01":"+MV"+pad(skids[i-1]),...mvVal(mw,g.kv,Object.assign({},kfG(g),{grupper:last?nR:1})),langd:last?g.lSV:g.lSkid,mw,kv:g.kv,...kfG(g),grupper:last?nR:1,skarv:0,schakt:"N075 0,4–0,9 m normal (137.13)"}});});}
+  if(g.poc==="Ja") out.push({lib:"poc",ident:"+W00",params:{...mvVal(g.mw,g.kv,kfG(g)),langd:g.lPoc,mw:g.mw,kv:g.kv,...kfG(g)}});
+  out.push({lib:"fiber",ident:"+F01",params:{langd:Math.round(nS*g.lSkid+nR*g.lSV+50),nod:nS+2,data:6,datal:30}});
+  out.push({lib:"jord",ident:"+J01",params:{ring:Math.round(g.stangsel*1.1+nB*10),spett:Math.max(8,nS*2),staket:Math.ceil(g.stangsel/25),ask:0}});
+  return {items:out,nB,nS,nR,perS};
+}
+
+/* ============ STATE ============ */
+const KEY="onebered.bess.v1";
+let S, UI={tab:"oversikt",selK:null,katQ:"",katF:"BESS",kalkId:null,regTab:"katalog"};
+const uid=()=>Math.random().toString(36).slice(2,9);
+const today=()=>new Date().toISOString().slice(0,10);
+const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x.toISOString().slice(0,10);};
+
+function catFromRows(rows){return rows.map(r=>({kat:r[0],kod:r[1],grp:r[2],ben:r[3],enh:r[4],b:r[5],m:r[6],x:r[7],arb:r[8],mat:r[9],mk:r[10],ov:r[11],sum:r[12]}));}
+function seed(){
+  const s={v:2,settings:{rates:{bered:1077,mont:982,maskin:1190},deb:{bered:1150,mont:890,maskin:1350},matPaslag:10,uePaslag:10,moms:25,foretag:"ONE Nordic AB"},
+    catalog:catFromRows(DEMO_CATALOG.concat(BESS_CATALOG)),catSource:"KLG 1:26 P2 (urval) + BESS-schablon",materiel:DEMO_MATERIEL,projects:[]};
+  const g=Object.assign({},GEN_DEF);
+  const p=newProject(s,{pnr:"EX-2026-01",namn:"Exempel BESS 20 MW / 40 MWh",ort:"Exempelort",omrade:"BESS",kund:"Exempel Energilager AB",refnr:"EX-RFQ-01",projektor:"A. Projektör",beredare:"B. Beredare",ansvarig:"C. Platschef",debitering:"fast",kontrakt:12000000,exempel:true,bess:{mw:g.mw,mwh:g.mwh}});
+  applyGen(p,g,s);
+  const k=kalkylFromBeredning(p,s); k.namn="Anbudskalkyl (av beredning)"; k.status="UF"; k.risk=6; k.vinst=10; k.matMode="beredning";
+  p.tidlagen[0].start="2026-08-03";p.tidlagen[0].slut="2026-08-28";p.tidlagen[1].start="2026-08-17";p.tidlagen[1].slut="2026-09-11";p.tidlagen[2].start="2026-09-14";p.tidlagen[3].start="2026-09-21";
+  p.dagbok=[{d:"2026-09-11",t:"Beredning klar. Kabellista och materiellista till granskning.",h:2},{d:"2026-09-21",t:"Schaktstart MV-stråk, fundament battericontainer gjuts v.40.",h:1}];
+  p.bestallningar=[{id:uid(),nr:"B-1001",lev:"Huvudleverantör",datum:"2026-09-14",status:"Levererad",upplag:1,rader:aggMateriel(p,s).filter(r=>!r.bl&&r.pris>0&&/^E0/.test(r.art)).map(r=>({art:r.art,n:r.n,pris:r.pris,ben:r.ben,enh:r.enh}))}];
+  p.tid=[["2026-09-21","C. Platschef","bered",8],["2026-09-22","D. Montör","mont",8],["2026-09-22","E. Montör","mont",8],["2026-09-23","D. Montör","mont",8],["2026-09-23","E. Montör","mont",8],["2026-09-24","D. Montör","mont",8],["2026-09-24","B. Beredare","bered",4]]
+    .map(([d,pers,roll,h])=>({id:uid(),d,pers,roll,h,kom:"",fakt:null}));
+  p.kostnader=[{id:uid(),d:"2026-09-30",lev:"Mark-UE (exempel)",typ:"UE",belopp:640000,text:"Schakt, bärlager och fundament etapp 1",fakt:null},{id:uid(),d:"2026-09-30",lev:"Bod- och maskinuthyrning (exempel)",typ:"Maskin",belopp:48000,text:"Etablering v.38–41",fakt:null}];
+  p.ata=[{id:uid(),nr:"ÄTA 1",text:"Förstärkt kranuppställningsyta pga containervikt",belopp:86000,status:"Godkänd",fakt:null},{id:uid(),nr:"ÄTA 2",text:"Bortforsling förorenade massor (MKM)",belopp:142000,status:"Begärd",fakt:null}];
+  p.fakturaplan=[["M1 Kontraktsskrivning",10,"2026-08-31"],["M2 Projektering klar",25,"2026-09-30"],["M3 Mark och fundament klara",25,"2026-10-31"],["M4 Utrustning levererad och monterad",20,"2026-11-30"],["M5 Cold commissioning klar",15,"2026-12-15"],["M6 Hot commissioning/provdrift",3,"2027-01-15"],["M7 Slutbesiktning godkänd",2,"2027-02-15"]].map(([t,pct,d])=>({id:uid(),text:t,datum:d,pct,fakt:null}));
+  createFaktura(p,s,{planId:p.fakturaplan[0].id,datum:"2026-08-31"}); p.fakturor[0].status="Betald";
+  p.fardig=22;
+  s.ui={pid:p.id}; return s;
+}
+const GEN_DEF={mw:20,mwh:40,profil:"Generisk",mwhC:5,mwS:5,sPerR:3,kv:20,marktemp:17,rho:"1,0",djup:"0,71–0,90",avst:250,ror:"Nej",dcn:4,dcl:25,lSkid:40,lSV:150,poc:"Nej",lPoc:300,stangsel:240,veckor:20};
+function applyGen(p,g,s=S){const r=genBess(g);const B=p.beredning;B.konst=[];B.upplag=[{nr:1,adr:"Upplag/etableringsyta inom området"}];
+  r.items.forEach(it=>{const L=LIB.find(x=>x.id===it.lib);const pr=Object.assign(defaults(L),it.params);const b=L.build(pr);
+    B.konst.push({id:uid(),lib:it.lib,params:pr,ident:it.ident,upplag:1,anm:"",m:b.m.filter(x=>x[1]).map(([a,n])=>({art:a,n})),k:b.k.filter(x=>x[1]).map(([c,n])=>({kod:c,n})),c:b.c});});
+  p.bess=Object.assign({},p.bess||{},{mw:g.mw,mwh:g.mwh,profil:g.profil,nB:r.nB,nS:r.nS,nR:r.nR,gen:g});return r;}
+function defaults(L){const o={};L.params.forEach(x=>o[x.k]=x.d);return o;}
+function newProject(s,o){
+  const p=Object.assign({id:uid(),pnr:"",namn:"Nytt projekt",ort:"",omrade:"",kund:"",refnr:"",projektor:"",beredare:"",ansvarig:"",debitering:"fast",kontrakt:0,status:"Pågående",fardig:0,
+    tidlagen:TIDLAGEN.map(n=>({n,start:"",slut:""})),dagbok:[],kalkyler:[],beredning:{nr:"B"+(1000+s.projects.length+1),lev:"Huvudleverantör",konst:[],upplag:[]},
+    bestallningar:[],tid:[],kostnader:[],ata:[],fakturaplan:[],fakturor:[],bess:{mw:0,mwh:0,profil:"Generisk"}},o);
+  s.projects.push(p); return p;
+}
+function load(){try{const t=localStorage.getItem(KEY);if(t){S=JSON.parse(t);return;}}catch(e){} S=seed();}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+
+/* ============ HJÄLP ============ */
+const fmt=(v,d=0)=>(v==null||isNaN(v))?"–":Number(v).toLocaleString("sv-SE",{minimumFractionDigits:d,maximumFractionDigits:d});
+const kr=v=>fmt(Math.round(v||0))+" kr";
+const h=v=>fmt(v,1);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const P=()=>S.projects.find(p=>p.id===S.ui.pid)||S.projects[0];
+const cat=kod=>S.catalog.find(c=>c.kod===kod);
+const art=a=>S.materiel.find(m=>m.art===a);
+function toast(t){const el=document.createElement("div");el.className="toast";el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),2200);}
+function getPath(o,p){return p.split(".").reduce((a,k)=>a?.[k],o);}
+function setPath(o,p,v){const ks=p.split(".");const last=ks.pop();const t=ks.reduce((a,k)=>a[k],o);t[last]=v;}
+const inp=(path,val,cls="",type="text")=>`<input data-bind="${path}" data-t="${type}" type="${type==="num"?"number":type}" ${type==="num"?'step="any"':""} class="${cls}" value="${esc(val)}" id="f_${path.replace(/\./g,"_")}">`;
+const sel=(path,val,opts)=>`<select data-bind="${path}" id="f_${path.replace(/\./g,"_")}">${opts.map(o=>{const [v,l]=Array.isArray(o)?o:[o,o];return `<option value="${esc(v)}" ${String(v)===String(val)?"selected":""}>${esc(l)}</option>`}).join("")}</select>`;
+const pi=()=>S.projects.indexOf(P());
+
+/* ============ KALKYLMOTOR ============ */
+function codeCost(c,n,k){
+  const r=S.settings.rates,f=+k.faktor||1,pa=k.pas||{};
+  const hb=(c.b||0)*n*f,hm=(c.m||0)*n*f,hx=(c.x||0)*n*f;
+  let arb=(c.b!=null||c.m!=null)?((c.b||0)*r.bered+(c.m||0)*r.mont)*n*f:(c.arb||0)*n;
+  let msk=c.x!=null?(c.mk!=null?c.mk*(r.maskin/1190)*n*f:hx*r.maskin):(c.mk||0)*n;
+  let mat=k.matMode==="beredning"?0:(c.mat||0)*n;
+  let ov=(c.ov||0)*n;
+  arb*=1+(+pa.arb||0)/100; mat*=1+(+pa.mat||0)/100; msk*=1+(+pa.msk||0)/100; ov*=1+(+pa.ov||0)/100;
+  return {hb,hm,hx,arb,mat,msk,ov,tot:arb+mat+msk+ov};
+}
+function kalkylSum(k,p){
+  const t={hb:0,hm:0,hx:0,arb:0,mat:0,msk:0,ov:0,tot:0,rows:[]};
+  k.rader.forEach(r=>{const c=r.egen?{b:r.b,m:r.m,x:r.x,arb:0,mat:r.mat,mk:null,ov:r.ov,ben:r.ben,enh:r.enh}:cat(r.kod); if(!c){t.rows.push({r,c:null,v:null});return;}
+    const v=codeCost(c,+r.n||0,k); t.rows.push({r,c,v}); ["hb","hm","hx","arb","mat","msk","ov","tot"].forEach(x=>t[x]+=v[x]);});
+  if(k.matMode==="beredning"&&p){const m=aggMateriel(p).reduce((a,x)=>a+x.n*x.pris,0)*(1+(+(k.pas||{}).mat||0)/100);t.matBer=m;t.mat+=m;t.tot+=m;}
+  t.risk=t.tot*(1+(+k.risk||0)/100); t.vinst=t.risk*(1+(+k.vinst||0)/100); return t;
+}
+function ufKalkyl(p){return p.kalkyler.find(k=>k.status==="UF")||p.kalkyler.find(k=>k.status==="Huv")||p.kalkyler[0];}
+function aggMateriel(p,s=S){const m={};p.beredning.konst.forEach(k=>k.m.forEach(x=>{const a=s.materiel.find(z=>z.art===x.art);const key=x.art;m[key]=m[key]||{art:x.art,ben:a?.ben||"Okänd artikel",enh:a?.enh||"",pris:a?.pris||0,lev:a?.lev||"",lk:a?.lk,bl:a?.bl,kalla:a?.kalla||"",n:0,konst:[]};m[key].n+=+x.n||0;m[key].konst.push(k.ident);}));return Object.values(m).filter(x=>x.n);}
+function aggKoder(p){const m={};p.beredning.konst.forEach(k=>k.k.forEach(x=>{m[x.kod]=(m[x.kod]||0)+(+x.n||0);}));return m;}
+function kalkylFromBeredning(p,s=S){const ak=aggKoder(p);const k={id:uid(),nr:"K"+(2000+Math.floor(Math.random()*8000)),namn:"Kalkyl av beredning "+p.beredning.nr,typ:"P2",status:p.kalkyler.length?"Alt":"Huv",faktor:1,pas:{arb:0,mat:0,msk:0,ov:0},risk:0,vinst:0,matMode:"katalog",
+  rader:Object.entries(ak).sort((a,b)=>a[0].localeCompare(b[0],"sv",{numeric:true})).map(([kod,n])=>({id:uid(),kod,n:+n.toFixed(4),matris:1,kom:""}))};p.kalkyler.push(k);return k;}
+function utfall(p){const r=S.settings.rates;const t={hb:0,hm:0,hx:0,arb:0,msk:0,mat:0,ov:0};
+  p.tid.forEach(x=>{if(x.roll==="bered"){t.hb+=+x.h;t.arb+=x.h*r.bered;}else if(x.roll==="mont"){t.hm+=+x.h;t.arb+=x.h*r.mont;}else{t.hx+=+x.h;t.msk+=x.h*r.maskin;}});
+  p.bestallningar.filter(b=>b.status==="Levererad").forEach(b=>b.rader.forEach(x=>t.mat+=x.n*x.pris));
+  p.kostnader.forEach(x=>{if(x.typ==="Materiel")t.mat+=+x.belopp;else if(x.typ==="Maskin")t.msk+=+x.belopp;else t.ov+=+x.belopp;});
+  t.tot=t.arb+t.msk+t.mat+t.ov; return t;}
+function fakturerat(p){return p.fakturor.filter(f=>f.status!=="Makulerad").reduce((a,f)=>a+f.netto,0);}
+function ataGodk(p){return p.ata.filter(a=>a.status==="Godkänd").reduce((a,x)=>a+(+x.belopp||0),0);}
+
+/* ============ FAKTURERING ============ */
+function lopandeUnderlag(p){const d=S.settings.deb,rows=[];
+  const t=p.tid.filter(x=>!x.fakt); const roller={bered:"Beredare",mont:"Montör",maskin:"Maskin"};
+  Object.keys(roller).forEach(rk=>{const hh=t.filter(x=>x.roll===rk).reduce((a,x)=>a+(+x.h),0);if(hh)rows.push({text:`Arbete ${roller[rk].toLowerCase()} enligt tidrapport`,antal:hh,enh:"tim",apris:d[rk],src:"tid",roll:rk});});
+  p.kostnader.filter(x=>!x.fakt).forEach(x=>{const pas=x.typ==="Materiel"?S.settings.matPaslag:S.settings.uePaslag;rows.push({text:`${x.text} (${x.lev}) inkl. ${pas} % påslag`,antal:1,enh:"st",apris:x.belopp*(1+pas/100),src:"kost",id:x.id});});
+  return rows;}
+function createFaktura(p,s=S,o={}){
+  const nr="F"+(26000+s.projects.reduce((a,x)=>a+x.fakturor.length,0)+1);const rows=[];const datum=o.datum||today();
+  if(o.planId){const pl=p.fakturaplan.find(x=>x.id===o.planId);rows.push({text:`Delfaktura enligt fakturaplan: ${pl.text} (${pl.pct} % av ${kr(p.kontrakt)})`,antal:1,enh:"st",apris:p.kontrakt*pl.pct/100});pl.fakt=nr;}
+  if(o.lopande){lopandeUnderlag(p).forEach(r=>rows.push(r));p.tid.filter(x=>!x.fakt).forEach(x=>x.fakt=nr);p.kostnader.filter(x=>!x.fakt).forEach(x=>x.fakt=nr);}
+  if(o.ata!==false){p.ata.filter(a=>a.status==="Godkänd"&&!a.fakt&&(o.ata||o.lopande)).forEach(a=>{rows.push({text:`${a.nr}: ${a.text}`,antal:1,enh:"st",apris:+a.belopp});a.fakt=nr;});}
+  const netto=rows.reduce((a,r)=>a+r.antal*r.apris,0);
+  const f={id:uid(),nr,datum,forfall:addDays(datum,30),status:"Utkast",rows,netto,moms:netto*s.settings.moms/100};p.fakturor.push(f);return f;}
+
+/* ============ RENDER ============ */
+const TABS=[["oversikt","Översikt"],["projekt","Projekt"],["beredning","Beredning"],["kabel","Kabellista"],["kalkyl","Kalkyl"],["inkop","Inköp"],["tid","Tid & kostnader"],["faktura","Fakturering"],["uppf","Uppföljning"],["register","Register"]];
+function render(){
+  document.getElementById("projSel").innerHTML=S.projects.map(p=>`<option value="${p.id}" ${p.id===P().id?"selected":""}>${esc(p.pnr)} · ${esc(p.namn)}</option>`).join("");
+  document.getElementById("tabs").innerHTML=TABS.map(([k,l])=>`<button data-a="tab" data-id="${k}" aria-current="${UI.tab===k}">${l}</button>`).join("");
+  const v={oversikt:vOversikt,projekt:vProjekt,beredning:vBeredning,kabel:vKabel,kalkyl:vKalkyl,inkop:vInkop,tid:vTid,faktura:vFaktura,uppf:vUppf,register:vRegister}[UI.tab];
+  document.getElementById("main").innerHTML=v();
+}
+function flow(active){const st=["Projekt","Beredning","Kalkyl","Inköp","Utförande","Fakturering","Uppföljning"];return `<div class="flow">${st.map(s=>`<span class="${s===active?"on":""}">${s}</span>`).join("→")}</div>`;}
+function phead(title,extra=""){const p=P();return `<div class="ph"><div><div class="small muted">${esc(p.pnr)} · ${esc(p.ort)} ${p.exempel?'<span class="ex">Exempel</span>':""}</div><h1>${title}</h1></div><div class="sp"></div>${extra}</div>`;}
+function statusPill(s){const m={"Pågående":"p-blue","Avslutat":"p-grey","Upplagt":"p-orange","Utkast":"p-orange","Skickad":"p-blue","Betald":"p-green","Makulerad":"p-grey","Godkänd":"p-green","Begärd":"p-orange","Avslagen":"p-red","Levererad":"p-green","Skapad":"p-orange","Huv":"p-blue","Alt":"p-grey","UF":"p-green"};return `<span class="pill ${m[s]||"p-grey"}">${esc(s)}</span>`;}
+
+function vOversikt(){
+  let kal=0,utf=0,fak=0,ord=0;
+  const rows=S.projects.map(p=>{const k=ufKalkyl(p);const ks=k?kalkylSum(k,p):null;const u=utfall(p);const f=fakturerat(p);const o=p.debitering==="fast"?p.kontrakt+ataGodk(p):f;
+    kal+=ks?ks.tot:0;utf+=u.tot;fak+=f;ord+=o;const pct=o?Math.min(100,f/o*100):0;
+    return `<tr><td><span class="code">${esc(p.pnr)}</span></td><td><a href="#" data-a="goto" data-id="${p.id}">${esc(p.namn)}</a> ${p.exempel?'<span class="ex">Exempel</span>':""}<div class="small muted">${esc(p.kund)} · ${p.debitering==="fast"?"Fast pris":"Löpande räkning"}${p.bess?` · ${fmt(p.bess.mw)} MW / ${fmt(p.bess.mwh)} MWh`:""}</div></td>
+    <td>${statusPill(p.status)}</td><td class="r">${ks?kr(ks.tot):"–"}</td><td class="r">${kr(u.tot)}</td><td class="r">${kr(f)}</td><td style="min-width:120px"><div class="meter"><i style="width:${pct}%"></i></div><div class="small muted">${fmt(pct)} % av ${p.debitering==="fast"?"kontrakt+ÄTA":"fakturerat"}</div></td></tr>`;}).join("");
+  return `${flow("")}<div class="ph"><h1>Projektportfölj</h1><div class="sp"></div><button class="btn" data-a="newproj">Nytt projekt</button></div>
+  <div class="kpis"><div class="kpi"><div class="l">Pågående projekt</div><div class="v">${S.projects.filter(p=>p.status==="Pågående").length}</div><div class="s">av ${S.projects.length} upplagda</div></div>
+  <div class="kpi"><div class="l">Orderstock</div><div class="v">${kr(ord)}</div><div class="s">kontrakt + godkända ÄTA</div></div>
+  <div class="kpi"><div class="l">Kalkylerad kostnad</div><div class="v">${kr(kal)}</div><div class="s">uppföljningskalkyler, grund</div></div>
+  <div class="kpi"><div class="l">Utfall hittills</div><div class="v">${kr(utf)}</div><div class="s">tid, materiel, UE</div></div>
+  <div class="kpi"><div class="l">Fakturerat</div><div class="v">${kr(fak)}</div><div class="s">exkl. moms</div></div></div>
+  <div class="panel"><div class="tw"><table><thead><tr><th>P-nr</th><th>Projekt</th><th>Status</th><th class="r">Kalkyl</th><th class="r">Utfall</th><th class="r">Fakturerat</th><th>Faktureringsgrad</th></tr></thead><tbody>${rows}</tbody></table></div></div>
+  <div class="panel"><h2>Arbetsgång</h2><p class="muted small" style="margin:.4em 0 0">Projektnumret är navet. BESS-generatorn bygger beredningen ur effekt, energi och layoutdata; beredningen ger materiellista med E-nr, kabellista och kalkylkoder (KLG P2 för schakt, kabel och fiber, BESS-schablon för container, skid, ställverk och idrifttagning). Fakturering enligt milstolpar M1–M7 med ÄTA enligt ABT 06.</p></div>`;
+}
+
+function vProjekt(){const p=P(),i=pi(),b=`projects.${i}`;
+  const kopp=`<table><thead><tr><th>Typ</th><th>Nr</th><th>Benämning</th><th>Status</th><th></th></tr></thead><tbody>
+   <tr><td>Beredning</td><td><span class="code">${esc(p.beredning.nr)}</span></td><td>${p.beredning.konst.length} konstruktioner</td><td></td><td><button class="btn s sm" data-a="tab" data-id="beredning">Öppna</button></td></tr>
+   ${p.kalkyler.map(k=>`<tr><td>Kalkyl ${esc(k.typ)}</td><td><span class="code">${esc(k.nr)}</span></td><td>${esc(k.namn)}</td><td>${statusPill(k.status)}</td><td><button class="btn s sm" data-a="openkalk" data-id="${k.id}">Kalkylera</button></td></tr>`).join("")}
+   ${p.kalkyler.length?"":`<tr><td>Kalkyl</td><td>?</td><td class="muted">Ingen kalkyl kopplad</td><td></td><td><button class="btn s sm" data-a="newkalk">Ny</button></td></tr>`}</tbody></table>`;
+  return `${flow("Projekt")}${phead("Projektnummerhuvud",`<select data-bind="${b}.status" id="f_pstatus">${["Upplagt","Pågående","Avslutat"].map(s=>`<option ${s===p.status?"selected":""}>${s}</option>`).join("")}</select><button class="btn s" data-a="copyproj">Kopiera P-nr</button><button class="btn" data-a="newproj">Nytt projekt</button>`)}
+  <div class="panel"><div class="form">
+   <label>P-nr ${inp(b+".pnr",p.pnr)}</label><label>Ort/Benämning ${inp(b+".namn",p.namn)}</label><label>Ort ${inp(b+".ort",p.ort)}</label><label>Utförande område ${inp(b+".omrade",p.omrade)}</label>
+   <label>Beställare/Kund ${inp(b+".kund",p.kund)}</label><label>Ref.nr beställare ${inp(b+".refnr",p.refnr)}</label><label>Projektör ${inp(b+".projektor",p.projektor)}</label><label>Beredare ${inp(b+".beredare",p.beredare)}</label>
+   <label>Arbetsansvarig ${inp(b+".ansvarig",p.ansvarig)}</label><label>Debitering ${sel(b+".debitering",p.debitering,[["fast","Fast pris (fakturaplan)"],["lopande","Löpande räkning"]])}</label>
+   <label>Kontraktssumma (kr, exkl. moms) ${inp(b+".kontrakt",p.kontrakt,"","num")}</label><label>Färdigställandegrad (%) ${inp(b+".fardig",p.fardig,"","num")}</label>${p.bess?`<label>Effekt (MW) ${inp(b+".bess.mw",p.bess.mw,"","num")}</label><label>Energi (MWh) ${inp(b+".bess.mwh",p.bess.mwh,"","num")}</label><label>Hårdvaruprofil ${inp(b+".bess.profil",p.bess.profil||"")}</label>`:""}</div></div>
+  <div class="grid g2">
+   <div class="panel"><div class="ph"><h2>Kopplingar</h2></div><div class="tw">${kopp}</div></div>
+   <div class="panel"><div class="ph"><h2>Tidlägen</h2></div><div class="tw"><table><thead><tr><th>Aktivitet</th><th>Start</th><th>Slut</th><th>Läge</th></tr></thead><tbody>
+    ${p.tidlagen.map((t,j)=>`<tr><td>${esc(t.n)}</td><td>${inp(`${b}.tidlagen.${j}.start`,t.start,"","date")}</td><td>${inp(`${b}.tidlagen.${j}.slut`,t.slut,"","date")}</td><td>${t.slut?statusPill("Klar").replace("p-grey","p-green"):t.start?statusPill("Pågår").replace("p-grey","p-blue"):'<span class="pill p-grey">Ej startad</span>'}</td></tr>`).join("")}</tbody></table></div></div>
+  </div>
+  <div class="panel"><div class="ph"><h2>Dagbok</h2><div class="sp"></div><button class="btn s sm" data-a="adddag">Ny anteckning</button></div><div class="tw"><table><thead><tr><th>Datum</th><th>Anteckning</th><th class="r">Tim</th><th></th></tr></thead><tbody>
+   ${p.dagbok.map((d,j)=>`<tr><td style="width:150px">${inp(`${b}.dagbok.${j}.d`,d.d,"","date")}</td><td>${inp(`${b}.dagbok.${j}.t`,d.t,"","text").replace("<input","<input style=\"width:100%\"")}</td><td class="r">${inp(`${b}.dagbok.${j}.h`,d.h,"nn","num")}</td><td><button class="btn g" data-a="del" data-p="${b}.dagbok" data-i="${j}" aria-label="Ta bort">✕</button></td></tr>`).join("")||`<tr><td colspan="4" class="muted">Inga anteckningar.</td></tr>`}</tbody></table></div></div>`;
+}
+
+function vBeredning(){const p=P(),i=pi(),B=p.beredning,b=`projects.${i}.beredning`;
+  const selK=B.konst.find(k=>k.id===UI.selK)||B.konst[0];
+  const groups=[...new Set(LIB.map(l=>l.grupp))];
+  const lib=groups.map(g=>`<div><div class="small muted" style="font-weight:600;margin:6px 0 4px">${esc(g)}</div><div class="lib">${LIB.filter(l=>l.grupp===g).map(l=>`<button data-a="addkonst" data-id="${l.id}"><b>${esc(l.namn)}</b><span>${l.params.map(x=>x.l.replace(/ \(.*\)/,"")).slice(0,3).join(" · ")}</span></button>`).join("")}</div></div>`).join("");
+  const desk=B.konst.map((k,j)=>{const L=LIB.find(l=>l.id===k.lib);const mat=k.m.reduce((a,x)=>a+x.n*(art(x.art)?.pris||0),0);const kal=k.k.reduce((a,x)=>{const c=cat(x.kod);return a+(c?codeCost(c,x.n,{faktor:1}).tot:0);},0);
+    const gul=k.m.some(x=>/^EX-12/.test(x.art));
+    return `<tr class="${selK&&k.id===selK.id?"sel":""} ${gul?"gul":""}" data-a="selk" data-id="${k.id}"><td class="nw">${j+1}</td><td><b>${esc(L?.namn||k.lib)}</b> ${checkPill(k)}<div class="small muted">${esc(paramSummary(k))}</div></td><td>${esc(k.ident)}</td><td class="r">${k.upplag||"–"}</td><td class="r">${kr(mat)}</td><td class="r">${kr(kal)}</td>
+    <td class="nw"><button class="btn g" data-a="mv" data-i="${j}" data-d="-1" aria-label="Flytta upp">↑</button><button class="btn g" data-a="mv" data-i="${j}" data-d="1" aria-label="Flytta ner">↓</button><button class="btn g" data-a="del" data-p="${b}.konst" data-i="${j}" aria-label="Ta bort">✕</button></td></tr>`;}).join("");
+  let detail='<div class="empty">Välj en konstruktion på skrivbordet.</div>';
+  if(selK){const j=B.konst.indexOf(selK),kb=`${b}.konst.${j}`;const L=LIB.find(l=>l.id===selK.lib);
+    detail=`<div class="ph"><h2>${esc(L?.namn)}</h2><div class="sp"></div><button class="btn s sm" data-a="editkonst" data-id="${selK.id}">Ändra val</button><button class="btn s sm" data-a="dupkonst" data-id="${selK.id}">Kopiera</button></div>
+    ${L?.check?(()=>{const r=L.check(selK.params);return `<p class="small" style="margin:0 0 10px">${checkPill(selK)} ${esc(r.txt)}. Underlag: Prysmian AXLJ-TTCL TSLF 24 kV (mark, treklöver, skärm jordad i båda ändar) och NKT Kraftkabelhandboken tabell 25–28.</p>`})():""}
+    <div class="form"><label>Identitet ${inp(kb+".ident",selK.ident)}</label><label>Upplag ${sel(kb+".upplag",selK.upplag,[["","–"],...B.upplag.map(u=>[u.nr,u.nr+" · "+u.adr])])}</label><label style="grid-column:1/-1">Anmärkning ${inp(kb+".anm",selK.anm)}</label></div>
+    <h3 style="margin-top:14px">Materiel</h3><div class="tw"><table><thead><tr><th>Art.nr</th><th>Benämning</th><th class="r">Antal</th><th>Enh</th><th class="r">À-pris</th><th class="r">Summa</th><th></th></tr></thead><tbody>
+    ${selK.m.map((x,q)=>{const a=art(x.art);return `<tr><td><span class="code">${esc(x.art)}</span></td><td>${esc(a?.ben||"Okänd")}${a?.bl?' <span class="pill p-grey">BL</span>':""}${a&&!a.bl&&!a.pris?' <span class="pill p-orange">Pris saknas</span>':""}</td><td class="r">${inp(`${kb}.m.${q}.n`,x.n,"nn","num")}</td><td>${esc(a?.enh)}</td><td class="r">${fmt(a?.pris,2)}</td><td class="r">${kr(x.n*(a?.pris||0))}</td><td><button class="btn g" data-a="del" data-p="${kb}.m" data-i="${q}" aria-label="Ta bort">✕</button></td></tr>`}).join("")||'<tr><td colspan="7" class="muted">Ingen materiel (t.ex. projektgemensam konstruktion).</td></tr>'}</tbody></table></div>
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><select id="addArt">${S.materiel.map(m=>`<option value="${m.art}">${esc(m.art)} · ${esc(m.ben)}</option>`).join("")}</select><button class="btn s sm" data-a="addart" data-id="${selK.id}">Lägg till materiel</button></div>
+    <h3 style="margin-top:16px">Kalkylkoder (KLG P2 + BESS)</h3><div class="tw"><table><thead><tr><th>Kod</th><th>Benämning</th><th class="r">Antal</th><th>Enh</th><th class="r">Kostnad</th><th></th></tr></thead><tbody>
+    ${selK.k.map((x,q)=>{const c=cat(x.kod);return `<tr><td><span class="code">${esc(x.kod)}</span></td><td>${esc(c?.ben||"Saknas i katalog")}</td><td class="r">${inp(`${kb}.k.${q}.n`,x.n,"n","num")}</td><td>${esc(c?.enh)}</td><td class="r">${c?kr(codeCost(c,x.n,{faktor:1}).tot):"–"}</td><td><button class="btn g" data-a="del" data-p="${kb}.k" data-i="${q}" aria-label="Ta bort">✕</button></td></tr>`}).join("")}</tbody></table></div>
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><input id="addKod" placeholder="Kod, t.ex. B110.03" style="width:140px" list="kodlist"><datalist id="kodlist">${S.catalog.filter(c=>c.kat==="P2"||c.kat==="BESS").map(c=>`<option value="${c.kod}">${esc(c.ben)}</option>`).join("")}</datalist><button class="btn s sm" data-a="addkod" data-id="${selK.id}">Lägg till kod</button></div>`;}
+  const mat=aggMateriel(p),matTot=mat.reduce((a,x)=>a+x.n*x.pris,0);
+  return `${flow("Beredning")}${phead(`Beredning <span class="code">${esc(B.nr)}</span>`,`<button class="btn s" data-a="genbess">BESS-generator</button><button class="btn s" data-a="tab" data-id="kabel">Kabellista</button><button class="btn" data-a="kalkav">Kalkyl av beredning</button>`)}
+  <div class="panel"><div class="ph"><h2>Lägg till konstruktion</h2><span class="small muted">Konstruktionsgrupp → konstruktion → val. Materiel, kalkylkoder och kabellista genereras och kan justeras. Hela anläggningen på en gång: BESS-generatorn.</span></div><div style="display:flex;flex-wrap:wrap;gap:4px 22px">${lib}</div></div>
+  <div class="konst">
+   <div class="panel"><div class="ph"><h2>Skrivbord</h2><span class="small muted">${B.konst.length} konstruktioner · materiel ${kr(matTot)}</span></div><div class="tw"><table class="desk"><thead><tr><th>#</th><th>Konstruktion</th><th>Identitet</th><th class="r">Uppl.</th><th class="r">Materiel</th><th class="r">Kalkyl</th><th></th></tr></thead><tbody>${desk||'<tr><td colspan="7" class="muted">Inga konstruktioner ännu.</td></tr>'}</tbody></table></div>
+    <h3 style="margin-top:16px">Upplag</h3><div class="tw"><table><tbody>${B.upplag.map((u,j)=>`<tr><td style="width:70px">${inp(`${b}.upplag.${j}.nr`,u.nr,"nn","num")}</td><td>${inp(`${b}.upplag.${j}.adr`,u.adr).replace("<input","<input style=\"width:100%\"")}</td><td><button class="btn g" data-a="del" data-p="${b}.upplag" data-i="${j}" aria-label="Ta bort">✕</button></td></tr>`).join("")}</tbody></table></div>
+    <button class="btn s sm" data-a="addupplag" style="margin-top:8px">Nytt upplag</button></div>
+   <div class="panel">${detail}</div></div>`;
+}
+function paramSummary(k){const L=LIB.find(l=>l.id===k.lib);if(!L)return "";return L.params.filter(x=>x.t!=="text"&&k.params[x.k]!==""&&k.params[x.k]!=null&&k.params[x.k]!==0&&k.params[x.k]!=="0"&&!String(k.params[x.k]).startsWith("Nej")).slice(0,4).map(x=>x.n?`${x.l.replace(/ \(.*\)/,"")} ${fmt(k.params[x.k],k.params[x.k]%1?1:0)}${/\(m\)/.test(x.l)?" m":""}`:k.params[x.k]).join(" · ");}
+function checkPill(k){const L=LIB.find(l=>l.id===k.lib);if(!L?.check)return "";const r=L.check(k.params);return `<span class="pill ${r.ok===true?"p-green":r.ok===false?"p-red":"p-orange"}" title="${esc(r.txt)}">${r.ok===true?"Dim. OK":r.ok===false?"Överlast":"Verifiera"}</span>`;}
+
+function vKalkyl(){const p=P(),i=pi();
+  if(!p.kalkyler.length) return `${flow("Kalkyl")}${phead("Kalkyl")}<div class="panel"><div class="empty">Ingen kalkyl kopplad till projektet.<br><br><button class="btn" data-a="kalkav">Kalkyl av beredning</button> <button class="btn s" data-a="newkalk">Ny tom P2-kalkyl</button></div></div>`;
+  const k=p.kalkyler.find(x=>x.id===UI.kalkId)||ufKalkyl(p);UI.kalkId=k.id;const j=p.kalkyler.indexOf(k),kb=`projects.${i}.kalkyler.${j}`;const t=kalkylSum(k,p);const ueSak=t.rows.filter(x=>x.c?.kat==="BESS"&&x.v&&!x.v.tot).length;
+  const grp={};t.rows.forEach(x=>{const g=x.c?(x.r.egen?"Egna koder":(x.c.kod.split(".")[0]+" "+x.c.grp)):"Okänd";(grp[g]=grp[g]||[]).push(x);});
+  const body=Object.entries(grp).sort((a,b)=>a[0].localeCompare(b[0],"sv",{numeric:true})).map(([g,rs])=>`<tr class="grp"><td colspan="11">${esc(g)}</td></tr>`+rs.map(({r,c,v})=>{const q=k.rader.indexOf(r);return `<tr><td>${r.egen?`<span class="code">EGEN</span>`:`<span class="code">${esc(r.kod)}</span>`}</td>
+    <td>${r.egen?inp(`${kb}.rader.${q}.ben`,r.ben):esc(c?.ben||"Saknas i katalogen – importera full katalog")}</td><td class="r">${inp(`${kb}.rader.${q}.n`,r.n,"n","num")}</td><td>${esc(c?.enh||r.enh||"")}</td><td class="r">${inp(`${kb}.rader.${q}.matris`,r.matris,"nn","num")}</td>
+    <td class="r">${v?h(v.hb):""}</td><td class="r">${v?h(v.hm):""}</td><td class="r">${v?h(v.hx):""}</td><td class="r">${v?kr(v.arb):""}</td><td class="r">${v?kr(v.mat+v.msk+v.ov):""}</td><td class="r nw">${v&&!v.tot&&c?.kat==="BESS"?'<span class="pill p-orange">UE-pris saknas</span> ':""}<b>${v?kr(v.tot):""}</b> <button class="btn g" data-a="del" data-p="${kb}.rader" data-i="${q}" aria-label="Ta bort">✕</button></td></tr>`}).join("")).join("");
+  const matris=[...new Set(k.rader.map(r=>+r.matris||1))].sort((a,b)=>a-b);
+  const perMatris=matris.length>1?`<div class="small muted" style="margin-top:6px">Per matris (etapp): ${matris.map(m=>{const s=kalkylSum(Object.assign({},k,{rader:k.rader.filter(r=>(+r.matris||1)===m),matMode:"katalog"}),null);return `M${m}: ${kr(s.tot)}`}).join(" · ")}</div>`:"";
+  return `${flow("Kalkyl")}${phead(`Kalkyl <span class="code">${esc(k.nr)}</span>`,`<select data-a="selkalk" id="selkalk">${p.kalkyler.map(x=>`<option value="${x.id}" ${x.id===k.id?"selected":""}>${esc(x.nr)} · ${esc(x.namn)} (${x.status})</option>`).join("")}</select><button class="btn s" data-a="copykalk">Kopiera kalkyl</button><button class="btn s" data-a="newkalk">Ny</button>`)}
+  <div class="kpis"><div class="kpi"><div class="l">Grundkalkyl</div><div class="v">${kr(t.tot)}</div><div class="s">${h(t.hb+t.hm)} mantimmar · ${h(t.hx)} maskintim</div>${ueSak?`<div style="margin-top:6px"><span class="pill p-orange">${ueSak} UE-poster utan pris</span></div>`:""}</div>
+   <div class="kpi"><div class="l">Riskkalkyl (+${fmt(k.risk)} %)</div><div class="v">${kr(t.risk)}</div><div class="s">grund × risk</div></div>
+   <div class="kpi"><div class="l">Vinstkalkyl (+${fmt(k.vinst)} %)</div><div class="v">${kr(t.vinst)}</div><div class="s">offertunderlag exkl. moms</div></div>
+   <div class="kpi"><div class="l">Fördelning</div><div class="v small" style="font-family:var(--f-body);font-size:.84rem;line-height:1.6">Arbete ${kr(t.arb)}<br>Materiel ${kr(t.mat)}<br>Maskin ${kr(t.msk)} · Övrigt ${kr(t.ov)}</div></div></div>
+  <div class="panel"><div class="form">
+   <label>Benämning ${inp(kb+".namn",k.namn)}</label><label>Status ${sel(kb+".status",k.status,[["Huv","Huvudkalkyl"],["Alt","Alternativ"],["UF","Uppföljningskalkyl"]])}</label>
+   <label>Sök i katalog ${sel(kb+".typ",k.typ,[["P2","KLG P2"],["BESS","BESS-schablon"],["P3","KLG P3"],["P1","KLG P1"]])}</label>
+   <label>Materiel ${sel(kb+".matMode",k.matMode,[["katalog","Enligt katalog (KLG)"],["beredning","Enligt beredningens materiellista"]])}</label>
+   <label>Tidsfaktor ${inp(kb+".faktor",k.faktor,"","num")}</label><label>Påslag arbete % ${inp(kb+".pas.arb",k.pas.arb,"","num")}</label><label>Påslag materiel % ${inp(kb+".pas.mat",k.pas.mat,"","num")}</label><label>Påslag maskin % ${inp(kb+".pas.msk",k.pas.msk,"","num")}</label>
+   <label>Påslag övrigt % ${inp(kb+".pas.ov",k.pas.ov,"","num")}</label><label>Risk % ${inp(kb+".risk",k.risk,"","num")}</label><label>Vinst % ${inp(kb+".vinst",k.vinst,"","num")}</label></div>
+   <p class="small muted" style="margin:10px 0 0">Timpriser: beredare ${fmt(S.settings.rates.bered)} kr/h, montör ${fmt(S.settings.rates.mont)} kr/h, maskin ${fmt(S.settings.rates.maskin)} kr/h (KLG 1:26 självkostnad; ändras under Register → Inställningar). Matris används för etappindelning.</p></div>
+  <div class="panel"><div class="ph"><h2>Kalkylkoder</h2><div class="sp"></div><input id="kKod" placeholder="Arbetskod.löpnr" list="kodlist2" style="width:150px"><datalist id="kodlist2">${S.catalog.filter(c=>c.kat===k.typ).map(c=>`<option value="${c.kod}">${esc(c.ben)}</option>`).join("")}</datalist><input id="kAntal" type="number" step="any" placeholder="Antal" style="width:90px"><button class="btn s sm" data-a="kaddkod">Lägg till</button><button class="btn s sm" data-a="kaddegen">Egen kod</button></div>
+   <div class="tw"><table><thead><tr><th>Kod</th><th>Benämning</th><th class="r">Antal</th><th>Enh</th><th class="r">Matris</th><th class="r">Bered h</th><th class="r">Mont h</th><th class="r">Mskn h</th><th class="r">Arbete</th><th class="r">Mtrl+mskn+övr</th><th class="r">Summa</th></tr></thead>
+   <tbody>${body}${t.matBer!=null?`<tr class="grp"><td colspan="11">Materiel enligt beredning ${esc(p.beredning.nr)}</td></tr><tr><td></td><td>Materiellista (${aggMateriel(p).length} artiklar)</td><td colspan="8"></td><td class="r"><b>${kr(t.matBer)}</b></td></tr>`:""}
+   <tr class="sum"><td colspan="5">Summa grundkalkyl</td><td class="r">${h(t.hb)}</td><td class="r">${h(t.hm)}</td><td class="r">${h(t.hx)}</td><td class="r">${kr(t.arb)}</td><td class="r">${kr(t.mat+t.msk+t.ov)}</td><td class="r">${kr(t.tot)}</td></tr></tbody></table></div>${perMatris}</div>`;
+}
+
+function kabellista(p){const cnt={};Object.keys(SERIE).forEach(k=>cnt[k]=SERIE[k][0]);const rows=[];
+  p.beredning.konst.forEach(k=>(k.c||[]).forEach(c=>{const a=art(c.art);const n=cnt[c.serie]++;rows.push(Object.assign({},c,{id:`${c.serie==="DC"?"DC":c.serie==="HSP"?"W":c.serie==="OPTO"?"F":c.serie==="LSP"?"L":"S"}${n}`,nr:n,fran:c.fran.replace("{id}",k.ident),till:c.till.replace("{id}",k.ident),ben:a?.ben||c.art,konst:k.ident}));}));return rows;}
+function vKabel(){const p=P();const rows=kabellista(p);const ser=Object.keys(SERIE);
+  const sum={};rows.forEach(r=>{sum[r.art]=(sum[r.art]||0)+r.antal*r.langd;});
+  return `${flow("Beredning")}${phead("Kabellista",`<button class="btn s" data-a="copykabel">Kopiera som tabell</button>`)}
+  <div class="panel"><p class="small muted" style="margin:0 0 10px">Genereras från beredningens konstruktioner. Nummerserier enligt Konstruktionshandbok EL 2.4.3; DC-serien 201–500 är förslag (serien saknas i handboken). Postbeteckningar: +B battericontainer, +MV MV-skid, +SV ställverk, +HK hjälpkraft.</p>
+  <div class="tw"><table id="kabTab"><thead><tr><th>Kabel-ID</th><th>Från</th><th>Till</th><th>Spänning/typ</th><th>Kabeltyp & spec</th><th class="r">Antal/parter</th><th class="r">Längd m</th><th class="r">Totalt m</th><th>Förläggning & skydd</th></tr></thead><tbody>
+  ${ser.map(sr=>{const rs=rows.filter(r=>r.serie===sr);if(!rs.length)return "";return `<tr class="grp"><td colspan="9">${esc(SERIE[sr][1])} · ${rs.length} st</td></tr>`+rs.map(r=>`<tr><td><span class="code">${esc(r.id)}</span></td><td>${esc(r.fran)}</td><td>${esc(r.till)}</td><td>${esc(r.typ)}</td><td>${esc(r.ben)}<div class="small muted">${esc(r.art)}</div></td><td class="r">${r.antal}</td><td class="r">${fmt(r.langd)}</td><td class="r">${fmt(r.antal*r.langd)}</td><td class="small">${esc(r.forl)}</td></tr>`).join("")}).join("")||'<tr><td colspan="9" class="muted">Inga kablar. Lägg till konstruktioner eller kör BESS-generatorn.</td></tr>'}</tbody></table></div></div>
+  <div class="panel"><div class="ph"><h2>Kabelmängder</h2><span class="small muted">exkl. spill (spill läggs i materiellistan)</span></div><div class="tw"><table><thead><tr><th>Art.nr</th><th>Kabel</th><th class="r">Totalt m</th></tr></thead><tbody>${Object.entries(sum).map(([a,m])=>`<tr><td><span class="code">${esc(a)}</span></td><td>${esc(art(a)?.ben||a)}</td><td class="r">${fmt(m)}</td></tr>`).join("")}</tbody></table></div></div>
+  <div class="panel"><h2>Installationskrav (sammanfattning)</h2><ul class="small" style="margin:.5em 0 0;padding-left:1.2em;line-height:1.7">
+   <li>Enledare MV förläggs i treklöver, buntade (KLG 140.16). Skärm jordas i båda ändar; belastningsförmåga enligt Prysmian gäller detta utförande. Korrektion för marktemperatur, resistivitet, djup och anhopning enligt NKT tabell 25–28; i rör ×0,8 (EBR KJ41).</li><li>Fler än två kabelgrupper i samma schakt: håll minst 250 mm mellan grupperna. Kablar i två lager ger extra faktor 0,7 (NKT) – undvik.</li>
+   <li>Minsta böjradie AXLJ-TTCL: 10×D fast montering, 15×D under utdragning. AXQ/AXQJ: 8–10×D enligt datablad.</li>
+   <li>DC-kablar: 0,6/1 kV-kabel tål 0,9 kV DC mot jord och 1,8 kV DC mellan ledare (Kabelboken 2026). Vid 1500 V DC och ojordat system ligger full spänning mot jord vid första jordfel – välj kabel med högre DC-märkning eller skriftligt godkännande från leverantören.</li>
+   <li>Signal-, brandlarm- och fiberkablar skiljs från kraft (minst 0,3 m eller separat rör). Skärm på S/FTP och ELAQBY ansluts i en ände om leverantören inte anger annat.</li>
+   <li>Kabelströmtransformator för jordfelsskydd: kontrollera innerdiameter mot antal och diameter på enledare innan beställning.</li>
+   <li>Genomföringar i container och skid tätas med modulstätning (t.ex. Roxtec) – brand- och vattentätt.</li>
+   <li>Varningsnät över alla markförlagda kraftkablar. Inmätning före återfyllning.</li></ul></div>`;
+}
+function vInkop(){const p=P(),i=pi();const all=aggMateriel(p);const mat=all.filter(x=>!x.bl);const bl=all.filter(x=>x.bl);const tot=mat.reduce((a,x)=>a+x.n*x.pris,0);const saknas=mat.filter(x=>!x.pris).length;
+  return `${flow("Inköp")}${phead("Materiellista & inköp",`<button class="btn" data-a="mkbest">Skapa beställning</button>`)}
+  <div class="panel"><div class="ph"><h2>Materiellista ${esc(p.beredning.nr)}</h2><span class="small muted">summerad över konstruktioner · ${kr(tot)}</span>${saknas?`<span class="pill p-orange">${saknas} artiklar saknar pris</span>`:""}</div><div class="tw"><table><thead><tr><th>Art.nr</th><th>Benämning</th><th class="r">Antal</th><th>Enh</th><th>Leverantör</th><th class="r">À-pris</th><th class="r">Summa</th><th>Konstruktioner</th></tr></thead><tbody>
+  ${mat.map(x=>`<tr><td><span class="code">${esc(x.art)}</span></td><td>${esc(x.ben)}</td><td class="r">${fmt(x.n,x.n%1?1:0)}</td><td>${esc(x.enh)}</td><td>${esc(x.lev)}</td><td class="r">${x.pris?fmt(x.pris,2):'<span class="pill p-orange">Saknas</span>'}</td><td class="r">${kr(x.n*x.pris)}</td><td class="small muted">${esc([...new Set(x.konst)].slice(0,8).join(", "))}${new Set(x.konst).size>8?" …":""}</td></tr>`).join("")||'<tr><td colspan="8" class="muted">Beredningen saknar materiel.</td></tr>'}
+  <tr class="sum"><td colspan="6">Summa</td><td class="r">${kr(tot)}</td><td></td></tr></tbody></table></div></div>
+  ${bl.length?`<div class="panel"><div class="ph"><h2>Beställarlevererat (BL)</h2><span class="small muted">ingår inte i beställning – mottagningskontroll och lyft kalkyleras</span></div><div class="tw"><table><thead><tr><th>Art</th><th>Benämning</th><th class="r">Antal</th><th>Objekt</th></tr></thead><tbody>${bl.map(x=>`<tr><td><span class="code">${esc(x.art)}</span></td><td>${esc(x.ben)}</td><td class="r">${fmt(x.n)}</td><td class="small muted">${esc([...new Set(x.konst)].slice(0,12).join(", "))}${x.konst.length>12?" …":""}</td></tr>`).join("")}</tbody></table></div></div>`:""}
+  <div class="panel"><div class="ph"><h2>Beställningar</h2></div><div class="tw"><table><thead><tr><th>Nr</th><th>Datum</th><th>Leverantör</th><th>Upplag</th><th class="r">Rader</th><th class="r">Belopp</th><th>Status</th><th></th></tr></thead><tbody>
+  ${p.bestallningar.map((x,j)=>`<tr><td><span class="code">${esc(x.nr)}</span></td><td>${esc(x.datum)}</td><td>${esc(x.lev)}</td><td>${esc(p.beredning.upplag.find(u=>u.nr==x.upplag)?.adr||"–")}</td><td class="r">${x.rader.length}</td><td class="r">${kr(x.rader.reduce((a,r)=>a+r.n*r.pris,0))}</td><td>${sel(`projects.${i}.bestallningar.${j}.status`,x.status,["Skapad","Skickad","Levererad"])}</td><td><button class="btn s sm" data-a="showbest" data-id="${x.id}">Visa</button></td></tr>`).join("")||'<tr><td colspan="8" class="muted">Inga beställningar.</td></tr>'}</tbody></table></div>
+  <p class="small muted" style="margin:8px 0 0">Levererad materiel räknas som utfall i uppföljningen och kan faktureras med påslag vid löpande räkning. I produktion: e-handel (EDI/PEPPOL) mot grossist i stället för statusbyte.</p></div>`;
+}
+
+function vTid(){const p=P(),i=pi(),b=`projects.${i}`;const roller=[["mont","Montör"],["bered","Beredare"],["maskin","Maskin"]];
+  const sumH=p.tid.reduce((a,x)=>a+(+x.h||0),0),sumK=p.kostnader.reduce((a,x)=>a+(+x.belopp||0),0);
+  return `${flow("Utförande")}${phead("Tid & kostnader")}
+  <div class="grid g2"><div class="panel"><div class="ph"><h2>Tidrapport</h2><span class="small muted">${h(sumH)} tim</span><div class="sp"></div><button class="btn s sm" data-a="addtid">Ny rad</button></div><div class="tw"><table><thead><tr><th>Datum</th><th>Person</th><th>Roll</th><th class="r">Tim</th><th>Faktura</th><th></th></tr></thead><tbody>
+  ${p.tid.map((x,j)=>`<tr><td>${inp(`${b}.tid.${j}.d`,x.d,"","date")}</td><td>${inp(`${b}.tid.${j}.pers`,x.pers)}</td><td>${sel(`${b}.tid.${j}.roll`,x.roll,roller)}</td><td class="r">${inp(`${b}.tid.${j}.h`,x.h,"nn","num")}</td><td>${x.fakt?`<span class="code">${esc(x.fakt)}</span>`:'<span class="small muted">Ej fakt.</span>'}</td><td><button class="btn g" data-a="del" data-p="${b}.tid" data-i="${j}" aria-label="Ta bort">✕</button></td></tr>`).join("")||'<tr><td colspan="6" class="muted">Ingen tid registrerad.</td></tr>'}</tbody></table></div></div>
+  <div class="panel"><div class="ph"><h2>Kostnadsregistrering</h2><span class="small muted">${kr(sumK)}</span><div class="sp"></div><button class="btn s sm" data-a="addkost">Ny kostnad</button></div><div class="tw"><table><thead><tr><th>Datum</th><th>Leverantör</th><th>Typ</th><th>Text</th><th class="r">Belopp</th><th></th></tr></thead><tbody>
+  ${p.kostnader.map((x,j)=>`<tr><td>${inp(`${b}.kostnader.${j}.d`,x.d,"","date")}</td><td>${inp(`${b}.kostnader.${j}.lev`,x.lev)}</td><td>${sel(`${b}.kostnader.${j}.typ`,x.typ,["UE","Maskin","Materiel","Övrigt"])}</td><td>${inp(`${b}.kostnader.${j}.text`,x.text)}</td><td class="r">${inp(`${b}.kostnader.${j}.belopp`,x.belopp,"n","num")}</td><td><button class="btn g" data-a="del" data-p="${b}.kostnader" data-i="${j}" aria-label="Ta bort">✕</button></td></tr>`).join("")||'<tr><td colspan="6" class="muted">Inga kostnader.</td></tr>'}</tbody></table></div>
+  <p class="small muted" style="margin:8px 0 0">Leverantörsfakturor kopplade till P-nr. I produktion läses de in från ekonomisystemet.</p></div></div>`;
+}
+
+function vFaktura(){const p=P(),i=pi(),b=`projects.${i}`;const f=fakturerat(p),ag=ataGodk(p),ord=p.kontrakt+ag;
+  const plan=p.debitering==="fast"?`<div class="panel"><div class="ph"><h2>Fakturaplan</h2><span class="small muted">kontrakt ${kr(p.kontrakt)} · ${fmt(p.fakturaplan.reduce((a,x)=>a+(+x.pct||0),0))} % planerat</span><div class="sp"></div><button class="btn s sm" data-a="addplan">Ny delfaktura</button></div><div class="tw"><table><thead><tr><th>Milstolpe</th><th>Datum</th><th class="r">%</th><th class="r">Belopp</th><th>Faktura</th><th></th></tr></thead><tbody>
+   ${p.fakturaplan.map((x,j)=>`<tr><td>${inp(`${b}.fakturaplan.${j}.text`,x.text).replace("<input","<input style=\"width:100%\"")}</td><td>${inp(`${b}.fakturaplan.${j}.datum`,x.datum,"","date")}</td><td class="r">${inp(`${b}.fakturaplan.${j}.pct`,x.pct,"nn","num")}</td><td class="r">${kr(p.kontrakt*x.pct/100)}</td><td>${x.fakt?`<span class="code">${esc(x.fakt)}</span>`:`<button class="btn sm" data-a="fakplan" data-id="${x.id}">Skapa faktura</button>`}</td><td>${x.fakt?"":`<button class="btn g" data-a="del" data-p="${b}.fakturaplan" data-i="${j}" aria-label="Ta bort">✕</button>`}</td></tr>`).join("")}</tbody></table></div></div>`
+   :`<div class="panel"><div class="ph"><h2>Underlag löpande räkning</h2><div class="sp"></div><button class="btn" data-a="faklop">Skapa faktura av underlag</button></div>${(()=>{const u=lopandeUnderlag(p);const ga=p.ata.filter(a=>a.status==="Godkänd"&&!a.fakt);return `<div class="tw"><table><thead><tr><th>Text</th><th class="r">Antal</th><th>Enh</th><th class="r">À-pris</th><th class="r">Belopp</th></tr></thead><tbody>${u.map(r=>`<tr><td>${esc(r.text)}</td><td class="r">${fmt(r.antal,1)}</td><td>${r.enh}</td><td class="r">${fmt(r.apris,2)}</td><td class="r">${kr(r.antal*r.apris)}</td></tr>`).join("")}${ga.map(a=>`<tr><td>${esc(a.nr)}: ${esc(a.text)}</td><td class="r">1</td><td>st</td><td class="r">${fmt(a.belopp,2)}</td><td class="r">${kr(a.belopp)}</td></tr>`).join("")}${u.length||ga.length?"":'<tr><td colspan="5" class="muted">Inget ofakturerat underlag.</td></tr>'}</tbody></table></div><p class="small muted" style="margin:8px 0 0">Debiteringspriser och påslag sätts under Register → Inställningar.</p>`})()}</div>`;
+  return `${flow("Fakturering")}${phead("Fakturering",`<span class="pill p-blue">${p.debitering==="fast"?"Fast pris":"Löpande räkning"}</span>`)}
+  <div class="kpis"><div class="kpi"><div class="l">${p.debitering==="fast"?"Kontrakt + godkända ÄTA":"Godkända ÄTA"}</div><div class="v">${kr(p.debitering==="fast"?ord:ag)}</div></div>
+   <div class="kpi"><div class="l">Fakturerat</div><div class="v">${kr(f)}</div><div class="s">${p.fakturor.filter(x=>x.status==="Betald").length} betalda av ${p.fakturor.length}</div></div>
+   <div class="kpi"><div class="l">Kvar att fakturera</div><div class="v">${p.debitering==="fast"?kr(ord-f):kr(lopandeUnderlag(p).reduce((a,r)=>a+r.antal*r.apris,0)+p.ata.filter(a=>a.status==="Godkänd"&&!a.fakt).reduce((a,x)=>a+ +x.belopp,0))}</div></div></div>
+  ${plan}
+  <div class="panel"><div class="ph"><h2>ÄTA-arbeten</h2><span class="small muted">ändrings-, tilläggs- och avgående arbeten (ABT 06)</span><div class="sp"></div><button class="btn s sm" data-a="addata">Ny ÄTA</button>${p.debitering==="fast"?`<button class="btn sm" data-a="fakata">Fakturera godkända ÄTA</button>`:""}</div><div class="tw"><table><thead><tr><th>Nr</th><th>Beskrivning</th><th class="r">Belopp</th><th>Status</th><th>Faktura</th><th></th></tr></thead><tbody>
+   ${p.ata.map((x,j)=>`<tr><td style="width:90px">${inp(`${b}.ata.${j}.nr`,x.nr)}</td><td>${inp(`${b}.ata.${j}.text`,x.text).replace("<input","<input style=\"width:100%\"")}</td><td class="r">${inp(`${b}.ata.${j}.belopp`,x.belopp,"n","num")}</td><td>${sel(`${b}.ata.${j}.status`,x.status,["Begärd","Godkänd","Avslagen"])}</td><td>${x.fakt?`<span class="code">${esc(x.fakt)}</span>`:""}</td><td>${x.fakt?"":`<button class="btn g" data-a="del" data-p="${b}.ata" data-i="${j}" aria-label="Ta bort">✕</button>`}</td></tr>`).join("")||'<tr><td colspan="6" class="muted">Inga ÄTA.</td></tr>'}</tbody></table></div></div>
+  <div class="panel"><div class="ph"><h2>Fakturor</h2></div><div class="tw"><table><thead><tr><th>Nr</th><th>Datum</th><th>Förfaller</th><th class="r">Netto</th><th class="r">Moms</th><th class="r">Att betala</th><th>Status</th><th></th></tr></thead><tbody>
+   ${p.fakturor.map((x,j)=>`<tr><td><span class="code">${esc(x.nr)}</span></td><td>${esc(x.datum)}</td><td>${esc(x.forfall)}</td><td class="r">${kr(x.netto)}</td><td class="r">${kr(x.moms)}</td><td class="r"><b>${kr(x.netto+x.moms)}</b></td><td>${sel(`${b}.fakturor.${j}.status`,x.status,["Utkast","Skickad","Betald","Makulerad"])}</td><td><button class="btn s sm" data-a="showfak" data-id="${x.id}">Visa</button></td></tr>`).join("")||'<tr><td colspan="8" class="muted">Inga fakturor.</td></tr>'}</tbody></table></div>
+   <p class="small muted" style="margin:8px 0 0">Faktura skapas som underlag. I produktion: export till ekonomisystem (SIE/API) eller e-faktura.</p></div>`;
+}
+
+function vUppf(){const p=P();const k=ufKalkyl(p);const t=k?kalkylSum(k,p):null;const u=utfall(p);const fg=(+p.fardig||0)/100;
+  const intakt=p.debitering==="fast"?p.kontrakt+ataGodk(p):fakturerat(p)+lopandeUnderlag(p).reduce((a,r)=>a+r.antal*r.apris,0);
+  const ueSak=t?t.rows.filter(x=>x.c?.kat==="BESS"&&x.v&&!x.v.tot).length:0;const prog=t?(u.arb+t.arb*(1-fg))+(u.msk+t.msk*(1-fg))+(u.ov+t.ov*(1-fg))+Math.max(u.mat,t.mat):u.tot;
+  const rows=[["Timmar bered.",t?.hb,u.hb,true],["Timmar montör",t?.hm,u.hm,true],["Maskintimmar",t?.hx,u.hx,true],["Arbete",t?.arb,u.arb],["Materiel",t?.mat,u.mat],["Maskin",t?.msk,u.msk],["Övrigt/UE",t?.ov,u.ov],["Totalt",t?.tot,u.tot]];
+  const max=Math.max(...rows.filter(r=>!r[3]).map(r=>Math.max(r[1]||0,r[2]||0)),1),maxh=Math.max(...rows.filter(r=>r[3]).map(r=>Math.max(r[1]||0,r[2]||0)),1);
+  const bars=rows.map(([l,a,bv,isH])=>{const m=isH?maxh:max;const over=(bv||0)>(a||0)*fg*1.1&&fg>0;return `<div>${l}</div><div class="bars"><div class="b k" style="width:${(a||0)/m*100}%" title="Kalkyl"></div><div class="b u ${over?"over":""}" style="width:${(bv||0)/m*100}%" title="Utfall"></div><div class="small muted">${isH?`${h(a)} / ${h(bv)} tim`:`${kr(a)} / ${kr(bv)}`}</div></div>`;}).join("");
+  return `${flow("Uppföljning")}${phead("Uppföljning",k?`<span class="small muted">mot ${esc(k.nr)} (${k.status})</span>`:"")}
+  <div class="kpis"><div class="kpi"><div class="l">Intäkt (order)</div><div class="v">${kr(intakt)}</div><div class="s">${p.debitering==="fast"?"kontrakt + godkända ÄTA":"fakturerat + ofakturerat"}</div></div>
+  <div class="kpi"><div class="l">Kalkylerad kostnad</div><div class="v">${t?kr(t.tot):"–"}</div><div class="s">grundkalkyl</div></div>
+  <div class="kpi"><div class="l">Utfall</div><div class="v">${kr(u.tot)}</div><div class="s">färdigställt ${fmt(p.fardig)} %</div></div>
+  <div class="kpi"><div class="l">Prognos slutkostnad</div><div class="v">${kr(prog)}</div><div class="s">utfall + kvarvarande kalkyl</div></div>
+  <div class="kpi"><div class="l">Prognos TB${ueSak?` <span class="pill p-orange">${ueSak} UE utan pris</span>`:""}</div><div class="v" style="color:${intakt-prog<0?"var(--red)":"var(--green)"}">${kr(intakt-prog)}</div><div class="s">${intakt?fmt((intakt-prog)/intakt*100,1):"–"} % TG</div></div></div>
+  <div class="panel"><div class="ph"><h2>Kalkyl mot utfall</h2><div class="sp"></div><div class="legend"><span class="lk">Kalkyl</span><span class="lu">Utfall</span></div></div><div class="cmp">${bars}</div>
+  <p class="small muted" style="margin:12px 0 0">Röd stapel: utfallet överstiger kalkylen × färdigställandegrad med mer än 10 %. Utfall tid värderas till internkostnad (KLG-timpriser). Prognos: arbete, maskin och övrigt = utfall + kalkyl × (1 − färdigställandegrad); materiel = det högsta av utfall och kalkyl.</p></div>`;
+}
+
+function vRegister(){const rt=UI.regTab;const st=S.settings;
+  const chips=`<div class="chips">${[["katalog","Kalkylkatalog"],["materiel","Materiel"],["konst","Konstruktioner"],["inst","Inställningar"],["data","Data"]].map(([k,l])=>`<button data-a="regtab" data-id="${k}" aria-pressed="${rt===k}">${l}</button>`).join("")}</div>`;
+  let body="";
+  if(rt==="katalog"){const q=UI.katQ.toLowerCase();const list=S.catalog.filter(c=>c.kat===UI.katF&&(!q||(c.kod+" "+c.ben+" "+c.grp).toLowerCase().includes(q)));
+    body=`<div class="panel"><div class="ph"><h2>Kalkylkatalog</h2><span class="small muted">${fmt(S.catalog.length)} koder · ${esc(S.catSource)}</span><div class="sp"></div><label class="btn s sm" for="catFile" style="cursor:pointer">Importera katalog (CSV)</label><input type="file" id="catFile" accept=".csv,text/csv" hidden data-a="catfile"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><div class="chips">${["BESS","P2","P3","P1"].map(k=>`<button data-a="katf" data-id="${k}" aria-pressed="${UI.katF===k}">${k}</button>`).join("")}</div><input id="katQ" placeholder="Sök kod eller benämning" value="${esc(UI.katQ)}" data-a="katq" style="flex:1;min-width:180px"></div>
+    <div class="tw"><table><thead><tr><th>Kod</th><th>Grupp</th><th>Benämning</th><th>Enh</th><th class="r">Bered</th><th class="r">Mont</th><th class="r">Mskn</th><th class="r">Arbete</th><th class="r">Materiel</th><th class="r">Maskin</th><th class="r">Övrigt</th><th class="r">Summa</th></tr></thead><tbody>
+    ${list.slice(0,300).map(c=>`<tr><td><span class="code">${esc(c.kod)}</span></td><td class="small muted">${esc(c.grp)}</td><td>${esc(c.ben)}</td><td>${esc(c.enh)}</td><td class="r">${fmt(c.b,2)}</td><td class="r">${fmt(c.m,2)}</td><td class="r">${fmt(c.x,2)}</td><td class="r">${fmt(c.arb)}</td><td class="r">${fmt(c.mat)}</td><td class="r">${fmt(c.mk)}</td><td class="r">${c.kat==="BESS"?inp(`catalog.${S.catalog.indexOf(c)}.ov`,c.ov??"","n","num"):fmt(c.ov)}</td><td class="r">${c.kat==="BESS"?kr(codeCost(c,1,{faktor:1}).tot):fmt(c.sum)}</td></tr>`).join("")}</tbody></table></div>
+    <p class="small muted" style="margin:8px 0 0">${list.length>300?`Visar 300 av ${list.length}. `:""}Inbyggt är ett urval. Importera hela KLG 1:26 med den medföljande CSV-filen (semikolonseparerad, kolumner enligt exporten). P3 anger endast timmar; kostnaden räknas med timpriserna. <b>BESS-schablon:</b> timmar är erfarenhetsvärden att kalibrera mot utfall; UE-poster (B160) prissätts här i kolumnen Övrigt när offerter finns.</p></div>`;}
+  if(rt==="materiel") body=`<div class="panel"><div class="ph"><h2>Materielkatalog BESS</h2></div><div class="tw"><table><thead><tr><th>E-nr/Art</th><th>Benämning</th><th>Enh</th><th class="r">Pris</th><th>Priskälla</th><th>Leverantör</th></tr></thead><tbody>${S.materiel.map((m,j)=>`<tr><td><span class="code">${esc(m.art)}</span></td><td>${esc(m.ben)}</td><td>${esc(m.enh)}</td><td class="r">${m.bl?'<span class="pill p-grey">BL</span>':inp(`materiel.${j}.pris`,m.pris,"n","num")}</td><td class="small">${esc(m.kalla)}</td><td>${esc(m.lev)}</td></tr>`).join("")}</tbody></table></div><p class="small muted" style="margin:8px 0 0">E-nr enligt Prysmian Kabelkatalogen 2024 och Nexans Kabelboken 2026. Priser: "KLG" = härlett ur KLG 1:26 materielkostnad (ej grossistnetto); "Saknas"/"Offert" = 0 kr tills pris läggs in. Art.nr utan E-prefix är interna platshållare – ersätt med E-nr vid beställning.</p></div>`;
+  if(rt==="konst") body=`<div class="panel"><div class="ph"><h2>Konstruktionsbibliotek BESS</h2></div><div class="tw"><table><thead><tr><th>Grupp</th><th>Konstruktion</th><th>Val</th><th>Genererade koder (standardval)</th></tr></thead><tbody>${LIB.map(L=>{const r=L.build(defaults(L));return `<tr><td>${esc(L.grupp)}</td><td><b>${esc(L.namn)}</b> <span class="code">${esc(L.post)}</span></td><td class="small">${L.params.map(x=>esc(x.l)).join(", ")}</td><td>${r.k.map(x=>`<span class="code">${x[0]}</span>`).join(" ")}</td></tr>`}).join("")}</tbody></table></div><p class="small muted" style="margin:8px 0 0">Motsvarar Gurus konstruktionsgrupp → konstruktion → undergrupper med kopplad materiel och P2/P3-koder. Biblioteket är kod i prototypen; i produktion en redigerbar tabell per företag.</p></div>`;
+  if(rt==="inst") body=`<div class="panel"><h2>Timpriser (internkostnad, KLG 1:26)</h2><div class="form" style="margin-top:10px"><label>Beredare kr/h ${inp("settings.rates.bered",st.rates.bered,"","num")}</label><label>Montör kr/h ${inp("settings.rates.mont",st.rates.mont,"","num")}</label><label>Maskin kr/h ${inp("settings.rates.maskin",st.rates.maskin,"","num")}</label></div></div>
+    <div class="panel"><h2>Debitering (löpande räkning)</h2><div class="form" style="margin-top:10px"><label>Beredare kr/h ${inp("settings.deb.bered",st.deb.bered,"","num")}</label><label>Montör kr/h ${inp("settings.deb.mont",st.deb.mont,"","num")}</label><label>Maskin kr/h ${inp("settings.deb.maskin",st.deb.maskin,"","num")}</label><label>Påslag materiel % ${inp("settings.matPaslag",st.matPaslag,"","num")}</label><label>Påslag UE/övrigt % ${inp("settings.uePaslag",st.uePaslag,"","num")}</label><label>Moms % ${inp("settings.moms",st.moms,"","num")}</label></div><p class="small muted" style="margin:8px 0 0"><span class="ex">Exempel</span> Debiteringspriserna är platshållare – ange era avtalade priser.</p></div>`;
+  if(rt==="data") body=`<div class="panel"><h2>Säkerhetskopia</h2><p class="small muted">Data sparas bara i den här webbläsaren. Kopiera JSON för att spara eller flytta, eller läs in en fil.</p><textarea class="json" id="jsonOut" readonly>${esc(JSON.stringify(Object.assign({},S,{catalog:undefined}),null,1))}</textarea>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn s" data-a="copyjson">Kopiera JSON</button><label class="btn s" for="jsonFile" style="cursor:pointer">Läs in JSON-fil</label><input type="file" id="jsonFile" accept=".json,application/json" hidden data-a="jsonfile"><button class="btn s" data-a="resetq">Återställ exempeldata</button></div><div id="resetBox"></div></div>`;
+  return `<div class="ph"><h1>Register</h1></div>${chips}${body}`;
+}
+
+/* ============ MODALER ============ */
+function modal(html){document.getElementById("ovl").innerHTML=`<div class="ov" data-a="closeov"><div class="modal" role="dialog" aria-modal="true">${html}</div></div>`;}
+function closeModal(){document.getElementById("ovl").innerHTML="";}
+function konstModal(libId,existing){const L=LIB.find(l=>l.id===libId);const pr=existing?existing.params:defaults(L);
+  modal(`<div class="ph"><div><div class="small muted">${esc(L.grupp)}</div><h2>${esc(L.namn)}</h2></div><div class="sp"></div><button class="btn g" data-a="close" aria-label="Stäng">✕</button></div>
+  <div class="form">${L.params.map(x=>`<label>${esc(x.l)} ${x.t==="text"?`<input id="kp_${x.k}" value="${esc(pr[x.k])}">`:x.n?`<input type="number" step="any" id="kp_${x.k}" value="${esc(pr[x.k])}">`:`<select id="kp_${x.k}">${x.o.map(o=>`<option ${o===pr[x.k]?"selected":""}>${esc(o)}</option>`).join("")}</select>`}</label>`).join("")}
+  ${existing?"":`<label>Identitet <input id="kp__ident" placeholder="t.ex. KS 14"></label>`}</div>
+  <p class="small muted" style="margin:0">${existing?"Materiel och kalkylkoder genereras om från valen. Manuella ändringar på konstruktionen skrivs över.":"Materiel och P2-koder genereras från valen."}</p>
+  <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn s" data-a="close">Avbryt</button><button class="btn" data-a="savekonst" data-id="${libId}" data-k="${existing?existing.id:""}">${existing?"Generera om":"Lägg på skrivbordet"}</button></div>`);}
+function fakturaModal(f){const p=P();
+  modal(`<div class="ph"><h2>Faktura ${esc(f.nr)}</h2><div class="sp"></div>${statusPill(f.status)}<button class="btn g" data-a="close" aria-label="Stäng">✕</button></div>
+  <div class="inv"><div class="ih"><div><div class="logo">ONE Nordic AB</div><div class="small muted">one-nordic.se</div></div><div class="small" style="text-align:right">Fakturanr <b>${esc(f.nr)}</b><br>Fakturadatum ${esc(f.datum)}<br>Förfallodatum ${esc(f.forfall)}</div></div>
+  <div class="small"><b>${esc(p.kund)}</b><br>Er referens: ${esc(p.refnr||"–")}<br>Projekt: ${esc(p.pnr)} ${esc(p.namn)}</div>
+  <div class="tw"><table><thead><tr><th>Specifikation</th><th class="r">Antal</th><th>Enh</th><th class="r">À-pris</th><th class="r">Belopp</th></tr></thead><tbody>${f.rows.map(r=>`<tr><td>${esc(r.text)}</td><td class="r">${fmt(r.antal,r.antal%1?1:0)}</td><td>${esc(r.enh)}</td><td class="r">${fmt(r.apris,2)}</td><td class="r">${kr(r.antal*r.apris)}</td></tr>`).join("")}
+  <tr class="sum"><td colspan="4">Netto</td><td class="r">${kr(f.netto)}</td></tr><tr><td colspan="4">Moms ${S.settings.moms} %</td><td class="r">${kr(f.moms)}</td></tr><tr class="sum"><td colspan="4">Att betala</td><td class="r">${kr(f.netto+f.moms)}</td></tr></tbody></table></div>
+  <div class="small muted">Betalningsvillkor 30 dagar netto. Fakturaunderlag genererat ur ONE Bered.</div></div>`);}
+function bestModal(b){const p=P();const u=p.beredning.upplag.find(x=>x.nr==b.upplag);
+  modal(`<div class="ph"><h2>Beställning ${esc(b.nr)}</h2><div class="sp"></div>${statusPill(b.status)}<button class="btn g" data-a="close" aria-label="Stäng">✕</button></div>
+  <div class="small">Leverantör: <b>${esc(b.lev)}</b> · Projekt ${esc(p.pnr)} · Leveransadress: ${esc(u?.adr||"–")}</div>
+  <div class="tw"><table><thead><tr><th>Art.nr</th><th>Benämning</th><th class="r">Antal</th><th>Enh</th><th class="r">Belopp</th></tr></thead><tbody>${b.rader.map(r=>`<tr><td><span class="code">${esc(r.art)}</span></td><td>${esc(r.ben)}</td><td class="r">${fmt(r.n,r.n%1?1:0)}</td><td>${esc(r.enh)}</td><td class="r">${kr(r.n*r.pris)}</td></tr>`).join("")}</tbody></table></div>`);}
+
+function genModal(){const p=P();const g=Object.assign({},GEN_DEF,p.bess?.gen||{});
+  const f=(k,l,unit="")=>`<label>${l} <input type="number" step="any" id="g_${k}" value="${esc(g[k])}"></label>`;
+  modal(`<div class="ph"><div><div class="small muted">Beredning ${esc(p.beredning.nr)}</div><h2>BESS-generator</h2></div><div class="sp"></div><button class="btn g" data-a="close" aria-label="Stäng">✕</button></div>
+  <p class="small muted" style="margin:0">Bygger hela skrivbordet: battericontainrar, MV-skids, radialer med dimensionerad MV-kabel, ställverk, hjälpkraft, fiber, jordnät, mark och etablering. Ange data enligt leverantörens datablad.</p>
+  <h3>Anläggning</h3><div class="form">${f("mw","Effekt (MW)")}${f("mwh","Energi (MWh)")}<label>Hårdvaruprofil <select id="g_profil">${["Generisk","CATL EnerX + Power Electronics MV-skid","Sungrow + MVS"].map(o=>`<option ${o===g.profil?"selected":""}>${o}</option>`).join("")}</select></label>${f("mwhC","MWh per battericontainer")}${f("mwS","MW per MV-skid")}${f("veckor","Entreprenadtid (veckor)")}</div>
+  <h3>Mellanspänning</h3><div class="form">${f("kv","Driftspänning (kV)")}${f("sPerR","MV-skids per radial")}${f("lSkid","Avstånd skid–skid (m)")}${f("lSV","Avstånd närmaste skid–ställverk (m)")}<label>Marktemperatur (°C) <select id="g_marktemp">${Object.keys(KF_TEMP).map(o=>`<option ${o==String(g.marktemp)?"selected":""}>${o}</option>`).join("")}</select></label><label>Värmeresistivitet (K·m/W) <select id="g_rho">${Object.keys(KF_RHO).map(o=>`<option ${o===g.rho?"selected":""}>${o}</option>`).join("")}</select></label><label>Förläggningsdjup (m) <select id="g_djup">${Object.keys(KF_DJUP).map(o=>`<option ${o===g.djup?"selected":""}>${o}</option>`).join("")}</select></label><label>Avstånd mellan radialer i schakt (mm) <select id="g_avst">${Object.keys(KF_GRP).map(o=>`<option ${o==String(g.avst)?"selected":""}>${o}</option>`).join("")}</select></label><label>MV i rör <select id="g_ror">${["Nej","Ja"].map(o=>`<option ${o===g.ror?"selected":""}>${o}</option>`).join("")}</select></label><label>POC-kabel i entreprenaden <select id="g_poc">${["Nej","Ja"].map(o=>`<option ${o===g.poc?"selected":""}>${o}</option>`).join("")}</select></label>${f("lPoc","POC-kabel längd (m)")}</div>
+  <h3>DC och område</h3><div class="form">${f("dcn","DC-kablar per container (+/−)")}${f("dcl","DC-längd per kabel (m)")}${f("stangsel","Stängsel (m)")}</div>
+  <p class="small" style="margin:0"><span class="pill p-orange">Ersätter</span> Befintliga konstruktioner på skrivbordet ersätts. Kalkyler påverkas inte förrän du kör "Kalkyl av beredning".</p>
+  <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn s" data-a="close">Avbryt</button><button class="btn" data-a="rungen">Generera beredning</button></div>`);}
+/* ============ HÄNDELSER ============ */
+document.addEventListener("click",e=>{const el=e.target.closest("[data-a]");if(!el)return;const a=el.dataset.a,id=el.dataset.id,p=P();
+  if(a==="closeov"&&e.target!==el)return;
+  if(["selproj","katq","catfile","jsonfile","selkalk"].includes(a))return;
+  if(a==="goto"){e.preventDefault();S.ui.pid=id;UI.tab="projekt";}
+  else if(a==="tab"){UI.tab=id;window.scrollTo(0,0);}
+  else if(a==="close"||a==="closeov"){closeModal();return;}
+  else if(a==="newproj"){const np=newProject(S,{pnr:"26-"+String(500+S.projects.length).padStart(4,"0")});S.ui.pid=np.id;UI.tab="projekt";toast("Projekt "+np.pnr+" upplagt");}
+  else if(a==="copyproj"){const c=JSON.parse(JSON.stringify(p));c.id=uid();c.pnr=p.pnr+"-K";c.namn=p.namn+" (kopia)";c.exempel=false;c.tid=[];c.kostnader=[];c.fakturor=[];c.bestallningar=[];c.ata=[];c.fakturaplan.forEach(x=>x.fakt=null);S.projects.push(c);S.ui.pid=c.id;toast("Kopierat med beredning och kalkyler");}
+  else if(a==="adddag")p.dagbok.push({d:today(),t:"",h:0});
+  else if(a==="del"){const arr=getPath(S,el.dataset.p);arr.splice(+el.dataset.i,1);}
+  else if(a==="selk"){if(e.target.closest("button"))return;UI.selK=id;}
+  else if(a==="mv"){const k=p.beredning.konst,i=+el.dataset.i,j=i+ +el.dataset.d;if(j>=0&&j<k.length)[k[i],k[j]]=[k[j],k[i]];}
+  else if(a==="addkonst"){konstModal(id);return;}
+  else if(a==="genbess"){genModal();return;}
+  else if(a==="rungen"){const g={};Object.keys(GEN_DEF).forEach(k=>{const el2=document.getElementById("g_"+k);if(el2)g[k]=typeof GEN_DEF[k]==="number"?(+el2.value||GEN_DEF[k]):el2.value;});const r=applyGen(p,g);UI.selK=null;closeModal();toast(`${r.nB} containrar, ${r.nS} MV-skids, ${r.nR} radialer genererade`);}
+  else if(a==="copykabel"){const rows=kabellista(p);const t=["Kabel-ID\tFrån\tTill\tTyp\tKabel\tE-nr\tAntal\tLängd m\tFörläggning",...rows.map(r=>[r.id,r.fran,r.till,r.typ,r.ben,r.art,r.antal,r.langd,r.forl].join("\t"))].join("\n");navigator.clipboard?.writeText(t).then(()=>toast("Kabellista kopierad – klistra in i Excel")).catch(()=>toast("Kopiering blockerad i denna vy"));return;}
+  else if(a==="editkonst"){const k=p.beredning.konst.find(x=>x.id===id);konstModal(k.lib,k);return;}
+  else if(a==="savekonst"){const L=LIB.find(l=>l.id===id);const pr={};L.params.forEach(x=>{const v=document.getElementById("kp_"+x.k).value;pr[x.k]=x.n?+v:v;});const r=L.build(pr);
+    if(el.dataset.k){const k=p.beredning.konst.find(x=>x.id===el.dataset.k);k.params=pr;k.m=r.m.filter(x=>x[1]).map(([a,n])=>({art:a,n}));k.k=r.k.filter(x=>x[1]).map(([c,n])=>({kod:c,n}));k.c=r.c;toast("Konstruktionen genererad om");}
+    else{const k={id:uid(),lib:id,params:pr,ident:document.getElementById("kp__ident").value||(L.post?L.post+"01":L.namn),upplag:p.beredning.upplag[0]?.nr||"",anm:"",m:r.m.filter(x=>x[1]).map(([a,n])=>({art:a,n})),k:r.k.filter(x=>x[1]).map(([c,n])=>({kod:c,n})),c:r.c};p.beredning.konst.push(k);UI.selK=k.id;toast("Lagd på skrivbordet");}
+    closeModal();}
+  else if(a==="dupkonst"){const k=p.beredning.konst.find(x=>x.id===id);const c=JSON.parse(JSON.stringify(k));c.id=uid();c.ident+=" (kopia)";p.beredning.konst.splice(p.beredning.konst.indexOf(k)+1,0,c);UI.selK=c.id;}
+  else if(a==="addart"){const k=p.beredning.konst.find(x=>x.id===id);k.m.push({art:document.getElementById("addArt").value,n:1});}
+  else if(a==="addkod"){const v=document.getElementById("addKod").value.trim();if(!cat(v)){toast("Koden finns inte i katalogen");return;}p.beredning.konst.find(x=>x.id===id).k.push({kod:v,n:1});}
+  else if(a==="addupplag")p.beredning.upplag.push({nr:(p.beredning.upplag.length+1),adr:""});
+  else if(a==="kalkav"){const k=kalkylFromBeredning(p);UI.kalkId=k.id;UI.tab="kalkyl";toast("Kalkyl "+k.nr+" skapad av beredning");}
+  else if(a==="newkalk"){const k={id:uid(),nr:"K"+(2000+Math.floor(Math.random()*8000)),namn:"Ny kalkyl",typ:"P2",status:p.kalkyler.length?"Alt":"Huv",faktor:1,pas:{arb:0,mat:0,msk:0,ov:0},risk:0,vinst:0,matMode:"katalog",rader:[]};p.kalkyler.push(k);UI.kalkId=k.id;UI.tab="kalkyl";}
+  else if(a==="openkalk"){UI.kalkId=id;UI.tab="kalkyl";}
+  else if(a==="copykalk"){const k=p.kalkyler.find(x=>x.id===UI.kalkId);const c=JSON.parse(JSON.stringify(k));c.id=uid();c.nr="K"+(2000+Math.floor(Math.random()*8000));c.namn+=" (kopia)";c.status="Alt";p.kalkyler.push(c);UI.kalkId=c.id;toast("Kalkyl kopierad");}
+  else if(a==="kaddkod"){const k=p.kalkyler.find(x=>x.id===UI.kalkId);const v=document.getElementById("kKod").value.trim();if(!cat(v)){toast("Koden finns inte i katalogen");return;}k.rader.push({id:uid(),kod:v,n:+document.getElementById("kAntal").value||1,matris:1,kom:""});}
+  else if(a==="kaddegen"){const k=p.kalkyler.find(x=>x.id===UI.kalkId);k.rader.push({id:uid(),egen:true,kod:"EGEN",ben:"Egen kod",enh:"st",n:1,b:0,m:1,x:0,mat:0,ov:0,matris:1});toast("Egen kod: 1 montörstimme – ändra benämning och antal");}
+  else if(a==="mkbest"){const mat=aggMateriel(p);if(!mat.length){toast("Beredningen saknar materiel");return;}const nr="B-"+(1001+S.projects.reduce((a,x)=>a+x.bestallningar.length,0));
+    p.bestallningar.push({id:uid(),nr,lev:p.beredning.lev,datum:today(),status:"Skapad",upplag:p.beredning.upplag[0]?.nr||"",rader:mat.filter(r=>!r.bl).map(r=>({art:r.art,n:r.n,pris:r.pris,ben:r.ben,enh:r.enh}))});const t=p.tidlagen.find(x=>x.n.startsWith("Materiel"));if(t&&!t.start)t.start=today();toast("Beställning "+nr+" skapad");}
+  else if(a==="showbest"){bestModal(p.bestallningar.find(x=>x.id===id));return;}
+  else if(a==="addtid")p.tid.push({id:uid(),d:today(),pers:"",roll:"mont",h:8,kom:"",fakt:null});
+  else if(a==="addkost")p.kostnader.push({id:uid(),d:today(),lev:"",typ:"UE",belopp:0,text:"",fakt:null});
+  else if(a==="addplan")p.fakturaplan.push({id:uid(),text:"Ny milstolpe",datum:today(),pct:0,fakt:null});
+  else if(a==="addata")p.ata.push({id:uid(),nr:"ÄTA "+(p.ata.length+1),text:"",belopp:0,status:"Begärd",fakt:null});
+  else if(a==="fakplan"){const f=createFaktura(p,S,{planId:id,ata:false});toast("Faktura "+f.nr+" skapad");fakturaModal(f);}
+  else if(a==="fakata"){if(!p.ata.some(x=>x.status==="Godkänd"&&!x.fakt)){toast("Inga ofakturerade godkända ÄTA");return;}const f=createFaktura(p,S,{ata:true});toast("Faktura "+f.nr+" skapad");fakturaModal(f);}
+  else if(a==="faklop"){if(!lopandeUnderlag(p).length&&!p.ata.some(x=>x.status==="Godkänd"&&!x.fakt)){toast("Inget ofakturerat underlag");return;}const f=createFaktura(p,S,{lopande:true});toast("Faktura "+f.nr+" skapad");fakturaModal(f);}
+  else if(a==="showfak"){fakturaModal(p.fakturor.find(x=>x.id===id));return;}
+  else if(a==="regtab")UI.regTab=id;
+  else if(a==="katf")UI.katF=id;
+  else if(a==="copyjson"){const t=document.getElementById("jsonOut");const done=()=>toast("JSON kopierad");navigator.clipboard?.writeText(t.value).then(done).catch(()=>{t.select();toast("Markerat – kopiera med Ctrl+C");});return;}
+  else if(a==="resetq"){document.getElementById("resetBox").innerHTML=`<p class="small" style="margin:10px 0 6px">All data i webbläsaren ersätts med exempeldata.</p><button class="btn" data-a="reset">Ja, återställ</button>`;return;}
+  else if(a==="reset"){S=seed();UI.selK=null;UI.kalkId=null;toast("Exempeldata återställd");}
+  else return;
+  save();render();
+});
+document.addEventListener("change",e=>{const el=e.target;
+  if(el.id==="projSel"){S.ui.pid=el.value;UI.selK=null;UI.kalkId=null;save();render();return;}
+  if(el.id==="selkalk"){UI.kalkId=el.value;render();return;}
+  if(el.id==="catFile"&&el.files[0]){const r=new FileReader();r.onload=()=>importCatalog(r.result,el.files[0].name);r.readAsText(el.files[0],"utf-8");return;}
+  if(el.id==="jsonFile"&&el.files[0]){const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.projects)throw 0;d.catalog=d.catalog||S.catalog;d.catSource=d.catSource||S.catSource;S=d;save();render();toast("Data inläst");}catch(x){toast("Filen är inte en giltig ONE Bered-export");}};r.readAsText(el.files[0]);return;}
+  if(el.dataset.bind){let v=el.value;if(el.dataset.t==="num")v=v===""?0:+v;setPath(S,el.dataset.bind,v);save();render();}
+});
+document.addEventListener("input",e=>{const el=e.target;if(el.id==="katQ"){UI.katQ=el.value;const pos=el.selectionStart;render();const n=document.getElementById("katQ");n.focus();n.setSelectionRange(pos,pos);}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();});
+function importCatalog(text,name){
+  const lines=text.replace(/^﻿/,"").split(/\r?\n/).filter(Boolean);const hd=lines[0].split(";").map(s=>s.trim());const ix=k=>hd.indexOf(k);
+  if(ix("kod")<0||ix("katalog")<0){toast("CSV saknar kolumnerna katalog och kod");return;}
+  const num=v=>{if(v==null||v==="")return null;const n=+String(v).replace(",",".");return isNaN(n)?null:n;};
+  const rows=lines.slice(1).map(l=>{const c=l.split(";");const g=k=>c[ix(k)];return {kat:g("katalog"),kod:g("kod"),grp:g("grupp")||"",ben:g("benamning")||"",enh:g("enhet")||"",b:num(g("bered_h")),m:num(g("mont_h")),x:num(g("maskin_h")),arb:num(g("arbete_kr")),mat:num(g("material_kr")),mk:num(g("maskin_kr")),ov:num(g("ovrigt_kr")),sum:num(g("summa_kr"))};}).filter(r=>r.kod);
+  S.catalog=rows;S.catSource=name+" (importerad "+today()+")";save();render();toast(fmt(rows.length)+" koder importerade");
+}
+load();
+render();
+</script>
