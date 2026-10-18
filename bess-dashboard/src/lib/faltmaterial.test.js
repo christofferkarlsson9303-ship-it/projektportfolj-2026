@@ -70,7 +70,7 @@ describe("Sekventiell lagplan", () => {
     expect(new Set(points.map((p) => p.id)).size).toBe(41);
     expect(LAGMALLAR.filter((m) => m.lag).map((m) => m.lag)).toEqual(["A", "B", "C"]);
     for (const m of LAGMALLAR) expect(m.flode).toBeTruthy();
-    expect(points.find((p) => p.id === "B.02").instruktion).toContain("innan DC-kablar");
+    expect(points.find((p) => p.id === "B.02").instruktion).toContain("före ONE:s externa DC-anslutning");
     expect(points.findIndex((p) => p.id === "B.02")).toBeLessThan(points.findIndex((p) => p.id === "B.04"));
   });
   it("lagurval tar med båda namn, beroenden och källvillkor utan statusändring", () => {

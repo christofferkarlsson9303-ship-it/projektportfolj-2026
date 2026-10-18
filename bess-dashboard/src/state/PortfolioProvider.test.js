@@ -296,6 +296,9 @@ describe("offline och återanslutning", () => {
       await new Promise((r) => setTimeout(r, 120));
     });
     expect(falsk.appState.has(STATE)).toBe(false);
+    // Ändringen finns i webbläsarens lokala exemplar även om inget kunnat skrivas delat.
+    const lokal = JSON.parse(localStorage.getItem(CONFIG.storageKey));
+    expect(lokal.risker.find((r) => r.id === "r1").atgard).toBe("skriven före kontakt");
 
     falsk.sattFel(null);
     await vantaTills(() => falsk.appState.has(STATE) && iDb("risker", "r1").atgard === "skriven före kontakt", 3000);

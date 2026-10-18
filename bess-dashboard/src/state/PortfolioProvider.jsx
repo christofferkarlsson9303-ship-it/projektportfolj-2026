@@ -206,6 +206,8 @@ export function PortfolioProvider({ children }) {
       return;
     }
     if (!laddad.current) {
+      // Det lokala exemplaret skrivs ändå, så att ändringen överlever en krasch eller en omstart innan kontakten finns.
+      skrivLokalt(CONFIG.storageKey, s);
       // Utan en läst version skulle skrivningen ersätta andras ändringar. Ändringen ligger kvar, märkt som osparad.
       setConn({ kl: "err", txt: "Väntar på delad lagring — ändringarna är sparade lokalt och läggs in när kontakten finns" });
       return;
@@ -594,15 +596,18 @@ export function PortfolioProvider({ children }) {
       /* Ändringsloggen: egen append-only-tabell. Läses separat från portföljen
          och lyssnas på, så att spåret växer även när andra skriver. */
       if (DB.logg) {
-        const lasLogg = async () => {
+        const lasLogg = async (forsta = false) => {
           const poster = await DB.logg.las();
           if (avbruten) return;
-          senastLogg.current = poster.length ? poster[0].ts : "";
+          /* Gränsen för vad som ska skickas sätts bara vid första läsningen. Vid en
+             läsning efter återanslutning kan andra ha loggat under avbrottet; då får
+             gränsen inte flyttas förbi lokala poster som ännu inte nått tabellen. */
+          if (forsta) senastLogg.current = poster.length ? poster[0].ts : "";
           poster.forEach((p) => kandaLogg.current.add(loggNyckel(p)));
           if (poster.length) dispatch({ type: "SATT_LOGG", poster });
         };
         try {
-          await lasLogg();
+          await lasLogg(true);
         } catch {
           senastLogg.current = null; // otillgänglig — skicka inget blint
         }
