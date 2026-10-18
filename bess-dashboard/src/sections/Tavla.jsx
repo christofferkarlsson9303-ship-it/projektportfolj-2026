@@ -6,10 +6,14 @@ import { PILL_TILL_TON } from "../lib/status.js";
 import { KANBAN, KOLUMNER, ROLLER } from "../data/konstanter.js";
 import { dagarTill } from "../lib/datum.js";
 import { hamtaNamn } from "../state/portfolj-reducer.js";
+import { nyttId } from "../lib/id.js";
 
 /* Tavlan på designsystemet: filter och "+ Ny uppgift" i ett Card, kolumnerna
    i designsystemets toner (sunken, surface, hairline) så att tavlan följer
    mörkt läge, antal per kolumn som StatusBadge och förklaringen som Callout. */
+
+/* ÄTA/UR-lägen som inte flyttas från tavlan: godkänd, fakturerad och avslutad. */
+const ATA_LASTA = new Set(["godkand", "godkand_dok", "fakturerad", "stangd", "utgar"]);
 
 /* Ansvarig roll: satt värde vinner, annars härleds den ur ägare/leverantör.
    Härledningen är en gissning — ändra på kortet när den blir fel. */
@@ -111,7 +115,7 @@ function Valj({ vilket, etikett, alt, varde, onValj }) {
 
 export function Tavla() {
   const { state, dispatch, uppd, uppdStatus } = usePortfolj();
-  const { valtProjekt, fraga, visaToast } = useUi();
+  const { valtProjekt, fraga, bekrafta, visaToast } = useUi();
 
   const [filter, setFilter] = useState({ projekt: "alla", roll: "alla", typ: "alla" });
   const satFilter = useCallback((vilket, varde) => setFilter((f) => ({ ...f, [vilket]: varde })), []);
@@ -160,19 +164,37 @@ export function Tavla() {
     });
   }, [state, filter]);
 
-  const flyttaKort = (lista, id, kol) => {
+  const flyttaKort = async (lista, id, kol) => {
     const karta = KANBAN[lista];
     if (!karta) return;
     const ny = karta.till[kol];
     if (!ny) return;
+    const kort = rader.find((r) => r.lista === lista && r.rad.id === id);
+    if (!kort) return;
+    const gammal = kort.rad.status;
+    const kolnamn = (KOLUMNER.find((k) => k[0] === kol) || [undefined, kol])[1];
+
+    // Typen har inget eget läge för kolumnen: status ändras inte, så ingenting påstås ha loggats.
+    if (gammal === ny) {
+      visaToast(`Statusen ändras inte — ”${kolnamn}” finns inte som eget läge för den här typen`, "warn");
+      return;
+    }
+    // Fakturerade, godkända och avslutade ÄTA/UR får inte backas från tavlan.
+    if (lista === "ur" && ATA_LASTA.has(gammal)) {
+      visaToast("Den här ÄTA-posten är godkänd, fakturerad eller avslutad. Ändra den i ÄTA-vyn.", "warn");
+      return;
+    }
+    if (lista === "ur" && ny === "stangd") {
+      const ok = await bekrafta("Stänga ärendet? Det tas bort från tavlan och kan inte flyttas tillbaka här.", { titel: "Stäng ÄTA/UR", ok: "Stäng" });
+      if (!ok) return;
+    }
 
     if (lista === "hseqavvikelser") {
       dispatch({ type: "UPPD_RONDAVVIKELSE", id, falt: "status", varde: ny });
+      visaToast(`Flyttad till ”${kolnamn}” och loggad`);
     } else {
       uppdStatus(lista, id, "status", ny);
     }
-    const kolnamn = (KOLUMNER.find((k) => k[0] === kol) || [undefined, kol])[1];
-    visaToast(`Flyttad till ”${kolnamn}” och loggad`);
   };
 
   const sattRoll = (lista, id, roll) => {
@@ -205,7 +227,7 @@ export function Tavla() {
       type: "LAGG_TILL",
       lista: "punkter",
       rad: {
-        id: "p" + Date.now(),
+        id: nyttId("p"),
         projektId: pid,
         titel,
         agare: hamtaNamn() || "Christoffer Karlsson",

@@ -10,6 +10,7 @@ import { MOTESSTATUS, PARAGRAFER, PUNKTROLL } from "../data/konstanter.js";
 import { idag } from "../lib/datum.js";
 import { motesFlagga, projekt } from "../lib/berakningar.js";
 import { nyAtaPost } from "../lib/nyaPoster.js";
+import { nyttId } from "../lib/id.js";
 
 /* Byggmöten.
 
@@ -399,7 +400,7 @@ function Moteformular({ m, p }) {
                       type: "NY_MOTESPUNKT",
                       moteId: m.id,
                       punkt: {
-                        id: "pt" + Date.now(),
+                        id: nyttId("pt"),
                         para: nr,
                         text: "",
                         ansvarig: "PL",
@@ -462,12 +463,12 @@ export function Byggmoten() {
      faktiskt förs vidare mellan möten i stället för att skrivas om för hand. */
   const nyttMote = () => {
     const nr = "BM-" + String(moten.length + 1).padStart(2, "0");
-    const id = "bm" + Date.now();
+    const id = nyttId("bm");
     const tidigare = moten[0];
     const arv = (tidigare ? (tidigare.punkter || []).filter((pt) => pt.status === "oppen") : []).map(
       (pt) => ({
         ...pt,
-        id: "pt" + Date.now() + Math.random().toString(36).slice(2, 6),
+        id: nyttId("pt"),
         arv: true,
       })
     );

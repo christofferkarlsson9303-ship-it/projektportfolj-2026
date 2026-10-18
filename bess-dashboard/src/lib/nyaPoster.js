@@ -7,6 +7,7 @@
    samma fabriker, så en post skapad därifrån är identisk med en skapad i vyn. */
 
 import { idag } from "./datum.js";
+import { nyttId } from "./id.js";
 
 const lopnr = (lista, pid, prefix) =>
   prefix + String((lista || []).filter((r) => r.projektId === pid).length + 1).padStart(3, "0");
@@ -15,7 +16,7 @@ const lopnr = (lista, pid, prefix) =>
  *  för underrättelse räknas därifrån. */
 export function nyAtaPost(state, pid, falt = {}) {
   return {
-    id: "u" + Date.now(),
+    id: nyttId("u"),
     projektId: pid,
     nr: lopnr(state.ur, pid, "UR"),
     benamning: "",
@@ -36,7 +37,7 @@ export function nyAtaPost(state, pid, falt = {}) {
 /** Dagboksrad. ataRef binder raden till ÄTA-numret vid fakturering. */
 export function nyDagboksrad(pid, falt = {}) {
   return {
-    id: "d" + Date.now(),
+    id: nyttId("d"),
     projektId: pid,
     ataRef: "",
     titel: "",
@@ -58,7 +59,7 @@ export function nyDagboksrad(pid, falt = {}) {
 /** Skyddsrond med tom checklista, daterad idag. */
 export function nySkyddsrond(pid, falt = {}) {
   return {
-    id: "sr" + Date.now(),
+    id: nyttId("sr"),
     projektId: pid,
     datum: idag(),
     utfordAv: "",

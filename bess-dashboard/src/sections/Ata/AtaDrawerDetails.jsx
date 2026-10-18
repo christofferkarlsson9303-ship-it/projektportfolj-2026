@@ -13,6 +13,7 @@ import { registerStatus } from "../../lib/status.js";
 import { allaModellObjekt, arKopplad, byggKoppling } from "../../lib/modellKoppling.js";
 
 import { Callout, StatusBadge } from "../../components/ds/index.js";
+import { nyttId } from "../../lib/id.js";
 /* Ärendepanelen — glider in från höger och låter tavlan ligga kvar bakom.
 
    Medvetet INTE en modal: ingen mörk overlay och ingen fokusfälla, för hela
@@ -198,7 +199,7 @@ export function AtaDrawerDetails({ u, onStang, onKalkyl }) {
 
   const nyUnderrattelse = () => {
     const nr = state.storningar.filter((s) => s.projektId === u.projektId).length + 1;
-    const id = "s" + Date.now();
+    const id = nyttId("s");
     laggTill("storningar", {
       id,
       projektId: u.projektId,

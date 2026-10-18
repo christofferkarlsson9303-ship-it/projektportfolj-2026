@@ -17,6 +17,7 @@ import {
   procent,
   resurslage,
 } from "../lib/planering.js";
+import { nyttId } from "../lib/id.js";
 
 /* Resurser på designsystemet: kapacitet och beläggning vecka för vecka.
    Beläggningen är en värmekarta i en sekventiell skala — ljust ONE Blå för
@@ -85,7 +86,7 @@ export function Resurser() {
 
   const nyMedarbetare = () =>
     laggTill("medarbetare", {
-      id: "me" + Date.now(),
+      id: nyttId("me"),
       namn: "Ny medarbetare",
       roll: "Montör",
       kapacitet: 40,

@@ -8,6 +8,7 @@ import { Slideover } from "../components/ui/Slideover.jsx";
 import { HP_STATUS } from "../data/konstanter.js";
 import { handlingsplan, hpAtgarder, hpForsenad, hpSammanfattning } from "../lib/berakningar.js";
 import { idag } from "../lib/datum.js";
+import { nyttId } from "../lib/id.js";
 
 /* Handlingsplan — Vision to Action per projekt.
 
@@ -29,7 +30,7 @@ const STATUSKORT = { ejpaborjad: "Ej påbörjad", pagaende: "Pågår", klar: "Kl
 
 /* Id-generering på modulnivå — Date.now() direkt i komponentkroppen läses
    av lintern som ett orent anrop under render. */
-const nyttId = () => "hpa" + Date.now() + Math.floor(Math.random() * 1000);
+
 
 function Statusval({ a, onSatt, etikett }) {
   return (
@@ -130,7 +131,7 @@ export function Handlingsplan() {
   const sattStatus = (id, v) => uppdStatus("hpAtgarder", id, "status", v);
 
   const nyAtgard = () => {
-    const id = nyttId();
+    const id = nyttId("hpa");
     laggTill("hpAtgarder", {
       id,
       projektId: pid,

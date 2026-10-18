@@ -17,6 +17,7 @@
 import { CSV_TABELLER } from "../data/konstanter.js";
 import { SEED } from "../data/seed.js";
 import { excelDatum } from "./xlsx.js";
+import { nyttId } from "./id.js";
 
 /* ---------- Filtyp ---------- */
 
@@ -166,7 +167,6 @@ export function forslagUrLogg(state, bok, { filnamn = "", projektId = null } = {
   const cell = (rad, k) => (kol[k] === undefined ? "" : rad[kol[k]]);
   const befintliga = state.ur.filter((u) => u.projektId === pid);
   const sedda = new Set();
-  let lopnr = Date.now();
 
   for (const rad of hit.blad.rader.slice(hit.rubrikrad + 1)) {
     const nr = rensa(cell(rad, "nr"));
@@ -197,7 +197,7 @@ export function forslagUrLogg(state, bok, { filnamn = "", projektId = null } = {
       const likt = befintliga.find((x) => likaNr(x.nr, nr));
       if (likt) bas.varningar.push(`${nr} läggs till som ny post — observera att ${likt.nr} redan finns.`);
       bas.nya.push({
-        id: "u" + lopnr++,
+        id: nyttId("u"),
         projektId: pid,
         nr,
         ...falt,
@@ -292,7 +292,9 @@ export function listaForCsv(filnamn) {
 /* Värdet i CSV:n tillbaka till samma typ som fältet redan har. Nästlade
    objekt skrivs som JSON med ' i exporten och går inte att läsa tillbaka
    säkert — de lämnas som de är. */
-function tillTyp(text, nuvarande) {
+function tillTyp(text, nuvarande, nyckel = "") {
+  // Id-fält är alltid text: "36037" som tal skulle aldrig matcha projektets id.
+  if (/^(id|nr|kod)$|Id$/.test(nyckel)) return { v: text };
   if (nuvarande !== null && typeof nuvarande === "object") return { hoppa: true };
   if (typeof nuvarande === "number") return { v: text === "" ? null : tolkaTal(text) };
   if (typeof nuvarande === "boolean") return { v: /^(true|1|ja)$/i.test(text) };
@@ -331,6 +333,10 @@ export function forslagCsv(state, text, { filnamn = "", lista = null } = {}) {
   for (const cellar of data) {
     const id = cellar[idKol];
     if (!id) continue;
+    if (bas.nya.some((n) => n.id === id)) {
+      bas.varningar.push(`Id ${id} förekommer flera gånger i filen — bara första raden används.`);
+      continue;
+    }
     const befintlig = state[l].find((r) => r.id === id);
     if (!befintlig) {
       const ny = {};
@@ -340,7 +346,8 @@ export function forslagCsv(state, text, { filnamn = "", lista = null } = {}) {
           hoppadeNastlade = true;
           return;
         }
-        ny[k] = tillTyp(v, null).v;
+        const mall = (state[l] || []).find((r) => r[k] !== null && r[k] !== undefined);
+        ny[k] = tillTyp(v, mall ? mall[k] : "", k).v;
       });
       bas.nya.push(ny);
       continue;
@@ -349,7 +356,7 @@ export function forslagCsv(state, text, { filnamn = "", lista = null } = {}) {
     const efter = {};
     rubriker.forEach((k, i) => {
       if (k === "id") return;
-      const t = tillTyp(cellar[i] ?? "", befintlig[k]);
+      const t = tillTyp(cellar[i] ?? "", befintlig[k], k);
       if (t.hoppa) {
         hoppadeNastlade = true;
         return;
@@ -504,7 +511,7 @@ export function forslagProtokoll(state, { filnamn = "", projektId = null, datum 
     if (t && !tomt) bas.info.push(`${nr} finns redan med punkter i Byggmöten. Mötet ändras inte, bara filen kopplas.`);
   } else {
     bas.nya.push({
-      id: "bm" + Date.now(),
+      id: nyttId("bm"),
       projektId: pid,
       nr,
       datum: t?.datum || datum,
