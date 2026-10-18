@@ -32,6 +32,7 @@ import { Faktura } from "./Faktura.jsx";
 import { Kontrakt } from "./Kontrakt.jsx";
 import { Site } from "./Site/Site.jsx";
 import { Projektstart } from "./Projektstart/Projektstart.jsx";
+import { Bered } from "./Bered/Bered.jsx";
 
 export const SEKTIONER = {
   metod: Projektmetod,
@@ -41,6 +42,7 @@ export const SEKTIONER = {
   oversikt: DashboardView,
   epc: EpcChecklista,
   site: Site,
+  bered: Bered,
   tavla: Tavla,
   tidplan: Tidplan,
   resurser: Resurser,
