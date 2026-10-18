@@ -21,6 +21,11 @@ const TILLAGDA = [
     "Räkna fram ett ÄTA-belopp rad för rad — arbete, maskin, fordon och material — och spara det på ärendet.",
   ],
   [
+    "bered",
+    "ONE Bered",
+    "Beredning för batteriparken: generera containrar, MV-skids och kabelnät ur MW och MWh, få kabellista, materiellista med E-nr och kalkyl på KLG och BESS-schablon.",
+  ],
+  [
     "site",
     "Siten i 3D",
     "Projektets tomt med skid, containrar, E-House, trafo och nålar på öppna punkter. Gå runt i den.",
@@ -57,6 +62,8 @@ const IKONER_TILLAGDA = {
   kontrakt: '<path d="M6 3h9l4 4v8"/><path d="M15 3v4h4"/><path d="M6 3v18h7"/><path d="M9 9h5M9 13h4"/><circle cx="17.5" cy="18" r="2.5"/><path d="M16.5 20.3 16 23l1.5-.8 1.5.8-.5-2.7"/>',
   // Miniräknare: ÄTA-kalkylen.
   atakalkyl: '<rect x="5" y="2.5" width="14" height="19" rx="2"/><path d="M8 6.5h8v3H8z"/><path d="M8.5 13h.01M12 13h.01M15.5 13h.01M8.5 16.5h.01M12 16.5h.01M15.5 16.5h.01"/>',
+  // Kabeltrumma: beredning och kabellista.
+  bered: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3"/><path d="M12 3.5v5.5M20.5 12H15"/>',
   // Kub: volymerna på tomten.
   site: '<path d="M12 2.5 3.5 7v10L12 21.5 20.5 17V7z"/><path d="M3.5 7 12 11.5 20.5 7M12 11.5v10"/>',
   // Flagga på stolpe: start.
@@ -78,7 +85,7 @@ function medInskjutna(lista) {
 const URSPRUNG = Object.fromEntries(medInskjutna([...TILLAGDA, ...VYER_ORIGINAL]).filter(([id]) => id !== "_sek").map((v) => [v[0], v]));
 const GRUPPER = [
   ["Börja här", ["metod", "start", "idag", "oversikt"]],
-  ["Planera jobbet", ["kontrakt", "epc", "site", "tidplan", "handlingsplan", "resurser", "kontakter"]],
+  ["Planera jobbet", ["kontrakt", "epc", "bered", "site", "tidplan", "handlingsplan", "resurser", "kontakter"]],
   ["Gör och följ upp", ["punkter", "tavla", "moten", "vecka", "dagbok", "hseq", "risker", "storning"]],
   ["Följ pengarna", ["ata", "atakalkyl", "budget", "tid", "ekonomi", "milstolpar", "faktura"]],
   ["Lämna över och spara", ["slutdok", "rapport", "rutiner", "data"]],
@@ -89,6 +96,7 @@ const ENKLA_LEADS = {
   idag: "Vad behöver du ta hand om först? Öppna en rad för att komma till rätt ärende.",
   oversikt: "Se läget i dina projekt, nästa arbete och frågor som behöver hjälp.",
   epc: "Följ batteriparken genom 16 moment. En grind är ett klartecken för nästa moment.",
+  bered: "Generera beredningen ur MW och MWh. Få kabellista, materiel med E-nr och kalkyl.",
   site: "Placera skid, containrar och E-House på tomten och gå runt bland dem. Nålar visar öppna punkter.",
   tavla: "Se uppgifter och ärenden som kort. Flytta dem när arbetsläget ändras.",
   tidplan: "Se när arbeten och leveranser ska ske. Öppna en rad för detaljer.",

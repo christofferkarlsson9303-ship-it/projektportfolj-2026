@@ -218,6 +218,7 @@ const s = StyleSheet.create({
   signRubrik: { fontFamily: RUBRIK, fontSize: 12.5, fontWeight: 700, color: F.djup, marginBottom: 6 },
   signRad: { height: 0.8, backgroundColor: F.text, marginTop: 26, marginBottom: 3 },
   signEtikett: { fontSize: 8.5, color: F.text },
+  signVarde: { fontSize: 10.5, color: F.text, marginTop: 14 },
 });
 
 function Bock({ farg = "#fff", storlek = 7 }) {
@@ -296,7 +297,7 @@ function Forsattsblad({ d }) {
         </View>
       </View>
 
-      <Text style={s.overrubrik}>{ps.fas.nr === 1 ? "ANBUDSGENOMGÅNG ENLIGT ONE-P" : "PROJEKTSTATUS OCH BESLUTSUNDERLAG"}</Text>
+      <Text style={s.overrubrik}>{ps.fas.nr === 1 ? "BESLUTSUNDERLAG ANBUD ENLIGT ONE-P" : "PROJEKTSTATUS OCH BESLUTSUNDERLAG"}</Text>
       <Text style={s.titel}>{p.namn || "Projekt utan namn"}</Text>
 
       <FasRuta fas={ps.fas} lage={ps.lage} />
@@ -565,7 +566,7 @@ function Steg({ sek, fasBand }) {
               <Text style={s.stegTitel}>{sek.titel}</Text>
               {sek.sammanfattning ? <Text style={s.stegSammanfattning}>{sek.sammanfattning}</Text> : null}
             </View>
-            {!sek.id.startsWith("direktiv-") ? <View style={[s.piller, s.pillerGra]}>
+            {!sek.id.startsWith("direktiv-") && !sek.id.startsWith("anbud-") ? <View style={[s.piller, s.pillerGra]}>
               <Text style={s.pillerText}>{sek.kontroll ? `${sek.kontroll.klara}/${sek.kontroll.totalt} avbockade` : stegLage(sek) || "Ej ifyllt"}</Text>
             </View> : null}
           </View>
@@ -654,7 +655,8 @@ export function ProjektstartPdf({ dokument: d }) {
         <Sidfot d={d} />
         <Forsattsblad d={d} />
 
-        {(ps.direktiv || []).map((sek) => <View key={sek.id} break><Steg sek={sek} /></View>)}
+        {(ps.anbud || []).map((sek, i) => <View key={sek.id} break><Steg sek={sek} fasBand={i === 0 ? <FasBand text="Del 1 · Anbud" /> : null} /></View>)}
+        {(ps.direktiv || []).map((sek, i) => <View key={sek.id} break><Steg sek={{ ...sek, nr: (ps.anbud || []).length + sek.nr }} fasBand={i === 0 ? <FasBand text="Del 2 · Planering – projektdirektiv" /> : null} /></View>)}
         {ps.sektioner.filter((sek) => sek.fasNr > 1).map((sek, i, lista) => (
           <View key={sek.id} break><Steg sek={sek} fasBand={lista[i - 1]?.fas !== sek.fas ? <FasBand text={`Fas ${sek.fasNr} av ${ps.fas.antal} · ${sek.fasTitel}`} /> : null} /></View>
         ))}
@@ -663,20 +665,21 @@ export function ProjektstartPdf({ dokument: d }) {
         {ps.historik.length ? <View style={s.stegLuft} /> : null}
 
         <View break wrap={false}>
-          <Text style={[s.h2, { fontSize: 16 }]}>Granskning och godkännande</Text>
+          <Text style={[s.h2, { fontSize: 16 }]}>{ps.fas.nr === 1 ? "Beslut och signering" : "Granskning och godkännande"}</Text>
           <Text style={s.summaFet}>
-            Aktuellt projektskede: {ps.lage.skede}. Rapporten omfattar projektdirektivet{ps.fas.nr > 1 ? ` och upplåsta faser till och med fas ${ps.fas.nr} (${ps.fas.kort})` : " inför anbudsgenomgång"}. {ps.fas.nr === 1 ? `Anbudsutfall: ${ps.anbudsutfall}. Genomgång av anbudsunderlaget innebär inte vunnet anbud eller tillstånd att starta genomförandet.` : `${ps.klara} av ${ps.totalt} kontrollpunkter är avbockade.`}
+            Aktuellt projektskede: {ps.lage.skede}. Rapporten omfattar projektdirektivet{ps.fas.nr > 1 ? ` och upplåsta faser till och med fas ${ps.fas.nr} (${ps.fas.kort})` : " inför anbudsgenomgång"}. {ps.fas.nr === 1 ? `Anbudsutfall: ${ps.anbudsutfall}. Ledningen tar ställning till om anbudet ska lämnas in. Ett godkänt beslutsunderlag innebär inte vunnet anbud eller tillstånd att starta genomförandet.` : `${ps.klara} av ${ps.totalt} kontrollpunkter är avbockade.`}
           </Text>
           <Text style={s.summaText}>
             Underlaget är ett arbetsmaterial. Kontrollera kontraktsvillkor, betalplan och priser mot originalhandlingarna före användning.
           </Text>
           <View style={s.sign}>
-            {["Projektledare", "Intern beställare / styrgrupp"].map((t, i) => (
-              <View style={[s.signBox, i ? { marginLeft: 16 } : null]} key={t}>
-                <Text style={s.signRubrik}>{t}</Text>
-                {["Signatur", "Namnförtydligande", "Datum"].map((e) => (
+            {(ps.signering || [{ roll: "Intern beställare" }, { roll: "Projektledare" }]).map((sg, i) => (
+              <View style={[s.signBox, i ? { marginLeft: 16 } : null]} key={sg.roll}>
+                <Text style={s.signRubrik}>{sg.roll}</Text>
+                {[["Signatur", ""], ["Namnförtydligande", sg.namn], ["Datum", sg.datum]].map(([e, varde]) => (
                   <View key={e}>
-                    <View style={s.signRad} />
+                    {varde ? <Text style={s.signVarde}>{varde}</Text> : null}
+                    <View style={[s.signRad, varde ? { marginTop: 2 } : null]} />
                     <Text style={s.signEtikett}>{e}</Text>
                   </View>
                 ))}

@@ -23,8 +23,8 @@ test("gantt ritar staplar och visar i dag-linjen i bild", async ({ page }) => {
   expect(idag.x).toBeGreaterThanOrEqual(lada.x);
   expect(idag.x + idag.width).toBeLessThanOrEqual(lada.x + lada.width);
 
-  // Byggmomenten ur Bygga batteripark ritas som staplar med start och slut, märkta med projektets fas 1–8.
-  await expect(gantt.getByRole("button", { name: /^Fas [1-8] · .+ \(moment \d+\).* till \d{4}-\d{2}-\d{2}/ }).first()).toBeAttached();
+  // Byggmomenten ur Bygga batteripark ritas som staplar med start och slut, grupperade under projektets fas 1–8.
+  await expect(gantt.getByRole("button", { name: /^Moment \d+ · .+ till \d{4}-\d{2}-\d{2}/ }).first()).toBeAttached();
 });
 
 test("stapeln har beskrivande etikett och öppnar detaljvyn", async ({ page }) => {
@@ -152,4 +152,23 @@ test("byggfaserna fälls ut och bockar av", async ({ page }) => {
   const fore = await kryss.isChecked();
   await kryss.click();
   expect(await kryss.isChecked()).toBe(!fore);
+});
+
+test("byggmoment grupperas i åtta fällbara ONE-P-faser", async ({ page }) => {
+  await page.getByRole("radiogroup", { name: "Omfattning" }).getByRole("radio", { name: "Valt projekt" }).click();
+  const gantt = page.getByRole("group", { name: GANTT });
+  const grupper = gantt.getByRole("button", { name: /^Fas [1-8] · / });
+  await expect(grupper).toHaveCount(8);
+  const namn = await grupper.allTextContents();
+  expect(namn.map((text) => Number(text.match(/Fas (\d)/)[1]))).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+
+  const moment = gantt.getByRole("button", { name: /^Moment [01] · / });
+  await expect(moment).toHaveCount(2);
+  await grupper.first().click();
+  await expect(grupper.first()).toHaveAttribute("aria-expanded", "false");
+  await expect(moment).toHaveCount(0);
+  await expect(gantt.getByRole("button", { name: /^Moment 2 · / })).toHaveCount(1);
+  await grupper.first().focus();
+  await page.keyboard.press("Enter");
+  await expect(moment).toHaveCount(2);
 });

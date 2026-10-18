@@ -1,4 +1,6 @@
 import { KATALOG_RUBRIK, STEG } from "../data/projektstartSteg.js";
+import { ANBUDSFRAGOR, anbudsfragaId } from "../data/anbudsfragor.js";
+import { styrparametrarText } from "./styrparametrar.js";
 import { KATALOG } from "../data/projektstartKatalog.js";
 import { FAS_ANTAL, FAS_MODELL, arFasNr, faseFranGammal, faseInfo, fasFranStatus, riskFasFranGammal, statusEtikett } from "../data/projektfaser.ts";
 import { arRiskKategori } from "../data/riskTyper.ts";
@@ -292,19 +294,46 @@ export function anbudsDirektiv(u) {
   const risks = (u.rader.risker || []).filter((r) => r.titel?.trim()).map((r) => [r.titel.trim(), riskvardeText(r), varde(r.agare), varde(r.atgard)]);
   const tider = (u.rader.faser || []).filter((r) => r.namn?.trim() && (r.start || r.slut)).map((r) => [r.namn, r.start || "Ej angivet", r.slut || "Ej angivet", r.kritisk || "Nej"]);
   const intressenter = (u.rader.intressenter || []).filter((r) => r.namn?.trim()).map((r) => [r.namn, r.roll || "", r.organisation || "", r.kommunikation || ""]);
-  const prio = [v.prioritetKostnad, v.prioritetKvalitet, v.prioritetTid];
-  const tal = prio.map((x) => x?.trim() ? Number(x.replace(",", ".")) : NaN);
-  const giltig = tal.every((n) => Number.isFinite(n) && n >= 0 && n <= 100) && Math.abs(tal.reduce((a, b) => a + b, 0) - 100) < 0.01;
-  const prioritering = prio.some((x) => x?.trim()) ? `Kostnad: ${prio[0] || "ej angivet"} %, kvalitet: ${prio[1] || "ej angivet"} %, tid: ${prio[2] || "ej angivet"} %.${giltig ? "" : " Kontrollera fördelningen: tre tal mellan 0 och 100 ska summera till 100 %."}` : "";
+  const prioritering = styrparametrarText(v);
   const delar = [
-    ["Bakgrund, syfte, mål och avgränsningar", falt([["Bakgrund", v.bakgrund], ["Syfte", v.syfte], ["Mål och förväntningar", v.mal], ["Ingår", v.ingar], ["Avgränsningar - ingår inte", v.ingarEj], ["Anbudsbeslut", v.beslut], ["Motivering till anbudsbeslut", v.motivering], ["Betalvillkor inför anbud", v.betalvillkor], ["Bankgaranti inför anbud", v.bankgaranti], ["Viten och milstolpar", v.viten], ["Kassaflödesbedömning", v.kassaflode]])],
+    ["Bakgrund, syfte, mål och avgränsningar", falt([["Bakgrund", v.bakgrund], ["Syfte", v.syfte], ["Mål och förväntningar", v.mal], ["Ingår", v.ingar], ["Avgränsningar - ingår inte", v.ingarEj]])],
     ["Identifierade risker", falt([["Riskbild inför anbud", v.anbudRiskbild]]), tabell("Riskregister - preliminära bedömningar", ["Risk", "S × K", "Ägare", "Åtgärdsplan"], [3, 0.8, 1.5, 3], risks)],
-    ["Tidplan och prioriteringar", falt([["Övergripande tidplan och kontraktsdatum", v.anbudTidplan], ["Planerad start", v.startdatum], ["Planerat färdigställande", v.fardigdatum], ["Kritisk linje", v.kritiskLinje], ["Prioritering kostnad, kvalitet och tid", prioritering], ["Vad får ge vika först?", v.offra]]), tabell("Kända datum", ["Aktivitet", "Start", "Slut", "Kritisk"], [3, 1.5, 1.5, 1], tider)],
-    ["Nulägesanalys och intressenter", falt([["Nuläge", v.nulage], ["Öppna frågor", v.oppnaFragor]]), tabell("Intressenter", ["Namn", "Roll", "Organisation", "Kommunikation"], [2, 2, 2, 3], intressenter)],
+    ["Tidplan och styrparametrar", falt([["Övergripande tidplan och kontraktsdatum", v.anbudTidplan], ["Planerad start", v.startdatum], ["Planerat färdigställande", v.fardigdatum], ["Kritisk linje", v.kritiskLinje], ["Styrparametrar", prioritering], ["Vad får ge vika först?", v.offra]]), tabell("Kända datum", ["Aktivitet", "Start", "Slut", "Kritisk"], [3, 1.5, 1.5, 1], tider)],
+    ["Nulägesanalys och intressenter", falt([["Nulägesanalys", v.nulagesanalys], ["Nuläge till ledningen", v.nulage], ["Öppna frågor", v.oppnaFragor]]), tabell("Intressenter", ["Namn", "Roll", "Organisation", "Kommunikation"], [2, 2, 2, 3], intressenter)],
     ["HSEQ och arbetsmiljö", falt([["Förutsättningar inför anbud", v.anbudHseq], ["Planerad BAS-P", v.roll_basP], ["Planerad BAS-U", v.roll_basU]])],
     ["Organisation, rapportering och överlämning", falt([["Planerad organisation och överlämning", v.anbudOrganisation], ["Intern beställare", v.roll_internalClient], ["Projektledare", v.roll_pl], ["Rapportering till kund", v.rapporteringKund], ["Intern rapportering", v.rapporteringIntern]])],
   ];
   return delar.map(([titel, innehall, t], i) => ({ id: `direktiv-${i + 1}`, nr: i + 1, titel, sammanfattning: "", falt: innehall, tabell: t || null, tomma: [], tomTabell: "", kontroll: null }));
+}
+
+/** Del 1 i beslutsunderlaget: anbudet. Entreprenad- och ersättningsform, anbudsprocessen,
+ *  svaren på den fasta frågelistan och avropsbeslutet med kontrakts- och kassaflödesvillkor.
+ *  Obesvarade frågor står kvar som "Ej besvarad", så att ledningen ser vad som saknas. */
+export function anbudsUnderlag(u) {
+  const v = u.v;
+  const falt = (poster) => poster.filter(([, val]) => varde(val)).map(([k, val]) => [k, String(val).trim(), arLangText(String(val).trim()) ? textstycken(val) : null]);
+  const fragor = ANBUDSFRAGOR.map((f) => {
+    const svar = varde(v[anbudsfragaId(f)]);
+    /* Frågan blir rubrik och svaret brödtext, även när svaret är kort. */
+    return [f.fraga, svar || "Ej besvarad", textstycken(svar || "Ej besvarad")];
+  });
+  const delar = [
+    ["Entreprenadform och anbudsprocess", falt([["Entreprenadform (kontraktsform)", v.kontraktsform], ["Ersättningsform", v.ersattningsform], ["Anbudsutfall", v.anbudsutfall || "Anbudsarbete pågår"], ["Anbudsprocessen just nu", v.anbudsprocess], ["Sista dag för frågor", v.sistaFragedag], ["Anbudet lämnas senast", v.anbudsdag], ["Anbudet giltigt till", v.anbudGiltigt], ["Tilldelning väntas", v.tilldelning]])],
+    ["Svar på anbudsfrågor", fragor],
+    ["Avropsbeslut, kontrakt och kassaflöde", falt([["Anbudsbeslut", v.beslut], ["Motivering till anbudsbeslut", v.motivering], ["Öppna frågor till intern beställare", v.oppnaFragor], ["Betalvillkor", v.betalvillkor], ["Bankgaranti", v.bankgaranti], ["Viten och deltidsmilstolpar", v.viten], ["Hävningsgrunder", v.havning], ["Indexregel", v.index], ["Kassaflöde: längsta negativa period", v.kassaflode]])],
+  ];
+  return delar.map(([titel, innehall], i) => ({ id: `anbud-${i + 1}`, nr: i + 1, titel, sammanfattning: "", falt: innehall, tabell: null, tomma: [], tomTabell: "", kontroll: null }));
+}
+
+/** Signaturblocket: intern beställare och projektledare. Namn ur signeringen i direktivet,
+ *  annars de planerade rollerna. Datum bara när direktivet är signerat. */
+export function signering(u) {
+  const v = u.v;
+  const datum = varde(v.signDatum);
+  return [
+    { roll: "Intern beställare", namn: varde(v.signBestallare) || varde(v.roll_internalClient), datum: varde(v.signBestallare) ? datum : "" },
+    { roll: "Projektledare", namn: varde(v.signPL) || varde(v.roll_pl), datum: varde(v.signPL) ? datum : "" },
+  ];
 }
 
 export function projektstartDokument(u, { datum, skapadAv = "", historik = [], sparad = "" }) {
@@ -383,7 +412,9 @@ export function projektstartDokument(u, { datum, skapadAv = "", historik = [], s
     skapadAv,
     projektstart: {
       sektioner,
+      anbud: anbudsUnderlag(u),
       direktiv: anbudsDirektiv(u),
+      signering: signering(u),
       anbudsutfall: v.anbudsutfall || "Anbudsarbete pågår",
       klara: l.klara,
       totalt: l.totalt,
