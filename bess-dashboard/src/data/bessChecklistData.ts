@@ -33,6 +33,13 @@
 
 import type { FasNr } from "./projektfaser.ts";
 
+/* AC2C-gränsdragning 2026-10-17: leverantörsmatris 03.4 (uppdaterad
+   2025-08-25, filnamn 250828), aktivitetslista 2026-08-27 och CATL-checklista
+   release 12.2025. Workshoprader är antaganden. Customer är inte automatiskt
+   ONE. Externa utförandepunkter har ersatts av mottagning/samordning med
+   samma ID för att behålla historik; tidigare bock är inte ny verifiering.
+   Andra projekt måste bekräfta gränsdragningen mot sitt avtal. */
+
 /* ---------- Typer ---------- */
 
 /** HP = hållpunkt, stopp tills godkänt · K = kontrakts- eller lagkrav · L = lärdom från Batch C. */
@@ -126,7 +133,7 @@ export interface Lardom {
 }
 
 /** Checklistans version — står i kapitlets rubrik. */
-export const VERSION = { nr: "1.2", datum: "2026-09-29" } as const;
+export const VERSION = { nr: "1.3", datum: "2026-10-17" } as const;
 
 /* ---------- Markeringar ---------- */
 
@@ -319,7 +326,7 @@ export const FASER: Fas[] = [
           { id: "3.4", text: "Fundamentdimensionering mot verklig containervikt – begär skriftligt från OEM (t.ex. 43,8 t / 46 t mot 45 t)", badges: ["HP", "L"], ansvar: "K-konstruktör / PL", nar: "Före gjutning" },
           { id: "3.5", text: "eBoP: SLD, jordning, kabellista, fiber, åskskydd, belysning, CCTV, kabelskåp", badges: [], ansvar: "Elprojektör", nar: "Enligt kontrakt" },
           { id: "3.6", text: "Kabellista kontrollerad mot rätt topologi (radiell vs slinga) – ingen copy-paste från systerprojekt", badges: ["L"], ansvar: "Elprojektör", nar: "Före beställning" },
-          { id: "3.7", text: "Selektivplan och reläskyddsinställningar – ansvarsfördelning skriftlig", badges: ["L"], ansvar: "Elprojektör / leverantör", nar: "Före provning" },
+          { id: "3.7", text: "Ta emot selektivplan från Ingrid Capacity och verifiera gränssnittet mot stationsleverantörens respektive BESS/PE:s reläinställningar. ONE projekterar och kontrollerar sin BoP-anslutning.", badges: ["L"], ansvar: "ONE PL / IC / leverantörer", nar: "Före provning" },
           { id: "3.8", text: "Kabelstorlekar/antal ledare verifierade mot genomföringar och CT-fönster (t.ex. Ø160 mm)", badges: ["L"], ansvar: "Elprojektör", nar: "Före beställning" },
           { id: "3.9", text: "Kabeltyper för signal (CAN, brandlarm) verifierade med elinstallatörsansvarig", badges: ["L"], ansvar: "Elinstallatör", nar: "Före beställning" },
         ],
@@ -340,7 +347,7 @@ export const FASER: Fas[] = [
           { id: "3.15", text: "Klimatlaster med 50-års returperiod; 25 års teknisk livslängd", badges: ["K"], ansvar: "K-konstruktör", nar: "Projektering" },
           { id: "3.16", text: "Material, metoder, kabeltyper eller dimensioner ändras aldrig utan beställarens skriftliga samtycke", badges: ["K"], ansvar: "PL", nar: "Hela projektet" },
           { id: "3.17", text: "Skyltplan till beställaren för godkännande – stålstolpar, inga trästolpar", badges: ["K"], ansvar: "PL", nar: "Före montage" },
-          { id: "3.18", text: "Stationshus: takhöjd ≥ 2 700 mm (tryckavlastning), golv ±5 mm/m, varje rum EI60", badges: ["K"], ansvar: "Projektör", nar: "Före beställning" },
+          { id: "3.18", text: "Granska stationsleverantörens byggnadsunderlag och krav mot BoP-fundament, externa anslutningar och åtkomst. Intern stationsprojektering ligger hos stationsleverantören.", badges: ["K"], ansvar: "ONE PL / stationsleverantör", nar: "Före beställning" },
           { id: "3.19", text: "Lås beteckningar och data: lokaltrafo 315/630 kVA, 11/12 kV, LSP IP31/IP21 och 800/400 A, fack H1/HA01/H01", badges: ["L"], ansvar: "Elprojektör", nar: "Före beställning" },
           { id: "3.20", text: "Klargör provningsansvar för ställverksfack vid nätägarens inkoppling (ansvarsmatris saknade detta)", badges: ["L"], ansvar: "PL", nar: "Före beställning" },
         ],
@@ -606,7 +613,7 @@ export const FASER: Fas[] = [
           { id: "10.1", text: "FAT-protokoll med reläinställningar begärt från leverantören (Harju/VEO/Aktif)", badges: ["L"], ansvar: "PL", nar: "Före leverans" },
           { id: "10.2", text: "Mottagningskontroll: transportskador, tillbehör, verktygssats", badges: [], ansvar: "Platschef", nar: "Vid leverans" },
           { id: "10.3", text: "Stationshus besiktigat efter leverans – störningar dokumenterade (vem orsakar/bär kostnad)", badges: ["L"], ansvar: "PL", nar: "Efter leverans" },
-          { id: "10.4", text: "Fack sammandockade, samlingsskena och jordskena skarvade, tryckavlastning monterad", badges: [], ansvar: "Leverantör / elinstallatör", nar: "Montage" },
+          { id: "10.4", text: "Ta emot stationsleverantörens montagekvittens för interna fack, samlingsskenor, jordskenor och tryckavlastning. ONE utför externa anslutningar enligt gränsdragningen.", badges: [], ansvar: "ONE PL / stationsleverantör", nar: "Montage" },
           { id: "10.5", text: "Genomföringar tätade för EI60 / kapslingsklass", badges: [], ansvar: "Elinstallatör", nar: "Montage" },
         ],
       },
@@ -615,10 +622,10 @@ export const FASER: Fas[] = [
         punkter: [
           { id: "10.6", text: "Kabeldon rätt för area/ledarmaterial", badges: [], ansvar: "Elinstallatör", nar: "Montage" },
           { id: "10.7", text: "Skärmåterföring genom nollföljds-CT innan jordplint – annars falska/missade jordfel", badges: ["HP", "L"], ansvar: "Elinstallatör", nar: "Montage" },
-          { id: "10.8", text: "CT-omsättning och sekundärsteg samma på alla faser; reläparametrar enligt selektivplan", badges: ["HP", "L"], ansvar: "Reläprovare", nar: "Före provning" },
-          { id: "10.9", text: "Sekundärprovning reläskydd (riktat jordfel kräver U0 + I0), trippprov, ljusbågsvakt", badges: ["HP"], ansvar: "Reläprovare", nar: "Före spänningssättning" },
-          { id: "10.10", text: "RTU/SCADA: indikeringar, manövrar, larm verifierade", badges: [], ansvar: "Leverantör", nar: "Före spänningssättning" },
-          { id: "10.11", text: "Provresurser (Omicron/Megger) bokade i god tid", badges: ["L"], ansvar: "PL", nar: "≥ 6 v före provning" },
+          { id: "10.8", text: "Ta emot stationsleverantörens verifiering av CT-data och reläinställningar mot selektivplan. ONE verifierar egna externa anslutningar och registrerar gränssnittsfel.", badges: ["HP", "L"], ansvar: "ONE PL / stationsleverantör", nar: "Före provning" },
+          { id: "10.9", text: "Ta emot signerat SAT-protokoll från stationsleverantören för reläskydd, trippprov och ljusbågsvakt. IC samordnar stationens SAT. Öppna fel hanteras före ONE:s spänningssättning.", badges: ["HP"], ansvar: "ONE PL / IC / stationsleverantör", nar: "Före spänningssättning" },
+          { id: "10.10", text: "Ta emot verifiering av stationens RTU-signaler från stationsleverantören och samordna externa signalgränssnitt med Techinova, FlexGen och IC. Konfigurationsgränsen i IF05 ska fastställas.", badges: [], ansvar: "ONE PL / stationsleverantör / Techinova", nar: "Före spänningssättning" },
+          { id: "10.11", text: "Samordna tid och tillträde för stationsleverantörens SAT. Boka ONE:s egna provresurser för externa kablar och BoP separat.", badges: ["L"], ansvar: "ONE PL", nar: "≥ 6 v före provning" },
         ],
       },
       {
@@ -626,8 +633,8 @@ export const FASER: Fas[] = [
         punkter: [
           { id: "10.12", text: "Verktygssats (handtag jordkopplare/brytare, servicevagn) kvitterad och vägghängd", badges: [], ansvar: "Platschef", nar: "Mottagning" },
           { id: "10.13", text: "Fack H3: jordkopplaren kräver spänningssatt förreglingsmagnet (110 VDC) – forcera aldrig", badges: ["L"], ansvar: "Elinstallatör", nar: "Drift/provning" },
-          { id: "10.14", text: "Ljusbågsskydd testat (trippreläer ~7 ms) inkl. utlösning av effektbrytare", badges: ["HP"], ansvar: "Reläprovare", nar: "SAT" },
-          { id: "10.15", text: "LS1 110 VDC: laddning och batteritest verifierat innan ställverket spänningssätts", badges: ["HP"], ansvar: "Elinstallatör", nar: "Före spänning" },
+          { id: "10.14", text: "Ta emot stationsleverantörens SAT-resultat för ljusbågsskydd och utlösningskedja. ONE dokumenterar eventuella gränssnittsåtgärder inom BoP.", badges: ["HP"], ansvar: "ONE PL / stationsleverantör", nar: "SAT" },
+          { id: "10.15", text: "Ta emot stationsleverantörens verifiering av intern DC-försörjning och batteribackup före spänningssättning. ONE kontrollerar externa matningar inom BoP.", badges: ["HP"], ansvar: "ONE PL / stationsleverantör", nar: "Före spänning" },
         ],
       },
     ],
@@ -687,12 +694,12 @@ export const FASER: Fas[] = [
       {
         namn: "",
         punkter: [
-          { id: "12.1", text: "PCS: DC-säkringar monterade INNAN DC-kablar ansluts (garanti)", badges: ["HP", "L"], ansvar: "Montör", nar: "Montage" },
+          { id: "12.1", text: "Fastställ gränsen för PCS-interna DC-säkringar med PE före externa kabelanslutningar. Ta emot PE:s klartecken och följ godkänd montageanvisning för ONE:s anslutningar.", badges: ["HP", "L"], ansvar: "ONE / PE", nar: "Montage" },
           { id: "12.2", text: "DC: dubbelhåls kabelskor (c/c 45 mm), M12 50 Nm, balans mellan block ≤ ±20 %", badges: ["HP"], ansvar: "Montör", nar: "Montage" },
-          { id: "12.3", text: "AC-krage PCS–skid: etanol, kontaktpasta, M12 A2-70, packning tät", badges: [], ansvar: "Montör", nar: "Montage" },
-          { id: "12.4", text: "Aerosolkablage (brandsläckning) FRÅNKOPPLAT till sista steget i hot commissioning", badges: ["HP", "L"], ansvar: "Elinstallatör", nar: "Hela montaget" },
+          { id: "12.3", text: "Ta emot PE:s montagekvittens för intern AC-förbindning PCS–transformator/MV-skid. ONE utför externa anslutningar. Dokumentera skriftligt om PCS-dockningen kräver ONE-medverkan.", badges: [], ansvar: "ONE PL / PE", nar: "Montage" },
+          { id: "12.4", text: "Samordna säker provkonfiguration för aerosolsystemet med CATL och FACP-specialist. ONE:s externa kablage och OEM:s interna FSS hanteras separat enligt godkänd provplan.", badges: ["HP", "L"], ansvar: "ONE / CATL / FACP-specialist", nar: "Hela montaget" },
           { id: "12.5", text: "Kommunikation: fiber/Ethernet/CAN; CAN-bridge vid > 30 m; terminering 60 Ω uppmätt", badges: ["L"], ansvar: "Elinstallatör", nar: "Montage" },
-          { id: "12.6", text: "Brandlarm/FSS: gränsdragning OEM vs entreprenör skriftlig; certifiering för panel (t.ex. INIM) säkrad", badges: ["L"], ansvar: "PL", nar: "Tidigt" },
+          { id: "12.6", text: "ONE samordnar SAT/certifiering av FACP enligt matrisen och anlitar rätt specialist. CATL ansvarar för intern BESS-FSS. Fastställ panel-, signal- och utlösningsgränser skriftligt.", badges: ["L"], ansvar: "ONE PL / CATL / FACP-specialist", nar: "Tidigt" },
           { id: "12.7", text: "LV: PEN-delningspunkt dokumenterad per kabelskåp (TN-C → TN-S)", badges: ["L"], ansvar: "Elinstallatör", nar: "Montage" },
           { id: "12.8", text: "Brandtätning av alla kabelgenomföringar (brandkitt) – egenkontroll med foto", badges: ["K"], ansvar: "Elinstallatör", nar: "Montage" },
           { id: "12.9", text: "VCI-rostskyddsskum borttaget ur skåp", badges: ["L"], ansvar: "Montör", nar: "Före spänning" },
@@ -703,7 +710,7 @@ export const FASER: Fas[] = [
         namn: "Från källgenomgången",
         punkter: [
           { id: "12.11", text: "CATL: 2 skyddsplåtar i busbar-utrymmet demonteras före kabeldragning, återmonteras 10 Nm (kondens)", badges: ["HP"], ansvar: "Montör", nar: "Montage" },
-          { id: "12.12", text: "Moment: CATL-busbar 50 Nm, AC-krage 60 Nm; märk förband med färgpenna efter kalibrerad nyckel", badges: ["K"], ansvar: "Montör", nar: "Montage" },
+          { id: "12.12", text: "Dokumentera moment på ONE:s externa kraftanslutningar enligt aktuell OEM-anvisning. Ta emot PE:s protokoll för interna AC-förband; de ska inte intygas som ONE:s utförande.", badges: ["K"], ansvar: "ONE elpersonal / PE", nar: "Montage" },
           { id: "12.13", text: "VCI-rostskyddsskum sitter kvar under byggtiden – tas bort först vid idrifttagning", badges: ["L"], ansvar: "Montör", nar: "Idrifttagning" },
           { id: "12.14", text: "Torrrör DN50 PN16 anslutet till containerflänsen, RAL 3000", badges: ["K"], ansvar: "Rörentreprenör", nar: "Montage" },
           { id: "12.15", text: "Oljetråg: regnvattenventil ÖPPEN, avtappningsventil stängd och tejpad", badges: ["K"], ansvar: "Montör", nar: "Före spänning" },
@@ -727,7 +734,7 @@ export const FASER: Fas[] = [
         punkter: [
           { id: "13.1", text: "Test- och kontrollplan (\"Check before commissioning\") till beställaren", badges: ["K"], ansvar: "PL", nar: "≥ 2 mån före" },
           { id: "13.2", text: "SITP (Site Inspection & Test Plan) levererad", badges: ["K"], ansvar: "PL", nar: "Enligt kontrakt" },
-          { id: "13.3", text: "Personal: OEM-utbildning (CATL Qualified Person), läkarintyg, PPE kat 2/ljusbåge kat 3", badges: ["K"], ansvar: "PL", nar: "Före start" },
+          { id: "13.3", text: "Kontrollera kompetens och skydd för ONE:s egna arbetsuppgifter enligt arbetsberedning. Bekräfta CATL:s och PE:s behöriga idrifttagningspersonal separat.", badges: ["K"], ansvar: "ONE PL / OEM", nar: "Före start" },
           { id: "13.4", text: "Elanläggningsansvar och eldriftledare avtalade skriftligt", badges: ["HP", "K"], ansvar: "PL / beställare", nar: "Före spänning" },
           { id: "13.5", text: "Spänningssättningstillstånd från EAA och nätägare; nätägarens kontaktperson bokad", badges: ["HP"], ansvar: "PL", nar: "≥ 4 v före" },
         ],
@@ -735,16 +742,16 @@ export const FASER: Fas[] = [
       {
         namn: "Cold commissioning",
         punkter: [
-          { id: "13.6", text: "Isolationsmätning (2500 V) HV DC/AC, CAN-resistans, LOTO-status, aerosol frånkopplad", badges: ["HP"], ansvar: "Elinstallatör / OEM", nar: "Cold" },
+          { id: "13.6", text: "Utför ONE:s förkontroller av externa AC/DC-kablar, resistans, kommunikationskablage och säker arbetskonfiguration enligt godkänd provplan. Skilj CATL-listans multimeterkontroll från OEM:s isolationsövervakning; ingen generell provspänning anges här.", badges: ["HP"], ansvar: "ONE elpersonal / provledare", nar: "Cold" },
           { id: "13.7", text: "Cold commissioning-checklista inlämnad i tid (Batch C: 2026-11-09)", badges: ["K"], ansvar: "PL", nar: "Före start" },
         ],
       },
       {
         namn: "Hot commissioning & SAT",
         punkter: [
-          { id: "13.8", text: "Hjälpkraft stabil, BMS-boot, PCS/EMS-kommunikation, nödstopp (1 s/2 s)", badges: ["HP"], ansvar: "OEM / elinstallatör", nar: "Hot" },
-          { id: "13.9", text: "SAT separat för BoP, BESS, station, SCADA, EMS, brandlarm", badges: ["K"], ansvar: "PL", nar: "Hot" },
-          { id: "13.10", text: "Aerosolkablage återansluten sist – protokollfört", badges: ["HP"], ansvar: "Elinstallatör", nar: "Sist" },
+          { id: "13.8", text: "ONE verifierar sin hjälpkraft och externa säkerhetskretsar. Ta emot CATL:s BMS-uppstart och PE:s PCS-provning. FlexGen leder EMS-integration enligt fastställda gränssnitt.", badges: ["HP"], ansvar: "ONE / CATL / PE / FlexGen", nar: "Hot" },
+          { id: "13.9", text: "ONE utför och dokumenterar BoP-SAT. Ta emot separat BESS-SAT från OEM, stations-SAT via IC och EMS-SAT från FlexGen. SCADA-gränser och FACP-provning samordnas separat.", badges: ["K"], ansvar: "ONE PL / respektive provansvarig", nar: "Hot" },
+          { id: "13.10", text: "Ta emot kvittens på aerosolsystemets slutliga prov- och driftkonfiguration från CATL/FACP-specialist. ONE dokumenterar sitt externa kablage enligt godkänd gränsdragning.", badges: ["HP"], ansvar: "ONE / CATL / FACP-specialist", nar: "Sist" },
           { id: "13.11", text: "Egen avgränsningsklausul: intyga bara egna anslutningar – inte OEM-utrustning", badges: ["L"], ansvar: "PL", nar: "Vid intyg" },
           { id: "13.12", text: "Spänningssättning = beställaren tar i bruk → risk övergår för den delen (kap. 5 § 1) – kräv protokoll", badges: ["K"], ansvar: "PL", nar: "Vid spänning" },
           { id: "13.13", text: "CATL/OEM-verifiering skriftlig → avisering M5", badges: ["K", "L"], ansvar: "PL", nar: "Direkt" },
@@ -753,13 +760,13 @@ export const FASER: Fas[] = [
       {
         namn: "Från källgenomgången",
         punkter: [
-          { id: "13.14", text: "Cold commissioning startar först när ≥ 50 % av installationen och hjälpkraften är klar", badges: ["HP"], ansvar: "PL", nar: "Före cold" },
-          { id: "13.15", text: "Mätutrustning på plats: 1500 VDC multimeter, megger 2500 V, DC-tång 600 A, CAN-interface, täthetsprovare", badges: ["K"], ansvar: "Elinstallatör", nar: "Före cold" },
-          { id: "13.16", text: "MSD (manual service disconnect) installeras som sista moment", badges: ["HP"], ansvar: "OEM / montör", nar: "Hot" },
-          { id: "13.17", text: "Ansvarsgräns: CATL = BMS/firmware/batterifel; entreprenör/kund = PCS/EMS, station, nät, FSS", badges: ["K"], ansvar: "PL", nar: "Före start" },
-          { id: "13.18", text: "FSS-test: H2 10 % LEL startar fläkt; aerosol 30 s fördröjning (avbrytbar)", badges: ["K"], ansvar: "OEM / elinstallatör", nar: "Hot" },
+          { id: "13.14", text: "Bekräfta provberedskap per anläggningsdel med CATL och PE: ONE:s förkontroller, hjälpkraft, öppna fel och tillträde. Ett generellt procenttal för färdig installation ersätter inte deras klartecken.", badges: ["HP"], ansvar: "ONE PL / CATL / PE", nar: "Före cold" },
+          { id: "13.15", text: "Säkra mätutrustning för ONE:s egna förkontroller enligt godkänd provplan. CATL och PE bekräftar resurser för sina specialistprov.", badges: ["K"], ansvar: "ONE provledare / OEM", nar: "Före cold" },
+          { id: "13.16", text: "Fastställ utförare och ordning för MSD skriftligt med CATL. Checklistan anger CATL/Customer; progress record nämner RWE-installationslag och kan inte direkt tillämpas på ONE. Ingen automatisk ansvarstilldelning.", badges: ["HP"], ansvar: "ONE PL / CATL – ansvar öppet", nar: "Hot" },
+          { id: "13.17", text: "Gränsdragning AC2C: CATL sköter BMS/firmware och batteriets cold; PE sköter PCS cold/hot och interna PCS–trafoförbindningar; FlexGen sköter EMS; stationsleverantören sköter intern station/SAT; ONE sköter BoP, förkontroller och avtalad spänningssättning. IF05 och Customer-ledda prov ska fastställas.", badges: ["K"], ansvar: "ONE PL / IC / leverantörer", nar: "Före start" },
+          { id: "13.18", text: "Samordna brandprov: CATL:s interna FSS och ONE:s FACP-SAT/certifiering via specialist. Gemensamt detektorprov anges CATL/Customer och behöver bekräftad utförare och godkänd provplan.", badges: ["K"], ansvar: "ONE PL / CATL / FACP-specialist", nar: "Hot" },
           { id: "13.19", text: "Energisation Certificate utfärdas efter godkänd cold commissioning", badges: ["K"], ansvar: "PL", nar: "Efter cold" },
-          { id: "13.20", text: "SAT nätfunktioner: Q/V, P-Q, FCR/FFR, peak shaving, SoC-styrning", badges: ["K"], ansvar: "PL / OEM", nar: "Hot" },
+          { id: "13.20", text: "Bevaka nät- och EMS-prov: aktivitetslistan föreslår Sweco för nätkravsprov, FlexGen för EMS och IC för förkvalificering. ONE ger avtalat tillträde, elsäkerhet och BoP-stöd. Bekräfta ansvar innan bokning; lista är workshopantaganden.", badges: ["K"], ansvar: "ONE PL / IC / Sweco / FlexGen", nar: "Hot" },
           { id: "13.21", text: "Elanläggningsansvar till ONE Nordic: kopplingsansvar dygnet runt (Alvesta 3 000 kr/mån) – bemanna", badges: ["HP", "L"], ansvar: "PL", nar: "Före spänning" },
           { id: "13.22", text: "Under provning: inga andra arbetsbevis utlämnade; permanent märkning monterad före spänning", badges: ["K"], ansvar: "Eldriftledare", nar: "Provning" },
         ],
@@ -783,8 +790,8 @@ export const FASER: Fas[] = [
           { id: "14.2", text: "Egen förbesiktning/punch walk med UE innan besiktningsman kommer", badges: [], ansvar: "PL / platschef", nar: "2–3 v före" },
           { id: "14.3", text: "Slutdokumentation komplett till beställaren", badges: ["HP", "K"], ansvar: "PL", nar: "≥ 2 v före slutbesiktning" },
           { id: "14.4", text: "Skriftlig anmälan om slutbesiktningsberedskap", badges: ["K"], ansvar: "PL", nar: "Enligt kontrakt" },
-          { id: "14.5", text: "Slutbesiktning (opartisk besiktningsman) – protokoll mottaget", badges: ["K"], ansvar: "Beställare", nar: "Slutdatum" },
-          { id: "14.6", text: "Anmärkningar åtgärdade inom 2 v – annars vite (t.ex. 0,2 %/v)", badges: ["K"], ansvar: "PL", nar: "≤ 2 v" },
+          { id: "14.5", text: "Samordna besiktningsberedskap och ta emot beställarens besiktningsutlåtande. ONE utför inte den oberoende slutbesiktningen.", badges: ["K"], ansvar: "ONE PL / beställare / besiktningsman", nar: "Slutdatum" },
+          { id: "14.6", text: "Åtgärda och verifiera ONE:s/UE:s besiktningsanmärkningar inom avtalad tid. Leverantörsfel hänvisas till rätt part och bevakas till dokumenterad stängning.", badges: ["K"], ansvar: "ONE PL / UE / leverantörer", nar: "≤ 2 v" },
           { id: "14.7", text: "Efterbesiktning skriftligt bekräftad → M7", badges: ["K"], ansvar: "PL", nar: "Efter åtgärd" },
           { id: "14.8", text: "Särskild besiktning inom 6 mån för delar som inte kunde besiktigas (snö/is)", badges: ["K"], ansvar: "PL", nar: "≤ 6 mån" },
           { id: "14.9", text: "Återställd mark utanför site – kvittens från fastighetsägare", badges: ["K"], ansvar: "PL", nar: "Före slut" },
@@ -812,9 +819,9 @@ export const FASER: Fas[] = [
       {
         namn: "Slutdokumentation (enligt kontraktets lista, t.ex. App. 03.7)",
         punkter: [
-          { id: "15.1", text: "Relationsritningar (.dwg + PDF): situationsplan, SLD, kretsscheman, kabelförläggning", badges: ["K"], ansvar: "Projektör", nar: "≥ 2 v före SB" },
-          { id: "15.2", text: "Provprotokoll: FAT, SAT, megger, mantel, VLF, OTDR, jordtag, betongkuber, moment", badges: ["K"], ansvar: "PL", nar: "≥ 2 v före SB" },
-          { id: "15.3", text: "Reläinställningar, selektivplan, signal-/manöverlistor", badges: ["K"], ansvar: "PL", nar: "≥ 2 v före SB" },
+          { id: "15.1", text: "Leverera ONE:s relationshandlingar för mark och externa BoP-anslutningar. Samordna och ta emot respektive leverantörs interna relationshandlingar enligt avtalad dokumentlista.", badges: ["K"], ansvar: "ONE PL / projektör / leverantörer", nar: "≥ 2 v före SB" },
+          { id: "15.2", text: "Samla ONE:s provprotokoll och ta emot leverantörernas FAT/SAT-protokoll med ansvarig, revision och provomfattning. Leverantörsprotokoll ska inte intygas som ONE:s utförande.", badges: ["K"], ansvar: "ONE PL / leverantörer", nar: "≥ 2 v före SB" },
+          { id: "15.3", text: "Ta emot IC:s selektivplan och leverantörernas reläinställningar och signal-/manöverlistor. Sammanställ tillsammans med ONE:s externa anslutningsunderlag.", badges: ["K"], ansvar: "ONE PL / IC / leverantörer", nar: "≥ 2 v före SB" },
           { id: "15.4", text: "DoU-instruktioner (sv/en), CE-intyg, kemikalieförteckning, EPD, egenkontroller", badges: ["K"], ansvar: "PL", nar: "≥ 2 v före SB" },
           { id: "15.5", text: "Verifiering från OEM (CATL) klar i tid för M5", badges: ["L"], ansvar: "PL", nar: "Före M5" },
         ],
@@ -841,7 +848,7 @@ export const FASER: Fas[] = [
       {
         namn: "Från källgenomgången",
         punkter: [
-          { id: "15.15", text: "RTU- och HMI-projektfiler överlämnas i redigerbart format", badges: ["K"], ansvar: "PL", nar: "Överlämning" },
+          { id: "15.15", text: "Ta emot stationsleverantörens RTU/HMI-filer och avtalade konfigurationsunderlag från Techinova/FlexGen. ONE sammanställer leveransen; extern programmering är inte ONE:s utförande.", badges: ["K"], ansvar: "ONE PL / leverantörer", nar: "Överlämning" },
           { id: "15.16", text: "Eldokumentation: 2 pappersexemplar + digitalt (Harju)", badges: ["K"], ansvar: "PL", nar: "Överlämning" },
           { id: "15.17", text: "Batterigaranti vid stillestånd > 90 dagar: SOC 30–60 %, cell aldrig < 3,21 V, full cykel var 12:e månad – in i DoU", badges: ["L"], ansvar: "PL", nar: "Överlämning" },
           { id: "15.18", text: "Farligt avfall (olja, batterier, kemikalier) e-rapporterat till Naturvårdsverket; transportdokument sparas ≥ 1 år", badges: ["K"], ansvar: "PL", nar: "Löpande" },
