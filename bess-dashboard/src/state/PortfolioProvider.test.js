@@ -82,6 +82,7 @@ beforeEach(() => {
   localStorage.clear();
   toaster.length = 0;
   CONFIG.autosaveMs = 20;
+  CONFIG.sparaOmMs = 10_000;
 });
 
 afterEach(async () => {
@@ -229,5 +230,77 @@ describe("ekonomin", () => {
 
     expect(api.ekonomiFel).toMatch(/administratören/);
     expect(api.state.projekt.find((p) => p.id === "36037").kontraktsvarde).toBe(fore);
+  });
+});
+
+describe("offline och återanslutning", () => {
+  it("en ändring som aldrig nådde databasen försvinner inte vid nästa start", async () => {
+    await montera();
+    falsk.sattFel((tabell, op) => (tabell === "app_state" && op === "update" ? { code: "PGRST000", message: "nät" } : null));
+
+    await act(async () => api.uppd("risker", "r1", "atgard", "gjord offline"));
+    await vantaTills(() => api.conn.txt.includes("försöker igen"));
+    expect(iDb("risker", "r1").atgard).not.toBe("gjord offline");
+
+    // Fliken stängs, och medan den är stängd ändrar någon annan en annan rad.
+    await act(async () => root?.unmount());
+    root = null;
+    document.body.innerHTML = "";
+    falsk.sattFel(null);
+    bAndrar("risker", "r2", "atgard", "B:s åtgärd");
+
+    await montera();
+    await vantaTills(() => iDb("risker", "r1").atgard === "gjord offline");
+    expect(iDb("risker", "r2").atgard).toBe("B:s åtgärd");
+    expect(iVyn("risker", "r1").atgard).toBe("gjord offline");
+    expect(iVyn("risker", "r2").atgard).toBe("B:s åtgärd");
+  });
+
+  it("ett nätfel vid sparandet ger nytt försök utan ny redigering", async () => {
+    await montera();
+    CONFIG.sparaOmMs = 50;
+    let nekade = 0;
+    falsk.sattFel((tabell, op) => {
+      if (tabell === "app_state" && op === "update" && nekade < 2) {
+        nekade += 1;
+        return { code: "PGRST000", message: "nät" };
+      }
+      return null;
+    });
+
+    await act(async () => api.uppd("risker", "r1", "atgard", "kommer fram till slut"));
+    await vantaTills(() => iDb("risker", "r1").atgard === "kommer fram till slut", 3000);
+    expect(nekade).toBe(2);
+  });
+
+  it("inget skrivs delat förrän första läsningen lyckats, sedan läggs ändringen in", async () => {
+    CONFIG.sparaOmMs = 50;
+    falsk.sattFel((tabell, op) => (op === "select" ? { code: "PGRST000", message: "nät" } : null));
+
+    const div = document.createElement("div");
+    document.body.append(div);
+    root = createRoot(div);
+    await act(async () => {
+      root.render(
+        h(
+          UiContext.Provider,
+          { value: { visaToast: (txt) => toaster.push(txt) } },
+          h(PortfolioProvider, null, h("main", null, h(Fanga)))
+        )
+      );
+    });
+    await vantaTills(() => api?.conn.txt.includes("svarar inte"));
+
+    await act(async () => api.uppd("risker", "r1", "atgard", "skriven före kontakt"));
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 120));
+    });
+    expect(falsk.appState.has(STATE)).toBe(false);
+    // Ändringen finns i webbläsarens lokala exemplar även om inget kunnat skrivas delat.
+    const lokal = JSON.parse(localStorage.getItem(CONFIG.storageKey));
+    expect(lokal.risker.find((r) => r.id === "r1").atgard).toBe("skriven före kontakt");
+
+    falsk.sattFel(null);
+    await vantaTills(() => falsk.appState.has(STATE) && iDb("risker", "r1").atgard === "skriven före kontakt", 3000);
   });
 });

@@ -8,6 +8,7 @@
 
 import { idag, veckansDagar } from "./datum.js";
 import { KALKYL_STARTPRISER, KM_PRIS, KOSTNADSTYP, PRISLISTA_061 } from "../data/konstanter.js";
+import { nyttId } from "./id.js";
 
 /** Entreprenadarvode på självkostnad, ABT 06 kap. 6 § 9. */
 export const ARVODE_PROCENT = 10;
@@ -95,7 +96,7 @@ export function tidraderVecka(state, personId, vecka) {
 
 export function nyTidrad({ datum, personId, projektId }) {
   return {
-    id: "td" + Date.now() + Math.floor(Math.random() * 1000),
+    id: nyttId("td"),
     datum: datum || idag(),
     personId,
     projektId,
@@ -162,7 +163,7 @@ export function budgetlage(state, pid) {
 
 export function nyAktivitet(pid) {
   return {
-    id: "ak" + Date.now(),
+    id: nyttId("ak"),
     projektId: pid,
     namn: "Ny aktivitet",
     budgetTim: 0,
@@ -174,7 +175,7 @@ export function nyAktivitet(pid) {
 
 export function nyKostnad(pid) {
   return {
-    id: "ko" + Date.now(),
+    id: nyttId("ko"),
     projektId: pid,
     aktivitetId: "",
     datum: idag(),
@@ -221,12 +222,16 @@ export function ofakturerat(state, pid) {
 export function skapaFakturaunderlag(state, pid, datum = idag()) {
   const o = ofakturerat(state, pid);
   if (!o.tid.length && !o.kost.length) return state;
-  const nr = "FU" + String(state.fakturor.filter((f) => f.projektId === pid).length + 1).padStart(3, "0");
+  // Nästa nummer efter det högsta som använts — inte antalet, för då återanvänds ett nummer efter ångra.
+  const hogsta = state.fakturor
+    .filter((f) => f.projektId === pid)
+    .reduce((m, f) => Math.max(m, Number(String(f.nr || "").replace(/^\D+/, "")) || 0), 0);
+  const nr = "FU" + String(hogsta + 1).padStart(3, "0");
   const datumlista = [...o.tid.map((t) => t.datum), ...o.kost.map((k) => k.datum)].sort();
   const tidIds = new Set(o.tid.map((t) => t.id));
   const kostIds = new Set(o.kost.map((k) => k.id));
   const underlag = {
-    id: "fu" + Date.now(),
+    id: nyttId("fu"),
     projektId: pid,
     nr,
     skapad: datum,

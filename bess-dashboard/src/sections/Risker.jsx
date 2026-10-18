@@ -20,6 +20,7 @@ import {
   riskvarde,
 } from "../lib/berakningar.js";
 import { hamtaNamn } from "../state/portfolj-reducer.js";
+import { nyttId } from "../lib/id.js";
 
 /** Slår upp etiketten för ett kodvärde i en [kod, namn]-lista. */
 const etikettAv = (lista, v, fallback) => {
@@ -278,7 +279,7 @@ function RiskTillArende({ r }) {
 
   const skapa = () => {
     const antal = state.ur.filter((u) => u.projektId === r.projektId).length + 1;
-    const id = "u" + Date.now();
+    const id = nyttId("u");
     laggTill("ur", {
       id,
       projektId: r.projektId,
@@ -354,7 +355,7 @@ export function Risker() {
     });
     if (!sv || !sv.titel) return;
     laggTill("risker", {
-      id: "r" + Date.now(),
+      id: nyttId("r"),
       projektId: pid,
       titel: sv.titel,
       fas: p.fas ?? fasFranStatus(p.status),

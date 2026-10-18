@@ -14,6 +14,7 @@ import { idag, veckaEtikett, veckaForskjut, veckaNu } from "../lib/datum.js";
 import { allvar, ALLVARSNAMN, SVARSORD } from "../lib/veckotriage.js";
 import { hamtaNamn } from "../state/portfolj-reducer.js";
 import { registerStatus } from "../lib/status.js";
+import { nyttId } from "../lib/id.js";
 
 /* Veckokollen — projektledarens checklista, en vecka i taget.
 
@@ -41,7 +42,7 @@ const ANTAL_FRAGOR = VECKOFRAGOR.length;
 
 /* Id-generering på modulnivå. Anropad direkt i komponentkroppen läser
    lintern Date.now() som ett orent anrop under render. */
-const nyttId = (prefix) => prefix + Date.now();
+
 
 const IKON = { ok: CircleCheck, varning: CircleHelp, avvikelse: TriangleAlert };
 

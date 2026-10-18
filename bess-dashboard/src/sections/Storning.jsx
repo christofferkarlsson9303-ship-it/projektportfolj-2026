@@ -9,6 +9,7 @@ import { Ruta } from "../components/ui/Utskrift.jsx";
 import { dagarTill, idag } from "../lib/datum.js";
 import { projekt } from "../lib/berakningar.js";
 import { hamtaNamn } from "../state/portfolj-reducer.js";
+import { nyttId } from "../lib/id.js";
 
 /* Rutorna A–F i blanketten. Vägledningen är hämtad ur ONE Nordics mall och
    styr vad projektledaren faktiskt ska skriva — den är en del av dokumentet,
@@ -168,7 +169,7 @@ function Storningsformular({ s, onStang }) {
   };
 
   const dagboksrad = () => {
-    const id = "d" + Date.now();
+    const id = nyttId("d");
     laggTill("dagbok", {
       id,
       projektId: s.projektId,
@@ -368,7 +369,7 @@ export function Storning() {
 
   const nyUnderrattelse = () => {
     const nr = state.storningar.filter((s) => s.projektId === pid).length + 1;
-    const id = "s" + Date.now();
+    const id = nyttId("s");
     laggTill("storningar", {
       id,
       projektId: pid,

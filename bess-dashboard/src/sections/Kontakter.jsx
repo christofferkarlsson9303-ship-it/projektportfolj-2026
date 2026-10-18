@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { usePortfolj, useUi } from "../state/hooks.js";
 import { DataTable } from "../components/ui/DataTable.jsx";
 import { Callout, Card } from "../components/ds/index.js";
+import { nyttId } from "../lib/id.js";
 
 /* Kontakter på designsystemet: projektorganisationen i fyra kort —
    beställare, ONE Nordic, nät och besiktning, UE och leverantörer. Namnet
@@ -54,7 +55,7 @@ export function Kontakter() {
     });
     if (!sv || !sv.namn) return;
     laggTill("kontakter", {
-      id: "k" + Date.now(),
+      id: nyttId("k"),
       namn: sv.namn,
       roll: sv.roll || "",
       org: sv.org || "",

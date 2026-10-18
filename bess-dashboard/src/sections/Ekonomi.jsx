@@ -20,6 +20,7 @@ import { fmtSEK } from "../lib/format.js";
 import { ataSummering, ekonomi, projekt } from "../lib/berakningar.js";
 import { aprisKontroll, slutavrakning } from "../lib/kalkyl.js";
 import { kontraktsText } from "../lib/kontraktsgrund.js";
+import { nyttId } from "../lib/id.js";
 
 /* Ekonomi på designsystemet: nyckeltal överst (StatTile), betalplanen som
    kort med diagram och tabell, ÄTA-sammanfattningen med StatGroup och de två
@@ -303,7 +304,7 @@ export function Ekonomi() {
     dispatch({
       type: "UPPD_BETALPLAN_NY",
       rad: {
-        id: "b" + Date.now(),
+        id: nyttId("b"),
         projektId: valtProjekt,
         kod: "M" + antal,
         andel: 0,

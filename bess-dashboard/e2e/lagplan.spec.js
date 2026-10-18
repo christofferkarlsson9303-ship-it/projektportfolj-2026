@@ -24,7 +24,7 @@ test("lagplan: två namn per lag, DC-stoppunkt, PDF och rent lagurval", async ({
   const print = page.locator("#utskrift");
   await expect(print.locator(".field-check:has(.field-reference)")).toHaveCount(18);
   await expect(print).toContainText("Dan + Adam");
-  await expect(print).toContainText("DC-säkringar före DC-anslutning");
+  await expect(print).toContainText("före ONE:s externa DC-anslutning");
   await expect(print).toContainText("A.09");
   await expect(print).not.toContainText("C.04");
   await expect(print).toContainText("□ Ej OK");

@@ -27,7 +27,7 @@ test("fältmaterial: samtliga moment, PDF och tomma utskriftsfält", async ({ pa
   await expect(doc.locator(".field-check")).toHaveCount(49);
   await expect(doc).toContainText("□ OK"); await expect(doc).toContainText("□ Ej OK");
   await expect(doc).toContainText("CATL-01 / SN-001"); await expect(doc).toContainText("CATL Ener X rev B, sid 12");
-  await expect(doc).toContainText("Källskillnad"); await expect(doc).toContainText("M4.16");
+  await expect(doc).toContainText("AC2C-gränsdragning"); await expect(doc).toContainText("M4.16");
   if (testInfo.project.name === "desktop") await page.pdf({ path: testInfo.outputPath("utskrift.pdf"), printBackground: true, preferCSSPageSize: true });
   await page.evaluate(() => window.dispatchEvent(new Event("afterprint")));
   await expect(page.locator("#utskrift")).toHaveCount(0);

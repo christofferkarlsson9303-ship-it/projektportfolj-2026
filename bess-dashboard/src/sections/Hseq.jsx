@@ -19,6 +19,7 @@ import { idag } from "../lib/datum.js";
 import { nySkyddsrond } from "../lib/nyaPoster.js";
 import { hamtaNamn } from "../state/portfolj-reducer.js";
 import { kontraktsprofil, vite as kontraktsvite, viteTak } from "../lib/kontraktsprofil.js";
+import { nyttId } from "../lib/id.js";
 
 /* HSEQ / BAS-U.
 
@@ -39,7 +40,7 @@ import { kontraktsprofil, vite as kontraktsvite, viteTak } from "../lib/kontrakt
    APD-planen och arbetsplatstavlan (etablering, G5) är ett eget kort i
    components/hseq/Apd.jsx med datan i data/apd.js. */
 
-const nyttId = (prefix) => prefix + Date.now();
+
 
 function Incident({ i, onUppd }) {
   const lage = incidentLage(i);

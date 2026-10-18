@@ -10,6 +10,7 @@ import { dagarTill } from "../lib/datum.js";
 import { gallerFor, projekt } from "../lib/berakningar.js";
 import { hamtaNamn } from "../state/portfolj-reducer.js";
 import { ArbetslistaSnabb, useSnabbUtskrift } from "../components/field/SnabbUtskrift.jsx";
+import { nyttId } from "../lib/id.js";
 
 /* Öppna punkter på designsystemet: nyckeltal överst och registret som Card
    med täthetsväljaren i huvudet. */
@@ -42,7 +43,7 @@ export function Punkter() {
     });
     if (!sv || !sv.titel) return;
     laggTill("punkter", {
-      id: "p" + Date.now(),
+      id: nyttId("p"),
       projektId: pid,
       titel: sv.titel,
       agare: hamtaNamn() || "Christoffer Karlsson",

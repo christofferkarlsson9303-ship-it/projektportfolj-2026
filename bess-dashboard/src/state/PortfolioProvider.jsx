@@ -13,6 +13,9 @@ import { feltyp, loggNyckel, nyaLoggposter, sammanslagningsText } from "./synk.j
 export const CONFIG = {
   autosaveMs: 1200,
   loggAterforsokMs: 15000, // nytt försök när en loggpost inte nådde tabellen
+  sparaOmMs: 10_000, // nytt försök när portföljen inte gick att spara delat
+  basKey: "batchc-portfolj-bas-v1", // senast gemensamma läge med databasen (basen i sammanslagningen)
+  osparadKey: "batchc-portfolj-osparad-v1", // "1" så länge lokala ändringar inte nått databasen
   storageKey: "batchc-portfolj-v1",
   dbPath: "portfolj/state", // huvuddokument — alla med länken kan ändra
   dbPathEkonomi: "portfolj/ekonomi", // kontraktsvärde + betalplan, write:admin
@@ -27,6 +30,39 @@ function laddaLokalt() {
     /* trasig eller blockerad lagring — falla tillbaka på grunddatan */
   }
   return efterInlasning(structuredClone(SEED));
+}
+
+/* Märkning i webbläsaren av vad som inte nått databasen. Utan den ersattes
+   lokala ändringar som gjorts offline av serverns version vid nästa start. */
+function lagraNyckel(nyckel, varde) {
+  try {
+    if (varde === null) localStorage.removeItem(nyckel);
+    else localStorage.setItem(nyckel, varde);
+  } catch {
+    /* full eller blockerad lagring — då finns ingen bas att slå ihop mot */
+  }
+}
+const markeraOsparad = (ja) => lagraNyckel(CONFIG.osparadKey, ja ? "1" : null);
+function arOsparad() {
+  try {
+    return localStorage.getItem(CONFIG.osparadKey) === "1";
+  } catch {
+    return false;
+  }
+}
+function lasBas() {
+  try {
+    const raw = localStorage.getItem(CONFIG.basKey);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Basen i sammanslagningen: hålls i minnet och speglas i webbläsaren för nästa start. */
+function sattBas(ref, payload) {
+  ref.current = payload;
+  lagraNyckel(CONFIG.basKey, JSON.stringify(payload));
 }
 
 const packa = (s) => JSON.parse(JSON.stringify(s));
@@ -100,6 +136,12 @@ export function PortfolioProvider({ children }) {
   const loggTimer = useRef(null);
   const [loggForsok, setLoggForsok] = useState(0);
   const tillampaFjarr = useRef(null); // sätts nedan, efter sparaState
+  const laddad = useRef(false); // första läsningen från databasen är gjord — innan dess skrivs inget delat
+  const anslutRef = useRef(null); // ny anslutning (efter ett misslyckat försök eller när nätet är tillbaka)
+  const lasInVantande = useRef(null); // läser in en delad ändring som väntar
+  const sparaRef = useRef(null); // sparaState för händelser utanför spar-logiken
+  const startRef = useRef(null); // lokala läget när appen startade — reservbas om ingen bas sparats
+  if (startRef.current === null) startRef.current = packaStatePayload(state);
 
   /* Håll en färsk referens till state för de asynkrona callbackerna (autospar
      och db-snapshots). Deklarerad före autospar-effekten så att den hinner
@@ -107,6 +149,14 @@ export function PortfolioProvider({ children }) {
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  /* Sätter state och låter stateRef följa direkt. Annars läser nästa asynkrona steg
+     (till exempel ekonomidokumentet) ett föråldrat läge innan React hunnit rendera,
+     och skriver tillbaka det över det som just lästs in. */
+  const sattNu = useCallback((nytt) => {
+    stateRef.current = nytt;
+    rawDispatch({ type: "SATT_STATE", state: nytt });
+  }, []);
 
   /** Fullt state ur en portföljpayload. Ekonomi och logg ligger i egna
    *  källor och tas från det vi redan har. */
@@ -143,12 +193,30 @@ export function PortfolioProvider({ children }) {
     }
   }, [visaToast]);
 
-  const sparaState = useCallback(async () => {
+  /* Spar-vakt: bara en skrivning åt gången. En andra skrivning som startade
+     före den första svarat använde den gamla versionen och gav en konflikt med
+     sig själv. Den körs i stället om när den pågående är klar. */
+  const sparPagar = useRef(false);
+  const sparaOm = useRef(false);
+
+  const sparaState = useCallback(async function sparaStateNu() {
     const s = stateRef.current;
     if (!dbRef.current) {
       skrivLokaltOchRapportera(s);
       return;
     }
+    if (!laddad.current) {
+      // Det lokala exemplaret skrivs ändå, så att ändringen överlever en krasch eller en omstart innan kontakten finns.
+      skrivLokalt(CONFIG.storageKey, s);
+      // Utan en läst version skulle skrivningen ersätta andras ändringar. Ändringen ligger kvar, märkt som osparad.
+      setConn({ kl: "err", txt: "Väntar på delad lagring — ändringarna är sparade lokalt och läggs in när kontakten finns" });
+      return;
+    }
+    if (sparPagar.current) {
+      sparaOm.current = true;
+      return;
+    }
+    sparPagar.current = true;
     skrivLokalt(CONFIG.storageKey, s);
     try {
       setConn({ kl: "", txt: "Sparar…" });
@@ -157,7 +225,9 @@ export function PortfolioProvider({ children }) {
       senastSynkad.current = str;
       komIhagSkickad(str);
       await dbRef.current.doc(CONFIG.dbPath).set(payload);
-      basState.current = payload;
+      sattBas(basState, payload);
+      // Märkningen släpps bara om inget nytt hunnit ändras under skrivningen.
+      if (JSON.stringify(packaStatePayload(stateRef.current)) === str) markeraOsparad(false);
       setConn({ kl: "ok", txt: "Delad · sparad " + nu() });
     } catch (e) {
       /* Konflikt betyder att någon hann spara mellan vår läsning och vår
@@ -176,7 +246,21 @@ export function PortfolioProvider({ children }) {
         }
         return;
       }
-      setConn({ kl: "err", txt: `Kunde inte spara delat (${e.code || e.message || "fel"}) — finns lokalt` });
+      setConn({ kl: "err", txt: `Kunde inte spara delat (${e.code || e.message || "fel"}) — försöker igen, finns lokalt` });
+      /* Nät- eller serverfel: ändringen ligger kvar, märkt som osparad, och
+         skickas igen. Tidigare väntade den på nästa redigering — och vid nästa
+         start ersattes den av serverns version. */
+      if (feltyp(e) !== "nekad") {
+        clearTimeout(sparTimer.current);
+        sparTimer.current = setTimeout(sparaStateNu, CONFIG.sparaOmMs);
+      }
+    } finally {
+      sparPagar.current = false;
+      if (sparaOm.current) {
+        sparaOm.current = false;
+        clearTimeout(sparTimer.current);
+        sparTimer.current = setTimeout(sparaStateNu, 0);
+      }
     }
   }, [skrivLokaltOchRapportera]);
 
@@ -193,19 +277,21 @@ export function PortfolioProvider({ children }) {
     const { varde, konflikter } = sammanfoga(bas, mina, deras);
 
     dbRef.current?.doc(CONFIG.dbPath).antaVersion?.(version);
-    basState.current = deras;
+    sattBas(basState, deras);
     senastSynkad.current = JSON.stringify(packa(raw));
     vantar.current = false;
 
-    rawDispatch({ type: "SATT_STATE", state: franPayload(varde) });
+    sattNu(franPayload(varde));
     if (!lika(varde, deras)) {
       clearTimeout(sparTimer.current);
       sparTimer.current = setTimeout(sparaState, CONFIG.autosaveMs);
+    } else {
+      markeraOsparad(false); // inget lokalt som databasen saknar
     }
     // Statusraden skrivs över av omsparningen direkt — toasten syns.
     if (konflikter.length) visaToast(sammanslagningsText(konflikter), "warn");
     return konflikter;
-  }, [franPayload, sparaState, visaToast]);
+  }, [franPayload, sparaState, visaToast, sattNu]);
 
   useEffect(() => {
     tillampaFjarr.current = tillampaFjarrFn;
@@ -240,7 +326,7 @@ export function PortfolioProvider({ children }) {
             const { varde, konflikter } = sammanfoga(ekonomiLast.current ?? deras, forsok, deras);
             ekonomiLast.current = deras;
             senastSynkadEk.current = JSON.stringify(deras);
-            rawDispatch({ type: "SATT_STATE", state: tillampaEkonomi(stateRef.current, varde) });
+            sattNu(tillampaEkonomi(stateRef.current, varde));
             if (!lika(varde, deras)) {
               clearTimeout(sparTimerEk.current);
               sparTimerEk.current = setTimeout(sparaEkonomiNu, CONFIG.autosaveMs);
@@ -256,7 +342,7 @@ export function PortfolioProvider({ children }) {
       if (typ === "nekad") {
         // Behörigheten sa nej: återställ vyn till senast bekräftade värden.
         if (ekonomiLast.current) {
-          rawDispatch({ type: "SATT_STATE", state: tillampaEkonomi(stateRef.current, ekonomiLast.current) });
+          sattNu(tillampaEkonomi(stateRef.current, ekonomiLast.current));
         }
         senastSynkadEk.current = JSON.stringify(ekonomiLast.current || forsok);
         setEkonomiFel(
@@ -277,7 +363,7 @@ export function PortfolioProvider({ children }) {
       clearTimeout(sparTimerEk.current);
       sparTimerEk.current = setTimeout(sparaEkonomiNu, 10_000);
     }
-  }, [skrivLokaltOchRapportera]);
+  }, [skrivLokaltOchRapportera, sattNu]);
 
   /** Dispatch som också schemalägger autospar på rätt kanal. */
   const dispatch = useCallback(
@@ -286,6 +372,7 @@ export function PortfolioProvider({ children }) {
       if (action.type === "SATT_STATE" && action.tyst) return;
       if (action.type === "SATT_LOGG") return; // loggen sparas i egen tabell
       koadKanal.current = arEkonomiAtgard(action) ? "ekonomi" : "state";
+      if (koadKanal.current === "state" && dbRef.current) markeraOsparad(true);
     },
     []
   );
@@ -318,9 +405,50 @@ export function PortfolioProvider({ children }) {
 
   useEffect(() => {
     let avbruten = false;
-    const avregistrera = [];
+    let avregistrera = [];
+    let omforsok = null;
+    let pagar = false;
 
-    (async () => {
+    const rensa = () => {
+      avregistrera.forEach((av) => {
+        try {
+          if (typeof av === "function") av();
+        } catch {
+          /* redan avregistrerad */
+        }
+      });
+      avregistrera = [];
+    };
+
+    /* Efter ett avbrott: läs in det som hänt och skicka det som väntar. */
+    const ikapp = () => {
+      vantar.current = true;
+      lasInVantande.current?.();
+      if (arOsparad()) {
+        clearTimeout(sparTimer.current);
+        sparTimer.current = setTimeout(() => sparaRef.current?.(), 0);
+      }
+    };
+
+    const anslut = async () => {
+      if (pagar || avbruten) return;
+      pagar = true;
+      try {
+        await anslutEnGang();
+      } finally {
+        pagar = false;
+      }
+    };
+    anslutRef.current = anslut;
+
+    const forsokIgen = (txt) => {
+      setConn({ kl: "err", txt });
+      clearTimeout(omforsok);
+      omforsok = setTimeout(anslut, CONFIG.sparaOmMs);
+    };
+
+    const anslutEnGang = async () => {
+      rensa();
       let DB = null;
       try {
         DB = skapaDb();
@@ -341,20 +469,34 @@ export function PortfolioProvider({ children }) {
         const snap = await ref.get();
         if (avbruten) return;
         if (snap.exists && snap.data()) {
-          senastSynkad.current = JSON.stringify(packa(snap.data()));
-          const inlast = franPayload(snap.data());
-          basState.current = packaStatePayload(inlast);
-          dispatch({ type: "SATT_STATE", state: inlast, tyst: true });
-          setConn({ kl: "ok", txt: "Delad · hämtad " + nu() });
+          /* Lokala ändringar som aldrig nått databasen (offline, tappad anslutning,
+             stängd flik) slås ihop med databasens version mot senast gemensamma
+             läge. Tidigare ersattes de av serverns version utan ett ord. */
+          const bas = arOsparad() ? lasBas() ?? startRef.current : null;
+          if (bas) {
+            basState.current = bas;
+            const konflikter = tillampaFjarr.current(snap.data(), undefined);
+            setConn(
+              konflikter.length
+                ? { kl: "err", txt: sammanslagningsText(konflikter) }
+                : { kl: "ok", txt: "Delad · hämtad, dina osparade ändringar är inlagda " + nu() }
+            );
+          } else {
+            senastSynkad.current = JSON.stringify(packa(snap.data()));
+            const inlast = franPayload(snap.data());
+            sattBas(basState, packaStatePayload(inlast));
+            sattNu(inlast);
+            setConn({ kl: "ok", txt: "Delad · hämtad " + nu() });
+          }
         } else {
           const start = packaStatePayload(stateRef.current);
           senastSynkad.current = JSON.stringify(start);
           await ref.set(start);
-          basState.current = start;
+          sattBas(basState, start);
           setConn({ kl: "ok", txt: "Delad · databasen skapad " + nu() });
         }
       } catch {
-        setConn({ kl: "err", txt: "Delad lagring svarar inte — lokalt läge" });
+        forsokIgen("Delad lagring svarar inte — ändringarna sparas lokalt, nytt försök strax");
         return;
       }
 
@@ -380,10 +522,9 @@ export function PortfolioProvider({ children }) {
                 : { kl: "ok", txt: "Delad · uppdaterad " + nu() }
             );
           },
-          (err) => {
-            setConn({ kl: "err", txt: `Delningen avbröts (${err.code}) — lokalt läge` });
-            dbRef.current = null;
-          }
+          // Kanalen byggs om av db-lagret; dbRef lämnas orörd så att sparandet fortsätter och kön töms.
+          (err) => setConn({ kl: "err", txt: `Delningen avbröts (${err.code}) — återansluter, ändringar sparas när kontakten är tillbaka` }),
+          ikapp
         )
       );
 
@@ -396,7 +537,7 @@ export function PortfolioProvider({ children }) {
           const data = snap.data();
           ekonomiLast.current = data;
           senastSynkadEk.current = JSON.stringify(data);
-          dispatch({ type: "SATT_STATE", state: tillampaEkonomi(stateRef.current, data), tyst: true });
+          sattNu(tillampaEkonomi(stateRef.current, data));
         } else {
           const start = packaEkonomi(stateRef.current);
           ekonomiLast.current = start;
@@ -408,8 +549,30 @@ export function PortfolioProvider({ children }) {
           }
         }
       } catch {
+        forsokIgen("Delad lagring svarar inte — ändringarna sparas lokalt, nytt försök strax");
         return;
       }
+      laddad.current = true;
+      // Något väntade på första kontakten (offline-start): skicka det nu.
+      if (arOsparad() && !lika(packaStatePayload(stateRef.current), basState.current)) {
+        clearTimeout(sparTimer.current);
+        sparTimer.current = setTimeout(() => sparaRef.current?.(), CONFIG.autosaveMs);
+      }
+
+      const lasEkonomiIgen = async () => {
+        try {
+          const snap = await refEk.get();
+          if (!snap.exists || !snap.data()) return;
+          const data = snap.data();
+          const inkommande = JSON.stringify(data);
+          if (inkommande === senastSynkadEk.current || redigerarNu()) return;
+          senastSynkadEk.current = inkommande;
+          ekonomiLast.current = data;
+          sattNu(tillampaEkonomi(stateRef.current, data));
+        } catch {
+          /* nästa händelse eller nästa spar ger en ny chans */
+        }
+      };
 
       avregistrera.push(
         refEk.onSnapshot(
@@ -423,69 +586,101 @@ export function PortfolioProvider({ children }) {
             senastSynkadEk.current = inkommande;
             ekonomiLast.current = data;
             refEk.antaVersion?.(snap.version);
-            dispatch({ type: "SATT_STATE", state: tillampaEkonomi(stateRef.current, data), tyst: true });
+            sattNu(tillampaEkonomi(stateRef.current, data));
           },
-          () => {}
+          () => {},
+          lasEkonomiIgen
         )
       );
 
       /* Ändringsloggen: egen append-only-tabell. Läses separat från portföljen
          och lyssnas på, så att spåret växer även när andra skriver. */
       if (DB.logg) {
-        try {
+        const lasLogg = async (forsta = false) => {
           const poster = await DB.logg.las();
           if (avbruten) return;
-          senastLogg.current = poster.length ? poster[0].ts : "";
+          /* Gränsen för vad som ska skickas sätts bara vid första läsningen. Vid en
+             läsning efter återanslutning kan andra ha loggat under avbrottet; då får
+             gränsen inte flyttas förbi lokala poster som ännu inte nått tabellen. */
+          if (forsta) senastLogg.current = poster.length ? poster[0].ts : "";
           poster.forEach((p) => kandaLogg.current.add(loggNyckel(p)));
           if (poster.length) dispatch({ type: "SATT_LOGG", poster });
+        };
+        try {
+          await lasLogg(true);
         } catch {
           senastLogg.current = null; // otillgänglig — skicka inget blint
         }
         avregistrera.push(
-          DB.logg.lyssna((post) => {
-            // Känd innan den når listan — annars skickas den upp igen i mitt namn.
-            kandaLogg.current.add(loggNyckel(post));
-            dispatch({ type: "SATT_LOGG", poster: [post] });
-          })
+          DB.logg.lyssna(
+            (post) => {
+              // Känd innan den når listan — annars skickas den upp igen i mitt namn.
+              kandaLogg.current.add(loggNyckel(post));
+              dispatch({ type: "SATT_LOGG", poster: [post] });
+            },
+            () => lasLogg().catch(() => {})
+          )
         );
       }
-    })();
+    };
+
+    anslut();
 
     return () => {
       avbruten = true;
-      avregistrera.forEach((av) => {
-        try {
-          if (typeof av === "function") av();
-        } catch {
-          /* redan avregistrerad */
-        }
-      });
+      clearTimeout(omforsok);
+      anslutRef.current = null;
+      rensa();
     };
-  }, [dispatch, franPayload]);
+  }, [dispatch, franPayload, sattNu]);
 
   /* En delad ändring som väntade medan användaren skrev läses in när fokus
      lämnar fältet. Timeouten låter fokus landa i nästa fält först. */
   useEffect(() => {
+    const lasIn = async () => {
+      if (!vantar.current || redigerarNu() || !dbRef.current) return;
+      try {
+        const snap = await dbRef.current.doc(CONFIG.dbPath).get();
+        if (!vantar.current || !snap.exists || !snap.data()) return;
+        const konflikter = tillampaFjarr.current(snap.data(), undefined);
+        setConn(
+          konflikter.length
+            ? { kl: "err", txt: sammanslagningsText(konflikter) }
+            : { kl: "ok", txt: "Delad · uppdaterad " + nu() }
+        );
+      } catch {
+        /* nästa spar ger konflikt och sammanslagning ändå */
+      }
+    };
+    lasInVantande.current = lasIn;
     const vidFokusUt = () => {
-      setTimeout(async () => {
-        if (!vantar.current || redigerarNu() || !dbRef.current) return;
-        try {
-          const snap = await dbRef.current.doc(CONFIG.dbPath).get();
-          if (!vantar.current || !snap.exists || !snap.data()) return;
-          const konflikter = tillampaFjarr.current(snap.data(), undefined);
-          setConn(
-            konflikter.length
-              ? { kl: "err", txt: sammanslagningsText(konflikter) }
-              : { kl: "ok", txt: "Delad · uppdaterad " + nu() }
-          );
-        } catch {
-          /* nästa spar ger konflikt och sammanslagning ändå */
-        }
-      }, 0);
+      setTimeout(lasIn, 0);
+    };
+    /* Nätet är tillbaka: anslut om första kontakten aldrig lyckades, annars läs
+       ikapp och skicka det som väntar. */
+    const vidOnline = () => {
+      if (!laddad.current) {
+        anslutRef.current?.();
+        return;
+      }
+      vantar.current = true;
+      lasIn();
+      if (arOsparad()) {
+        clearTimeout(sparTimer.current);
+        sparTimer.current = setTimeout(() => sparaRef.current?.(), 0);
+      }
     };
     document.addEventListener("focusout", vidFokusUt);
-    return () => document.removeEventListener("focusout", vidFokusUt);
+    window.addEventListener("online", vidOnline);
+    return () => {
+      document.removeEventListener("focusout", vidFokusUt);
+      window.removeEventListener("online", vidOnline);
+    };
   }, []);
+
+  useEffect(() => {
+    sparaRef.current = sparaState;
+  }, [sparaState]);
 
   /* Skickar upp poster som tillkommit lokalt. Avsändaren utelämnas med flit —
      databasen fyller i den inloggade adressen, och reglerna tillåter ingen

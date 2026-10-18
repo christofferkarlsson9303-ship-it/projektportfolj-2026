@@ -21,6 +21,7 @@ import {
 
 import { FASER, faseInfo } from "../data/projektfaser.ts";
 import { projektfasForMilstolpe } from "../lib/fasmappning.js";
+import { nyttId } from "../lib/id.js";
 
 /* Tidplanen på designsystemet: Gantt-schemat, milstolparna och leveranserna
    som kort, och byggfaserna som utfällbara rader i ett kort — varje fas med
@@ -300,7 +301,7 @@ export function Tidplan() {
     });
     if (!sv || !sv.titel) return;
     laggTill("milstolpar", {
-      id: "m" + Date.now(),
+      id: nyttId("m"),
       projektId: pid,
       titel: sv.titel,
       datum: sv.datum || "",
@@ -320,7 +321,7 @@ export function Tidplan() {
     });
     if (!sv || !sv.benamning) return;
     laggTill("leveranser", {
-      id: "l" + Date.now(),
+      id: nyttId("l"),
       projektId: pid,
       benamning: sv.benamning,
       leverantor: sv.leverantor || "",

@@ -11,5 +11,6 @@ export default defineConfig({
     // köra e2e-specarna och havererar på @playwright/test.
     include: ["src/**/*.test.js", "supabase/**/*.test.js"],
     environment: "node",
+    setupFiles: ["./src/test/setup.js"],
   },
 });

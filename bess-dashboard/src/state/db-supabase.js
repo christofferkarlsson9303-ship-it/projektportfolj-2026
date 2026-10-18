@@ -63,6 +63,54 @@ async function skriv(nyckel, payload) {
   if (ny) versioner.set(nyckel, ny.version);
 }
 
+/* Realtidskanal som kopplar upp sig igen efter ett fel. Tidigare gav första
+   CHANNEL_ERROR eller TIMED_OUT ett permanent avbrott: ett kort nätavbrott
+   ute på site räckte för att resten av sessionen bara sparades lokalt.
+   Nu tas kanalen ner och byggs om med stigande väntetid (1, 2, 4 … 30 s), och
+   vidAteransluten anropas när den är uppe igen så att anroparen kan läsa
+   ikapp det som hänt under avbrottet. Returnerar avregistreringsfunktionen. */
+function prenumerera(bygg, vidFel, vidAteransluten) {
+  let kanal = null;
+  let timer = null;
+  let forsok = 0;
+  let harFelat = false;
+  let avregistrerad = false;
+
+  const anslut = () => {
+    if (avregistrerad) return;
+    let denna = null;
+    denna = bygg((status, err) => {
+      // Händelser från en kanal vi redan bytt ut (t.ex. CLOSED efter removeChannel) ignoreras.
+      if (avregistrerad || denna !== kanal) return;
+      if (status === "SUBSCRIBED") {
+        forsok = 0;
+        if (harFelat) {
+          harFelat = false;
+          vidAteransluten?.();
+        }
+        return;
+      }
+      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+        harFelat = true;
+        vidFel?.(fel(status, err?.message || status));
+        supabase.removeChannel(denna);
+        kanal = null;
+        clearTimeout(timer);
+        timer = setTimeout(anslut, Math.min(30_000, 1000 * 2 ** forsok++));
+      }
+    });
+    kanal = denna;
+  };
+  anslut();
+
+  return () => {
+    avregistrerad = true;
+    clearTimeout(timer);
+    if (kanal) supabase.removeChannel(kanal);
+    kanal = null;
+  };
+}
+
 function dokument(nyckel) {
   return {
     async get() {
@@ -94,31 +142,28 @@ function dokument(nyckel) {
        andras ändring (t.ex. för att användaren stod i ett fält) — den andras
        ändring skrevs över utan konflikt. Nu följer versionen med i snapshoten
        och providern anropar antaVersion först när ändringen är inläst. */
-    onSnapshot(vidAndring, vidFel) {
-      const kanal = supabase
-        .channel(`app_state:${nyckel}`)
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "app_state", filter: `key=eq.${nyckel}` },
-          (handelse) => {
-            const rad = handelse.new && Object.keys(handelse.new).length ? handelse.new : null;
-            vidAndring({
-              exists: !!rad,
-              version: rad ? rad.version : undefined,
-              data: () => (rad ? rad.value : null),
-              metadata: { hasPendingWrites: false },
-            });
-          }
-        )
-        .subscribe((status, err) => {
-          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-            vidFel?.(fel(status, err?.message || status));
-          }
-        });
-
-      return () => {
-        supabase.removeChannel(kanal);
-      };
+    onSnapshot(vidAndring, vidFel, vidAteransluten) {
+      return prenumerera(
+        (status) =>
+          supabase
+            .channel(`app_state:${nyckel}`)
+            .on(
+              "postgres_changes",
+              { event: "*", schema: "public", table: "app_state", filter: `key=eq.${nyckel}` },
+              (handelse) => {
+                const rad = handelse.new && Object.keys(handelse.new).length ? handelse.new : null;
+                vidAndring({
+                  exists: !!rad,
+                  version: rad ? rad.version : undefined,
+                  data: () => (rad ? rad.value : null),
+                  metadata: { hasPendingWrites: false },
+                });
+              }
+            )
+            .subscribe(status),
+        vidFel,
+        vidAteransluten
+      );
     },
   };
 }
@@ -172,19 +217,18 @@ const logg = {
     if (e2) throw fel(e2.code, e2.message);
   },
 
-  lyssna(vidPost) {
-    const kanal = supabase
-      .channel("andringslogg")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "andringslogg" },
-        (handelse) => vidPost(franRad(handelse.new))
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(kanal);
-    };
+  lyssna(vidPost, vidAteransluten) {
+    return prenumerera(
+      (status) =>
+        supabase
+          .channel("andringslogg")
+          .on("postgres_changes", { event: "INSERT", schema: "public", table: "andringslogg" }, (handelse) =>
+            vidPost(franRad(handelse.new))
+          )
+          .subscribe(status),
+      undefined,
+      vidAteransluten
+    );
   },
 };
 
