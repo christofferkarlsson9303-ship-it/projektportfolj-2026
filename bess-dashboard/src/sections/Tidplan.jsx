@@ -19,7 +19,7 @@ import {
   rutinNyckel,
 } from "../lib/berakningar.js";
 
-import { faseInfo } from "../data/projektfaser.ts";
+import { FASER, faseInfo } from "../data/projektfaser.ts";
 import { projektfasForMilstolpe } from "../lib/fasmappning.js";
 
 /* Tidplanen på designsystemet: Gantt-schemat, milstolparna och leveranserna
@@ -235,8 +235,8 @@ export function Tidplan() {
         .filter((f) => f.start && f.slut)
         .map((f) => ({
           id: `fas-${f.fas.nr}`,
-          /* Fas 1–8 först, momentets eget nummer inom parentes: samma fasnummer som projektkortet. */
-          titel: `Fas ${f.fas.projektfas} · ${f.fas.kort} (moment ${f.fas.nr})`,
+          titel: `Moment ${f.fas.nr} · ${f.fas.kort}`,
+          projektfas: f.fas.projektfas,
           datum: f.start,
           slutdatum: f.slut,
           lage: FAS_TILL_LAGE[f.status] || "planerad",
@@ -263,7 +263,14 @@ export function Tidplan() {
         id: pr.id,
         namn: (pr.nr ? pr.nr + " " : "") + pr.namn,
         grupper: [
-          { id: "faser", namn: "Byggmoment", poster: faser },
+          ...FASER.map((fas) => ({
+            id: `projektfas-${fas.nr}`,
+            namn: `Fas ${fas.nr} · ${fas.kort}`,
+            fallbar: true,
+            visaTom: true,
+            sortera: false,
+            poster: faser.filter((moment) => moment.projektfas === fas.nr),
+          })),
           { id: "handelser", namn: "Milstolpar och leveranser", poster: handelser },
         ],
       };

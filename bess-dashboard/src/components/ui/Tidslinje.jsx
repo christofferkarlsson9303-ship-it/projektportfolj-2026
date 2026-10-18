@@ -131,6 +131,7 @@ const VECKODAG = ["S", "M", "T", "O", "T", "F", "L"];
 export function Tidslinje({ rader, etikett = "Tidslinje", onValjPost, redigera, standardZoom = "manad" }) {
   const [zoom, setZoom] = useState(standardZoom);
   const [hopfallda, setHopfallda] = useState(() => new Set());
+  const [hopfalldaGrupper, setHopfalldaGrupper] = useState(() => new Set());
   const [vald, setVald] = useState(null);
   const [tips, setTips] = useState(null);
   const rullRef = useRef(null);
@@ -269,11 +270,14 @@ export function Tidslinje({ rader, etikett = "Tidslinje", onValjPost, redigera, 
     const grupper = rad.grupper || [{ id: "alla", namn: null, poster: rad.poster || [] }];
     let nagon = false;
     grupper.forEach((g) => {
-      const gp = (g.poster || []).filter((p) => giltigt(p.datum)).sort((a, b) => a.datum.localeCompare(b.datum));
-      if (!gp.length) return;
+      const gp = (g.poster || []).filter((p) => giltigt(p.datum));
+      if (g.sortera !== false) gp.sort((a, b) => a.datum.localeCompare(b.datum));
+      if (!gp.length && !g.visaTom) return;
       nagon = true;
       if (g.namn) synliga.push({ typ: "grupp", rad, grupp: g, antal: gp.length });
-      gp.forEach((p) => synliga.push({ typ: "post", rad, post: p }));
+      if (!g.fallbar || !hopfalldaGrupper.has(JSON.stringify([rad.id, g.id]))) {
+        gp.forEach((p) => synliga.push({ typ: "post", rad, post: p }));
+      }
     });
     if (!nagon) synliga.push({ typ: "tom", rad });
   });
@@ -462,6 +466,8 @@ export function Tidslinje({ rader, etikett = "Tidslinje", onValjPost, redigera, 
               }
 
               if (r.typ === "grupp") {
+                const gruppNyckel = JSON.stringify([r.rad.id, r.grupp.id]);
+                const oppen = !hopfalldaGrupper.has(gruppNyckel);
                 return (
                   <div key={`g-${r.rad.id}-${r.grupp.id}`} className="flex" style={{ height: GRUPP_H }}>
                     <div
@@ -469,8 +475,32 @@ export function Tidslinje({ rader, etikett = "Tidslinje", onValjPost, redigera, 
                       style={{ width: namnBredd }}
                       title={r.grupp.namn}
                     >
-                      <span className="min-w-0 truncate">{r.grupp.namn}</span>
-                      <span className="shrink-0 font-semibold text-ink-faint">{r.antal}</span>
+                      {r.grupp.fallbar ? (
+                        <button
+                          type="button"
+                          className="flex h-full w-full cursor-pointer items-center gap-1 border-0 bg-transparent p-0 text-left font-body text-inherit"
+                          aria-expanded={oppen}
+                          title={r.grupp.namn}
+                          onClick={() => {
+                            doljTips();
+                            setHopfalldaGrupper((s) => {
+                              const ny = new Set(s);
+                              if (ny.has(gruppNyckel)) ny.delete(gruppNyckel);
+                              else ny.add(gruppNyckel);
+                              return ny;
+                            });
+                          }}
+                        >
+                          <ChevronDown size={14} aria-hidden="true" className={`shrink-0 transition-transform ${oppen ? "" : "-rotate-90"}`} />
+                          <span className="min-w-0 truncate">{r.grupp.namn}</span>
+                          <span className="shrink-0 font-semibold text-ink-faint">{r.antal}</span>
+                        </button>
+                      ) : (
+                        <>
+                          <span className="min-w-0 truncate">{r.grupp.namn}</span>
+                          <span className="shrink-0 font-semibold text-ink-faint">{r.antal}</span>
+                        </>
+                      )}
                     </div>
                     <div style={{ width: tidsbredd }} />
                   </div>
