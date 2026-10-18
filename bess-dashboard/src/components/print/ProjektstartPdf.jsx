@@ -1,5 +1,6 @@
 import { Document, Font, Image, Page, Path, StyleSheet, Svg, Text, View } from "@react-pdf/renderer";
 import logotyp from "../../assets/one-nordic-logo.png";
+import { fmtKompakt, fmtProcent } from "../../lib/format.js";
 import dejavu from "../../assets/fonts/DejaVuSans.ttf?inline";
 import dejavuFet from "../../assets/fonts/DejaVuSans-Bold.ttf?inline";
 import openSans from "../../assets/fonts/open-sans-latin-400-normal.woff?inline";
@@ -210,6 +211,24 @@ const s = StyleSheet.create({
   kritiskOppen: { fontSize: 7.5, fontWeight: 700, color: "#fff", backgroundColor: F.rod, borderRadius: 2.5, paddingHorizontal: 3, letterSpacing: 0.5 },
   kritiskKlar: { fontSize: 7.5, fontWeight: 700, color: F.djup, backgroundColor: F.himmelLjus, borderRadius: 2.5, paddingHorizontal: 3, letterSpacing: 0.5 },
 
+  /* Fas 1: sammanfattning för beslut på försättsbladet */
+  ekoRad: { flexDirection: "row", marginBottom: 8 },
+  ekoTile: { flex: 1, border: `0.8pt solid ${F.linje}`, borderRadius: 7, paddingVertical: 8, paddingHorizontal: 11 },
+  ekoEtikett: { fontSize: 8.5, fontWeight: 600, color: F.djup },
+  ekoTal: { fontSize: 16, fontWeight: 700, color: F.text, marginTop: 3 },
+  ekoSaknas: { fontSize: 11, fontWeight: 600, color: F.dov, marginTop: 6 },
+  ekoUnder: { fontSize: 8.5, color: F.dov, marginTop: 2, lineHeight: 1.3 },
+  rek: { border: `1pt solid ${F.bla}`, borderRadius: 8, paddingVertical: 11, paddingHorizontal: 15, marginTop: 6, marginBottom: 14 },
+  rekTopp: { flexDirection: "row", alignItems: "center", marginBottom: 5 },
+  rekRubrik: { fontFamily: RUBRIK, fontSize: 13, fontWeight: 700, color: F.djup, flex: 1 },
+  rekBeslut: { fontSize: 9, fontWeight: 700, color: "#fff", backgroundColor: F.djup, borderRadius: 4, paddingVertical: 2.5, paddingHorizontal: 8, letterSpacing: 0.6 },
+  luckaRuta: { backgroundColor: "#fdf1e7", borderLeft: `2.5pt solid ${F.orange}`, borderRadius: 4, paddingVertical: 7, paddingHorizontal: 10, marginBottom: 12 },
+  luckaText: { fontSize: 9.5, lineHeight: 1.4, color: F.text },
+  beslutsruta: { border: `1pt solid ${F.djup}`, borderRadius: 8, paddingVertical: 12, paddingHorizontal: 14, marginTop: 16 },
+  kryssRad: { flexDirection: "row", alignItems: "center", marginBottom: 7 },
+  kryss: { width: 11, height: 11, border: `0.9pt solid ${F.djup}`, borderRadius: 2, marginRight: 8 },
+  kryssText: { fontSize: 10.5 },
+
   /* Sammanfattning */
   summaFet: { fontSize: 11, fontWeight: 700, marginBottom: 4 },
   summaText: { fontSize: 10.5, lineHeight: 1.5, color: F.text },
@@ -279,29 +298,121 @@ function FasRuta({ fas, lage }) {
   );
 }
 
+const belopp = (n) => (n === null || n === undefined ? null : fmtKompakt(n));
+
+function EkoTile({ etikett, varde, under, farg, style }) {
+  return (
+    <View style={[s.ekoTile, style]}>
+      <Text style={s.ekoEtikett}>{etikett}</Text>
+      {varde ? <Text style={[s.ekoTal, farg ? { color: farg } : null]}>{varde}</Text> : <Text style={s.ekoSaknas}>Ej angivet</Text>}
+      {under ? <Text style={s.ekoUnder}>{under}</Text> : null}
+    </View>
+  );
+}
+
+/** Nyckeltalen ur kalkylen. Saknade belopp skrivs som "Ej angivet", aldrig som noll. */
+function Ekonomi({ e }) {
+  const tbFarg = e.tb === null ? null : e.tb < 0 ? F.rod : F.djup;
+  const riskUnder = e.riskSumma !== null
+    ? `Riskregistret: ${belopp(e.riskSumma)} i ${e.prissattaRisker} av ${e.antalRisker} risker`
+    : e.antalRisker ? `Inga belopp i riskregistret (${e.antalRisker} risker)` : "Inga risker registrerade";
+  return (
+    <View wrap={false}>
+      <Text style={[s.h2, { fontSize: 14, marginBottom: 6 }]}>Ekonomi</Text>
+      <View style={s.ekoRad}>
+        <EkoTile etikett="Anbudssumma" varde={belopp(e.summa)} />
+        <EkoTile etikett="Kalkylerad kostnad" varde={belopp(e.kostnad)} style={{ marginHorizontal: 8 }} />
+        <EkoTile etikett="Täckningsbidrag" varde={e.tb === null ? null : `${belopp(e.tb)} · ${fmtProcent(e.tbProcent)}`} farg={tbFarg} />
+      </View>
+      <View style={[s.ekoRad, { marginBottom: 4 }]}>
+        <EkoTile etikett="Riskreserv" varde={belopp(e.riskreserv)} under={riskUnder} />
+        <EkoTile etikett="Kassaflöde, lägsta punkt" varde={belopp(e.kassaLagst)} farg={e.kassaLagst < 0 ? F.rod : null} style={{ marginHorizontal: 8 }} />
+        <EkoTile etikett="Underlag" varde={e.kalkylRev || null} under={e.kalkylRev ? null : "Ange kalkylens revision"} />
+      </View>
+    </View>
+  );
+}
+
+function Rekommendation({ r }) {
+  return (
+    <View style={s.rek} wrap={false}>
+      <View style={s.rekTopp}>
+        <Text style={s.rekRubrik}>Projektledarens rekommendation</Text>
+        <Text style={s.rekBeslut}>{(r.beslut || "Ej angiven").toUpperCase()}</Text>
+      </View>
+      <Text style={s.stycke}>{r.text || "Ingen rekommendation skriven (anbudsfråga 12)."}</Text>
+      {r.motivering ? <Text style={[s.stycke, { marginBottom: 0 }]}><Text style={s.nyckel}>Motivering: </Text>{r.motivering}</Text> : null}
+    </View>
+  );
+}
+
+/** Det som saknas i underlaget, så att ledningen ser det innan beslutet. */
+function Underlagsluckor({ f }) {
+  if (!f.obesvarade && !f.kvar) return null;
+  const delar = [
+    f.obesvarade ? `${f.obesvarade} av ${f.fragorTotalt} anbudsfrågor obesvarade` : null,
+    f.kvar ? `${f.kvar} obligatoriska punkter i fas 1 ej klara` : null,
+  ].filter(Boolean);
+  return (
+    <View style={s.luckaRuta} wrap={false}>
+      <Text style={[s.luckaText, { fontWeight: 700 }]}>Underlaget är inte komplett: {delar.join(", ")}.</Text>
+      {f.saknas.length ? <Text style={s.luckaText}>Saknas: {f.saknas.slice(0, 6).join("; ")}{f.saknas.length > 6 ? ` med flera (${f.saknas.length} totalt)` : ""}.</Text> : null}
+    </View>
+  );
+}
+
+function ToppRisker({ risker }) {
+  const B = ["52%", "12%", "18%", "18%"];
+  return (
+    <View wrap={false}>
+      <Text style={[s.h2, { fontSize: 14, marginBottom: 6 }]}>Största riskerna</Text>
+      {risker.length ? (
+        <>
+          <View style={s.th}>
+            {["Risk", "S × K", "Ägare", "Reserverat"].map((t, i) => <Text key={t} style={[s.thText, { width: B[i] }]}>{t}</Text>)}
+          </View>
+          {risker.map((r) => (
+            <View key={r.titel} style={s.tr}>
+              <Text style={[s.td, { width: B[0] }]}>{r.titel}</Text>
+              <Text style={[s.td, { width: B[1], fontWeight: 700, color: r.varde >= 15 ? F.rod : F.text }]}>{r.varde}</Text>
+              <Text style={[s.td, { width: B[2] }]}>{r.agare || "–"}</Text>
+              <Text style={[s.td, { width: B[3] }]}>{belopp(r.belopp) || "–"}</Text>
+            </View>
+          ))}
+        </>
+      ) : <Text style={s.inget}>Inga risker registrerade.</Text>}
+    </View>
+  );
+}
+
+/** Ledningens beslut i fas 1: tre alternativ, villkor och signatur. */
+function LedningensBeslut() {
+  return (
+    <View style={s.beslutsruta} wrap={false}>
+      <Text style={s.signRubrik}>Ledningens beslut</Text>
+      {["Lämna anbud", "Lämna anbud med villkor", "Lämna inte anbud"].map((t) => (
+        <View key={t} style={s.kryssRad}><View style={s.kryss} /><Text style={s.kryssText}>{t}</Text></View>
+      ))}
+      <Text style={[s.signEtikett, { marginTop: 6 }]}>Villkor och kommentar</Text>
+      {[0, 1, 2].map((i) => <View key={i} style={[s.signRad, { marginTop: 18, marginBottom: 0 }]} />)}
+      <View style={{ flexDirection: "row", marginTop: 4 }}>
+        {["Signatur", "Namnförtydligande", "Datum"].map((e, i) => (
+          <View key={e} style={{ flex: 1, marginLeft: i ? 12 : 0 }}>
+            <View style={s.signRad} />
+            <Text style={s.signEtikett}>{e}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 function Forsattsblad({ d }) {
   const p = d.projekt;
   const ps = d.projektstart;
   const k = ps.kort;
-  return (
-    <View>
-      <View style={s.omslagTopp}>
-        <View>
-          <Image src={logotyp} style={s.logo} />
-          <Text style={s.logoUnder}>one-nordic.se</Text>
-        </View>
-        <View style={s.toppHoger}>
-          <Text style={s.toppHogerFet}>Arbetsmaterial</Text>
-          <Text style={s.toppHogerText}>Upprättad {d.datum}</Text>
-          {d.skapadAv ? <Text style={s.toppHogerText}>{d.skapadAv}</Text> : null}
-        </View>
-      </View>
-
-      <Text style={s.overrubrik}>{ps.fas.nr === 1 ? "BESLUTSUNDERLAG ANBUD ENLIGT ONE-P" : "PROJEKTSTATUS OCH BESLUTSUNDERLAG"}</Text>
-      <Text style={s.titel}>{p.namn || "Projekt utan namn"}</Text>
-
-      <FasRuta fas={ps.fas} lage={ps.lage} />
-
+  /* Projektuppgifterna. I fas 1 står de efter sammanfattningen, annars direkt under fasrutan. */
+  const meta = (
       <View style={s.meta} wrap={false}>
         <View style={s.metaCell}>
           <Text style={s.metaEtikett}>Projektnummer</Text>
@@ -324,11 +435,34 @@ function Forsattsblad({ d }) {
           <Text style={s.metaVarde}>{[k.kontraktsform, k.niva].filter(Boolean).join(" · ") || "Ej satt"}</Text>
         </View>
         <View style={[s.metaCell, { marginBottom: 0 }]}>
-          <Text style={s.metaEtikett}>Avropsbeslut</Text>
+          <Text style={s.metaEtikett}>{ps.fas.nr === 1 ? "PL:s rekommendation" : "Avropsbeslut"}</Text>
           <Text style={[s.metaVarde, { fontWeight: 700 }]}>{k.beslut || "Ej taget"}</Text>
         </View>
       </View>
+  );
+  return (
+    <View>
+      <View style={s.omslagTopp}>
+        <View>
+          <Image src={logotyp} style={s.logo} />
+          <Text style={s.logoUnder}>one-nordic.se</Text>
+        </View>
+        <View style={s.toppHoger}>
+          <Text style={s.toppHogerFet}>Arbetsmaterial</Text>
+          <Text style={s.toppHogerText}>Upprättad {d.datum}</Text>
+          {d.skapadAv ? <Text style={s.toppHogerText}>{d.skapadAv}</Text> : null}
+        </View>
+      </View>
 
+      <Text style={s.overrubrik}>{ps.fas.nr === 1 ? "BESLUTSUNDERLAG ANBUD ENLIGT ONE-P" : "PROJEKTSTATUS OCH BESLUTSUNDERLAG"}</Text>
+      <Text style={s.titel}>{p.namn || "Projekt utan namn"}</Text>
+
+      <FasRuta fas={ps.fas} lage={ps.lage} />
+      {ps.sammanfattning ? <Underlagsluckor f={ps.sammanfattning.fullstandighet} /> : null}
+      {ps.sammanfattning ? <Ekonomi e={ps.sammanfattning.ekonomi} /> : null}
+      {ps.sammanfattning ? <Rekommendation r={ps.sammanfattning.rekommendation} /> : null}
+
+      {!ps.sammanfattning ? meta : null}
       <View style={s.lage} wrap={false}>
         <View style={s.lageTopp}>
           <Text style={s.lageTitelRad}>Läget just nu{ps.sparad ? ` · senast sparad ${ps.sparad}` : ""}</Text>
@@ -345,6 +479,8 @@ function Forsattsblad({ d }) {
           <Text style={s.lageText}>{ps.lage.nastaSteg || "Ej angivet."}</Text>
         </View>
       </View>
+      {ps.sammanfattning ? <ToppRisker risker={ps.sammanfattning.toppRisker} /> : null}
+      {ps.sammanfattning ? <View style={{ marginTop: 14 }}>{meta}</View> : null}
 
       {ps.fas.nr > 1 ? <View break>
       <Text style={s.h2}>Bilaga - dokumentation och kontrollpunkter</Text>
@@ -551,11 +687,13 @@ function Steg({ sek, fasBand }) {
   ) : null;
   const [forstaFalt, ...ovrigaFalt] = sek.falt;
   const forstaArRad = forstaFalt && !forstaFalt[2];
+  const forstaArBlock = forstaFalt && !!forstaFalt[2];
 
   return (
     <>
       <View>
-        {/* Fasband, rubrik och första innehållet hålls ihop på samma sida. */}
+        {/* Fasband, rubrik och första innehållet hålls ihop på samma sida, även när
+            första fältet är ett textblock (då följer blockets rubrik och första stycke med). */}
         <View wrap={false}>
           {fasBand}
           <View style={s.stegHuvud}>
@@ -575,11 +713,18 @@ function Steg({ sek, fasBand }) {
               <Faltrad k={forstaFalt[0]} v={forstaFalt[1]} />
             </View>
           ) : null}
+          {forstaArBlock ? (
+            <>
+              <Text style={s.blockRubrik}>{forstaFalt[0]}</Text>
+              <Stycken stycken={forstaFalt[2].slice(0, 1)} />
+            </>
+          ) : null}
           {!forstaFalt && sek.tabell ? tabellHuvud : null}
           {tomt ? <Text style={s.inget}>Inget ifyllt i det här steget ännu.</Text> : null}
         </View>
 
-        {(forstaArRad ? ovrigaFalt : sek.falt).map(([k, v, stycken]) =>
+        {forstaArBlock ? <Stycken stycken={forstaFalt[2].slice(1)} /> : null}
+        {(forstaFalt ? ovrigaFalt : sek.falt).map(([k, v, stycken]) =>
           stycken ? <Faltblock key={k} k={k} stycken={stycken} /> : <Faltrad key={k} k={k} v={v} />,
         )}
 
@@ -655,8 +800,8 @@ export function ProjektstartPdf({ dokument: d }) {
         <Sidfot d={d} />
         <Forsattsblad d={d} />
 
-        {(ps.anbud || []).map((sek, i) => <View key={sek.id} break><Steg sek={sek} fasBand={i === 0 ? <FasBand text="Del 1 · Anbud" /> : null} /></View>)}
-        {(ps.direktiv || []).map((sek, i) => <View key={sek.id} break><Steg sek={{ ...sek, nr: (ps.anbud || []).length + sek.nr }} fasBand={i === 0 ? <FasBand text="Del 2 · Planering – projektdirektiv" /> : null} /></View>)}
+        {(ps.anbud || []).map((sek, i) => <View key={sek.id} break={i === 0}><Steg sek={sek} fasBand={i === 0 ? <FasBand text="Del 1 · Anbud" /> : null} /></View>)}
+        {(ps.direktiv || []).map((sek, i) => <View key={sek.id} break={i === 0}><Steg sek={{ ...sek, nr: (ps.anbud || []).length + sek.nr }} fasBand={i === 0 ? <FasBand text="Del 2 · Planering – projektdirektiv" /> : null} /></View>)}
         {ps.sektioner.filter((sek) => sek.fasNr > 1).map((sek, i, lista) => (
           <View key={sek.id} break><Steg sek={sek} fasBand={lista[i - 1]?.fas !== sek.fas ? <FasBand text={`Fas ${sek.fasNr} av ${ps.fas.antal} · ${sek.fasTitel}`} /> : null} /></View>
         ))}
@@ -672,7 +817,9 @@ export function ProjektstartPdf({ dokument: d }) {
           <Text style={s.summaText}>
             Underlaget är ett arbetsmaterial. Kontrollera kontraktsvillkor, betalplan och priser mot originalhandlingarna före användning.
           </Text>
-          <View style={s.sign}>
+          {ps.fas.nr === 1 ? <LedningensBeslut /> : null}
+          {ps.fas.nr === 1 ? <Text style={[s.signRubrik, { marginTop: 16, marginBottom: 0 }]}>Underlaget upprättat av</Text> : null}
+          <View style={[s.sign, ps.fas.nr === 1 ? { marginTop: 8 } : null]}>
             {(ps.signering || [{ roll: "Intern beställare" }, { roll: "Projektledare" }]).map((sg, i) => (
               <View style={[s.signBox, i ? { marginLeft: 16 } : null]} key={sg.roll}>
                 <Text style={s.signRubrik}>{sg.roll}</Text>
