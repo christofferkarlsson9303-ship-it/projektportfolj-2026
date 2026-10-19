@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { STEG } from "../data/projektstartSteg.js";
-import { ANBUDSFRAGOR, anbudsfragaId } from "../data/anbudsfragor.js";
+import { ANBUDSFRAGOR, anbudsBedomning, anbudsfragaId, anbudsljusId } from "../data/anbudsfragor.js";
 import { fasKrav, stegKrav } from "./projektfas.js";
 import { projektstartDokument, tomtUtkast } from "./projektstart.js";
 import { styrparametrar } from "./styrparametrar.js";
@@ -88,11 +88,31 @@ describe("beslutsunderlaget", () => {
     expect(d.anbud.map((x) => x.titel)).toEqual(["Entreprenadform och anbudsprocess", "Svar på anbudsfrågor", "Ekonomi, kontrakt och kassaflöde"]);
     const process = Object.fromEntries(d.anbud[0].falt.map(([k, v]) => [k, v]));
     expect(process).toMatchObject({ "Entreprenadform (kontraktsform)": "ABT 06", Ersättningsform: "Fast pris", "Anbudsprocessen just nu": "Frågetid pågår", "Anbudet lämnas senast": "2026-11-02" });
-    const fragor = d.anbud[1].falt;
+    const [samlad, ...fragor] = d.anbud[1].falt;
+    expect(samlad[0]).toBe("Samlad bedömning (trafikljus)");
     expect(fragor).toHaveLength(ANBUDSFRAGOR.length);
     expect(fragor[0].slice(0, 2)).toEqual([ANBUDSFRAGOR[0].fraga, "Allt utom nätanslutningen."]);
     expect(fragor[0][2]).toEqual([{ typ: "stycke", text: "Allt utom nätanslutningen." }]);
     expect(fragor[1][1]).toBe("Ej besvarad");
+  });
+
+  it("anbudsfrågornas trafikljus står först i svaret och i en samlad bedömning", () => {
+    const u = ifyllt();
+    u.v[anbudsljusId(ANBUDSFRAGOR[0])] = "gul";
+    u.v[anbudsljusId(ANBUDSFRAGOR[1])] = "rod";
+    const d = projektstartDokument(u, { datum: "2026-10-17" }).projektstart;
+    const [samlad, forsta] = d.anbud[1].falt;
+    expect(forsta[2][0]).toEqual({ typ: "stycke", nyckel: "Bedömning", text: "Gul" });
+    expect(samlad[1]).toMatch(/0 gröna, 1 gula, 1 röda, 10 ej bedömda\. 1 röd: ledningen måste ta ställning/);
+  });
+
+  it("anbudsBedomning: röd vinner, obedömt blir aldrig grönt", () => {
+    const alla = (ljus) => Object.fromEntries(ANBUDSFRAGOR.map((f) => [anbudsljusId(f), ljus]));
+    expect(anbudsBedomning({}).dom.ton).toBe("neutral");
+    expect(anbudsBedomning(alla("gron")).dom.ton).toBe("ok");
+    expect(anbudsBedomning({ ...alla("gron"), [anbudsljusId(ANBUDSFRAGOR[3])]: "gul" }).dom.ton).toBe("warn");
+    expect(anbudsBedomning({ [anbudsljusId(ANBUDSFRAGOR[3])]: "rod" }).dom.ton).toBe("bad");
+    expect(anbudsBedomning({ [anbudsljusId(ANBUDSFRAGOR[0])]: "lila" }).antal.obedomd).toBe(ANBUDSFRAGOR.length);
   });
 
   it("del 2 Planering har nulägesanalys och styrparametrar med summa", () => {
