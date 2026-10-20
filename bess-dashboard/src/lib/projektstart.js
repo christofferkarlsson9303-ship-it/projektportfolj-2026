@@ -8,6 +8,8 @@ import { arAvbockad, stegPunkter } from "./stegpunkter.js";
 import { RISKGRANSER, riskNivaFranVarde } from "./risknivaer.js";
 import { aktuellFas, arEjVunnetUtkast, faltSynligt, fasLage, pdfKvar, rapportFas } from "./projektfas.js";
 import { idag } from "./datum.js";
+import { anbudsEkonomi, rangordnadeRisker, tolkaBelopp } from "./anbudsekonomi.js";
+import { fmtKompakt } from "./format.js";
 
 export { arAvbockad, stegPunkter, RISKGRANSER };
 
@@ -287,19 +289,34 @@ export function rapporteringsSkede(u) {
 
 /** Ledningsunderlag enligt ONE-P. Anbudsantaganden och gemensamma register är
  *  tillgängliga redan i fas 1, utan krav på färdig etablering eller inköpslösning. */
+const beloppText = (x) => { const b = tolkaBelopp(x); return b === null ? varde(x) : fmtKompakt(b); };
+
+/** Försättsbladet i fas 1: ekonomi, PL:s rekommendation, de största riskerna och hur
+ *  komplett underlaget är. Ledningen ska kunna besluta från första sidan. */
+export function anbudsSammanfattning(u, kvar = pdfKvar(u)) {
+  const v = u.v;
+  const obesvarade = ANBUDSFRAGOR.filter((f) => !varde(v[anbudsfragaId(f)]));
+  return {
+    ekonomi: anbudsEkonomi(v, u.rader.risker || []),
+    rekommendation: { beslut: varde(v.beslut), text: varde(v[anbudsfragaId({ id: "rekommendation" })]), motivering: varde(v.motivering) },
+    toppRisker: rangordnadeRisker(u.rader.risker || []).slice(0, 3),
+    fullstandighet: { fragorTotalt: ANBUDSFRAGOR.length, obesvarade: obesvarade.length, kvar: kvar.length, saknas: kvar.map((k) => k.etikett) },
+  };
+}
+
 export function anbudsDirektiv(u) {
   const v = u.v;
   const falt = (poster) => poster.filter(([, val]) => varde(val)).map(([k, val]) => [k, val.trim(), textstycken(val)]);
   const tabell = (titel, kolumner, vikter, rader) => rader.length ? { titel, kolumner, vikter, rader } : null;
-  const risks = (u.rader.risker || []).filter((r) => r.titel?.trim()).map((r) => [r.titel.trim(), riskvardeText(r), varde(r.agare), varde(r.atgard)]);
+  const risks = (u.rader.risker || []).filter((r) => r.titel?.trim()).map((r) => [r.titel.trim(), riskvardeText(r), varde(r.agare), varde(r.atgard), beloppText(r.belopp)]);
   const tider = (u.rader.faser || []).filter((r) => r.namn?.trim() && (r.start || r.slut)).map((r) => [r.namn, r.start || "Ej angivet", r.slut || "Ej angivet", r.kritisk || "Nej"]);
   const intressenter = (u.rader.intressenter || []).filter((r) => r.namn?.trim()).map((r) => [r.namn, r.roll || "", r.organisation || "", r.kommunikation || ""]);
   const prioritering = styrparametrarText(v);
   const delar = [
     ["Bakgrund, syfte, mål och avgränsningar", falt([["Bakgrund", v.bakgrund], ["Syfte", v.syfte], ["Mål och förväntningar", v.mal], ["Ingår", v.ingar], ["Avgränsningar - ingår inte", v.ingarEj]])],
-    ["Identifierade risker", falt([["Riskbild inför anbud", v.anbudRiskbild]]), tabell("Riskregister - preliminära bedömningar", ["Risk", "S × K", "Ägare", "Åtgärdsplan"], [3, 0.8, 1.5, 3], risks)],
+    ["Identifierade risker", falt([["Riskbild inför anbud", v.anbudRiskbild]]), tabell("Riskregister - preliminära bedömningar", ["Risk", "S × K", "Ägare", "Åtgärdsplan", "Reserverat"], [3, 0.8, 1.3, 2.7, 1.3], risks)],
     ["Tidplan och styrparametrar", falt([["Övergripande tidplan och kontraktsdatum", v.anbudTidplan], ["Planerad start", v.startdatum], ["Planerat färdigställande", v.fardigdatum], ["Kritisk linje", v.kritiskLinje], ["Styrparametrar", prioritering], ["Vad får ge vika först?", v.offra]]), tabell("Kända datum", ["Aktivitet", "Start", "Slut", "Kritisk"], [3, 1.5, 1.5, 1], tider)],
-    ["Nulägesanalys och intressenter", falt([["Nulägesanalys", v.nulagesanalys], ["Nuläge till ledningen", v.nulage], ["Öppna frågor", v.oppnaFragor]]), tabell("Intressenter", ["Namn", "Roll", "Organisation", "Kommunikation"], [2, 2, 2, 3], intressenter)],
+    ["Nulägesanalys och intressenter", falt([["Nulägesanalys", v.nulagesanalys], ["Öppna frågor", v.oppnaFragor]]), tabell("Intressenter", ["Namn", "Roll", "Organisation", "Kommunikation"], [2, 2, 2, 3], intressenter)],
     ["HSEQ och arbetsmiljö", falt([["Förutsättningar inför anbud", v.anbudHseq], ["Planerad BAS-P", v.roll_basP], ["Planerad BAS-U", v.roll_basU]])],
     ["Organisation, rapportering och överlämning", falt([["Planerad organisation och överlämning", v.anbudOrganisation], ["Intern beställare", v.roll_internalClient], ["Projektledare", v.roll_pl], ["Rapportering till kund", v.rapporteringKund], ["Intern rapportering", v.rapporteringIntern]])],
   ];
@@ -320,7 +337,7 @@ export function anbudsUnderlag(u) {
   const delar = [
     ["Entreprenadform och anbudsprocess", falt([["Entreprenadform (kontraktsform)", v.kontraktsform], ["Ersättningsform", v.ersattningsform], ["Anbudsutfall", v.anbudsutfall || "Anbudsarbete pågår"], ["Anbudsprocessen just nu", v.anbudsprocess], ["Sista dag för frågor", v.sistaFragedag], ["Anbudet lämnas senast", v.anbudsdag], ["Anbudet giltigt till", v.anbudGiltigt], ["Tilldelning väntas", v.tilldelning]])],
     ["Svar på anbudsfrågor", fragor],
-    ["Avropsbeslut, kontrakt och kassaflöde", falt([["Anbudsbeslut", v.beslut], ["Motivering till anbudsbeslut", v.motivering], ["Öppna frågor till intern beställare", v.oppnaFragor], ["Betalvillkor", v.betalvillkor], ["Bankgaranti", v.bankgaranti], ["Viten och deltidsmilstolpar", v.viten], ["Hävningsgrunder", v.havning], ["Indexregel", v.index], ["Kassaflöde: längsta negativa period", v.kassaflode]])],
+    ["Ekonomi, kontrakt och kassaflöde", falt([["PL:s rekommendation", v.beslut], ["Motivering", v.motivering], ["Kalkyl", v.kalkylRev], ["Anbudssumma", v.anbudssumma], ["Kalkylerad kostnad", v.kalkylkostnad], ["Riskreserv", v.riskreserv], ["Kassaflöde: lägsta punkt", v.kassaflodeLagst], ["Öppna frågor till intern beställare", v.oppnaFragor], ["Betalvillkor", v.betalvillkor], ["Bankgaranti", v.bankgaranti], ["Viten och deltidsmilstolpar", v.viten], ["Hävningsgrunder", v.havning], ["Indexregel", v.index], ["Kassaflöde: längsta negativa period", v.kassaflode]])],
   ];
   return delar.map(([titel, innehall], i) => ({ id: `anbud-${i + 1}`, nr: i + 1, titel, sammanfattning: "", falt: innehall, tabell: null, tomma: [], tomTabell: "", kontroll: null }));
 }
@@ -413,6 +430,7 @@ export function projektstartDokument(u, { datum, skapadAv = "", historik = [], s
     projektstart: {
       sektioner,
       anbud: anbudsUnderlag(u),
+      sammanfattning: nuFas === 1 ? anbudsSammanfattning(u, kvar) : null,
       direktiv: anbudsDirektiv(u),
       signering: signering(u),
       anbudsutfall: v.anbudsutfall || "Anbudsarbete pågår",

@@ -69,7 +69,14 @@ export const STEG = [
       { id: "anbudGiltigt", etikett: "Anbudet giltigt till", typ: "date" },
       { id: "tilldelning", etikett: "Tilldelning väntas", typ: "date" },
       { id: "anbudsutfall", etikett: "Anbudsutfall", typ: "select", alternativ: ["Anbudsarbete pågår", "Anbud inlämnat", "Vunnet anbud"], tips: "Fas 2 öppnas först när fas 1 är genomgången och Vunnet anbud är valt. Gå vidare betyder endast att vi vill lämna anbud." },
-      { id: "beslut", etikett: "Beslut", typ: "select", alternativ: BESLUT, obligatoriskt: true, kravVarde: "Gå vidare", tips: "Fasen godkänns bara vid Gå vidare." },
+      /* Ekonomin står först i beslutsunderlaget till ledningen. Beloppen skrivs som i kalkylen
+         ("12 500 000", "12,5 Mkr"); täckningsbidraget räknas fram i lib/anbudsekonomi.js. */
+      { id: "anbudssumma", etikett: "Anbudssumma (kr)", typ: "text", placeholder: "12,5 Mkr", tips: "Det pris vi lämnar, exklusive moms." },
+      { id: "kalkylkostnad", etikett: "Kalkylerad kostnad (kr)", typ: "text", placeholder: "11,2 Mkr", tips: "Självkostnad enligt kalkylen, inklusive UE och material, exklusive riskreserv." },
+      { id: "riskreserv", etikett: "Riskreserv (kr)", typ: "text", tips: "Avsatt belopp för risker. Jämförs i PDF:en med summan av riskregistrets belopp." },
+      { id: "kassaflodeLagst", etikett: "Kassaflöde: lägsta punkt (kr)", typ: "text", placeholder: "-2,4 Mkr", tips: "Största belopp vi ligger ute med under projektet." },
+      { id: "kalkylRev", etikett: "Kalkyl (revision och fil)", typ: "text", placeholder: "Kalkyl rev. C, 2026-10-18", tips: "Vilken kalkyl siffrorna kommer från." },
+      { id: "beslut", etikett: "PL:s rekommendation", typ: "select", alternativ: BESLUT, obligatoriskt: true, kravVarde: "Gå vidare", tips: "Projektledarens rekommendation till ledningen. Fasen godkänns bara vid Gå vidare. Ledningen beslutar i PDF:en." },
       { id: "motivering", etikett: "Motivering", typ: "textarea", bred: true },
       { id: "oppnaFragor", etikett: "Öppna frågor till intern beställare", typ: "textarea", bred: true },
       /* Tacka nej gör anbudet till ett förlorat anbud: bara fas 1 gäller, och orsaken sparas i arkivet. */
@@ -206,6 +213,7 @@ export const STEG = [
         { id: "kategori", etikett: "Kategori", typ: "select", alternativ: [["", "Välj …"], ...RISKKATEGORIER.map(([id]) => [id, RISKKATEGORI_KORT[id]])], bredd: "mid" },
         { id: "agare", etikett: "Ägare", typ: "text" },
         { id: "atgard", etikett: "Åtgärdsplan", typ: "text", bredd: "wide" },
+        { id: "belopp", etikett: "Reserverat belopp (kr)", typ: "text" },
       ],
       start: [
         { titel: "Fundament och härdning försenar kritisk linje", fas: "4", kategori: "tid" },

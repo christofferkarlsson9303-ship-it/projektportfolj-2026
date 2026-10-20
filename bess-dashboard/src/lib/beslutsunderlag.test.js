@@ -85,7 +85,7 @@ describe("beslutsunderlaget", () => {
 
   it("har del 1 Anbud med entreprenadform, anbudsprocess och frågor med svar", () => {
     const d = projektstartDokument(ifyllt(), { datum: "2026-10-17" }).projektstart;
-    expect(d.anbud.map((x) => x.titel)).toEqual(["Entreprenadform och anbudsprocess", "Svar på anbudsfrågor", "Avropsbeslut, kontrakt och kassaflöde"]);
+    expect(d.anbud.map((x) => x.titel)).toEqual(["Entreprenadform och anbudsprocess", "Svar på anbudsfrågor", "Ekonomi, kontrakt och kassaflöde"]);
     const process = Object.fromEntries(d.anbud[0].falt.map(([k, v]) => [k, v]));
     expect(process).toMatchObject({ "Entreprenadform (kontraktsform)": "ABT 06", Ersättningsform: "Fast pris", "Anbudsprocessen just nu": "Frågetid pågår", "Anbudet lämnas senast": "2026-11-02" });
     const fragor = d.anbud[1].falt;
