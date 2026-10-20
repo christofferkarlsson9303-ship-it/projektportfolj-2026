@@ -99,6 +99,37 @@ export function ritadTextur(del) {
   return null;
 }
 
+/* ---------- Stängselnät ----------
+   Hägnaden ritas som genomsiktligt rombnät i stället för en massiv skiva, efter Vaggeryd-
+   modellen (2026-10-19). Nätet är vitt med alfa; typfärgen ur designsystemet läggs på i
+   materialet. En duk delas av alla hägnader, varje hägnad får en egen textur med egen
+   upprepning (en maska per halvmeter). */
+
+let natDuk = null;
+/** Stängselnät som textur, upprepad till `bredd` × `hojd` meter. Null utan DOM. */
+export function stangselTextur(bredd, hojd) {
+  if (typeof document === "undefined") return null;
+  if (!natDuk) {
+    natDuk = document.createElement("canvas");
+    natDuk.width = natDuk.height = 64;
+    const g = natDuk.getContext("2d");
+    g.clearRect(0, 0, 64, 64);
+    g.strokeStyle = "rgb(255,255,255)";
+    g.lineWidth = 5;
+    g.beginPath();
+    g.moveTo(0, 0);
+    g.lineTo(64, 64);
+    g.moveTo(64, 0);
+    g.lineTo(0, 64);
+    g.stroke();
+  }
+  const t = new THREE.CanvasTexture(natDuk);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(Math.max(1, (Number(bredd) || 1) / 0.5), Math.max(1, (Number(hojd) || 1) / 0.5));
+  return t;
+}
+
 /** Vilka genererade filer som finns per profil, ur manifest.json. Tomt om manifestet saknas. */
 async function manifest(bas) {
   try {

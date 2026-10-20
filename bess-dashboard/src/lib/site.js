@@ -161,6 +161,19 @@ export function steg(pos, delta, objekt, marginal = MARGINAL) {
   return blockerad ? { x: pos.x, y, z: pos.z, blockerad: true } : { x, y, z, blockerad: false };
 }
 
+/**
+ * Kompassnålens vinkel i grader medurs på skärmen, för en kamera som tittar från `kamera` mot
+ * `mal` (båda {x, z}). Norr är −Z, även med situationsplan (planen vrids så att norr blir −Z).
+ * 0 = norr uppåt i bilden, 90 = norr åt höger. I gåläget: mål = position + framat(yaw), och då
+ * blir vinkeln yaw i grader.
+ */
+export function kompassVinkel(kamera, mal) {
+  const dx = (kamera?.x || 0) - (mal?.x || 0);
+  const dz = (kamera?.z || 0) - (mal?.z || 0);
+  if (Math.abs(dx) < 1e-9 && Math.abs(dz) < 1e-9) return 0;
+  return (Math.atan2(dx, dz) * 180) / Math.PI;
+}
+
 /** Startpunkt när användaren går in: söder om tomten, blicken mot norr. */
 export const INGANG = { x: 0, y: OGONHOJD, z: TOMT.djup / 2 + 6, yaw: 0, pitch: 0 };
 
