@@ -4,7 +4,10 @@ import { nu } from "../lib/datum.js";
 import { PortfolioContext } from "./kontexter.js";
 import { skapaDb } from "./db-supabase.js";
 import { useUi } from "./hooks.js";
-import { arEkonomiAtgard, efterInlasning, normalisera, reducer } from "./portfolj-reducer.js";
+import { arEkonomiAtgard, efterInlasning, hamtaNamn, normalisera, reducer } from "./portfolj-reducer.js";
+import { kvittensFor, laggIKo, lasKo, sparaKo, tomKo } from "../lib/godkannanden.js";
+import { registreraGodkannande } from "./godkannanden.js";
+import { supabase } from "../lib/supabase.js";
 import { aktivVy, forlorade } from "../lib/arkiv.js";
 import { lokalFelText, skrivLokalt } from "../lib/lokalLagring.js";
 import { sammanfoga } from "../lib/sammanfoga.js";
@@ -399,15 +402,50 @@ export function PortfolioProvider({ children }) {
   }, [skrivLokaltOchRapportera, sattNu]);
 
   /** Dispatch som också schemalägger autospar på rätt kanal. */
+  /* Serverkvittens av egenkontroller och grindar (F05). Kvittensen köas lokalt och
+     skickas till registrera_godkannande; misslyckas den försöks den igen. */
+  const kvittensKo = useRef(null);
+  if (kvittensKo.current === null) kvittensKo.current = lasKo();
+  const [kvittens, setKvittens] = useState(() => ({ koade: kvittensKo.current.length, nekade: [], senast: null }));
+  const kvittensTimer = useRef(null);
+  const skickaKvittenser = useCallback(async function skickaNu() {
+    if (!supabase || !kvittensKo.current.length) return;
+    clearTimeout(kvittensTimer.current);
+    const ko = kvittensKo.current;
+    const { kvar, nekade, skickade } = await tomKo(ko, registreraGodkannande);
+    // Det som lagts i kön under tiden ligger kvar.
+    kvittensKo.current = [...kvar, ...kvittensKo.current.filter((k) => !ko.includes(k))];
+    sparaKo(kvittensKo.current);
+    setKvittens((x) => ({ koade: kvittensKo.current.length, nekade: [...x.nekade, ...nekade].slice(-20), senast: skickade ? new Date().toISOString() : x.senast }));
+    if (nekade.length) visaToast(`Databasen nekade kvittens: ${nekade[0].fel}`, "warn");
+    if (kvittensKo.current.length) kvittensTimer.current = setTimeout(skickaNu, CONFIG.loggAterforsokMs);
+  }, [visaToast]);
+  useEffect(() => {
+    skickaKvittenser();
+    const vidOnline = () => skickaKvittenser();
+    window.addEventListener("online", vidOnline);
+    return () => {
+      window.removeEventListener("online", vidOnline);
+      clearTimeout(kvittensTimer.current);
+    };
+  }, [skickaKvittenser]);
+
   const dispatch = useCallback(
     (action) => {
       rawDispatch(action);
+      const k = supabase ? kvittensFor(action, hamtaNamn()) : null;
+      if (k) {
+        kvittensKo.current = laggIKo(kvittensKo.current, k);
+        sparaKo(kvittensKo.current);
+        setKvittens((x) => ({ ...x, koade: kvittensKo.current.length }));
+        setTimeout(() => skickaKvittenser(), 0);
+      }
       if (action.type === "SATT_STATE" && action.tyst) return;
       if (action.type === "SATT_LOGG") return; // loggen sparas i egen tabell
       koadKanal.current = arEkonomiAtgard(action) ? "ekonomi" : "state";
       if (koadKanal.current === "state" && dbRef.current) markeraOsparad(true);
     },
-    []
+    [skickaKvittenser]
   );
 
   // Autospar: körs efter att state faktiskt uppdaterats, så payloaden är färsk.
@@ -774,6 +812,7 @@ export function PortfolioProvider({ children }) {
       conn,
       synk,
       konflikter,
+      kvittens,
       /** Väljer version för en konflikt. "mina" eller "deras". */
       losKonflikt: (k, val) => {
         dispatch({ type: "LOS_KONFLIKT", steg: k.steg, varde: val === "mina" ? k.mina : k.deras, vag: k.vag, val });
@@ -799,7 +838,7 @@ export function PortfolioProvider({ children }) {
       ateraktiveraAnbud: (id) => dispatch({ type: "ATERAKTIVERA_ANBUD", id }),
       markeraEjVunnet: (id, orsak, text) => dispatch({ type: "MARKERA_EJ_VUNNET", id, orsak, text }),
     }),
-    [state, vy, ejVunna, dispatch, conn, synk, konflikter, ekonomiFel, visaToast]
+    [state, vy, ejVunna, dispatch, conn, synk, konflikter, kvittens, ekonomiFel, visaToast]
   );
 
   return <PortfolioContext.Provider value={api}>{children}</PortfolioContext.Provider>;

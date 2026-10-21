@@ -337,3 +337,32 @@ describe("offline och återanslutning", () => {
     await vantaTills(() => falsk.appState.has(STATE) && iDb("risker", "r1").atgard === "skriven före kontakt", 3000);
   });
 });
+
+describe("serverkvittens av egenkontroller och grindar (F05)", () => {
+  const kontroll = (extra = {}) => ({
+    id: "k1", projektId: "36037", omfattning: "SKID 1", punktId: "P11.01", resultat: "ok",
+    datum: "2026-10-01", kontrollant: "A. Kontrollant", referens: "EK-1", mallrevision: "r", ...extra,
+  });
+
+  it("en komplett egenkontroll och en grindpassage kvitteras via RPC", async () => {
+    await montera();
+    await act(async () => api.dispatch({ type: "FALT_KONTROLL", rad: kontroll() }));
+    await act(async () => api.dispatch({ type: "EPC_FAS", pid: "36037", fas: 4, falt: "grindDatum", varde: "2026-10-02" }));
+    await vantaTills(() => falsk.kvittenser.length === 2 && api.kvittens.koade === 0);
+    expect(falsk.kvittenser[0]).toMatchObject({ p_typ: "egenkontroll", p_objekt_id: "k1", p_utford_av: "A. Kontrollant" });
+    expect(falsk.kvittenser[1]).toMatchObject({ p_typ: "grind", p_objekt_id: "G4", p_varde: { grindDatum: "2026-10-02" } });
+  });
+
+  it("en ofullständig kontroll kvitteras inte, och ett nätfel ger nytt försök", async () => {
+    await montera();
+    CONFIG.loggAterforsokMs = 50;
+    await act(async () => api.dispatch({ type: "FALT_KONTROLL", rad: kontroll({ referens: "" }) }));
+    let forsok = 0;
+    falsk.sattFel((tabell) => (tabell === "rpc" && ++forsok === 1 ? { code: "PGRST000", message: "nät" } : null));
+    await act(async () => api.dispatch({ type: "FALT_KONTROLL", rad: kontroll({ id: "k2" }) }));
+    await vantaTills(() => falsk.kvittenser.length === 1, 3000);
+    expect(falsk.kvittenser[0].p_objekt_id).toBe("k2");
+    expect(forsok).toBe(2); // ett misslyckat försök, sedan ett lyckat
+    CONFIG.loggAterforsokMs = 15000;
+  });
+});

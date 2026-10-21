@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { hamtaGodkannanden } from "../../state/godkannanden.js";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { PROJEKTMALLAR, PROJEKTKONTROLL_REVISION } from "../../data/projektkontroll.js";
 import { kontrollId, kontrollSummering } from "../../lib/projektkontroll.js";
@@ -7,7 +8,17 @@ import { HELA, tackningText, tolkaOmfattningar } from "../../lib/kontrollplan.js
 import { useSnabbUtskrift } from "../field/SnabbUtskrift.jsx";
 
 export function EgenkontrollLage({ pid, fas }) {
-  const { state, uppd } = usePortfolj();
+  const { state, uppd, kvittens } = usePortfolj();
+  /* Serverkvittenser (F05): vem som kvitterade och när, satt av databasen. null i lokalt läge. */
+  const [kvitterade, setKvitterade] = useState(null);
+  const antalKontroller = (state.faltkontroller || []).length;
+  useEffect(() => {
+    let aktiv = true;
+    hamtaGodkannanden(pid).then((m) => aktiv && setKvitterade(m)).catch(() => aktiv && setKvitterade(null));
+    return () => {
+      aktiv = false;
+    };
+  }, [pid, antalKontroller, kvittens?.senast]);
   const { oppnaFaltmaterial } = useUi();
   const snabb = useSnabbUtskrift();
   const [omfattning, setOmfattning] = useState(HELA);
@@ -32,6 +43,16 @@ export function EgenkontrollLage({ pid, fas }) {
     <b className="text-sm">Verkliga egenkontroller</b>
     <label className="mt-2 flex flex-col gap-1 text-xs">Kontrollomfattning för moment {fas}<select value={omfattning} onChange={(e) => setOmfattning(e.target.value)}>{scopes.map((s) => <option key={s}>{s}</option>)}</select></label>
     <p className="my-2 text-sm">{sum.klara} av {sum.totalt} kompletta · {sum.oppna} öppna · {sum.avvikelser} Ej OK</p>
+    {kvitterade ? (() => {
+      const egna = mall.punkter.map((p) => ({ p, k: kvitterade.get(kontrollId(pid, omfattning, p.id)), r: index.get(kontrollId(pid, omfattning, p.id)) })).filter((x) => x.r?.resultat);
+      const ok = egna.filter((x) => x.k && x.k.varde?.resultat === x.r.resultat && x.k.varde?.datum === x.r.datum).length;
+      const senaste = egna.map((x) => x.k).filter(Boolean).sort((a, b) => (a.kvitterad_tid < b.kvitterad_tid ? 1 : -1))[0];
+      return <p className="my-1 text-xs text-ink-soft">
+        Serverkvitterade: <b className={ok === egna.length ? "text-ok-ink" : "text-warn-ink"}>{ok} av {egna.length}</b> registrerade resultat
+        {senaste ? ` · senast kvitterad av ${senaste.kvitterad_epost} ${senaste.kvitterad_tid.slice(0, 16).replace("T", " ")} (utförd av ${senaste.utford_av || "–"})` : ""}
+        {kvittens?.koade ? ` · ${kvittens.koade} väntar på kvittens` : ""}
+      </p>;
+    })() : null}
 
     <details className="my-2">
       <summary className="cursor-pointer text-xs font-bold">
