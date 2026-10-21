@@ -11,6 +11,7 @@ import { idag } from "../lib/datum.js";
 import { motesFlagga, projekt } from "../lib/berakningar.js";
 import { nyAtaPost } from "../lib/nyaPoster.js";
 import { nyttId } from "../lib/id.js";
+import { lankadAtgard, motespunktStatus, nyAtgardFranMotespunkt } from "../lib/motesatgard.js";
 
 /* Byggmöten.
 
@@ -28,8 +29,8 @@ const statusNamn = (v) => (MOTESSTATUS.find(([k]) => k === v) || [undefined, "�
 
 /* ---------- A4-protokoll ---------- */
 
-function Protokoll({ m, p, ur }) {
-  const atgarder = (m.punkter || []).filter((pt) => pt.status === "oppen");
+function Protokoll({ m, p, ur, punkter: register }) {
+  const atgarder = (m.punkter || []).filter((pt) => motespunktStatus(pt, register) === "oppen");
   const projektNamn = (p.nr ? p.nr + " " : "") + p.namn;
 
   return (
@@ -90,7 +91,7 @@ function Protokoll({ m, p, ur }) {
                       <tr key={pt.id}>
                         <td>{pt.text || ""}</td>
                         <td>{pt.ansvarig || ""}</td>
-                        <td>{pt.status === "oppen" ? "Öppen" : "Avslutad"}</td>
+                        <td>{motespunktStatus(pt, register) === "oppen" ? "Öppen" : "Avslutad"}</td>
                         <td>{a ? a.nr : "—"}</td>
                       </tr>
                     );
@@ -162,7 +163,23 @@ function Protokoll({ m, p, ur }) {
 
 function Motespunkt({ m, pt }) {
   const { state, dispatch, laggTill } = usePortfolj();
-  const { visaToast, oppnaPost } = useUi();
+  const { visaToast, oppnaPost, visa, setValtProjekt } = useUi();
+
+  const atgard = lankadAtgard(pt, state.punkter);
+  const status = motespunktStatus(pt, state.punkter);
+
+  /* Skapar en åtgärd i punktregistret ur beslutet. Projekt, text, frist och källa
+     förifylls; samma åtgärd följer sedan med till nästa möte. */
+  const skapaAtgard = () => {
+    if (!String(pt.text || "").trim()) {
+      visaToast("Skriv punktens text först.", "warn");
+      return;
+    }
+    const rad = nyAtgardFranMotespunkt(m, pt);
+    laggTill("punkter", rad);
+    satt("punktId", rad.id);
+    visaToast("Åtgärd skapad — följ den under Idag eller Öppna punkter");
+  };
 
   const kravAtaKoppling = pt.para === "4" || pt.para === "5";
   const saknar = kravAtaKoppling && !pt.urId && pt.text;
@@ -227,15 +244,53 @@ function Motespunkt({ m, pt }) {
           ))}
         </select>
 
-        <select
-          className={val}
-          value={pt.status || "oppen"}
-          onChange={(e) => satt("status", e.target.value)}
-          aria-label="Punktens status"
-        >
-          <option value="oppen">Öppen</option>
-          <option value="avslutad">Avslutad</option>
-        </select>
+        {atgard ? (
+          <StatusBadge ton={status === "oppen" ? "warn" : "ok"} label={status === "oppen" ? "Åtgärd öppen" : "Åtgärd klar"} />
+        ) : (
+          <select
+            className={val}
+            value={pt.status || "oppen"}
+            onChange={(e) => satt("status", e.target.value)}
+            aria-label="Punktens status"
+          >
+            <option value="oppen">Öppen</option>
+            <option value="avslutad">Avslutad</option>
+          </select>
+        )}
+
+        {atgard ? (
+          <button
+            type="button"
+            className="btn sec mini"
+            onClick={() => {
+              if (atgard.projektId !== "bada") setValtProjekt(atgard.projektId);
+              visa("punkter");
+            }}
+          >
+            Åtgärd: {atgard.agare || "ansvarig saknas"}{atgard.forfaller ? ` · frist ${atgard.forfaller}` : ""}
+          </button>
+        ) : (
+          <>
+            <button type="button" className="btn sec mini" onClick={skapaAtgard}>
+              + Skapa åtgärd
+            </button>
+            <select
+              className={val}
+              value=""
+              onChange={(e) => e.target.value && satt("punktId", e.target.value)}
+              aria-label="Koppla till befintlig åtgärd"
+            >
+              <option value="">Koppla åtgärd…</option>
+              {state.punkter
+                .filter((x) => x.status !== "klarmarkerad" && (x.projektId === m.projektId || x.projektId === "bada"))
+                .map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {x.titel.length > 50 ? x.titel.slice(0, 50) + "…" : x.titel}
+                  </option>
+                ))}
+            </select>
+          </>
+        )}
 
         {arende ? (
           <button
@@ -317,7 +372,7 @@ function Moteformular({ m, p }) {
           <button
             type="button"
             className="btn sec mini"
-            onClick={() => skrivUt(<Protokoll m={m} p={p} ur={state.ur} />)}
+            onClick={() => skrivUt(<Protokoll m={m} p={p} ur={state.ur} punkter={state.punkter} />)}
           >
             Generera protokoll (A4)
           </button>
@@ -465,7 +520,7 @@ export function Byggmoten() {
     const nr = "BM-" + String(moten.length + 1).padStart(2, "0");
     const id = nyttId("bm");
     const tidigare = moten[0];
-    const arv = (tidigare ? (tidigare.punkter || []).filter((pt) => pt.status === "oppen") : []).map(
+    const arv = (tidigare ? (tidigare.punkter || []).filter((pt) => motespunktStatus(pt, state.punkter) === "oppen") : []).map(
       (pt) => ({
         ...pt,
         id: nyttId("pt"),
@@ -487,7 +542,7 @@ export function Byggmoten() {
   };
 
   const senaste = moten[0] || null;
-  const oppnaSenaste = senaste ? (senaste.punkter || []).filter((pt) => pt.status === "oppen").length : 0;
+  const oppnaSenaste = senaste ? (senaste.punkter || []).filter((pt) => motespunktStatus(pt, state.punkter) === "oppen").length : 0;
   const oregistrerade = moten.reduce((sum, x) => sum + motesFlagga(x).length, 0);
 
   return (

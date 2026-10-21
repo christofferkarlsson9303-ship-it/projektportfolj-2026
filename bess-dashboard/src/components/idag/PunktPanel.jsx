@@ -39,6 +39,8 @@ export function PunktPanel({ id, onStang, onOppnaRegister }) {
           <span>Ändringar här gäller bara den här punkten.</span>
         </p>
 
+        {pt.kalla ? <p className="m-0 text-[13px] text-ink-soft">Källa: {pt.kalla}</p> : null}
+
         <label className="block">
           <span className="font-semibold text-ink">Ansvarig</span>
           <Falt className={falt} varde={pt.agare || ""} etikett="Ansvarig" onCommit={(v) => uppd("punkter", pt.id, "agare", v)} />
