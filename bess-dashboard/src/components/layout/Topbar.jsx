@@ -1,5 +1,6 @@
 import { VYMETA as META } from "../../data/vyer.js";
 import { useUi } from "../../state/hooks.js";
+import { Projektrad } from "./Projektrad.jsx";
 
 export function Topbar() {
   const { aktivVy, navOppen, setNavOppen, tema, vaxlaTema, oppnaFaltmaterial, setSokOppen } = useUi();
@@ -27,6 +28,7 @@ export function Topbar() {
         {m.lead ? <p className="pagelead">{m.lead}</p> : null}
       </div>
 
+      <Projektrad />
       <button type="button" className="kbd !text-xs" onClick={() => setSokOppen(true)} aria-haspopup="dialog" title="Sök sidor, projekt och ärenden (Ctrl/Cmd+K)">Sök</button>
       <button type="button" className="kbd !text-xs" onClick={() => oppnaFaltmaterial()} aria-haspopup="dialog">Fältmaterial</button>
 

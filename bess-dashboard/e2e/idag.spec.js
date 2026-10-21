@@ -79,8 +79,14 @@ test("en agendarad leder till den vy som äger posten", async ({ page }) => {
   test.skip(!rad, "inga agendaposter i grunddatan");
 
   await rad.getByRole("button", { name: /^Öppna/ }).click();
-  // Vilken vy det blir beror på typen — men vi ska ha lämnat Idag.
-  await expect(page.getByRole("heading", { level: 1 })).not.toHaveText("Idag");
+  // Vilken vy det blir beror på typen. Punkter hanteras i en panel på Idag, allt annat
+  // leder till sin egen vy.
+  const panel = page.getByRole("region", { name: /^Punkt: / });
+  if (await panel.isVisible().catch(() => false)) {
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Idag");
+  } else {
+    await expect(page.getByRole("heading", { level: 1 })).not.toHaveText("Idag");
+  }
 });
 
 test("Idag nås via kommandopaletten", async ({ page }) => {

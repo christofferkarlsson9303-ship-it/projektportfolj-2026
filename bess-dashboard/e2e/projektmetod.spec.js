@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { oppna, gaTill, utanKonsolfel } from "./hjalpare.js";
+import { annatProjekt, oppna, gaTill, projektval, utanKonsolfel } from "./hjalpare.js";
 import { VYER } from "../src/data/vyer.js";
 
 test("enkel meny, synlig sökknapp och ordlista hjälper utan att dölja funktioner", async ({ page }, info) => {
@@ -38,7 +38,7 @@ test("enkel meny, synlig sökknapp och ordlista hjälper utan att dölja funktio
 
 test("nytt projekt har tomma mallar och finns kvar efter omladdning", async ({ page }) => {
   const { fel } = await oppna(page, "Min projektmetod");
-  await page.getByRole("button", { name: "Nytt projekt", exact: true }).click();
+  await page.getByRole("banner").getByRole("button", { name: "Nytt projekt", exact: true }).click();
   const d = page.getByRole("dialog", { name: "Skapa nytt projekt" });
   await d.getByLabel("Projektnamn", { exact: true }).fill("Kalmar nytt testprojekt");
   await d.getByLabel("Projektnummer (om du har det)").fill("90001");
@@ -98,12 +98,10 @@ test("alla sidor går att öppna och har enkel vägledning", async ({ page }) =>
 
 test("metoden visar projektval och sex fasgrindsmätare utan horisontell rullning", async ({ page }, info) => {
   const { fel } = await oppna(page, "Min projektmetod");
-  const val = page.getByRole("group", { name: "Välj projekt", exact: true });
-  const andra = val.getByRole("button").nth(1);
-  const namn = await andra.innerText();
-  await andra.click();
-  await expect(andra).toHaveAttribute("aria-pressed", "true");
-  await expect(val.getByRole("button").first()).toHaveAttribute("aria-pressed", "false");
+  const andra = await annatProjekt(page);
+  const namn = andra.t;
+  await projektval(page).selectOption(andra.v);
+  await expect(projektval(page)).toHaveValue(andra.v);
   await expect(page.locator(".metod-projekt-identitet")).toContainText(namn.replace(/\s+/g, " ").split(" ").slice(1).join(" "));
   const matare = page.getByRole("progressbar", { name: /^Fasgrindar för / });
   await expect(matare).toHaveCount(6);

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { oppna, utanKonsolfel } from "./hjalpare.js";
+import { annatProjekt, oppna, projektval, utanKonsolfel } from "./hjalpare.js";
 
 test.beforeEach(async ({ page }) => {
   await oppna(page, "Slutdokumentation");
@@ -136,15 +136,11 @@ test("status är låst per projekt, inte globalt", async ({ page }) => {
   await forsta(page).locator(".slutdok-bock").click();
   await expect(index(page)).not.toContainText("0 %");
 
-  // Projektväljaren är en knappgrupp, inte en <select>.
-  const valjare = page.getByRole("group", { name: "Välj projekt" });
-  const ovald = valjare.locator('button[aria-pressed="false"]').first();
-  expect(await ovald.count(), "portföljen ska ha fler än ett projekt").toBe(1);
-  // Låses mot namnet — attributfiltret skulle annars peka om efter klicket.
-  const annat = valjare.getByRole("button", { name: (await ovald.textContent()).trim(), exact: true });
+  const annat = await annatProjekt(page);
+  expect(annat, "portföljen ska ha fler än ett projekt").toBeTruthy();
 
-  await annat.click();
-  await expect(annat).toHaveAttribute("aria-pressed", "true");
+  await projektval(page).selectOption(annat.v);
+  await expect(projektval(page)).toHaveValue(annat.v);
   await expect(index(page)).toContainText("0 %");
   await expect(page.getByRole("article", { name: "M6-grind" })).toContainText("Spärrad");
 });

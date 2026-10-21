@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { oppna, utanKonsolfel } from "./hjalpare.js";
+import { gaTill, oppna, utanKonsolfel } from "./hjalpare.js";
 
 const REGISTER = "Byggmöten";
 
@@ -96,4 +96,34 @@ test("registret räknar oregistrerade punkter", async ({ page }) => {
   const rad = page.getByRole("region", { name: REGISTER, exact: true }).locator("tbody tr").first();
   await expect(rad.locator('[data-ton="bad"]')).toHaveText(/1/);
   await expect(rad).toHaveClass(/rad-sen/);
+});
+
+test("beslut blir en åtgärd som följer med till nästa möte med sin aktuella status", async ({ page }) => {
+  await oppna(page, "Byggmöten");
+  const form = await nyttMote(page);
+
+  await form.getByRole("button", { name: /\+ Punkt under §3/ }).click();
+  await form.getByLabel("Punkt under §3").fill("Bekräfta leveransdatum för transformator");
+  await page.keyboard.press("Tab");
+  await form.getByRole("button", { name: "+ Skapa åtgärd" }).click();
+
+  /* Åtgärden är länkad: mötespunkten visar dess status, inte en egen. */
+  await expect(form.getByText("Åtgärd öppen")).toBeVisible();
+  await expect(form.getByLabel("Punktens status")).toHaveCount(0);
+
+  /* Nästa möte ärver beslutet och visar åtgärdens status utan omskrivning. */
+  const nasta = await nyttMote(page);
+  await expect(nasta.getByLabel("Punkt under §3")).toHaveValue("Bekräfta leveransdatum för transformator");
+  await expect(nasta.getByText("Åtgärd öppen")).toBeVisible();
+
+  /* Samma åtgärd finns i punktregistret med mötet som källa. */
+  await page.getByRole("button", { name: /^Åtgärd:/ }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Öppna punkter");
+  await expect(page.getByRole("main")).toContainText("Bekräfta leveransdatum för transformator");
+
+  /* Klarmarkeras åtgärden där, syns det i mötet utan att något skrivs om. */
+  const radSt = page.getByRole("row", { name: /Bekräfta leveransdatum/ });
+  await radSt.getByLabel(/^Status för/).selectOption("klarmarkerad");
+  await gaTill(page, "Byggmöten");
+  await expect(page.getByText("Åtgärd klar").first()).toBeVisible();
 });

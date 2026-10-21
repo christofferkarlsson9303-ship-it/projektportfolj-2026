@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { oppna, utanKonsolfel } from "./hjalpare.js";
+import { annatProjekt, oppna, projektval, utanKonsolfel } from "./hjalpare.js";
 
 const kapitel = (page) => page.getByRole("list", { name: "Kapitel i handboken" }).locator('[data-roll="kapitel"]');
 const rubrik = (kap) => kap.locator("button[aria-expanded]");
@@ -86,10 +86,9 @@ test("avbockningen följer projektet", async ({ page }) => {
   await rubrik(kap).click();
   await kap.getByRole("checkbox").first().check();
 
-  const projekt = page.getByRole("group", { name: "Välj projekt" }).getByRole("button");
-  test.skip((await projekt.count()) < 2, "bara ett projekt i portföljen");
-  await projekt.nth(1).click();
-  await expect(projekt.nth(1)).toHaveAttribute("aria-pressed", "true");
+  const annatPr = await annatProjekt(page);
+  test.skip(!annatPr, "bara ett projekt i portföljen");
+  await projektval(page).selectOption(annatPr.v);
 
   const annat = medPunkter(page);
   if ((await rubrik(annat).getAttribute("aria-expanded")) === "false") await rubrik(annat).click();

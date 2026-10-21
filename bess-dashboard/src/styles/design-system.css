@@ -689,6 +689,13 @@ body{background:var(--ground);font-size:14.5px;line-height:1.55}
 .topbar .kbd{border-radius:8px;padding:9px 16px;margin-top:3px;
   background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.3)}
 .topbar .kbd:hover{border-color:#fff;background:rgba(255,255,255,.24);color:#fff}
+.projektrad{display:flex;align-items:center;gap:8px;margin-top:3px;min-width:0}
+.projektrad-etikett{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,255,255,.75)}
+.projektrad-val{max-width:260px;min-height:38px;padding:7px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.14);color:#fff;font:inherit;font-size:13.5px;font-weight:600}
+.projektrad-val option{color:#111;background:#fff}
+.projektrad .btn{min-height:38px;padding:7px 14px;font-size:13px;background:#fff;color:var(--one-djup);border-color:#fff}
+@media(max-width:720px){.projektrad{flex-basis:100%;margin-top:0}.projektrad-etikett{display:none}.projektrad-val{flex:1;max-width:none;min-height:34px;padding:5px 8px}.projektrad .btn{min-height:34px;padding:5px 10px}}
+@media print{.projektrad{display:none}}
 main{max-width:1320px;padding:32px 38px 80px}
 /* Sidhuvudet linjerar med innehållet: samma vänsterkant som main, som är
    centrerad med max 1320 px och 38 px luft. */

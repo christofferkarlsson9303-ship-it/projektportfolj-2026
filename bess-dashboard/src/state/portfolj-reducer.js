@@ -377,6 +377,19 @@ export function reducer(state, action) {
       return loggat(nytt, info?.projektId, `${info?.etikett || id}: ${falt} ändrad ${kort(rad[falt])} → ${kort(varde)}`);
     }
 
+    /* Kommentar på en punkt. Kommentarerna är en lista med id, så att två personers
+       kommentarer slås ihop av sammanfoga.js i stället för att den ena skriver över den andra. */
+    case "PUNKT_KOMMENTAR": {
+      const { id, kommentar } = action;
+      const text = String(kommentar?.text || "").trim();
+      const rad = (state.punkter || []).find((r) => r.id === id);
+      if (!rad || !text || !kommentar.id) return state;
+      const ny = { id: kommentar.id, text, av: kommentar.av || "", ts: kommentar.ts || "" };
+      const nytt = { ...state, punkter: byt(state.punkter, id, (r) => ({ ...r, kommentarer: [...(r.kommentarer || []), ny] })) };
+      const info = etikettFor(state, "punkter", id);
+      return loggat(nytt, info?.projektId, `${info?.etikett || id}: kommentar — ${text.slice(0, 100)}`);
+    }
+
     /* Statusändring loggas — det är den som revisionsspåret bygger på. */
     case "UPPDATERA_STATUS": {
       const { lista, id, falt, varde } = action;

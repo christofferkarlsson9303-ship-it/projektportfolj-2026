@@ -14,7 +14,6 @@ import { Projektkort, Projektredigering } from "../components/oversikt/Projekt.j
 import { uppmarksamhet } from "../lib/oversikt.js";
 import { projektUnderlag } from "../lib/berakningar.js";
 import { Callout } from "../components/ds/index.js";
-import { NyttProjekt } from "../components/ui/NyttProjekt.jsx";
 
 /* Översikten (DashboardView) — läget i portföljen just nu.
 
@@ -98,7 +97,6 @@ export function DashboardView() {
         <div className="oversikt-rubrik">
           <h2 id="ov-projekt">Projekt</h2>
           <span className="oversikt-undertext">{state.projekt.length} i portföljen</span>
-          <NyttProjekt />
           <button
             type="button"
             className="btn sec mini oversikt-rubrik-knapp"

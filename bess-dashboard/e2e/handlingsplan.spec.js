@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { oppna, utanKonsolfel } from "./hjalpare.js";
+import { annatProjekt, oppna, projektval, utanKonsolfel } from "./hjalpare.js";
 
 test.beforeEach(async ({ page }) => {
   await oppna(page, "Handlingsplan");
@@ -88,10 +88,8 @@ test("planen hör till projektet, inte till portföljen", async ({ page }) => {
   await page.keyboard.press("Escape");
   await expect(kort(page)).toHaveCount(1);
 
-  const valjare = page.getByRole("group", { name: "Välj projekt" });
-  const ovald = valjare.locator('button[aria-pressed="false"]').first();
-  const namn = (await ovald.textContent()).trim();
-  await valjare.getByRole("button", { name: namn, exact: true }).click();
+  const annat = await annatProjekt(page);
+  await projektval(page).selectOption(annat.v);
 
   await expect(kort(page)).toHaveCount(0);
   await expect(page.getByRole("textbox", { name: "Mål", exact: true })).toHaveValue("");

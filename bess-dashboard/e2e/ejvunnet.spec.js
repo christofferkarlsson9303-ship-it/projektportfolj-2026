@@ -12,7 +12,7 @@ async function gaTillSteg(page, nummer, titel) {
 
 test("Markera som ej vunnet flyttar anbudet till arkivet med orsak och räknas inte i aktiva vyer", async ({ page }) => {
   const { fel } = await oppna(page, "Översikt");
-  await expect(page.getByText(/Göteborg Skogome/).first()).toBeVisible();
+  await expect(page.getByRole("main").getByText(/Göteborg Skogome/).first()).toBeVisible();
   // Alla aktiva projekt kan markeras, också projekt i produktion.
   await expect(page.getByRole("button", { name: /^Markera som ej vunnet för Växjö Batteripark/ })).toBeVisible();
   await expect(page.getByText("Förlorade anbud", { exact: true })).toHaveCount(0);

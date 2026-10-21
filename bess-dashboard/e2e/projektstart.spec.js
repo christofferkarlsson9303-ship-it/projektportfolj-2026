@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { gaTill, oppna } from "./hjalpare.js";
+import { gaTill, oppna, valjProjekt } from "./hjalpare.js";
 
 /* Fliken Projektstart: åtta faser. Projektet startar i fas 1 och nästa fas låses
    upp först när allt obligatoriskt i den förra är godkänt. Guidens sidor är
@@ -314,7 +314,7 @@ test("lägesrapport till ledningen: nuläge och ny risk med fas och kategori spa
 
   // Riskregistret har fått risken.
   await gaTill(page, "Risker");
-  await page.getByRole("button", { name: "36038 Alvesta Batteripark" }).click();
+  await valjProjekt(page, "36038 Alvesta Batteripark");
   const nyRisk = page.getByText("Ny risk från lägesrapporten").or(page.locator('input[value="Ny risk från lägesrapporten"]'));
   await expect(nyRisk.first()).toBeVisible();
   expect(fel).toEqual([]);
