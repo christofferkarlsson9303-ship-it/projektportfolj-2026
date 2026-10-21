@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { avstandMellan, avstandsbrott, kravMellan, luftFor, skyddsreglerFor } from "./siteSakerhet.js";
+import { avstandMellan, avstandsbrott, kravMellan, luftFor, sidavstand, skyddsreglerFor } from "./siteSakerhet.js";
 import { kanPlaceras, provaPlacering, sattAktivTomt, STANDARDTOMT, TOMT, tomtFor } from "./site.js";
 
 const box = (id, x, z, extra = {}) => ({ id, typ: "container", x, z, bredd: 6.1, djup: 2.5, hojd: 2.9, rotation: 0, ...extra });

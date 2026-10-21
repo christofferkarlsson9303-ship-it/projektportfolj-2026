@@ -23,6 +23,7 @@ const KALLA_SAKNAS = "Saknas i appens underlag – fastställs i projekteringen 
  * @property {string} text
  * @property {string} kalla
  * @property {boolean} verifierad
+ * @property {boolean} [sida]          gäller bara långsida mot långsida
  */
 
 /** Regler som gäller oavsett profil. Värden saknas tills projekteringen anger dem. */
@@ -91,7 +92,27 @@ export function avstandMellan(a, b) {
 }
 
 /**
- * Par av volymer som står närmare än ett verifierat krav.
+ * Fritt avstånd mellan långsidorna när två lika vridna volymer står sida vid sida,
+ * annars null (kortsida mot kortsida, förskjutna eller olika vridna).
+ */
+export function sidavstand(a, b) {
+  const ra = (((a.rotation || 0) % 180) + 180) % 180;
+  const rb = (((b.rotation || 0) % 180) + 180) % 180;
+  if (Math.abs(ra - rb) > 1e-6) return null;
+  const t = (ra * Math.PI) / 180;
+  const dx = (b.x || 0) - (a.x || 0);
+  const dz = (b.z || 0) - (a.z || 0);
+  // Lokala axlar som i site.js: u längs bredden (långsidan), v längs djupet.
+  const du = dx * Math.cos(t) - dz * Math.sin(t);
+  const dv = dx * Math.sin(t) + dz * Math.cos(t);
+  const langsOverlapp = Math.abs(du) < (a.bredd || 0) / 2 + (b.bredd || 0) / 2 - 1e-6;
+  if (!langsOverlapp) return null;
+  return Math.max(0, Math.round((Math.abs(dv) - (a.djup || 0) / 2 - (b.djup || 0) / 2) * 100) / 100);
+}
+
+/**
+ * Par av volymer som står närmare än ett verifierat krav. En regel med `sida: true`
+ * gäller bara långsida mot långsida (kortsidor i rad är tillåtna).
  * @returns {Array<{a: object, b: object, avstand: number, krav: number, regel: Skyddsregel}>}
  */
 export function avstandsbrott(objekt, regler) {
@@ -101,7 +122,8 @@ export function avstandsbrott(objekt, regler) {
     for (let j = i + 1; j < v.length; j++) {
       const regel = regler.find((r) => passar(r, v[i].typ, v[j].typ) && r.verifierad && Number(r.avstand) > 0);
       if (!regel) continue;
-      const avstand = avstandMellan(v[i], v[j]);
+      const avstand = regel.sida ? sidavstand(v[i], v[j]) : avstandMellan(v[i], v[j]);
+      if (avstand === null) continue;
       if (avstand < Number(regel.avstand) - 1e-6) ut.push({ a: v[i], b: v[j], avstand, krav: Number(regel.avstand), regel });
     }
   }

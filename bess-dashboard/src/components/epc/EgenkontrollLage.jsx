@@ -26,6 +26,7 @@ export function EgenkontrollLage({ pid, fas }) {
   const projekt = (state.projekt || []).find((p) => p.id === pid);
   const lage = kontrollage(state, pid)[fas];
   const [planText, setPlanText] = useState(() => (lage?.planerade || []).join("\n"));
+  const [visaPlan, setVisaPlan] = useState(false);
   if (!mall || !lage) return null;
   const rader = (state.faltkontroller || []).filter((r) => r.projektId === pid);
   const scopes = [...new Set([HELA, ...lage.omfattningar, ...rader.map((r) => r.omfattning).filter(Boolean)])];
@@ -54,10 +55,12 @@ export function EgenkontrollLage({ pid, fas }) {
       </p>;
     })() : null}
 
-    <details className="my-2">
-      <summary className="cursor-pointer text-xs font-bold">
+    <div className="my-2">
+      <button type="button" className="cursor-pointer border-0 bg-transparent p-0 text-left text-xs font-bold text-ink" aria-expanded={visaPlan} onClick={() => setVisaPlan((v) => !v)}>
+        {visaPlan ? "▾ " : "▸ "}
         Kontrollplan: {lage.planerade.length ? `${lage.planerade.length} enheter` : "inga enheter angivna"}{lage.omfattningar.length ? ` · momentet kräver ${lage.omfattningar.length} omfattning${lage.omfattningar.length === 1 ? "" : "ar"}` : " · ingen omfattning registrerad"}
-      </summary>
+      </button>
+      {visaPlan ? <>
       <label className="mt-2 flex flex-col gap-1 text-xs">
         Enheter som ska kontrolleras i moment {fas} (en per rad)
         <textarea rows={4} value={planText} placeholder={"Hela anläggningen\nSKID 1\nSKID 2\n+B1a"} onChange={(e) => setPlanText(e.target.value)} onBlur={sparaPlan} />
@@ -73,7 +76,8 @@ export function EgenkontrollLage({ pid, fas }) {
           ))}
         </ul>
       ) : lage.omfattningar.length ? <p className="my-1 text-xs text-ok-ink">Alla punkter täcker {tackningText({ klara: lage.omfattningar.length, totalt: lage.omfattningar.length })}.</p> : null}
-    </details>
+      </> : null}
+    </div>
 
     <p className="my-2 text-xs text-ink-soft">Samma sparade resultat som i fältmaterialet. Momentets bockar och grind är separat uppföljning.</p>
     <div className="flex flex-wrap gap-2">

@@ -322,8 +322,8 @@ export function kantSnappa(q, o, objekt, { ignorera = null, luft = 0, troskel = 
       if (!liggerIHojd(n, nm)) continue;
       const [nc, nh] = kanter(n, nm);
       const l = luftMot(n);
-      /* Med krav på fritt avstånd snappar den bara till kravet, inte kant mot kant. */
-      const lagen = l > 0 ? [nc + nh + l + halv - c, nc - nh - l - halv - c] : [nc + nh + halv - c, nc - nh - halv - c];
+      /* Kant mot kant (kortsidor i rad) och, med krav på fritt avstånd, kravets läge. Närmast vinner. */
+      const lagen = [nc + nh + halv - c, nc - nh - halv - c, ...(l > 0 ? [nc + nh + l + halv - c, nc - nh - l - halv - c] : [])];
       for (const delta of [...lagen, nc + nh - halv - c, nc - nh + halv - c]) {
         if (Math.abs(delta) <= troskel && (b === null || Math.abs(delta) < Math.abs(b))) b = delta;
       }

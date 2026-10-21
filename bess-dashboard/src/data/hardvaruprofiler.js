@@ -45,7 +45,7 @@ export const HARDVARUPROFILER = {
     },
     /* Skyddsavstånd som regelobjekt (F11). Används av lib/siteSakerhet.js. */
     skyddsavstand: [
-      { id: "container-container", mellan: ["container", "container"], avstand: 3.0, text: "Fritt mellan batterienheter (sida), rek. 3,5 m", kalla: NYCKEL, verifierad: true },
+      { id: "container-container", mellan: ["container", "container"], avstand: 3.0, sida: true, text: "Fritt mellan batterienheter, långsida mot långsida (rek. 3,5 m)", kalla: NYCKEL, verifierad: true },
     ],
     skid: {
       benamning: "Power Electronics MV-skid",
