@@ -32,6 +32,7 @@ export async function lasPdfSida(blob) {
 }
 
 /** Ritningen som canvas: { canvas, proportion } där proportion = höjd/bredd. */
+/** @param {Blob} blob @param {{pdf?: boolean}} [val] */
 export async function ritaRitning(blob, { pdf } = {}) {
   if (pdf) {
     const lib = await pdfjs();

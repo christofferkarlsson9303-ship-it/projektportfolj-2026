@@ -30,6 +30,10 @@ const ERSATTNING = ["Fast pris", "Löpande räkning", "Fast pris med á-prislist
 const roll = (id) => { const r = ROLLER.find((x) => x.id === id); return { id: `roll_${id}`, etikett: `Planerad ${r.namn.toLowerCase()}`, typ: "text", tips: "Samma uppgift återanvänds i Organisation och uppstart." }; };
 const TAL = ["1", "2", "3", "4", "5"];
 
+/** @typedef {{id: string, etikett: string, typ: string, tips?: string, obligatoriskt?: boolean, standard?: string,
+ *   alternativ?: ReadonlyArray<string|ReadonlyArray<string>>, placeholder?: string, bred?: boolean, kravVarde?: string,
+ *   visaNar?: {id: string, varde: string}, val?: Array<[string, string]>}} StegFalt */
+/** @type {Array<{id: string, fas: number|null, falt?: StegFalt[], [k: string]: any}>} */
 export const STEG = [
   {
     id: "projekt",

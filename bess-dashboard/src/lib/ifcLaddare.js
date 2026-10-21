@@ -50,7 +50,7 @@ function laddaDel(api, modelID, placerad) {
  * @param {object} api       ett initierat web-ifc IfcAPI
  * @param {Uint8Array} data  IFC-filens innehåll
  * @param {{maxObjekt?: number, centrera?: boolean, onFramsteg?: (p: {gjorda: number, totalt: number}) => void}} [val]
- * @returns {{schema: string, objekt: object[], antal: number, avkortad: boolean, geometri: object[], bb: number[]|null, forskjutning: number[]}}
+ * @returns {{schema: string, objekt: object[], antal: number, avkortad: boolean, geometri: object[], guidPerEid: Object<string,string>, bb: number[]|null, forskjutning: number[], delFel?: number}}
  *   `objekt` är kompakt metadata (för state), `geometri` är { eid, delar: [{pos, nor, idx, farg}] } (för cachen).
  */
 export function lasIfc(api, data, { maxObjekt = IFC_MAX_OBJEKT, centrera = true, onFramsteg } = {}) {

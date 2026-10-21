@@ -32,11 +32,11 @@ Granskningen (commit `0e7f85961c8a`, fynd F01–F15) ligger till grund för GitH
 
 | Beslut | Status | Påverkar |
 | --- | --- | --- |
-| Ska beställare/UE få åtkomst till appen? | Ej beslutat | F01, F15 |
-| Synkkö: full operationskö eller förenklad variant i Etapp A? | Ej beslutat | F03 |
-| Formella godkännanden i egen tabell med `auth.uid()` och servertid | Ej beslutat | F05 |
-| Påminnelser: räcker en kanal eller måste alla lyckas? | Ej beslutat | F07 |
-| Frys nya vyer tills Etapp A är mergad | Ej beslutat | Alla |
+| Ska beställare/UE få åtkomst till appen? | **2026-10-21: Nej.** Christoffer är enda användaren. Allowlistan räcker; ingen RLS per projekt. | F01, F15 |
+| Synkkö: full operationskö eller förenklad variant i Etapp A? | **2026-10-21: Förenklad.** Flagga osparat lokalt, trevägssammanslagning vid uppstart, återförsökstimer. | F03 |
+| Formella godkännanden i egen tabell med `auth.uid()` och servertid | **2026-10-21: Ja.** Tabell `godkannanden`, RPC `registrera_godkannande`. | F05 |
+| Påminnelser: räcker en kanal eller måste alla lyckas? | **2026-10-21: Alla måste lyckas.** Status per kanal, misslyckad kanal försöks igen. | F07 |
+| Frys nya vyer tills Etapp A är mergad | **Inaktuellt:** Etapp A mergades i PR #76. | Alla |
 
 Fyll i datum och beslut i tabellen när det är fattat. Migrationer i `supabase/migrations/` appliceras manuellt efter granskning; skriv i filens huvud om den är applicerad.
 

@@ -87,7 +87,7 @@ export const plusDagar = (iso, n) => {
   d.setDate(d.getDate() + Math.round(n));
   return lokaltDatum(d);
 };
-export const dagarMellan = (fran, till) => Math.round((tillDatum(till) - tillDatum(fran)) / 86400000);
+export const dagarMellan = (fran, till) => Math.round((tillDatum(till).getTime() - tillDatum(fran).getTime()) / 86400000);
 const giltigt = (iso) => typeof iso === "string" && /^\d{4}-\d{2}-\d{2}$/.test(iso);
 
 /* ---------- Sparade rader ---------- */

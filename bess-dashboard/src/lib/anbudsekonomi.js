@@ -5,6 +5,7 @@
    och täckningsbidraget räknas fram. Ett belopp som inte går att tolka blir null,
    aldrig noll, så att PDF:en skriver "Ej angivet" i stället för en felaktig siffra. */
 
+/** @type {Array<[RegExp, number]>} */
 const ENHET = [
   [/^(m(kr|sek)?|miljoner?)$/, 1e6],
   [/^(t(kr|sek)?|tusen)$/, 1e3],

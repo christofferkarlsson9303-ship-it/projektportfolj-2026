@@ -345,6 +345,7 @@ export const SITE_STATUS = [
 ];
 
 /** Numeriska fält med namn och eventuellt tak — används av objektFel. */
+/** @type {Array<[string, string, number?]>} */
 const BESS_TAL = [
   ["mw", "Effekt (MW)"],
   ["mwh", "Energi (MWh)"],
@@ -383,6 +384,7 @@ export const fmtTal = (n, d = 1) => new Intl.NumberFormat("sv-SE", { maximumFrac
  * ("medel"). SoC är manuellt inmatad, inte telemetri; `socUnderlag` säger hur
  * stor del av parken siffran bygger på.
  */
+/** @param {any[]} objekt @returns {import("./typer.js").ParkSumma} */
 export function parkSumma(objekt) {
   const v = objekt.filter(arVolym);
   const cont = v.filter((o) => o.typ === "container");
@@ -390,6 +392,7 @@ export function parkSumma(objekt) {
   const medSoc = cont.filter((o) => num(o.soc) !== null);
   const viktade = medSoc.filter((o) => (num(o.mwh) ?? 0) > 0);
   const utanKapacitet = medSoc.length - viktade.length;
+  /** @type {import("./typer.js").SocUnderlag["metod"]} */
   let metod = null;
   let soc = null;
   if (medSoc.length && !viktade.length) {

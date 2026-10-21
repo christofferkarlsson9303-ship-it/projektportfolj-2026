@@ -44,7 +44,7 @@ export function kalkylSummor(rader) {
 
 /** Tidslagets text ur tidrapporten, t.ex. "Övertid 50 %". */
 export const tidslagText = (faktor) =>
-  (OVERTID.find(([f]) => f === Number(faktor)) || [0, "Normaltid"])[1].split(" (")[0];
+  String((OVERTID.find(([f]) => f === Number(faktor)) || [0, "Normaltid"])[1]).split(" (")[0];
 
 let lopnummer = 0;
 const nyttId = () => `kr${Date.now().toString(36)}${(lopnummer++).toString(36)}`;

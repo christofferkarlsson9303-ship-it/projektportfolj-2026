@@ -92,6 +92,7 @@ export function kopplingFel(k) {
 }
 
 /** Fälten som sparas på ärendet när det kopplas till ett objekt. */
+/** @param {any} objekt @param {{viewpoint?: any, modelVersionId?: string}} [val] */
 export function byggKoppling(objekt, { viewpoint, modelVersionId = "" } = {}) {
   const boundingBox = boundingBoxFor(objekt);
   return {

@@ -89,7 +89,7 @@ function slaIhopLista(bas, mina, deras, sokvag, konflikter) {
 
 /**
  * Slår ihop två versioner av samma dokument mot deras gemensamma bas.
- * @returns {{ varde: any, konflikter: string[] }} konflikter är sökvägar där
+ * @returns {import("./typer.js").Sammanslagning} konflikter är sökvägar där
  *   båda ändrat olika — där har min version behållits.
  */
 export function sammanfoga(bas, mina, deras) {

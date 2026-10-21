@@ -46,7 +46,7 @@ export default defineConfig({
 
   webServer: {
     // Bygget ingår med flit: testen ska aldrig köra mot en gammal dist/.
-    command: "npm run build && npm run preview -- --port 4173 --strictPort",
+    command: "npm run build:lokal && npm run preview -- --port 4173 --strictPort",
     url: "http://localhost:4173",
     /* Aldrig återanvända. Med återanvändning hoppas bygget över om en
        preview-server råkar stå kvar, och då körs sviten tyst mot en gammal

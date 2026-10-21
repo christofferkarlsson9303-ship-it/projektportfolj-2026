@@ -4,6 +4,7 @@ import { PROJEKTMALLAR, PROJEKTKONTROLL_REVISION, PROJEKTKONTROLL_INLEDNING } fr
 import { kontrollId, kontrollSummering } from "./projektkontroll.js";
 import { idag } from "./datum.js";
 
+/** @param {any} state @param {string} pid @param {{utforare?: string, fran?: string, till?: string, ids?: string[]}} [filter] */
 export function arbetsrader(state, pid, { utforare = "", fran = "", till = "", ids } = {}) {
   const valda = ids ? new Set(ids) : null;
   return (state.punkter || []).filter((p) =>
@@ -17,9 +18,19 @@ export function arbetsrader(state, pid, { utforare = "", fran = "", till = "", i
   }));
 }
 
-/** Fryst dokumentmodell: inget här ändrar projektets eller EPC:s status. */
+/**
+ * Metadata till fältmaterialet. Alla fält är valfria.
+ * @typedef {{enhet?: string, utforare?: string, lagmedlemmar?: Object<string,string>, visaResultat?: boolean,
+ *   kontrollplan?: string, datum?: string, skapadAv?: string, dokumentNr?: string, ritning?: string,
+ *   fran?: string, till?: string}} FaltMetadata
+ */
+
+/** Fryst dokumentmodell: inget här ändrar projektets eller EPC:s status.
+ * @param {{projekt: any, mallIds: string[], referenser?: Object<string,string>, ansvar?: Object<string,string>,
+ *   metadata?: FaltMetadata, uppgifter?: any[], mallpaket?: string, kontroller?: any[], profil?: string}} indata */
 export function byggFaltmaterial({ projekt, mallIds, referenser = {}, ansvar = {}, metadata = {}, uppgifter = [], mallpaket = "teknisk", kontroller = [] }) {
   const idSet = new Set(mallIds);
+  /** @type {any[]} */
   const mallar = mallpaket === "projekt" ? PROJEKTMALLAR : mallpaket === "lagplan" ? LAGMALLAR : FALTMALLAR;
   const revision = mallpaket === "projekt" ? PROJEKTKONTROLL_REVISION : mallpaket === "lagplan" ? "2026-10-01.2" : FALTMALL_REVISION;
   const omfattning = metadata.enhet?.trim() || "Hela anläggningen";

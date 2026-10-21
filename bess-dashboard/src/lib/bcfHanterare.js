@@ -298,6 +298,7 @@ export async function byggBcf(arenden, { snapshots = {}, forfattare = "Okänd", 
   const zip = new JSZip();
   zip.file("bcf.version", `${XML_HUVUD}${tagg("Version", tagg("DetailedVersion", BCF_VERSION), { VersionId: BCF_VERSION })}`);
   zip.file("project.bcfp", `${XML_HUVUD}${tagg("ProjectExtension", tagg("Project", text("Name", projektNamn || "Projekt"), { ProjectId: nyGuid() }))}`);
+  /** @type {Object<string,string>} */
   const nyaGuid = {};
   for (const u of arenden) {
     const topicGuid = arGuid(u.bcfGuid) ? u.bcfGuid : nyGuid();

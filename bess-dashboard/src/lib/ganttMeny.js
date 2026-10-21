@@ -41,7 +41,7 @@ export function antalVeckor(start, slut) {
   if (!start || !slut) return 0;
   const a = new Date(veckansMandag(veckaFor(start)) + "T00:00:00Z");
   const b = new Date(veckansMandag(veckaFor(slut)) + "T00:00:00Z");
-  return Math.round((b - a) / (7 * 86400000)) + 1;
+  return Math.round((b.getTime() - a.getTime()) / (7 * 86400000)) + 1;
 }
 
 /** En fas ihopfälld: en stapel från första momentets start till sista momentets slut, med ett

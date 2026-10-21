@@ -14,6 +14,7 @@ import KLG_RADER from "../../data/klgUrvalP2.json";
 /** Timkostnad enligt KLG 1:26 (självkostnad inkl. omkostnadspålägg). */
 export const KLG_TIMPRIS = { bered: 1077, mont: 982, maskin: 1190 };
 
+/** @type {Array<[string, string, Array<Array<string|number>>]>} */
 const BESS_KODER = [
   ["B101", "Battericontainer", [
     ["01", "Mottagning, lossning och lyft battericontainer (exkl. kran)", "st", 0.2, 4],

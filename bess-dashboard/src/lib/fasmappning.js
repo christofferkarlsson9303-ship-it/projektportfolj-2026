@@ -24,6 +24,7 @@ export const FASSTATUS = {
 /** Status för fas `nr` när projektet ligger i `aktiv`. Faser efter den aktiva är låsta: nästa fas
  *  låses upp först när allt obligatoriskt i den aktiva är godkänt. Är framdriften känd
  *  (`klara`/`totalt`) och inget är gjort, är den aktiva fasen ej påbörjad. */
+/** @param {number} nr @param {number} aktiv @param {{klara?: number, totalt?: number}} [framdrift] */
 export function fasStatus(nr, aktiv, { klara, totalt } = {}) {
   const a = arFasNr(aktiv) ? aktiv : 1;
   if (nr < a) return "klar";
