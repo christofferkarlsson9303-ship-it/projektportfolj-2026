@@ -24,6 +24,7 @@ import { nyttId } from "./id.js";
 export function filtyp(filnamn = "") {
   const n = filnamn.toLowerCase();
   if (n.endsWith(".json")) return "json";
+  if (n.endsWith(".zip")) return "zip";
   if (n.endsWith(".csv")) return "csv";
   if (n.endsWith(".xlsx") || n.endsWith(".xlsm")) return "xlsx";
   if (/\.(pdf|docx?|odt)$/.test(n)) return "protokoll";

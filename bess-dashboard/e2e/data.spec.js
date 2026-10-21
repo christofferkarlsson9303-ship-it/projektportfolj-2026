@@ -80,7 +80,8 @@ test("vyn är flyttad till React och visar lagring, import och tabeller", async 
   await expect(page.getByText("Den här sektionen är inte flyttad")).toHaveCount(0);
   await expect(page.getByRole("article", { name: "Lagring" })).toContainText("Lokalt läge");
   await expect(page.getByText("Släpp filer här")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Ladda ner säkerhetskopia (JSON)" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Fullständig säkerhetskopia (ZIP)" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Dataexport (utan bilagor, JSON)" })).toBeVisible();
   await expect(page.getByText(/Google Drive via Make — planerad/)).toBeVisible();
 });
 
@@ -216,4 +217,17 @@ test("vyn renderar utan konsolfel", async ({ page }) => {
   await kort(page, "Byggmöte_9_-_Växjö.pdf").getByRole("button", { name: "Tillämpa" }).click();
   await expect(page.getByRole("region", { name: /Protokoll för 36037/ })).toBeVisible();
   utanKonsolfel(fel);
+});
+
+test("fullständig säkerhetskopia laddas ner som ZIP och läses tillbaka (F06)", async ({ page }) => {
+  const [nedladdning] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button", { name: "Fullständig säkerhetskopia (ZIP)" }).click(),
+  ]);
+  expect(nedladdning.suggestedFilename()).toMatch(/^Projektportfolj_sakerhetskopia_\d{4}-\d{2}-\d{2}\.zip$/);
+  const fil = await nedladdning.path();
+  const { readFileSync } = await import("node:fs");
+  await valjFiler(page, { name: "kopia.zip", mimeType: "application/zip", buffer: readFileSync(fil) });
+  await expect(page.getByText("Fullständig säkerhetskopia → portföljen och bilagorna")).toBeVisible();
+  await expect(page.getByText(/Bilagor: \d+ ritningar, \d+ IFC-modeller, \d+ protokoll\./)).toBeVisible();
 });
