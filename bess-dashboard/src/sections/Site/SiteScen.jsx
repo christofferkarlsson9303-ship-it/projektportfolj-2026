@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { luftFor } from "../../lib/siteSakerhet.js";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { CSS2DObject, CSS2DRenderer } from "three/addons/renderers/CSS2DRenderer.js";
@@ -454,7 +455,7 @@ export default function SiteScen({
       }
       const rot = p.spokRot || 0;
       const ob = { typ: p.laddad, bredd: mall.bredd, djup: mall.djup, hojd: mall.hojd, rotation: rot };
-      const res = provaPlacering(ob, q, p.objekt || [], { rutnat: p.rutnat === false ? 0 : RUTNAT });
+      const res = provaPlacering(ob, q, p.objekt || [], { rutnat: p.rutnat === false ? 0 : RUTNAT, snappLuft: luftFor(p.skyddsregler || [], p.laddad) });
       const dim = `${p.laddad}:${mall.bredd}x${mall.djup}x${mall.hojd}`;
       if (spokTyp !== p.laddad || spokDim !== dim) {
         for (const barn of [...spok.children]) {
@@ -539,7 +540,7 @@ export default function SiteScen({
       const o = (senaste.current.objekt || []).find((x) => x.id === drag.id);
       const mal = { x: q.x - drag.dx, z: q.z - drag.dz };
       const res = o
-        ? provaPlacering(o, mal, senaste.current.objekt || [], { ignorera: o.id, rutnat: senaste.current.rutnat === false ? 0 : RUTNAT })
+        ? provaPlacering(o, mal, senaste.current.objekt || [], { ignorera: o.id, rutnat: senaste.current.rutnat === false ? 0 : RUTNAT, snappLuft: luftFor(senaste.current.skyddsregler || [], o.typ) })
         : { ...innanforTomt(mal.x, mal.z), ok: true };
       if (!res.ok) return;
       m.position.x = res.x;

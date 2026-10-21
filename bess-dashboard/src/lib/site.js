@@ -1,7 +1,7 @@
 /* Siten — volymer och nålar på projektets tomt, och matematiken för att gå
    runt bland dem. Ren logik utan three, så att den kan testas utan WebGL.
 
-   Koordinater: three.js, högerhänt, +Y upp, meter. Tomten är 80 × 52 m med
+   Koordinater: three.js, högerhänt, +Y upp, meter. Tomten är 80 × 52 m (eller projektets egen) med
    mitten i origo. yaw 0 tittar mot −Z (norr när ingen situationsplan säger
    annat). Rotation på en volym är grader runt +Y, moturs sett ovanifrån —
    samma som rotation.y i three.
@@ -11,13 +11,40 @@
    andra listor. Situationsplanen är en bild och ligger bara i sessionStorage
    — den skulle spränga JSONB-raden och följa med synken. */
 
-export const TOMT = { bredd: 80, djup: 52 };
+/** Standardtomten. Projektets egen tomt (projekt.siteTomt, F11) sätts med sattAktivTomt(). */
+export const STANDARDTOMT = Object.freeze({ bredd: 80, djup: 52 });
+
+/** Den aktiva tomten. Ett objekt som ändras på plats av sattAktivTomt(), så att all
+ *  geometri (snapp, kollision, mark, planvy) läser samma mått utan att tomten måste
+ *  skickas genom varje anrop. Siten sätter den för valt projekt innan något ritas. */
+export const TOMT = { bredd: STANDARDTOMT.bredd, djup: STANDARDTOMT.djup };
 
 /** Körytor när ingen situationsplan finns: en gata i söder och en infart i väster. */
-export const KORYTOR = [
-  { x: 0, z: TOMT.djup / 2 - 4, bredd: TOMT.bredd, djup: 6 },
-  { x: -TOMT.bredd / 2 + 3, z: 0, bredd: 6, djup: TOMT.djup },
-];
+export const KORYTOR = [];
+function byggKorytor() {
+  KORYTOR.length = 0;
+  KORYTOR.push(
+    { x: 0, z: TOMT.djup / 2 - 4, bredd: TOMT.bredd, djup: 6 },
+    { x: -TOMT.bredd / 2 + 3, z: 0, bredd: 6, djup: TOMT.djup }
+  );
+}
+byggKorytor();
+
+/** Projektets tomt: projekt.siteTomt om bredd och djup är rimliga (20–1000 m), annars standard. */
+export function tomtFor(projekt) {
+  const t = projekt?.siteTomt;
+  const ok = (v) => Number.isFinite(Number(v)) && Number(v) >= 20 && Number(v) <= 1000;
+  return t && ok(t.bredd) && ok(t.djup) ? { bredd: Number(t.bredd), djup: Number(t.djup) } : { ...STANDARDTOMT };
+}
+
+/** Byter aktiv tomt. Returnerar true om måtten ändrades. */
+export function sattAktivTomt({ bredd, djup }) {
+  if (TOMT.bredd === bredd && TOMT.djup === djup) return false;
+  TOMT.bredd = bredd;
+  TOMT.djup = djup;
+  byggKorytor();
+  return true;
+}
 
 /** Avstånd i meter som en gående håller till en volyms sida. */
 export const MARGINAL = 0.45;
@@ -256,13 +283,15 @@ export function rektanglarOverlappar(a, b, luft = 0) {
  * objekt i vägen. Nålar har ingen yta och kontrolleras inte.
  * @returns {{ok:true}|{ok:false,orsak:"utanfor"|"krock",med?:object}}
  */
+/** @param {any} kandidat @param {any[]} objekt @param {{ignorera?: any, luft?: number|((granne: any) => number)}} [val] */
 export function kanPlaceras(kandidat, objekt, { ignorera = null, luft = 0 } = {}) {
+  const luftMot = typeof luft === "function" ? luft : () => luft;
   if (!arVolym(kandidat)) return { ok: true };
   const m = yttermatt(kandidat);
   if (Math.abs(kandidat.x) + m.bredd / 2 > TOMT.bredd / 2 + EPS || Math.abs(kandidat.z) + m.djup / 2 > TOMT.djup / 2 + EPS) {
     return { ok: false, orsak: "utanfor" };
   }
-  const med = objekt.find((o) => o.id !== ignorera && arVolym(o) && rektanglarOverlappar(kandidat, o, luft));
+  const med = objekt.find((o) => o.id !== ignorera && arVolym(o) && rektanglarOverlappar(kandidat, o, luftMot(o)));
   return med ? { ok: false, orsak: "krock", med } : { ok: true };
 }
 
@@ -277,9 +306,13 @@ export const KANTTROSKEL = 0.6;
  * i hela meter. Ligger en kant inom tröskeln från en grannes kant dras
  * objektet så att kanterna möts exakt (kant mot kant) eller ligger i linje.
  * Bara grannar vars sida ligger i höjd med objektet räknas. `luft` håller
- * önskat fritt avstånd vid kant mot kant.
+ * önskat fritt avstånd vid kant mot kant – ett tal, eller en funktion av grannen
+ * (profilens skyddsavstånd per objekttyp, F11).
  */
+/** @param {{x: number, z: number}} q @param {any} o @param {any[]} objekt
+ *  @param {{ignorera?: any, luft?: number|((granne: any) => number), troskel?: number}} [val] */
 export function kantSnappa(q, o, objekt, { ignorera = null, luft = 0, troskel = KANTTROSKEL } = {}) {
+  const luftMot = typeof luft === "function" ? luft : () => luft;
   const m = yttermatt(o);
   const grannar = objekt.filter((n) => n.id !== ignorera && arVolym(n) && arKvartsvarv(n));
   const axel = (c, halv, liggerIHojd, kanter) => {
@@ -288,7 +321,10 @@ export function kantSnappa(q, o, objekt, { ignorera = null, luft = 0, troskel = 
       const nm = yttermatt(n);
       if (!liggerIHojd(n, nm)) continue;
       const [nc, nh] = kanter(n, nm);
-      for (const delta of [nc + nh + luft + halv - c, nc - nh - luft - halv - c, nc + nh - halv - c, nc - nh + halv - c]) {
+      const l = luftMot(n);
+      /* Med krav på fritt avstånd snappar den bara till kravet, inte kant mot kant. */
+      const lagen = l > 0 ? [nc + nh + l + halv - c, nc - nh - l - halv - c] : [nc + nh + halv - c, nc - nh - halv - c];
+      for (const delta of [...lagen, nc + nh - halv - c, nc - nh + halv - c]) {
         if (Math.abs(delta) <= troskel && (b === null || Math.abs(delta) < Math.abs(b))) b = delta;
       }
     }
@@ -318,13 +354,15 @@ export function kantSnappa(q, o, objekt, { ignorera = null, luft = 0, troskel = 
  * alla använder. `o` har typ, bredd, djup, hojd och rotation.
  * @returns {{x:number,z:number,ok:boolean,orsak?:string,med?:object}}
  */
-export function provaPlacering(o, punkt, objekt, { ignorera = null, rutnat = RUTNAT, luft = 0 } = {}) {
+/** @param {any} o @param {{x: number, z: number}} punkt @param {any[]} objekt
+ *  @param {{ignorera?: any, rutnat?: number, luft?: number|((granne: any) => number), snappLuft?: number|((granne: any) => number)}} [val] */
+export function provaPlacering(o, punkt, objekt, { ignorera = null, rutnat = RUTNAT, luft = 0, snappLuft = luft } = {}) {
   if (!arVolym(o)) {
     const q = innanforTomt(punkt.x, punkt.z);
     return { ...q, ok: true };
   }
   let q = snappa(punkt.x, punkt.z, o, rutnat);
-  if (rutnat > 0) q = kantSnappa(q, o, objekt, { ignorera, luft });
+  if (rutnat > 0) q = kantSnappa(q, o, objekt, { ignorera, luft: snappLuft });
   return { ...q, ...kanPlaceras({ ...o, ...q }, objekt, { ignorera, luft }) };
 }
 
