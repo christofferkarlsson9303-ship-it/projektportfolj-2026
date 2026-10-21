@@ -26,6 +26,7 @@ import { SiteFilterrad, SiteKameror, SiteProfilData } from "../../components/sit
 import { HeroBild, Kraftkurva } from "../../components/oversikt/Hero.jsx";
 import { RitningsKnapp, SiteRitningar, laddaUppRitning, placeringText, useRitningsCanvas } from "../../components/site/SiteRitningar.jsx";
 import { HARDVARUPROFILER, profilIdFor } from "../../data/hardvaruprofiler.js";
+import { anbudsmodellFor } from "../../lib/anbudsmodeller.js";
 import { ritningsText } from "../../lib/ritningar.js";
 import { STANDARDLAGER, kameravinklar, mattFor, profilKpi, ritningslayout, standardlayout } from "../../lib/siteLager.js";
 import {
@@ -59,6 +60,8 @@ import {
    när webbläsaren saknar WebGL. */
 
 const SiteScen = lazy(() => import("./SiteScen.jsx"));
+/* Anbudsmodellen (Vaggeryd m.fl.) laddas bara för projekt som har en — filen är stor. */
+const SiteAnbudsmodell = lazy(() => import("../../components/site/SiteAnbudsmodell.jsx").then((m) => ({ default: m.SiteAnbudsmodell })));
 
 const MAX_BILD = 2400;
 const BESS_TALFALT = new Set(["mw", "mwh", "mva", "soc"]);
@@ -150,6 +153,7 @@ export function Site() {
   /* Hårdvaruprofilen styr mått, etiketter, komponentdata och standardlayout (data/hardvaruprofiler.js). */
   const profilId = profilIdFor(p);
   const profil = HARDVARUPROFILER[profilId];
+  const anbudsmodell = anbudsmodellFor(p);
   const vinklar = useMemo(() => kameravinklar(objekt), [objekt]);
   const punkter = useMemo(() => (pid ? punkterForSite(state, pid) : []), [state, pid]);
   const ifcModeller = useMemo(() => (state.ifcModeller || []).filter((m) => m.projektId === pid), [state.ifcModeller, pid]);
@@ -718,6 +722,11 @@ export function Site() {
         </div>
       </section>
       <div className="flex flex-col gap-4 lg:gap-6">
+        {anbudsmodell ? (
+          <Suspense fallback={<Skeleton etikett="Laddar anbudsmodellen …" className="h-[62vh] max-h-[760px] min-h-[380px] w-full" />}>
+            <SiteAnbudsmodell modell={anbudsmodell} />
+          </Suspense>
+        ) : null}
         <Card
           id="site-scen"
           title={`Siten — ${p.nr ? `${p.nr} ` : ""}${p.namn}`}

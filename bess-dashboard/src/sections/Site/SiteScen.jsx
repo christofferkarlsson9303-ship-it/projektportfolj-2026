@@ -14,6 +14,7 @@ import {
   arVolym,
   forflyttning,
   innanforTomt,
+  kompassVinkel,
   planMatt,
   provaPlacering,
   steg,
@@ -22,7 +23,7 @@ import {
 import { DIFF_FARG } from "../../lib/modellDiff.js";
 import { avstand, flygBana, flygTid, klippPlan } from "../../lib/modellKoppling.js";
 import { LAGER, STANDARDLAGER, kabelvagar } from "../../lib/siteLager.js";
-import { frigorTexturer, laddaTexturer, modellFor } from "./siteTexturer.js";
+import { frigorTexturer, laddaTexturer, modellFor, stangselTextur } from "./siteTexturer.js";
 
 /* 3D-scenen för siten. Laddas för sig (lazy) så att three bara hämtas när
    någon öppnar siten.
@@ -53,7 +54,11 @@ import { frigorTexturer, laddaTexturer, modellFor } from "./siteTexturer.js";
    lib/siteLager.js. "Hög kvalitet" (`hogKvalitet`) lägger texturer på volymer
    och mark och en 360°-himmel bakom scenen (siteTexturer.js). Etiketterna är
    CSS2D-objekt i samma 3D-rum som volymerna och följer dem i varje bildruta,
-   också under en kameraflygning. */
+   också under en kameraflygning.
+
+   Från Vaggeryd-modellen (2026-10-19): en norrpil som vrids med kameran i båda lägena,
+   mjukare skuggor utan skuggränder (bias och normalBias) och hägnad som genomsiktligt
+   stängselnät med stolpar i stället för en massiv skiva. */
 
 const ORBITLAGE = [46, 40, 58];
 const rad = (g) => ((Number(g) || 0) * Math.PI) / 180;
@@ -180,6 +185,7 @@ export default function SiteScen({
   onFel,
 }) {
   const holder = useRef(null);
+  const kompass = useRef(null);
   const s = useRef({});
   const senaste = useRef({});
   const [pek] = useState(() => typeof window !== "undefined" && !!window.matchMedia?.("(pointer: coarse)").matches);
@@ -254,8 +260,12 @@ export default function SiteScen({
     const sol = new THREE.DirectionalLight(new THREE.Color(1, 1, 1), 2.2);
     sol.position.set(-40, 70, 30);
     sol.castShadow = true;
-    sol.shadow.mapSize.set(1024, 1024);
+    sol.shadow.mapSize.set(programvara ? 1024 : 2048, programvara ? 1024 : 2048);
     Object.assign(sol.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, near: 1, far: 200 });
+    // Mjuk kant och inga skuggränder på plana tak och marken (samma värden som Vaggeryd-modellen).
+    sol.shadow.radius = 3;
+    sol.shadow.bias = -0.0005;
+    sol.shadow.normalBias = 0.06;
     scene.add(sol);
 
     // Marken runt tomten, tomtens grus och körytor.
@@ -699,6 +709,17 @@ export default function SiteScen({
       smutsig = false;
       renderer.render(scene, camera);
       etiketter.render(scene, camera);
+      // Norrpilen: gåläget tittar mot position + framåt, orbit mot målpunkten.
+      const nal = kompass.current;
+      if (nal) {
+        const ga2 = senaste.current.lage === "ga";
+        const mal = ga2 ? { x: ga.pos.x - Math.sin(ga.yaw), z: ga.pos.z - Math.cos(ga.yaw) } : controls.target;
+        const v = Math.round(kompassVinkel(camera.position, mal) * 10) / 10;
+        if (nal.dataset.vinkel !== String(v)) {
+          nal.dataset.vinkel = String(v);
+          nal.setAttribute("transform", `rotate(${v})`);
+        }
+      }
     });
 
     return () => {
@@ -803,6 +824,29 @@ export default function SiteScen({
            träffas vid klick och dragning och det som gången krockar mot. Kanten syns bara när
            objektet är markerat. */
         const modell = !ds && texturer?.modeller?.[o.typ];
+        /* Hägnad: stängselnät (genomsiktligt) och stolpar var tredje meter. Lådan
+           ligger kvar för klick, dragning och gångens kollision. */
+        const nat = o.typ === "hagnad" && !ds ? stangselTextur(o.bredd, o.hojd) : null;
+        if (nat) {
+          material.map = nat;
+          material.color = farg(TYPFARG.hagnad);
+          // Genomskinligt utan alfa-test: på avstånd blir nätet en tunn slöja i stället för att försvinna.
+          material.transparent = true;
+          material.opacity = 0.9;
+          material.depthWrite = false;
+          material.side = THREE.DoubleSide;
+          material.roughness = 0.6;
+          material.metalness = 0.5;
+          const n = Math.max(1, Math.round((Number(o.bredd) || 0) / 3));
+          const stolpe = new THREE.CylinderGeometry(0.04, 0.04, o.hojd, 6);
+          const stolpMat = new THREE.MeshStandardMaterial({ color: farg("--morkgra"), roughness: 0.5, metalness: 0.6 });
+          for (let k = 0; k <= n; k++) {
+            const st = new THREE.Mesh(k ? stolpe.clone() : stolpe, k ? stolpMat.clone() : stolpMat);
+            st.position.set(-o.bredd / 2 + (o.bredd * k) / n, o.hojd / 2, 0);
+            st.castShadow = true;
+            g.add(st);
+          }
+        }
         if (modell) {
           material.transparent = true;
           material.opacity = 0;
@@ -811,10 +855,10 @@ export default function SiteScen({
         const lada = new THREE.Mesh(geo, material);
         lada.position.y = o.hojd / 2;
         lada.castShadow = !modell;
-        lada.receiveShadow = !modell;
+        lada.receiveShadow = !modell && !nat;
         const linjer = new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: o.id === valtId ? markering : kant }));
         linjer.position.y = o.hojd / 2;
-        linjer.visible = !modell || o.id === valtId;
+        linjer.visible = (!modell && !nat) || o.id === valtId;
         g.add(lada, linjer);
         // Batterierna fylls ut till profilens mått (datablad); skiden behåller modellens proportioner.
         const anpassa = o.typ === "container";
@@ -1153,6 +1197,19 @@ export default function SiteScen({
       >
         {hjalp}
       </p>
+      <div
+        data-roll="norrpil"
+        title="Norr"
+        aria-hidden="true"
+        className="pointer-events-none absolute bottom-3 right-3 z-[2] grid h-10 w-10 place-items-center rounded-full border border-solid border-hairline bg-surface text-ink shadow-sm"
+      >
+        <svg width="30" height="30" viewBox="-15 -15 30 30">
+          <g ref={kompass} transform="rotate(0)">
+            <path d="M0-11 L5 5 L0 2 L-5 5Z" fill="currentColor" />
+          </g>
+          <circle r="13" fill="none" stroke="currentColor" strokeOpacity=".25" />
+        </svg>
+      </div>
       {lage === "ga" ? (
         <span aria-hidden="true" className="pointer-events-none absolute left-1/2 top-1/2 z-[2] h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-one-djup" />
       ) : null}

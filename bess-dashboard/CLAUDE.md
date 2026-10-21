@@ -11,6 +11,7 @@ En visuell prototyp byggdes 2026-10-04 i ett annat verktyg (Grok). Den ligger **
 - **Designsystemet** är `src/components/ds/` (`Card`, `StatTile`, `StatusBadge`, `Callout`). Nya ytor använder det. Inga nya hex-färger, inget parallellt tema.
 - **ÄTA-kalkylen finns på två ställen med samma kod.** Kortet i vy `ata` (”Öppna i kalkyl”) och egen flik `atakalkyl` (`AtaKalkylVy.jsx`). Logiken ligger i `src/sections/Ata/useAtaKalkyl.jsx` och tabellen i `KalkylTabell.jsx`. Ändra där, inte i två kopior.
 - **Ärenden på siten.** UR/ÄTA-poster kan kopplas till ett `siteObjekt` (`objectGuid`, `viewpoint`, `boundingBox`, `modelVersionId`) och 3D-vyn kan jämföra modellversioner. Läs [`docs/modellarenden.md`](docs/modellarenden.md) innan du ändrar det. IFC-import (web-ifc, metadata i state, geometri i IndexedDB) och BCF-export finns; läs avsnitten där. Ingen egen backend.
+- **Anbudsmodeller på siten.** Fristående 3D-filer från anbudsskedet ligger orörda i `src/sections/Site/anbud/` och registreras i `src/lib/anbudsmodeller.js`. `SiteAnbudsmodell.jsx` visar dem i en iframe med `sandbox="allow-scripts"` för det projekt som matchar (Vaggeryd: namn/ort/plats). Redigera inte filerna — ersätt med en ny daterad fil. De skrivs aldrig till `portfolj/state`.
 - **Data** är två JSONB-rader: `portfolj/state` och `portfolj/ekonomi`. RLS skyddar. Ändra inte schemat för en kalkylator eller en bild. Undantag och beslut om schema står under *Teknisk granskning 2026-10-16* nedan.
 
 ## Teknisk granskning 2026-10-16
