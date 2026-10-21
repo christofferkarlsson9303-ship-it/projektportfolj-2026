@@ -90,7 +90,9 @@ export const STEG = [
     fas: 1,
     del: "Anbud",
     titel: "Anbudsfrågor",
-    sammanfattning: "Fast frågelista inför anbudsbeslutet. Svara kort, ange antaganden och var svaret kommer ifrån.",
+    sammanfattning: "Tolv frågor inför anbudsbeslutet. Sätt ett trafikljus per fråga och skriv kort vad det bygger på: antagande eller fakta, och källa.",
+    /* Trafikljuset (`af_ljus_<id>`) är inget eget fält här: det ritas av Anbudsfragor.jsx och är frivilligt.
+       Svaret är det obligatoriska fältet, så att ledningen alltid ser vad bedömningen bygger på. */
     falt: ANBUDSFRAGOR.map((f) => ({ id: anbudsfragaId(f), etikett: f.fraga, typ: "textarea", bred: true, obligatoriskt: true })),
   },
   {

@@ -515,3 +515,22 @@ test("styrparametertriangeln visar summan och fas 1 kräver 100 %", async ({ pag
   }
   expect(fel).toEqual([]);
 });
+
+test("anbudsfrågorna har trafikljus och anbudshjulet ger domen", async ({ page }) => {
+  const { fel } = await oppna(page, "Projektstart");
+  await gaTillSteg(page, 3, "Anbudsfrågor");
+  await expect(page.getByText("12 av 12 frågor är inte bedömda.")).toBeVisible();
+  const forsta = page.getByRole("group", { name: "Trafikljus: Vad bygger vi – och vad bygger vi inte?" });
+  await forsta.getByRole("button", { name: "Gul" }).click();
+  await expect(forsta.getByRole("button", { name: "Gul" })).toHaveAttribute("aria-pressed", "true");
+  const andra = page.getByRole("group", { name: "Trafikljus: Är avtalet tuffare än vanligt?" });
+  await andra.getByRole("button", { name: "Röd" }).click();
+  await expect(page.getByText("1 röd: ledningen måste ta ställning innan anbudet lämnas.")).toBeVisible();
+  // Samma val igen tar bort bedömningen.
+  await andra.getByRole("button", { name: "Röd" }).click();
+  await expect(page.getByText("11 av 12 frågor är inte bedömda.")).toBeVisible();
+  // Svaret är fortfarande det obligatoriska fältet, med frågan som etikett.
+  await page.getByLabel(/^Vad ingår i uppdraget/).fill("Allt utom nätanslutningen.");
+  await expect(page.locator("#ps-af_omfattning")).toHaveValue("Allt utom nätanslutningen.");
+  expect(fel).toEqual([]);
+});

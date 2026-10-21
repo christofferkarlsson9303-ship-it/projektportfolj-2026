@@ -1,5 +1,5 @@
 import { KATALOG_RUBRIK, STEG } from "../data/projektstartSteg.js";
-import { ANBUDSFRAGOR, anbudsfragaId } from "../data/anbudsfragor.js";
+import { ANBUDSFRAGOR, ANBUDSLJUS, anbudsBedomning, anbudsfragaId, anbudsljusId } from "../data/anbudsfragor.js";
 import { styrparametrarText } from "./styrparametrar.js";
 import { KATALOG } from "../data/projektstartKatalog.js";
 import { FAS_ANTAL, FAS_MODELL, arFasNr, faseFranGammal, faseInfo, fasFranStatus, riskFasFranGammal, statusEtikett } from "../data/projektfaser.ts";
@@ -331,12 +331,16 @@ export function anbudsUnderlag(u) {
   const falt = (poster) => poster.filter(([, val]) => varde(val)).map(([k, val]) => [k, String(val).trim(), arLangText(String(val).trim()) ? textstycken(val) : null]);
   const fragor = ANBUDSFRAGOR.map((f) => {
     const svar = varde(v[anbudsfragaId(f)]);
-    /* Frågan blir rubrik och svaret brödtext, även när svaret är kort. */
-    return [f.fraga, svar || "Ej besvarad", textstycken(svar || "Ej besvarad")];
+    const ljus = ANBUDSLJUS[v[anbudsljusId(f)]];
+    /* Frågan blir rubrik och svaret brödtext, även när svaret är kort. Trafikljuset står
+       som första stycke, så att ledningen ser bedömningen före motiveringen. */
+    return [f.fraga, svar || "Ej besvarad", [...(ljus ? [{ typ: "stycke", nyckel: "Bedömning", text: ljus[1] }] : []), ...textstycken(svar || "Ej besvarad")]];
   });
+  const { antal, dom } = anbudsBedomning(v);
+  const samlad = `${antal.gron} gröna, ${antal.gul} gula, ${antal.rod} röda, ${antal.obedomd} ej bedömda. ${dom.text}`;
   const delar = [
     ["Entreprenadform och anbudsprocess", falt([["Entreprenadform (kontraktsform)", v.kontraktsform], ["Ersättningsform", v.ersattningsform], ["Anbudsutfall", v.anbudsutfall || "Anbudsarbete pågår"], ["Anbudsprocessen just nu", v.anbudsprocess], ["Sista dag för frågor", v.sistaFragedag], ["Anbudet lämnas senast", v.anbudsdag], ["Anbudet giltigt till", v.anbudGiltigt], ["Tilldelning väntas", v.tilldelning]])],
-    ["Svar på anbudsfrågor", fragor],
+    ["Svar på anbudsfrågor", [["Samlad bedömning (trafikljus)", samlad, null], ...fragor]],
     ["Ekonomi, kontrakt och kassaflöde", falt([["PL:s rekommendation", v.beslut], ["Motivering", v.motivering], ["Kalkyl", v.kalkylRev], ["Anbudssumma", v.anbudssumma], ["Kalkylerad kostnad", v.kalkylkostnad], ["Riskreserv", v.riskreserv], ["Kassaflöde: lägsta punkt", v.kassaflodeLagst], ["Öppna frågor till intern beställare", v.oppnaFragor], ["Betalvillkor", v.betalvillkor], ["Bankgaranti", v.bankgaranti], ["Viten och deltidsmilstolpar", v.viten], ["Hävningsgrunder", v.havning], ["Indexregel", v.index], ["Kassaflöde: längsta negativa period", v.kassaflode]])],
   ];
   return delar.map(([titel, innehall], i) => ({ id: `anbud-${i + 1}`, nr: i + 1, titel, sammanfattning: "", falt: innehall, tabell: null, tomma: [], tomTabell: "", kontroll: null }));
