@@ -70,7 +70,7 @@ function niva(h) {
  * är er egen rutin. Kontraktets gräns (kontraktsprofilen) skrivs med i texten
  * när den finns — för Batch C är den 10 bankdagar för hinder (§18.2).
  * @param {{ur?: object[], hseqIncidenter?: object[], kontrakt?: object[]}} state
- * @returns {{nyckel:string, id:string, typ:string, niva:string, pid:string|null,
+ * @returns {{nyckel:string, revision:string, id:string, typ:string, niva:string, pid:string|null,
  *            titel:string, timmar:number|null, kvar:number|null, text:string}[]}
  */
 export function fristlage(state, nuMs = Date.now(), zon = TIDSZON) {
@@ -84,6 +84,8 @@ export function fristlage(state, nuMs = Date.now(), zon = TIDSZON) {
     const grans = kontraktsgrans(state, u.projektId);
     ut.push({
       nyckel: `ur:${u.id}`,
+      // Fristens revision (F07): ändras händelsedatumet är det en ny frist som påminns på nytt.
+      revision: String(u.handelseDatum || ""),
       id: u.id,
       typ: "ÄTA-underrättelse (egen rutin 24 h)",
       niva: n,
@@ -107,6 +109,7 @@ export function fristlage(state, nuMs = Date.now(), zon = TIDSZON) {
     const n = h !== null && h > 24 ? "forfallen" : "akut";
     ut.push({
       nyckel: `inc:${i.id}`,
+      revision: String(i.datum || ""),
       id: i.id,
       typ: "Incidentrapport",
       niva: n,
