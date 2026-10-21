@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { FALTMALLAR, KALLSTATUS } from "../../data/faltmaterial.js";
+import { gallerProfil } from "../../lib/tillampning.js";
+import { profilIdFor } from "../../data/hardvaruprofiler.js";
 import { LAGMALLAR, LAGPLAN_INLEDNING } from "../../data/lagplan.js";
 import { PROJEKTMALLAR, PROJEKTKONTROLL_REVISION } from "../../data/projektkontroll.js";
 import { kontrollId } from "../../lib/projektkontroll.js";
@@ -28,6 +30,7 @@ export function FaltmaterialPanel({ projekt, urval, onValjProjekt, onStang }) {
   const { skrivUt, oppnaPost } = useUi();
   const [sparat] = useState(() => lasVal(projekt.id));
   const [mallpaket, setMallpaket] = useState(() => urval?.ids ? "teknisk" : urval?.mallpaket || (sparat.version === 3 ? sparat.mallpaket : "projekt"));
+  const profilId = profilIdFor(projekt);
   const mallar = mallpaket === "projekt" ? PROJEKTMALLAR : mallpaket === "lagplan" ? LAGMALLAR : FALTMALLAR;
   const alla = mallar.map((m) => m.id);
   const [mallIds, setMallIds] = useState(() => urval?.ids ? [] : urval?.mallIds ? urval.mallIds.filter((id) => alla.includes(id)) : sparat.version === 3 && (!urval?.mallpaket || urval.mallpaket === sparat.mallpaket) && Array.isArray(sparat.mallIds) ? sparat.mallIds.filter((id) => alla.includes(id)) : alla);
@@ -101,7 +104,7 @@ export function FaltmaterialPanel({ projekt, urval, onValjProjekt, onStang }) {
         {mallpaket === "lagplan" ? <div className="mb-3 flex flex-wrap gap-2" aria-label="Snabbval per lag">{["A", "B", "C"].map((lag) => <button type="button" className="btn sec mini" key={lag} onClick={() => setMallIds([`lag-${lag.toLowerCase()}`])}>Endast Lag {lag}</button>)}<button type="button" className="btn sec mini" onClick={() => setMallIds(["lag-start", "lag-slut"])}>Arbetsledarens lista</button></div> : null}
         <div className="mb-3 flex flex-wrap gap-2"><button type="button" className="btn sec mini" onClick={() => setMallIds(alla)}>{mallpaket === "projekt" ? "Välj hela projektet" : mallpaket === "lagplan" ? "Välj hela lagplanen" : "Välj alla fyra"}</button><button type="button" className="btn sec mini" onClick={() => setMallIds([])}>Rensa moment</button></div>
         <div className="flex flex-col gap-3">{mallar.map((m) => <section key={m.id} className="rounded-sm border border-solid border-hairline p-3">
-          <label className="flex items-center gap-3 font-bold"><input type="checkbox" checked={mallIds.includes(m.id)} onChange={() => vaxlaMall(m.id)} />Moment {m.nr}: {m.titel}<span className="ml-auto whitespace-nowrap text-sm text-ink-soft">{m.punkter.length} punkter</span></label>
+          <label className="flex items-center gap-3 font-bold"><input type="checkbox" checked={mallIds.includes(m.id)} onChange={() => vaxlaMall(m.id)} />Moment {m.nr}: {m.titel}<span className="ml-auto whitespace-nowrap text-sm text-ink-soft">{m.punkter.filter((p) => gallerProfil(p, profilId)).length} punkter{m.punkter.some((p) => !gallerProfil(p, profilId)) ? ` · ${m.punkter.filter((p) => !gallerProfil(p, profilId)).length} gäller annan hårdvara` : ""}</span></label>
           {m.flode ? <p className="text-sm font-semibold text-text-bla">{m.flode}</p> : null}
           {mallIds.includes(m.id) ? <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="flex flex-col gap-1 text-xs font-semibold">Manual / provplan och revision – moment {m.nr}<input type="text" maxLength={140} value={referenser[m.id] || ""} placeholder="Dokumentnamn, revision och sida" onChange={(e) => setReferenser((r) => ({ ...r, [m.id]: e.target.value }))} /></label>

@@ -17,6 +17,8 @@
    BESS-leverans och slutbesiktning, och varje fas kan få egna datum. */
 
 import { HELA, forvantadeOmfattningar, planeradeOmfattningar } from "./kontrollplan.js";
+import { gallerProfil } from "./tillampning.js";
+import { profilIdFor } from "../data/hardvaruprofiler.js";
 import {
   ALLA_PUNKTER,
   ANKARE_NAMN,
@@ -226,10 +228,12 @@ export function kontrollage(state, pid) {
     perPunkt.get(r.punktId).push(r);
   }
   const projekt = (state.projekt || []).find((p) => p.id === pid);
+  const profilId = profilIdFor(projekt);
   const omfattningAv = (r) => (r.omfattning || "").trim() || HELA;
   const nyckel = (o) => o.toLocaleLowerCase("sv");
   return FASER.map((f, i) => {
-    const punkter = PROJEKTMALLAR[i]?.punkter || [];
+    /* Bara punkter som gäller projektets hårdvaruprofil (F09). */
+    const punkter = (PROJEKTMALLAR[i]?.punkter || []).filter((p) => gallerProfil(p, profilId));
     const plan = planeradeOmfattningar(projekt, i);
     const registrerade = [...new Set(punkter.flatMap((p) => (perPunkt.get(p.id) || []).map(omfattningAv)))].sort((a, b) => a.localeCompare(b, "sv"));
     /* Förväntat = kontrollplanens enheter + allt som registrerats (#73). */

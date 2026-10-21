@@ -3,6 +3,8 @@ import { LAGMALLAR, LAGPLAN_INLEDNING } from "../data/lagplan.js";
 import { PROJEKTMALLAR, PROJEKTKONTROLL_REVISION, PROJEKTKONTROLL_INLEDNING } from "../data/projektkontroll.js";
 import { kontrollId, kontrollSummering } from "./projektkontroll.js";
 import { idag } from "./datum.js";
+import { HARDVARUPROFILER, profilIdFor } from "../data/hardvaruprofiler.js";
+import { filtreraPaProfil, oppnaBeslut } from "./tillampning.js";
 
 /** @param {any} state @param {string} pid @param {{utforare?: string, fran?: string, till?: string, ids?: string[]}} [filter] */
 export function arbetsrader(state, pid, { utforare = "", fran = "", till = "", ids } = {}) {
@@ -35,8 +37,14 @@ export function byggFaltmaterial({ projekt, mallIds, referenser = {}, ansvar = {
   const revision = mallpaket === "projekt" ? PROJEKTKONTROLL_REVISION : mallpaket === "lagplan" ? "2026-10-01.2" : FALTMALL_REVISION;
   const omfattning = metadata.enhet?.trim() || "Hela anläggningen";
   const index = new Map(kontroller.map((r) => [r.id, r]));
-  const moment = mallar.filter((m) => idSet.has(m.id)).map((m) => ({
+  /* Bara punkter som gäller projektets hårdvaruprofil (F09). */
+  const profil = profilIdFor(projekt);
+  const { moment: valda, undantagna } = filtreraPaProfil(mallar.filter((m) => idSet.has(m.id)), profil);
+  const hv = HARDVARUPROFILER[profil];
+  const utrustning = (m) => (profil !== "catl-pe" && /CATL|Power Electronics/.test(m.utrustning || "") ? `${hv.container.benamning} / ${hv.skid.benamning}` : m.utrustning);
+  const moment = valda.filter((m) => m.punkter.length).map((m) => ({
     ...m,
+    utrustning: utrustning(m),
     referens: (referenser[m.id] || "").trim(),
     utforare: (ansvar[m.id] || (m.lag ? [metadata.lagmedlemmar?.[`${m.lag}1`], metadata.lagmedlemmar?.[`${m.lag}2`]].filter(Boolean).join(" + ") : "") || metadata.utforare || "").trim(),
     punkter: m.punkter.map((p) => ({ ...p, epc: [...p.epc], kontroll: index.has(kontrollId(projekt.id, omfattning, p.id)) ? { ...index.get(kontrollId(projekt.id, omfattning, p.id)) } : null })),
@@ -54,6 +62,7 @@ export function byggFaltmaterial({ projekt, mallIds, referenser = {}, ansvar = {
     fran: metadata.fran || "", till: metadata.till || "",
     moment, uppgifter: uppgifter.map((p) => ({ ...p })),
     antal: moment.reduce((s, m) => s + m.punkter.length, 0),
+    profil, undantagna, oppnaBeslut: oppnaBeslut(undantagna, moment, profil),
     komplett: moment.length === mallar.length,
   };
 }
