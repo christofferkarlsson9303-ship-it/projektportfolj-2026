@@ -14,7 +14,8 @@ const portfolj = (page) => page.evaluate(() => JSON.parse(localStorage.getItem("
 /** Klickar i planvyn på en punkt i meter (x öster, z söder). */
 async function klickaPlan(page, x, z) {
   const plan = page.getByRole("img", { name: /^Planvy över siten/ });
-  await plan.scrollIntoViewIfNeeded();
+  /* Mitt i bild: den fasta toppraden får inte täcka planen vid klicket. */
+  await plan.evaluate((el) => el.scrollIntoView({ block: "center" }));
   const b = await plan.boundingBox();
   await page.mouse.click(b.x + ((x + 42) / 84) * b.width, b.y + ((z + 28) / 56) * b.height);
 }

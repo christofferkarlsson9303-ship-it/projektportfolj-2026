@@ -11,7 +11,7 @@
      punkter, byggmöten och kontraktets färdigställandetid. Den mäts i dagar. */
 
 import { dagarTill, timmarSedan } from "./datum.js";
-import { incidentLage, underrattelseLage } from "./berakningar.js";
+import { gallerFor, incidentLage, underrattelseLage } from "./berakningar.js";
 import { INCIDENTTYP } from "../data/konstanter.js";
 
 /** Löpande frister. Nivåerna: forfallen > akut (≥12 h kvar av dygnet) > snart > oklar. */
@@ -58,9 +58,9 @@ export function fristrader(state) {
 }
 
 /** Poster där fristen inte ens går att räkna — händelsedatum saknas. */
-export function fristUtanDatum(state) {
+export function fristUtanDatum(state, pid = null) {
   return state.ur.filter(
-    (u) => u.status !== "stangd" && u.status !== "utgar" && !u.underrattelseDatum && !u.handelseDatum
+    (u) => u.status !== "stangd" && u.status !== "utgar" && !u.underrattelseDatum && !u.handelseDatum && iProjekt(u.projektId, pid)
   );
 }
 
@@ -73,15 +73,31 @@ export const AGENDATYPER = {
   Kontrakt: { ikon: "★", vy: "oversikt" },
 };
 
+/** Datum som styr var en punkt hamnar i arbetslistan.
+
+    `forfaller` är arbetsfristen, `uppfoljning` är när jag själv vill titta på
+    punkten igen. Har fristen passerat står punkten kvar som förfallen, hur långt
+    fram uppföljningen än är lagd. Annars styr uppföljningsdatumet, och saknas det
+    gäller fristen. Fristen skrivs aldrig om härifrån. */
+export function punktDatum(p) {
+  const frist = p.forfaller && dagarTill(p.forfaller) !== null ? p.forfaller : "";
+  const uppf = p.uppfoljning && dagarTill(p.uppfoljning) !== null ? p.uppfoljning : "";
+  if (frist && dagarTill(frist) < 0) return frist;
+  return uppf || frist;
+}
+
+/** Hör raden till valt projekt? Utan projekt (portföljläge) gäller allt. */
+const iProjekt = (projektId, pid) => !pid || gallerFor({ projektId }, pid);
+
 /** Allt med datum inom horisonten. `bakat` tar även med passerade poster. */
 export function agendarader(state, dagar, bakat = 0) {
   const ut = [];
 
-  const lagg = (datum, titel, typ, pid, id, extra) => {
+  const lagg = (datum, titel, typ, pid, id, extra, mer) => {
     if (!datum) return;
     const d = dagarTill(datum);
     if (d === null || d < -bakat || d > dagar) return;
-    ut.push({ datum, d, titel, typ, pid, id, extra: extra || "" });
+    ut.push({ datum, d, titel, typ, pid, id, extra: extra || "", ...mer });
   };
 
   state.milstolpar.forEach((m) => {
@@ -104,7 +120,13 @@ export function agendarader(state, dagar, bakat = 0) {
   });
 
   state.punkter.forEach((p) => {
-    if (p.status !== "klarmarkerad") lagg(p.forfaller, p.titel, "Punkt", p.projektId, p.id);
+    if (p.status === "klarmarkerad") return;
+    const datum = punktDatum(p);
+    lagg(datum, p.titel, "Punkt", p.projektId, p.id, "", {
+      agare: p.agare || "",
+      forfaller: p.forfaller || "",
+      uppfoljning: p.uppfoljning || "",
+    });
   });
 
   (state.byggmoten || []).forEach((m) => {
@@ -126,14 +148,15 @@ export function dagsetikett(d) {
   return `${d} d`;
 }
 
-/** Sammanfattning för hero-raden i Idag-vyn. */
-export function arbetslage(state, horisont = 30) {
-  const frister = fristrader(state).filter((f) => f.niva !== "oklar");
-  const rader = agendarader(state, horisont, 365);
+/** Sammanfattning för hero-raden i Idag-vyn. Med `pid` bara det projektets rader
+ *  (och rader som gäller båda parkerna); utan `pid` hela portföljen. */
+export function arbetslage(state, horisont = 30, pid = null) {
+  const frister = fristrader(state).filter((f) => f.niva !== "oklar" && iProjekt(f.pid, pid));
+  const rader = agendarader(state, horisont, 365).filter((r) => iProjekt(r.pid, pid));
   return {
     frister,
     forfallnaFrister: frister.filter((f) => f.niva === "forfallen"),
-    utanDatum: fristUtanDatum(state),
+    utanDatum: fristUtanDatum(state, pid),
     forfallet: rader.filter((r) => r.d < 0),
     idag: rader.filter((r) => r.d === 0),
     veckan: rader.filter((r) => r.d > 0 && r.d <= 7),

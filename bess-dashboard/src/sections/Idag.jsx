@@ -8,12 +8,16 @@ import { AGENDATYPER, arbetslage, dagsetikett } from "../lib/agenda.js";
 import { kritiskLinje } from "../lib/kritiskLinje.js";
 import { datumKort, idag } from "../lib/datum.js";
 import { useSnabbUtskrift } from "../components/field/SnabbUtskrift.jsx";
+import { PunktPanel } from "../components/idag/PunktPanel.jsx";
 import { arNal, siteObjekt } from "../lib/site.js";
 
 /* Idag — projektledarens arbetslista.
 
    Tre block, inget mer:
 
+   0. Projektet (eller "Alla projekt") väljs i toppraden. I projektläge gäller
+      allt på sidan det projektet; i portföljläge visas alla projekt och varje
+      rad anger vilket projekt den hör till.
    1. Bandet svarar på "blir vi klara i tid" för valt projekt, ur
       kritiskLinje() — samma motor som Tidplan, inget räknas om här — och på
       hur många saker som väntar på dig. Faserna som styr visas bara när
@@ -105,14 +109,18 @@ const lankKlass =
 
 export function Idag() {
   const { state } = usePortfolj();
-  const { visa, setValtProjekt, oppnaPost, valtProjekt } = useUi();
+  const { visa, setValtProjekt, oppnaPost, valtProjekt, lage, setLage } = useUi();
   const [horisont, setHorisont] = useState("30");
+  /* Punkten vars detaljpanel är öppen. Panelen och listan delar sammanhang:
+     stängs panelen står man kvar i samma lista med samma val. */
+  const [panelId, setPanelId] = useState(null);
+  const portfolj = lage === "portfolj";
   const snabb = useSnabbUtskrift();
-
-  const l = useMemo(() => arbetslage(state, Number(horisont)), [state, horisont]);
 
   /* Domen för valt projekt — samma motor som Tidplan. */
   const p = state.projekt.find((x) => x.id === valtProjekt) || state.projekt[0];
+  const filterPid = portfolj ? null : p?.id || null;
+  const l = useMemo(() => arbetslage(state, Number(horisont), filterPid), [state, horisont, filterPid]);
   const nu = idag();
   const k = useMemo(() => (p ? kritiskLinje(state, p.id, nu) : null), [state, p, nu]);
   const kritiska = k ? k.faser.filter((f) => f.kritisk) : [];
@@ -142,7 +150,7 @@ export function Idag() {
   const attGora = bradskande + narmast;
 
   /* Utförare med öppna punkter i listan, för valt projekt — papper via snabbutskrift. */
-  const utforareIListan = p
+  const utforareIListan = p && !portfolj
     ? [...new Set([...l.forfallet, ...l.idag, ...l.veckan]
         .filter((r) => r.typ === "Punkt" && (r.pid === p.id || r.pid === "bada"))
         .map((r) => (state.punkter || []).find((x) => x.id === r.id))
@@ -152,9 +160,39 @@ export function Idag() {
 
   /* Hoppa till en agendapost: byt projekt och gå till den vy som äger typen. */
   const oppnaAgenda = (rad) => {
+    /* Punkter hanteras i panelen, utan sidbyte. Allt annat leder till sin vy. */
+    if (rad.typ === "Punkt") {
+      setPanelId(rad.id);
+      return;
+    }
     if (rad.pid && rad.pid !== "bada") setValtProjekt(rad.pid);
     visa((AGENDATYPER[rad.typ] || { vy: "oversikt" }).vy);
   };
+
+  const oppnaPunktRegister = () => {
+    const pt = state.punkter.find((x) => x.id === panelId);
+    if (pt && pt.projektId !== "bada") {
+      setValtProjekt(pt.projektId);
+      setLage("projekt");
+    }
+    setPanelId(null);
+    visa("punkter");
+  };
+
+  /* Varför en punkt ligger där den ligger. */
+  const varfor = (r) => {
+    const egen = r.uppfoljning && r.uppfoljning === r.datum;
+    if (r.d < 0) return egen ? "Din uppföljning har passerat" : "Fristen har passerat";
+    return egen ? "Din uppföljning" : "Fristen närmar sig";
+  };
+  const punktText = (r) =>
+    [
+      "Punkt",
+      r.agare ? `Ansvarig: ${r.agare}` : "Ansvarig saknas",
+      r.forfaller ? `frist ${datumKort(r.forfaller)}` : "ingen frist",
+      r.uppfoljning ? `uppföljning ${datumKort(r.uppfoljning)}` : null,
+      varfor(r),
+    ].filter(Boolean).join(" · ");
 
   /* Frister pekar på en enskild post — ÄTA-vyn öppnar den direkt. */
   const oppnaFrist = (f) => {
@@ -174,7 +212,7 @@ export function Idag() {
           {r.extra === "avvikelse" ? <StatusBadge status="forsenad" label="Avvikelse" className="ml-2" /> : null}
         </>
       }
-      undertext={`${r.typ} · ${r.datum}`}
+      undertext={r.typ === "Punkt" ? punktText(r) : `${r.typ} · ${r.datum}`}
       pid={r.pid}
       onOppna={() => oppnaAgenda(r)}
     />
@@ -188,6 +226,28 @@ export function Idag() {
         className="flex flex-col gap-4 rounded-xl bg-one-djup px-5 py-5 text-white shadow-sm print:hidden md:px-6"
       >
         <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
+          {portfolj ? (
+            <div className="flex min-w-0 max-w-[560px] flex-col gap-2">
+              <span className="text-[12px] font-bold uppercase tracking-wider text-white/80">Alla projekt</span>
+              <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
+                {state.projekt.map((pr) => {
+                  const kp = kritiskLinje(state, pr.id, nu);
+                  const sentPr = !!kp && kp.forsening > 0;
+                  const ton = !kp || kp.forsening === null ? "warn" : sentPr ? "bad" : "ok";
+                  const text = !kp || kp.forsening === null ? "Uppgifter saknas" : sentPr ? `${kp.forsening} ${kp.forsening === 1 ? "dag" : "dagar"} sent` : "I tid";
+                  return (
+                    <li key={pr.id} className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <button type="button" className={lankKlass} onClick={() => { setValtProjekt(pr.id); setLage("projekt"); }}>
+                        {pr.nr ? `${pr.nr} ` : ""}{pr.namn}
+                      </button>
+                      <StatusBadge ton={ton} label={text} />
+                    </li>
+                  );
+                })}
+              </ul>
+              <p className="m-0 text-[13px] text-white/70">Välj ett projekt för att se och ändra dess rader.</p>
+            </div>
+          ) : (
           <div className="flex min-w-0 max-w-[560px] flex-col gap-1.5">
             <span className="flex flex-wrap items-center gap-2">
               <span className="text-[12px] font-bold uppercase tracking-wider text-white/80">Blir vi klara i tid</span>
@@ -201,14 +261,15 @@ export function Idag() {
             ) : null}
             <p className="m-0 text-[14px] text-white/80">{domMening}</p>
           </div>
+          )}
 
           <div className="flex gap-8">
-            <Bandtal etikett="Slutbesiktning" varde={k?.slutPrognos ? datumKort(k.slutPrognos) : "—"} detalj={motPlan} />
+            {portfolj ? null : <Bandtal etikett="Slutbesiktning" varde={k?.slutPrognos ? datumKort(k.slutPrognos) : "—"} detalj={motPlan} />}
             <Bandtal etikett="Att göra" varde={attGora} detalj={attGora === 1 ? "sak kräver din åtgärd" : "saker kräver din åtgärd"} />
           </div>
         </div>
 
-        {sent && kritiska.length ? (
+        {!portfolj && sent && kritiska.length ? (
           <p className="m-0 border-0 border-t border-solid border-white/15 pt-3 text-[13px] text-white">
             <span className="text-white/70">Moment som styr: </span>
             {kritiska.map((f, i) => (
@@ -235,7 +296,12 @@ export function Idag() {
         aria-labelledby="idag-attgora"
         className="flex min-w-0 flex-col gap-5 rounded-xl border border-solid border-hairline bg-surface p-4 shadow-sm md:p-6"
       >
-        <h3 id="idag-attgora" className="m-0 font-head text-base font-bold text-ink">Att göra</h3>
+        <div className="flex flex-wrap items-baseline gap-x-2">
+          <h3 id="idag-attgora" className="m-0 font-head text-base font-bold text-ink">Att göra</h3>
+          <span className="text-[13px] font-semibold text-ink-soft">
+            {portfolj ? "alla projekt" : `${p?.nr ? `${p.nr} ` : ""}${p?.namn || ""}`}
+          </span>
+        </div>
 
         {!bradskande && !narmast ? (
           <p className="m-0 flex items-center gap-2 text-[14px] text-ink">
@@ -319,6 +385,8 @@ export function Idag() {
           )}
         </section>
       </details>
+
+      {panelId ? <PunktPanel key={panelId} id={panelId} onStang={() => setPanelId(null)} onOppnaRegister={oppnaPunktRegister} /> : null}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { oppna, gaTill, utanKonsolfel } from "./hjalpare.js";
+import { oppna, gaTill, utanKonsolfel, valjProjekt } from "./hjalpare.js";
 
 /* Påhittad profil — riktiga avtalsvärden hör inte hemma i testerna. */
 const profil = {
@@ -32,7 +32,7 @@ const profil = {
 
 test("kontraktsprofilen läses in, granskas och styr ÄTA-vägledningen", async ({ page }) => {
   const { fel } = await oppna(page, "Kontraktet");
-  await page.getByRole("button", { name: "36037 Växjö Batteripark", exact: true }).click();
+  await valjProjekt(page, "36037 Växjö Batteripark");
   const start = page.getByRole("region", { name: /^Kontraktet – 36037/ });
   await expect(start).toContainText("Standardmall");
 

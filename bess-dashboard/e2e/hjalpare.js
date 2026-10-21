@@ -59,3 +59,22 @@ export function utanKonsolfel(fel) {
   );
   expect(relevanta, "sidan loggade fel i konsolen").toEqual([]);
 }
+
+/** Projektväljaren i toppraden — det enda stället man väljer projekt på. */
+export const projektval = (page) => page.getByRole("combobox", { name: "Välj projekt" });
+
+/** Väljer projekt i toppraden. `namn` är text eller regex som matchar alternativets text. */
+export async function valjProjekt(page, namn) {
+  const val = projektval(page);
+  const alternativ = val.locator("option").filter({ hasText: namn });
+  await val.selectOption({ value: await alternativ.first().getAttribute("value") });
+}
+
+/** Text och värde för det första projekt som inte är valt (portföljalternativet räknas inte). */
+export async function annatProjekt(page) {
+  const val = projektval(page);
+  const aktuellt = await val.inputValue();
+  const alt = await val.locator("option").evaluateAll((o) => o.map((x) => ({ v: x.value, t: x.textContent.trim() })));
+  const annat = alt.find((a) => a.v !== aktuellt && a.v !== "__alla");
+  return annat;
+}

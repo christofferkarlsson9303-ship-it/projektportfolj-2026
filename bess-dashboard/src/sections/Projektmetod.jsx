@@ -3,7 +3,6 @@ import { usePortfolj, useUi } from "../state/hooks.js";
 import { ArrowRight, CalendarDays, ClipboardCheck, ClipboardList, FileCheck2, FileText, HardHat, ListTodo, ShieldCheck, SlidersHorizontal, TriangleAlert, Users, Wallet } from "lucide-react";
 import { Card, Meter, StatusBadge } from "../components/ds/index.js";
 import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
-import { NyttProjekt } from "../components/ui/NyttProjekt.jsx";
 import { METODSTEG, ORDLISTA } from "../data/projektmetod.js";
 import { VYMETA } from "../data/vyer.js";
 import { faslage } from "../lib/epc.js";
@@ -23,7 +22,7 @@ export function Projektmetod() {
   const total = metodStegLage(faser);
   const knapp = (vy) => { const Ikon = VYIKONER[vy]; return <button type="button" className="btn sec mini metod-verktyg" key={vy} onClick={() => visa(vy)}>{Ikon ? <Ikon size={15} aria-hidden="true" /> : null}{VYMETA[vy].namn}</button>; };
   return <div className="projektmetod flex flex-col gap-6 lg:gap-8">
-    <Card className="metod-intro" icon={ClipboardList} id="metod-start" title="En arbetsmetod för varje projekt" subtitle="Välj projekt. Gör nästa uppgift. Spara vad som faktiskt blev gjort." action={<NyttProjekt />}>
+    <Card className="metod-intro" icon={ClipboardList} id="metod-start" title="En arbetsmetod för varje projekt" subtitle="Välj projekt. Gör nästa uppgift. Spara vad som faktiskt blev gjort.">
       <Projektvaljare />
       <p className="m-0 text-sm">Metoden passar nyckelfärdiga batteriparker. I andra projekt kan du använda planering, ekonomi, möten och uppföljning. Anpassa tekniska steg, priser och dokumentkrav till uppdraget.</p>
       {p ? <div className="metod-projekt">

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { gaTill, oppna, utanKonsolfel } from "./hjalpare.js";
+import { gaTill, oppna, utanKonsolfel, valjProjekt } from "./hjalpare.js";
 import { SEED } from "../src/data/seed.js";
 
 /** Startar med grunddatan, ändrad av fn, i den lokala lagringen. */
@@ -34,7 +34,7 @@ test("bandet visar samma dom och slutbesiktning som Tidplan", async ({ page }) =
 
 test("projekt utan start eller slut: tankstreck och Uppgifter saknas", async ({ page }) => {
   await oppna(page, "Tidplan");
-  await page.getByRole("group", { name: "Välj projekt" }).getByRole("button", { name: /Göteborg Skogome/ }).click();
+  await valjProjekt(page, /Göteborg Skogome/);
   await gaTill(page, "Idag");
   const b = band(page);
   await expect(b).toContainText("Göteborg Skogome");

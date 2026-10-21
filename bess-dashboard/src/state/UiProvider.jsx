@@ -42,6 +42,9 @@ export function UiProvider({ children }) {
   // har när man öppnar verktyget på morgonen.
   const [aktivVy, setAktivVy] = useState(() => lasAdress().vy || "idag");
   const [valtProjekt, setValtProjekt] = useState(() => lasAdress().projekt || "36037");
+  /* Portföljläge (alla projekt) eller projektläge. Bara vyer som kan visa hela portföljen
+     lyssnar på det; övriga vyer arbetar alltid i valt projekt. */
+  const [lage, setLage] = useState("projekt");
   const [tema, setTemaState] = useState(lasTema);
   const [tathet, setTathetState] = useState(lasTathet);
   const [toast, setToast] = useState(null);
@@ -212,6 +215,8 @@ export function UiProvider({ children }) {
       visa,
       valtProjekt,
       setValtProjekt,
+      lage,
+      setLage,
       tema,
       setTema: setTemaState,
       vaxlaTema,
@@ -241,7 +246,7 @@ export function UiProvider({ children }) {
     [
       projektstartMal, oppnaProjektstart, rensaProjektstartMal,
       siteVal, siteFlyg, visaISite,
-      aktivVy, visa, valtProjekt, tema, vaxlaTema, tathet, setTathet, toast, visaToast,
+      aktivVy, visa, valtProjekt, lage, tema, vaxlaTema, tathet, setTathet, toast, visaToast,
       modal, fraga, bekrafta, stangModal, navOppen, fokus, oppnaFlagga,
       postFokus, oppnaPost, utskrift, skrivUt, rensaUtskrift, faltmaterial, oppnaFaltmaterial, stangFaltmaterial, sokOppen,
     ]

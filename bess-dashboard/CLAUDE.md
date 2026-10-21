@@ -39,6 +39,15 @@ Granskningen (commit `0e7f85961c8a`, fynd F01–F15) ligger till grund för GitH
 
 Fyll i datum och beslut i tabellen när det är fattat. Migrationer i `supabase/migrations/` appliceras manuellt efter granskning; skriv i filens huvud om den är applicerad.
 
+## Projektval och Idag (2026-10-21)
+
+- **Projektval görs på ett ställe**: `Projektrad` i toppraden (`components/layout/Projektrad.jsx`). `Projektvaljare` ritar inget längre; lägg inte tillbaka egna väljare i vyer. "Nytt projekt" ligger också i toppraden.
+- **Portföljläge** (`lage` i `UiProvider`) finns bara i vyer som listas i `PORTFOLJVYER` (nu: Idag). Övriga vyer arbetar alltid i `valtProjekt`.
+- **Idag filtreras med `arbetslage(state, horisont, pid)`**. Utan `pid` är det hela portföljen. Rader för `bada` följer `gallerFor()`.
+- **Frist och uppföljning är två fält på punkter** (`forfaller`, `uppfoljning`). `punktDatum()` avgör var punkten hamnar: en passerad frist vinner alltid. Uppföljning skriver aldrig om fristen.
+- **Kommentarer på punkter** är en lista med id (`kommentarer`) via `PUNKT_KOMMENTAR`, så att `sammanfoga.js` slår ihop två personers kommentarer. `av` är det inskrivna namnet i sidomenyn, inte en verifierad identitet.
+- **"Mina uppgifter" finns inte än.** `agare` är fritext; bygg det först när ansvar tilldelas uttryckligen.
+
 ## Gör inte
 
 - Portera inte prototypens filer (`src/routes/*`, zustand-store, `@react-three/fiber`).
