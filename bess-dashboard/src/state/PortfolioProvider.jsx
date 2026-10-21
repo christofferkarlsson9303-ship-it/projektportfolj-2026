@@ -16,6 +16,7 @@ export const CONFIG = {
   sparaOmMs: 10_000, // nytt försök när portföljen inte gick att spara delat
   basKey: "batchc-portfolj-bas-v1", // senast gemensamma läge med databasen (basen i sammanslagningen)
   osparadKey: "batchc-portfolj-osparad-v1", // "1" så länge lokala ändringar inte nått databasen
+  bekraftadKey: "batchc-portfolj-bekraftad-v1", // ISO-tid för senaste sparning som databasen kvitterat (F03)
   storageKey: "batchc-portfolj-v1",
   dbPath: "portfolj/state", // huvuddokument — alla med länken kan ändra
   dbPathEkonomi: "portfolj/ekonomi", // kontraktsvärde + betalplan, write:admin
@@ -42,7 +43,20 @@ function lagraNyckel(nyckel, varde) {
     /* full eller blockerad lagring — då finns ingen bas att slå ihop mot */
   }
 }
-const markeraOsparad = (ja) => lagraNyckel(CONFIG.osparadKey, ja ? "1" : null);
+/* Synkläget (F03, förenklad kö) speglas till providern så att det kan visas:
+   osparat ja/nej, senast bekräftade sparning och antal återförsök. */
+let synkLyssnare = null;
+const markeraOsparad = (ja) => {
+  lagraNyckel(CONFIG.osparadKey, ja ? "1" : null);
+  synkLyssnare?.((s) => (s.osparat === ja ? s : { ...s, osparat: ja }));
+};
+function lasBekraftad() {
+  try {
+    return localStorage.getItem(CONFIG.bekraftadKey) || null;
+  } catch {
+    return null;
+  }
+}
 function arOsparad() {
   try {
     return localStorage.getItem(CONFIG.osparadKey) === "1";
@@ -111,6 +125,14 @@ export function PortfolioProvider({ children }) {
   const { visaToast } = useUi();
   const [state, rawDispatch] = useReducer(reducer, undefined, laddaLokalt);
   const [conn, setConn] = useState({ kl: "", txt: "Ansluter till delad lagring…" });
+  /** @type {[import("../lib/typer.js").Synkoperation, Function]} */
+  const [synk, setSynk] = useState(() => ({ osparat: arOsparad(), senastBekraftad: lasBekraftad(), forsok: 0, fel: null }));
+  useEffect(() => {
+    synkLyssnare = setSynk;
+    return () => {
+      if (synkLyssnare === setSynk) synkLyssnare = null;
+    };
+  }, []);
   const [ekonomiFel, setEkonomiFel] = useState("");
 
   const dbRef = useRef(null);
@@ -228,6 +250,9 @@ export function PortfolioProvider({ children }) {
       sattBas(basState, payload);
       // Märkningen släpps bara om inget nytt hunnit ändras under skrivningen.
       if (JSON.stringify(packaStatePayload(stateRef.current)) === str) markeraOsparad(false);
+      const tid = new Date().toISOString();
+      lagraNyckel(CONFIG.bekraftadKey, tid);
+      setSynk((x) => ({ ...x, senastBekraftad: tid, forsok: 0, fel: null }));
       setConn({ kl: "ok", txt: "Delad · sparad " + nu() });
     } catch (e) {
       /* Konflikt betyder att någon hann spara mellan vår läsning och vår
@@ -247,6 +272,7 @@ export function PortfolioProvider({ children }) {
         return;
       }
       setConn({ kl: "err", txt: `Kunde inte spara delat (${e.code || e.message || "fel"}) — försöker igen, finns lokalt` });
+      setSynk((x) => ({ ...x, osparat: true, forsok: x.forsok + 1, fel: String(e.code || e.message || "fel") }));
       /* Nät- eller serverfel: ändringen ligger kvar, märkt som osparad, och
          skickas igen. Tidigare väntade den på nästa redigering — och vid nästa
          start ersattes den av serverns version. */
@@ -739,6 +765,7 @@ export function PortfolioProvider({ children }) {
       ejVunna,
       dispatch,
       conn,
+      synk,
       ekonomiFel,
       uppd: (lista, id, falt, varde) => dispatch({ type: "UPPDATERA", lista, id, falt, varde }),
       uppdNum: (lista, id, falt, varde) =>
@@ -759,7 +786,7 @@ export function PortfolioProvider({ children }) {
       ateraktiveraAnbud: (id) => dispatch({ type: "ATERAKTIVERA_ANBUD", id }),
       markeraEjVunnet: (id, orsak, text) => dispatch({ type: "MARKERA_EJ_VUNNET", id, orsak, text }),
     }),
-    [state, vy, ejVunna, dispatch, conn, ekonomiFel, visaToast]
+    [state, vy, ejVunna, dispatch, conn, synk, ekonomiFel, visaToast]
   );
 
   return <PortfolioContext.Provider value={api}>{children}</PortfolioContext.Provider>;

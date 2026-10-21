@@ -24,8 +24,17 @@ function grupper() {
 
 const GRUPPER = grupper();
 
+/** "14:02" i dag, annars "2026-10-20 14:02". */
+function bekraftadText(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const tid = d.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" });
+  const dag = d.toLocaleDateString("sv-SE");
+  return dag === new Date().toLocaleDateString("sv-SE") ? tid : `${dag} ${tid}`;
+}
+
 export function Sidebar() {
-  const { conn } = usePortfolj();
+  const { conn, synk } = usePortfolj();
   const { aktivVy, visa, navOppen, setNavOppen } = useUi();
   const [namn, setNamn] = useState(hamtaNamn);
   const [hela, setHela] = useState(() => { try { return localStorage.getItem("bess-meny-v1") === "alla"; } catch { return false; } });
@@ -128,6 +137,12 @@ export function Sidebar() {
             <span className={`dot ${conn.kl}`.trim()} aria-hidden="true" />
             <span>{conn.txt}</span>
           </div>
+          {synk?.osparat || synk?.senastBekraftad ? (
+            <div className="conn-synk">
+              {synk.osparat ? <b>Osparade ändringar väntar{synk.forsok ? ` · försök ${synk.forsok}` : ""}</b> : null}
+              {synk.senastBekraftad ? <span>Senast bekräftad {bekraftadText(synk.senastBekraftad)}</span> : null}
+            </div>
+          ) : null}
         </div>
       </div>
     </>

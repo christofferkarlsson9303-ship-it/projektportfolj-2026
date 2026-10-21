@@ -256,6 +256,25 @@ describe("offline och återanslutning", () => {
     expect(iVyn("risker", "r2").atgard).toBe("B:s åtgärd");
   });
 
+  it("synkläget visar osparat, återförsök och senast bekräftad sparning (F03)", async () => {
+    await montera();
+    CONFIG.sparaOmMs = 50;
+    let nekade = 0;
+    falsk.sattFel((tabell, op) => {
+      if (tabell === "app_state" && op === "update" && nekade < 1) {
+        nekade += 1;
+        return { code: "PGRST000", message: "nät" };
+      }
+      return null;
+    });
+    await act(async () => api.uppd("risker", "r1", "atgard", "synkprov"));
+    await vantaTills(() => api.synk.osparat && api.synk.forsok === 1);
+    await vantaTills(() => iDb("risker", "r1").atgard === "synkprov" && !api.synk.osparat, 3000);
+    expect(api.synk.forsok).toBe(0);
+    expect(api.synk.senastBekraftad).toBe(localStorage.getItem(CONFIG.bekraftadKey));
+    expect(Number.isNaN(Date.parse(api.synk.senastBekraftad))).toBe(false);
+  });
+
   it("ett nätfel vid sparandet ger nytt försök utan ny redigering", async () => {
     await montera();
     CONFIG.sparaOmMs = 50;
