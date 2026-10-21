@@ -56,7 +56,7 @@ export function EgenkontrollLage({ pid, fas }) {
 
     <details className="my-2">
       <summary className="cursor-pointer text-xs font-bold">
-        Kontrollplan: {lage.planerade.length ? `${lage.planerade.length} enheter` : "inga enheter angivna"} · momentet kräver {lage.omfattningar.length || "–"} omfattningar
+        Kontrollplan: {lage.planerade.length ? `${lage.planerade.length} enheter` : "inga enheter angivna"}{lage.omfattningar.length ? ` · momentet kräver ${lage.omfattningar.length} omfattning${lage.omfattningar.length === 1 ? "" : "ar"}` : " · ingen omfattning registrerad"}
       </summary>
       <label className="mt-2 flex flex-col gap-1 text-xs">
         Enheter som ska kontrolleras i moment {fas} (en per rad)

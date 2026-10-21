@@ -78,10 +78,15 @@ export function SiteSakerhet({ p, tomt, regler, brott }) {
           </tbody>
         </table>
         {brott.length ? (
-          <ul className="mt-3 list-none p-0 text-[12.5px]" aria-label="Avstånd under kravet">
+          <p className="mb-0 mt-3 text-xs text-ink-soft">
+            Lägen hämtade ur en ritning är ungefärliga (inom någon meter). Par som enligt tillverkaren står rygg mot rygg ska stämmas av mot ritning och installationsmanual, inte flyttas här.
+          </p>
+        ) : null}
+        {brott.length ? (
+          <ul className="mt-2 list-none p-0 text-[12.5px]" aria-label="Avstånd under kravet">
             {brott.map((x) => (
               <li key={`${x.a.id}-${x.b.id}`} className="border-0 border-b border-solid border-hairline py-1">
-                <b>{namn(x.a)}</b> – <b>{namn(x.b)}</b>: {fmtTal(x.avstand)} m fritt, kravet är {fmtTal(x.krav)} m
+                <b>{namn(x.a)}</b> – <b>{namn(x.b)}</b>: {fmtTal(x.avstand, 2)} m fritt, kravet är {fmtTal(x.krav, 2)} m
               </li>
             ))}
           </ul>
