@@ -46,13 +46,13 @@ const MARKERING = {
 
 /** En rad i arbetslistan. Hela raden är en knapp som leder till posten.
  *  Namnet börjar med "Öppna" för skärmläsare, pilen visar det för seende. */
-function Arbetsrad({ nar, titel, undertext, pid, markering = "", onOppna }) {
+function Arbetsrad({ nar, titel, undertext, pid, markering = "", onOppna, atgard = null }) {
   return (
-    <li className="border-0 border-t border-solid border-hairline first:border-t-0">
+    <li className="flex items-center gap-2 border-0 border-t border-solid border-hairline first:border-t-0">
       <button
         type="button"
         onClick={onOppna}
-        className="group -mx-2 flex w-[calc(100%+16px)] cursor-pointer items-center gap-x-3 rounded-lg border-0 bg-transparent px-2 py-2.5 text-left font-body text-ink transition-colors hover:bg-sunken"
+        className="group -mx-2 flex min-w-0 flex-1 cursor-pointer items-center gap-x-3 rounded-lg border-0 bg-transparent px-2 py-2.5 text-left font-body text-ink transition-colors hover:bg-sunken"
       >
         <span className="sr-only">Öppna: </span>
         <span className={`w-[58px] shrink-0 text-[12.5px] tabular-nums ${MARKERING[markering]}`}>{nar}</span>
@@ -72,6 +72,18 @@ function Arbetsrad({ nar, titel, undertext, pid, markering = "", onOppna }) {
           className="shrink-0 text-ink-faint transition-colors group-hover:text-one-djup"
         />
       </button>
+      {/* Snabbåtgärd utan sidbyte, bredvid radens knapp (knappar får inte ligga i knappar). */}
+      {atgard ? (
+        <button
+          type="button"
+          onClick={atgard.onClick}
+          aria-label={atgard.etikett}
+          title={atgard.etikett}
+          className="inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-full border border-solid border-hairline-stark bg-surface px-2.5 py-1 font-body text-[12px] font-bold text-ok-ink hover:bg-ok-bg"
+        >
+          <CircleCheck size={14} aria-hidden="true" /> Klar
+        </button>
+      ) : null}
     </li>
   );
 }
@@ -108,7 +120,7 @@ const lankKlass =
   "cursor-pointer border-0 bg-transparent p-0 font-body text-[13px] font-semibold text-white underline underline-offset-2 hover:text-white/80";
 
 export function Idag() {
-  const { state } = usePortfolj();
+  const { state, uppdStatus } = usePortfolj();
   const { visa, setValtProjekt, oppnaPost, valtProjekt, lage, setLage } = useUi();
   const [horisont, setHorisont] = useState("30");
   /* Punkten vars detaljpanel är öppen. Panelen och listan delar sammanhang:
@@ -215,6 +227,11 @@ export function Idag() {
       undertext={r.typ === "Punkt" ? punktText(r) : `${r.typ} · ${r.datum}`}
       pid={r.pid}
       onOppna={() => oppnaAgenda(r)}
+      atgard={
+        r.typ === "Milstolpe" || r.typ === "Leverans"
+          ? { etikett: `Markera klar: ${r.titel}`, onClick: () => uppdStatus(r.typ === "Milstolpe" ? "milstolpar" : "leveranser", r.id, "status", "klar") }
+          : null
+      }
     />
   );
 
