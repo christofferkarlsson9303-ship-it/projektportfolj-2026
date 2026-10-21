@@ -1,0 +1,20 @@
+%% ONE P – agilt flöde med ÄTA. Klistra in i FigJam (Mermaid) eller mermaid.live.
+flowchart LR
+    classDef kol fill:#E6F2F5,stroke:#005F76,color:#0B2A33,stroke-width:1.5px
+    classDef ata fill:#FFF4E0,stroke:#C77700,color:#3D2A00,stroke-width:1.5px
+    classDef klar fill:#E3F4E8,stroke:#1E7B3A,color:#0E3B1C,stroke-width:1.5px
+    classDef stopp fill:#F1F1F1,stroke:#777,color:#333,stroke-width:1.5px
+
+    B["<b>Backlog</b><br/>Det som ska göras,<br/>sorterat efter värde"]:::kol
+    P["<b>Pågående</b><br/>Max 3 kort per person"]:::kol
+    A["<b>ÄTA-granskning</b><br/>1. Underrätta inom 24 h<br/>2. Typ: Ändring, Tillägg eller Avgående<br/>3. Pris och påverkan på tid<br/>4. Beställarens skriftliga beslut"]:::ata
+    K["<b>Klart</b><br/>Utfört och dokumenterat"]:::klar
+    X["<b>Utgår</b><br/>ÄTA avslaget eller<br/>inte längre aktuellt"]:::stopp
+    F["<b>Fakturera</b><br/>Med ÄTA-numret<br/>som referens"]:::klar
+
+    B -->|"Dra in till nästa cykel"| P
+    P -->|"Klart utan avvikelse"| K
+    P -->|"Avvikelse, tillägg eller<br/>ändrad omfattning"| A
+    A -->|"Godkänd: arbetet får utföras"| P
+    A -->|"Avslagen eller utgår"| X
+    K -->|"Gällde det en ÄTA"| F
