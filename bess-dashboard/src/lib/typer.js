@@ -42,6 +42,18 @@
  * @typedef {object} Sammanslagning
  * @property {any} varde
  * @property {string[]} konflikter    sökvägar där båda ändrat olika
+ * @property {Konfliktdetalj[]} [detaljer]
+ */
+
+/**
+ * En konflikt med värdena, för konfliktvyn.
+ * @typedef {object} Konfliktdetalj
+ * @property {string} vag                 läsbar sökväg, t.ex. "risker[r1].atgard"
+ * @property {Array<string|{id: any}>} steg  sökvägen som steg, för sattVidSteg()
+ * @property {any} bas                    senast gemensamma värde
+ * @property {any} mina
+ * @property {any} deras
+ * @property {boolean} kritisk            löses inte automatiskt
  */
 
 /**

@@ -129,7 +129,21 @@ describe("samtidig redigering", () => {
     await act(async () => api.uppd("risker", "r1", "atgard", "A:s åtgärd"));
 
     await vantaTills(() => iDb("risker", "r1").atgard === "A:s åtgärd");
-    expect(toaster.some((t) => /1 fält ändrades av er båda/.test(t))).toBe(true);
+    expect(toaster.some((t) => /1 fält ändrades på två ställen/.test(t))).toBe(true);
+  });
+
+  it("konflikten listas med värden och kan lösas med den sparade versionen (#70)", async () => {
+    await montera();
+    const falt = document.getElementById("falt");
+    falt.focus();
+    await act(async () => api.uppd("risker", "r1", "atgard", "A:s text"));
+    bAndrar("risker", "r1", "atgard", "B:s text");
+    await act(async () => falt.blur());
+    await vantaTills(() => api.konflikter.length === 1);
+    const k = api.konflikter[0];
+    expect(k).toMatchObject({ vag: "risker[r1].atgard", mina: "A:s text", deras: "B:s text", kritisk: false });
+    await act(async () => api.losKonflikt(k, "deras"));
+    await vantaTills(() => iVyn("risker", "r1").atgard === "B:s text" && api.konflikter.length === 0);
   });
 
   it("väntande ändring läses in när fokus lämnar fältet", async () => {

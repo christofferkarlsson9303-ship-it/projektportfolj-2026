@@ -19,6 +19,7 @@ import { boxFel, kopplingFel, viewpointFel } from "../lib/modellKoppling.js";
 import { arGuid } from "../lib/bcfHanterare.js";
 import { projektFasFranEpc } from "../lib/projektfasEpc.js";
 import { arDold } from "../lib/arkiv.js";
+import { sattVidSteg } from "../lib/sammanfoga.js";
 import { projektstartFel } from "../lib/projektstart.js";
 import { EJ_VUNNET_ORSAKER, FAS_MODELL, arFasNr, faseFranGammal, fasFranStatus, faseInfo, riskFasFranGammal, forstaFasForStatus, normaliseraStatus, statusEtikett } from "../data/projektfaser.ts";
 import { granskaProfil, rensaProfil } from "../lib/kontraktsprofil.js";
@@ -416,6 +417,14 @@ export function reducer(state, action) {
     }
 
     /* Ersätter en hel kollektion — för sorteringar och massuppdateringar. */
+    /* Val i konfliktvyn (#70): sätt det valda värdet på sökvägen och logga valet. */
+    case "LOS_KONFLIKT": {
+      const { steg, varde, vag, val } = action;
+      if (!Array.isArray(steg) || typeof steg[0] !== "string" || !Array.isArray(state[steg[0]])) return state;
+      const nytt = { ...state, [steg[0]]: sattVidSteg(state[steg[0]], steg.slice(1), varde) };
+      return loggat(nytt, null, `Konflikt löst: ${vag} — ${val === "mina" ? "min version" : "den sparade versionen"} valdes`);
+    }
+
     case "SATT_LISTA": {
       /* Vyerna ser portföljen utan förlorade anbud (lib/arkiv.js). Deras rader hålls kvar här, så att
          en sortering eller massuppdatering aldrig tar bort arkivet. */

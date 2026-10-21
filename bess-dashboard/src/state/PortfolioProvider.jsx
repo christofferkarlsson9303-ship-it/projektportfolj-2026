@@ -125,6 +125,12 @@ export function PortfolioProvider({ children }) {
   const { visaToast } = useUi();
   const [state, rawDispatch] = useReducer(reducer, undefined, laddaLokalt);
   const [conn, setConn] = useState({ kl: "", txt: "Ansluter till delad lagring…" });
+  /** Konflikter som väntar på ett val i konfliktvyn (#70). @type {[import("../lib/typer.js").Konfliktdetalj[], Function]} */
+  const [konflikter, setKonflikter] = useState([]);
+  const laggTillKonflikter = useCallback((detaljer) => {
+    if (!detaljer?.length) return;
+    setKonflikter((nu) => [...nu.filter((k) => !detaljer.some((d) => d.vag === k.vag)), ...detaljer]);
+  }, []);
   /** @type {[import("../lib/typer.js").Synkoperation, Function]} */
   const [synk, setSynk] = useState(() => ({ osparat: arOsparad(), senastBekraftad: lasBekraftad(), forsok: 0, fel: null }));
   useEffect(() => {
@@ -300,7 +306,8 @@ export function PortfolioProvider({ children }) {
     const deras = packaStatePayload(franPayload(raw));
     const mina = packaStatePayload(stateRef.current);
     const bas = basState.current ?? mina;
-    const { varde, konflikter } = sammanfoga(bas, mina, deras);
+    const { varde, konflikter, detaljer } = sammanfoga(bas, mina, deras);
+    laggTillKonflikter(detaljer);
 
     dbRef.current?.doc(CONFIG.dbPath).antaVersion?.(version);
     sattBas(basState, deras);
@@ -317,7 +324,7 @@ export function PortfolioProvider({ children }) {
     // Statusraden skrivs över av omsparningen direkt — toasten syns.
     if (konflikter.length) visaToast(sammanslagningsText(konflikter), "warn");
     return konflikter;
-  }, [franPayload, sparaState, visaToast, sattNu]);
+  }, [franPayload, sparaState, visaToast, sattNu, laggTillKonflikter]);
 
   useEffect(() => {
     tillampaFjarr.current = tillampaFjarrFn;
@@ -766,6 +773,12 @@ export function PortfolioProvider({ children }) {
       dispatch,
       conn,
       synk,
+      konflikter,
+      /** Väljer version för en konflikt. "mina" eller "deras". */
+      losKonflikt: (k, val) => {
+        dispatch({ type: "LOS_KONFLIKT", steg: k.steg, varde: val === "mina" ? k.mina : k.deras, vag: k.vag, val });
+        setKonflikter((nu) => nu.filter((x) => x.vag !== k.vag));
+      },
       ekonomiFel,
       uppd: (lista, id, falt, varde) => dispatch({ type: "UPPDATERA", lista, id, falt, varde }),
       uppdNum: (lista, id, falt, varde) =>
@@ -786,7 +799,7 @@ export function PortfolioProvider({ children }) {
       ateraktiveraAnbud: (id) => dispatch({ type: "ATERAKTIVERA_ANBUD", id }),
       markeraEjVunnet: (id, orsak, text) => dispatch({ type: "MARKERA_EJ_VUNNET", id, orsak, text }),
     }),
-    [state, vy, ejVunna, dispatch, conn, synk, ekonomiFel, visaToast]
+    [state, vy, ejVunna, dispatch, conn, synk, konflikter, ekonomiFel, visaToast]
   );
 
   return <PortfolioContext.Provider value={api}>{children}</PortfolioContext.Provider>;
