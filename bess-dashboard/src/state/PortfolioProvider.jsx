@@ -839,6 +839,7 @@ export function PortfolioProvider({ children }) {
         // varje gång någon öppnar en <select> och väljer samma sak igen.
         if (rad && rad[falt] !== varde) visaToast("Status uppdaterad och loggad");
       },
+      kopplaHandelse: (punktId, post) => dispatch({ type: "HANDELSE_KOPPLA", punktId, ...post }),
       kommenteraPunkt: (id, kommentar) => dispatch({ type: "PUNKT_KOMMENTAR", id, kommentar }),
       laggTill: (lista, rad) => dispatch({ type: "LAGG_TILL", lista, rad }),
       taBort: (lista, id) => dispatch({ type: "TA_BORT", lista, id }),

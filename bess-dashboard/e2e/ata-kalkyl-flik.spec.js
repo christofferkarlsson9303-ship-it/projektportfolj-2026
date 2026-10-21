@@ -44,7 +44,7 @@ test("ett nytt ärende från fliken väljs direkt", async ({ page }) => {
   await oppna(page, "ÄTA-kalkyl");
   await page.getByRole("button", { name: "+ Ny ÄTA" }).click();
   await page.getByLabel("Kort beskrivning av händelsen").fill("Extra kabelschakt");
-  await page.getByRole("button", { name: "Registrera" }).click();
+  await page.getByRole("button", { name: "Registrera", exact: true }).click();
   await expect(page.getByRole("region", { name: /^ÄTA-kalkyl — UR\d+ Extra kabelschakt$/ })).toBeVisible();
   await expect(page.getByText("Inga poster ännu. Klicka på ett snabbval ovan.")).toBeVisible();
 });
