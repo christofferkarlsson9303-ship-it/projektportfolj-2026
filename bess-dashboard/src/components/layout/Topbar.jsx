@@ -30,7 +30,7 @@ export function Topbar() {
 
       <Projektrad />
       <button type="button" className="kbd !text-xs !font-bold" onClick={() => setHandelseOppen(true)} aria-haspopup="dialog">Registrera händelse</button>
-      <button type="button" className="kbd !text-xs" onClick={() => setSokOppen(true)} aria-haspopup="dialog" title="Sök sidor, projekt och ärenden (Ctrl/Cmd+K)">Sök</button>
+      <button type="button" className="kbd !text-xs" onClick={() => setSokOppen(true)} aria-haspopup="dialog" title="Sök sidor, projekt och ÄTA (Ctrl/Cmd+K)">Sök</button>
       <button type="button" className="kbd !text-xs" onClick={() => oppnaFaltmaterial()} aria-haspopup="dialog">Fältmaterial</button>
 
       <button type="button" className="kbd" onClick={vaxlaTema} aria-label={temaEtikett} title={temaEtikett}>

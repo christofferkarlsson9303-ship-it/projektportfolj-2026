@@ -113,13 +113,13 @@ export function berakFlaggor(state) {
     }
   });
 
-  /* Byggmöten: punkter under §4/§5 utan registrerat ärende riskerar preskription */
+  /* Byggmöten: punkter under §4/§5 utan registrerad ÄTA riskerar preskription */
   (state.byggmoten || []).forEach((m) => {
     const saknar = motesFlagga(m);
     if (saknar.length)
       lagg(
         "hog",
-        `${m.nr}: ${saknar.length} punkt${saknar.length > 1 ? "er" : ""} under §4/§5 saknar registrerat ärende — risk för preskription`,
+        `${m.nr}: ${saknar.length} punkt${saknar.length > 1 ? "er" : ""} under §4/§5 saknar registrerad ÄTA — risk för preskription`,
         m.projektId,
         "moten"
       );

@@ -14,7 +14,7 @@ import { allaModellObjekt, arKopplad, byggKoppling } from "../../lib/modellKoppl
 
 import { Callout, StatusBadge } from "../../components/ds/index.js";
 import { nyttId } from "../../lib/id.js";
-/* Ärendepanelen — glider in från höger och låter tavlan ligga kvar bakom.
+/* ÄTA-panelen — glider in från höger och låter tavlan ligga kvar bakom.
 
    Medvetet INTE en modal: ingen mörk overlay och ingen fokusfälla, för hela
    poängen är att översikten ska vara kvar. Escape och Stäng stänger, och
@@ -94,7 +94,7 @@ function Sparindikator() {
 
 const vek = (v) => (Array.isArray(v) ? v.map((n) => String(Math.round(n * 10) / 10).replace(".", ",")).join(" · ") : "—");
 
-/** Koppling mellan ärendet och ett objekt i 3D-modellen (objectGuid, kameravy, låda, modellversion). */
+/** Koppling mellan ÄTA:n och ett objekt i 3D-modellen (objectGuid, kameravy, låda, modellversion). */
 function Koppling3D({ u }) {
   const { state, dispatch } = usePortfolj();
   const { siteVal, visaISite, visaToast } = useUi();
@@ -128,7 +128,7 @@ function Koppling3D({ u }) {
           </dl>
         </>
       ) : (
-        <p className="m-0 text-[13px] text-ink-soft">Ärendet är inte kopplat till något objekt. Markera ett objekt i Siten i 3D för att koppla det hit.</p>
+        <p className="m-0 text-[13px] text-ink-soft">ÄTA:n är inte kopplad till något objekt. Markera ett objekt i Siten i 3D för att koppla det hit.</p>
       )}
       <div className="flex flex-wrap gap-2">
         {o ? (
@@ -239,7 +239,7 @@ export function AtaDrawerDetails({ u, onStang, onKalkyl }) {
     <aside
       className="atadrawer"
       role="region"
-      aria-label={`Ärende ${u.nr}`}
+      aria-label={`ÄTA ${u.nr}`}
       tabIndex={-1}
       ref={panelRef}
     >
@@ -279,7 +279,7 @@ export function AtaDrawerDetails({ u, onStang, onKalkyl }) {
         <div className="frow c2">
           <div className="f">
             <label htmlFor={`nr-${u.id}`}>Nummer</label>
-            <Falt id={`nr-${u.id}`} varde={u.nr} etikett="Ärendenummer" onCommit={(v) => satt("nr", v)} />
+            <Falt id={`nr-${u.id}`} varde={u.nr} etikett="ÄTA-nummer" onCommit={(v) => satt("nr", v)} />
           </div>
           <div className="f">
             <label htmlFor={`st-${u.id}`}>Status (ÄTA-loggen)</label>

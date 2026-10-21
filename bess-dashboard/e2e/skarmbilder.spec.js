@@ -15,7 +15,7 @@ const VYER = [
   "Tavla",
   "Tidplan",
   "Milstolpar M1–M7",
-  "ÄTA och hinder",
+  "ÄTA",
   "Ekonomi",
   "Dagbok",
   "Risker",

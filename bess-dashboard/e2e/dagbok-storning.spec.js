@@ -97,12 +97,12 @@ test("svarsfrist som passerat markeras i registret", async ({ page }) => {
 /* ---------- Kopplingen från ÄTA ---------- */
 
 test("ÄTA skapar dagboksrad med ÄTA-numret som referens", async ({ page }) => {
-  const { fel } = await oppna(page, "ÄTA och hinder");
+  const { fel } = await oppna(page, "ÄTA");
 
-  // Tavlan är standardvyn — kortet är numera vägen in i ärendet.
+  // Tavlan är standardvyn — kortet är numera vägen in i ÄTA:n.
   await page.locator(".atakort").first().getByRole("button").first().click();
 
-  const ataForm = page.getByRole("region", { name: /^Ärende / });
+  const ataForm = page.getByRole("region", { name: /^ÄTA / });
   const rubrik = await ataForm.getByRole("heading", { level: 3 }).textContent();
   const nr = rubrik.split(" —")[0].trim();
 
@@ -117,13 +117,13 @@ test("ÄTA skapar dagboksrad med ÄTA-numret som referens", async ({ page }) => 
   utanKonsolfel(fel);
 });
 
-test("ÄTA skapar underrättelse med ärendet inskrivet i ruta A", async ({ page }) => {
-  await oppna(page, "ÄTA och hinder");
+test("ÄTA skapar underrättelse med ÄTA:n inskrivet i ruta A", async ({ page }) => {
+  await oppna(page, "ÄTA");
 
-  // Tavlan är standardvyn — kortet är numera vägen in i ärendet.
+  // Tavlan är standardvyn — kortet är numera vägen in i ÄTA:n.
   await page.locator(".atakort").first().getByRole("button").first().click();
 
-  const ataForm = page.getByRole("region", { name: /^Ärende / });
+  const ataForm = page.getByRole("region", { name: /^ÄTA / });
   const rubrik = await ataForm.getByRole("heading", { level: 3 }).textContent();
   const nr = rubrik.split(" —")[0].trim();
 

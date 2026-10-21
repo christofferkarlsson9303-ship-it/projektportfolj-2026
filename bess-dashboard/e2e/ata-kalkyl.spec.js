@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { gaTill, oppna, utanKonsolfel } from "./hjalpare.js";
 
-/* ÄTA-kalkylen: rader på ett befintligt ärende, belopp tillbaka på posten,
+/* ÄTA-kalkylen: rader på en befintlig ÄTA, belopp tillbaka på posten,
    avi via #utskrift och CSV. */
 
 const REGISTER = "UR- och ÄTA-register";
@@ -22,10 +22,10 @@ async function fyll(falt, varde) {
 }
 
 test("en montör 2 × 945 och material 10 000 ger 12 890 netto, och beloppet står kvar efter omladdning", async ({ page }) => {
-  const { fel } = await oppna(page, "ÄTA och hinder");
+  const { fel } = await oppna(page, "ÄTA");
   const kort = await oppnaKalkyl(page);
 
-  // Numret och benämningen kommer från ärendet.
+  // Numret och benämningen kommer från ÄTA:n.
   await expect(kort.getByRole("heading", { level: 3 })).toHaveText("ÄTA-kalkyl — UR001 Projektering");
 
   await kort.getByRole("button", { name: "+ Montör", exact: true }).click();
@@ -42,7 +42,7 @@ test("en montör 2 × 945 och material 10 000 ger 12 890 netto, och beloppet st�
   await expect(kort.getByLabel("Summering")).toContainText(/Att betala\s*16\s113 kr/);
   expect(await summa.count()).toBe(3);
 
-  await kort.getByRole("button", { name: "Spara belopp på ärendet" }).click();
+  await kort.getByRole("button", { name: "Spara belopp på ÄTA:n" }).click();
   await expect(kort.getByText("Belopp sparat")).toBeVisible();
 
   // Sparat i portföljen, inte i en egen nyckel.
@@ -53,7 +53,7 @@ test("en montör 2 × 945 och material 10 000 ger 12 890 netto, och beloppet st�
 
   await page.reload();
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 20_000 });
-  await gaTill(page, "ÄTA och hinder");
+  await gaTill(page, "ÄTA");
   await page.getByRole("radio", { name: "Tabell" }).click();
   const rad = page.getByRole("region", { name: REGISTER, exact: true }).locator("tbody tr", { hasText: "UR001" });
   await expect(rad).toContainText(/12\s890 kr/);
@@ -61,7 +61,7 @@ test("en montör 2 × 945 och material 10 000 ger 12 890 netto, och beloppet st�
 });
 
 test("övertid 50 % är faktor 1,5 och Enter i beskrivningen ger en ny rad med samma resurs", async ({ page }) => {
-  await oppna(page, "ÄTA och hinder");
+  await oppna(page, "ÄTA");
   const kort = await oppnaKalkyl(page);
 
   await kort.getByRole("button", { name: "+ Ledande montör", exact: true }).click();
@@ -79,7 +79,7 @@ test("övertid 50 % är faktor 1,5 och Enter i beskrivningen ger en ny rad med s
 });
 
 test("avin skrivs ut via #utskrift med två signaturer, och CSV har BOM och semikolon", async ({ page }) => {
-  await oppna(page, "ÄTA och hinder");
+  await oppna(page, "ÄTA");
   const kort = await oppnaKalkyl(page);
   await kort.getByRole("button", { name: "+ Montör", exact: true }).click();
   await fyll(kort.getByLabel("Antal tim, rad 1, Montör"), "2");
@@ -104,12 +104,12 @@ test("avin skrivs ut via #utskrift med två signaturer, och CSV har BOM och semi
   expect(text.split("\n")[1]).toMatch(/;Montör;2;0;0;1890$/);
 });
 
-test("ärendepanelen öppnar kalkylen för samma ärende", async ({ page }) => {
-  await oppna(page, "ÄTA och hinder");
+test("ÄTA-panelen öppnar kalkylen för samma ÄTA", async ({ page }) => {
+  await oppna(page, "ÄTA");
   await page.getByRole("radio", { name: "Tabell" }).click();
   await page.getByRole("region", { name: REGISTER, exact: true }).locator("tbody tr").nth(1).getByRole("button").first().click();
-  const panel = page.getByRole("region", { name: /^Ärende / });
-  const nr = (await panel.getAttribute("aria-label")).replace("Ärende ", "");
+  const panel = page.getByRole("region", { name: /^ÄTA / });
+  const nr = (await panel.getAttribute("aria-label")).replace("ÄTA ", "");
   await panel.getByRole("button", { name: "Öppna i kalkyl" }).click();
   await expect(page.getByRole("region", { name: new RegExp(`^ÄTA-kalkyl — ${nr}`) })).toBeVisible();
   await expect(panel).toBeHidden();

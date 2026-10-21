@@ -9,7 +9,7 @@ import { OVERTID_VAL, medResurs, radSumma, tidslagText, utanOvertid } from "../.
 const tal = "text-right tabular-nums";
 const radNamn = (r, i) => `rad ${i + 1}${r.resurs ? `, ${r.resurs}` : ""}`;
 
-/** Kalkylraderna som tabell. `tomText` visas när ärendet saknar rader. */
+/** Kalkylraderna som tabell. `tomText` visas när ÄTA:n saknar rader. */
 export function KalkylTabell({ u, k, tomText = "Inga rader ännu. Välj en resurs ovan." }) {
   const { resurser, rader, andra, taBort, nyRadEfter } = k;
   return (

@@ -134,7 +134,7 @@ export function BessStatusHeader({ projekt, effekt, siffror, ata, stadier, kompo
             varde={`${ata.oppna} ${ata.oppna === 1 ? "öppen post" : "öppna poster"}`}
             hint={ata.ejFakturerat ? `${fmtSEK(ata.ejFakturerat)} godkänt, ej fakturerat` : ata.pagaende ? `${fmtSEK(ata.pagaende)} under prissättning` : "Inget väntar på faktura"}
             onClick={onOppnaAta}
-            atgard="Öppna ÄTA och hinder"
+            atgard="Öppna ÄTA"
           />
         </div>
       </div>
@@ -236,7 +236,7 @@ export function BessStatusHeader({ projekt, effekt, siffror, ata, stadier, kompo
                       </span>
                       <span className="flex items-center justify-between gap-2 text-[11.5px] text-ink-soft">
                         <span className="truncate">{TYPNAMN[k.typ] || MALLAR[k.typ]?.namn}</span>
-                        <span className={`shrink-0 font-semibold ${l.ton === "varning" ? "text-warn-ink" : "text-ink-soft"}`}>{l.ton === "varning" ? "Ärende" : "Inga ärenden"}</span>
+                        <span className={`shrink-0 font-semibold ${l.ton === "varning" ? "text-warn-ink" : "text-ink-soft"}`}>{l.ton === "varning" ? "ÄTA" : "Ingen ÄTA"}</span>
                       </span>
                       {k.soc !== undefined && k.soc !== null && k.soc !== "" ? (
                         <>

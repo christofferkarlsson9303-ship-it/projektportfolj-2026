@@ -135,7 +135,7 @@ export function AtaKanbanView({ rader, projektNamn, vald, onOppna, onVisaTabell 
 
       <p className="lead atatavla-fot">
         Dra ett kort för att flytta det — ändringen sparas direkt. Med tangentbord byter du läge i
-        ärendepanelen i stället.
+        ÄTA-panelen i stället.
         {avslutade.length ? (
           <>
             {" "}

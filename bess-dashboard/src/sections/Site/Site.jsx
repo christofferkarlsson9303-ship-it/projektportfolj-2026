@@ -301,7 +301,7 @@ export function Site() {
     return null;
   };
   const taBortIfc = async (m) => {
-    const ja = await bekrafta(`”${m.namn}” tas bort från projektet. Ärenden som pekar på dess objekt behåller sitt GlobalId och sin kameravy.`, { titel: "Ta bort IFC-modell", ok: "Ta bort", fara: true });
+    const ja = await bekrafta(`”${m.namn}” tas bort från projektet. ÄTA som pekar på dess objekt behåller sitt GlobalId och sin kameravy.`, { titel: "Ta bort IFC-modell", ok: "Ta bort", fara: true });
     if (!ja) return;
     dispatch({ type: "IFC_MODELL_TA_BORT", id: m.id });
     setIfcGeo((g) => {
@@ -312,7 +312,7 @@ export function Site() {
     ifcCache.ta(m.id).catch(() => {});
   };
 
-  /* ---------- Ärenden, versioner och jämförelse ---------- */
+  /* ---------- ÄTA, versioner och jämförelse ---------- */
   const arendeRader = useMemo(() => (pid ? arendenFor(state.ur, pid) : []), [state.ur, pid]);
   const arendenMap = useMemo(() => (pid ? arendenPerObjekt(state.ur, pid) : new Map()), [state.ur, pid]);
   const objektById = useMemo(() => new Map([...ifcObjekt, ...objekt].map((o) => [o.id, o])), [objekt, ifcObjekt]);
@@ -331,7 +331,7 @@ export function Site() {
     setFlyg({ tid: Date.now(), viewpoint });
   };
 
-  /* Ett ärende i ÄTA-sektionen bad om "Visa i 3D": markera objektet och flyg till dess låda. */
+  /* En ÄTA i ÄTA-sektionen bad om "Visa i 3D": markera objektet och flyg till dess låda. */
   const [sedd, setSedd] = useState(null);
   if (siteFlyg && siteFlyg.tid !== sedd) {
     setSedd(siteFlyg.tid);
@@ -402,14 +402,14 @@ export function Site() {
   const kopplaArende = (u) => {
     if (!valt) return;
     dispatch({ type: "ATA_KOPPLA_OBJEKT", id: u.id, koppling: kopplingFor(valt) });
-    visaToast(`${u.nr || "Ärendet"} kopplat till ${valt.namn || "objektet"}.`);
+    visaToast(`${u.nr || "ÄTA:n"} kopplad till ${valt.namn || "objektet"}.`);
   };
   const losArende = (u) => dispatch({ type: "ATA_LOSS_OBJEKT", id: u.id });
   const nyttArende = async () => {
     if (!valt || arNal(valt)) return;
     const sv = await fraga({
-      titel: `Nytt ärende på ${valt.namn}`,
-      lead: "Ärendet kopplas till objektet och sparar kamerans vy, så att man hittar tillbaka dit i 3D-vyn.",
+      titel: `Ny ÄTA på ${valt.namn}`,
+      lead: "ÄTA:n kopplas till objektet och sparar kamerans vy, så att man hittar tillbaka dit i 3D-vyn.",
       falt: [{ namn: "benamning", etikett: "Kort beskrivning av händelsen", typ: "textarea" }],
       ok: "Registrera",
     });
@@ -420,12 +420,12 @@ export function Site() {
       return;
     }
     laggTill("ur", nyAtaPost(state, pid, { benamning: sv.benamning, ansvarig: hamtaNamn() || "", ...koppling }));
-    visaToast(`Ärende registrerat på ${valt.namn}.`);
+    visaToast(`ÄTA registrerad på ${valt.namn}.`);
   };
   /* ---------- BCF ---------- */
   const projektNamn = p ? `${p.nr ? `${p.nr} ` : ""}${p.namn}` : "";
 
-  /** Exporterar de valda ärendena till en .bcfzip. Skärmdumpen tas från varje ärendes egen vy. */
+  /** Exporterar de valda ÄTA till en .bcfzip. Skärmdumpen tas från varje ÄTA:s egen vy. */
   const exporteraBcf = async (ids) => {
     const valda = arendeRader.filter((u) => ids.includes(u.id));
     if (!valda.length) return;
@@ -440,7 +440,7 @@ export function Site() {
       const { data, nyaGuid } = await byggBcf(valda, { snapshots, forfattare: hamtaNamn() || "Okänd", projektNamn });
       if (Object.keys(nyaGuid).length) dispatch({ type: "ATA_SATT_BCFGUID", guider: nyaGuid });
       const r = await laddaNer(bcfFilnamn(p.nr || p.namn), data, "application/zip");
-      if (r.ok) visaToast(`${valda.length} ärenden exporterade${Object.keys(snapshots).length < valda.length ? " (utan skärmdump där 3D-vyn saknas)" : ""}.`);
+      if (r.ok) visaToast(`${valda.length} ÄTA exporterade${Object.keys(snapshots).length < valda.length ? " (utan skärmdump där 3D-vyn saknas)" : ""}.`);
       else if (!r.tyst) visaToast(r.txt || "Exporten misslyckades.", "warn");
     } catch (e) {
       visaToast(`BCF-exporten misslyckades: ${e.message}`, "warn");
@@ -467,7 +467,7 @@ export function Site() {
           return rad;
         },
       });
-      const ja = await bekrafta(importSammanfattning(plan, r), { titel: `Importera ${r.topics.length} ärenden från BCF`, ok: "Importera" });
+      const ja = await bekrafta(importSammanfattning(plan, r), { titel: `Importera ${r.topics.length} ÄTA från BCF`, ok: "Importera" });
       if (!ja) return;
       dispatch({ type: "ATA_IMPORTERA_BCF", projektId: pid, nya: plan.nya, uppdatera: plan.uppdatera });
       visaToast(`BCF importerad: ${plan.nya.length} nya, ${plan.uppdatera.length} uppdaterade.`);
@@ -492,7 +492,7 @@ export function Site() {
   const taBortVersion = async (id) => {
     const v = versioner.find((x) => x.id === id);
     if (!v) return;
-    const ja = await bekrafta(`Modellversionen ”${v.namn}” tas bort. Siten och ärendena påverkas inte.`, { titel: "Ta bort modellversion", ok: "Ta bort", fara: true });
+    const ja = await bekrafta(`Modellversionen ”${v.namn}” tas bort. Siten och ÄTA påverkas inte.`, { titel: "Ta bort modellversion", ok: "Ta bort", fara: true });
     if (!ja) return;
     dispatch({ type: "MODELLVERSION_TA_BORT", id });
     setJamforId(null);
@@ -725,7 +725,7 @@ export function Site() {
         vyer={<SiteKameror className="site-camera-menu" vinklar={vinklar} onFlyg={flygTill} />}
         legend={<><ul>{Object.entries(MALLAR).filter(([typ]) => objekt.some(o => o.typ === typ)).map(([typ, mall]) => <li key={typ}><Farg typ={typ} />{mall.namn} · {objekt.filter(o => o.typ === typ).length} st</li>)}</ul><p className="note">{profil.namn}. Mått och placeringar följer projektets sparade modell.</p></>}
         info={valt && !arNal(valt) && !arIfc ? <><h2>{namnFor(valt)}</h2><dl><dt>Typ</dt><dd>{MALLAR[valt.typ]?.namn}</dd><dt>Mått</dt><dd>{fmtM(valt.bredd)} × {fmtM(valt.djup)} × {fmtM(valt.hojd)} m</dd><dt>Rotation</dt><dd>{fmtM(valt.rotation || 0)}°</dd></dl><button type="button" className="btn mt-3" onClick={() => setPanel("objekt")}>Redigera objekt</button></> : null}
-        paneler={[{ id: "bygg", namn: "Bygg" }, { id: "visning", namn: "Visning" }, { id: "objekt", namn: "Objekt" }, { id: "arenden", namn: "Ärenden" }, { id: "underlag", namn: "Underlag" }]}
+        paneler={[{ id: "bygg", namn: "Bygg" }, { id: "visning", namn: "Visning" }, { id: "objekt", namn: "Objekt" }, { id: "arenden", namn: "ÄTA" }, { id: "underlag", namn: "Underlag" }]}
         verktyg={<>
           <section hidden={panel !== "bygg"} aria-label="Bygg parken">
             <h3 className="m-0 mb-2 text-sm">Bygg din batteripark</h3>
@@ -926,8 +926,8 @@ export function Site() {
         </Card>
       </div>
           </section>
-          <aside hidden={panel !== "arenden"} aria-label="Ärenden på siten">
-            <h3 className="m-0 mb-3 text-sm">Ärenden</h3>
+          <aside hidden={panel !== "arenden"} aria-label="ÄTA på siten">
+            <h3 className="m-0 mb-3 text-sm">ÄTA</h3>
                 <SiteArenden
                   rader={arendeRader}
                   valt={valt}

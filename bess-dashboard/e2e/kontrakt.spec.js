@@ -58,7 +58,7 @@ test("kontraktsprofilen läses in, granskas och styr ÄTA-vägledningen", async 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Kontraktet");
   await expect(page.getByRole("region", { name: /^Kontraktet – 36037/ })).toContainText("Kontrollerat mot kontrakt");
 
-  await gaTill(page, "ÄTA och hinder");
+  await gaTill(page, "ÄTA");
   await expect(page.locator("main")).toContainText("Kontraktet: underrätta om hinder inom 7 bankdagar");
   await gaTill(page, "Milstolpar M1–M7");
   await expect(page.locator("main")).toContainText("Kontraktets betalningsplan enligt kontraktsprofilen");

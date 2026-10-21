@@ -85,7 +85,7 @@ test("vyn är flyttad till React och visar lagring, import och tabeller", async 
   await expect(page.getByText(/Google Drive via Make — planerad/)).toBeVisible();
 });
 
-test("en UR-logg blir ett förslag som uppdaterar ÄTA och hinder först när det tillämpas", async ({ page }) => {
+test("en UR-logg blir ett förslag som uppdaterar ÄTA först när det tillämpas", async ({ page }) => {
   await valjFiler(page, {
     name: "UR-logg_Växjö.xlsx",
     mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -103,7 +103,7 @@ test("en UR-logg blir ett förslag som uppdaterar ÄTA och hinder först när de
   // Före → efter syns innan något skrivs.
   await expect(f).toContainText("Projektering - Extra pga bygglov");
 
-  await gaTill(page, "ÄTA och hinder");
+  await gaTill(page, "ÄTA");
   await expect(page.getByText("Ny post från Excel")).toHaveCount(0);
   await gaTill(page, "Data och backup");
 
@@ -117,7 +117,7 @@ test("en UR-logg blir ett förslag som uppdaterar ÄTA och hinder först när de
   await expect(page.getByText("Importen är tillämpad och loggad")).toBeVisible();
   await expect(kort(page, "UR-logg_Växjö.xlsx")).toHaveCount(0);
 
-  await gaTill(page, "ÄTA och hinder");
+  await gaTill(page, "ÄTA");
   await expect(page.getByText("Ny post från Excel").first()).toBeVisible();
 });
 

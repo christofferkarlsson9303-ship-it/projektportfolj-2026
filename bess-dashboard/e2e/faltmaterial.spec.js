@@ -76,7 +76,7 @@ test("markerade projektuppgifter skrivs ut med utförare och ritningsreferens", 
 });
 
 test("Excel exporterar filtrerad tabell och svensk beloppsredigering kan avbrytas", async ({ page }) => {
-  await oppna(page, "ÄTA och hinder");
+  await oppna(page, "ÄTA");
   await page.getByRole("radio", { name: /Tabell/ }).click();
   const region = page.getByRole("region", { name: "UR- och ÄTA-register", exact: true });
   const rad = region.locator("tbody tr").first();
@@ -110,12 +110,12 @@ test("mörkt UI ger fortfarande vitt utskriftsmaterial och komplett fältpaket",
   await expect(page.locator("#utskrift")).toContainText("Delurval");
 });
 
-test("enskilt ÄTA-ärende har direkt PDF-nedladdning för alla dokumenttyper", async ({ page }, testInfo) => {
+test("enskild ÄTA har direkt PDF-nedladdning för alla dokumenttyper", async ({ page }, testInfo) => {
   test.setTimeout(60_000);
-  const { fel } = await oppna(page, "ÄTA och hinder");
+  const { fel } = await oppna(page, "ÄTA");
   await page.getByRole("radio", { name: /Tabell/ }).click();
   const region = page.getByRole("region", { name: "UR- och ÄTA-register", exact: true });
-  await region.locator("tbody tr").first().getByRole("button", { name: /öppna ärendet/ }).click();
+  await region.locator("tbody tr").first().getByRole("button", { name: /öppna ÄTA:n/ }).click();
   for (const typ of ["underrattelse", "pris", "underlag"]) {
     await page.getByRole("combobox", { name: "PDF-dokument", exact: true }).selectOption(typ);
     const promise = page.waitForEvent("download");

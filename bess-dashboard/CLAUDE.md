@@ -56,6 +56,7 @@ Fyll i datum och beslut i tabellen när det är fattat. Migrationer i `supabase/
 - **Art** (`art`: andring, tillagg, avgaende; `ATA_ART`) är vad ÄTA:n är. **Orsak** (`orsak`, `ORSAKER`) är varför. Hinder och störning är orsaker, inte egna poster. `klass` ("Behandlas som") finns kvar eftersom `prisGrind()` hoppar över hinder; den föreslås ur orsaken bara när posten är oklassificerad.
 - **ÄTA-tavlan har fyra kolumner** (`KOLUMNER` i `Ata/flode.js`): Identifierad, ÄTA-granskning, Godkänd, Fakturerad. `checklista()` härleds ur fälten. Lägg inte till lagrade steg-flaggor.
 - **Störning** är dold ur menyn (`DOLDA_VYER` i `data/vyer.js`) men vyn och datan finns kvar och nås via länkar.
+- **Ordet ärende** är ersatt av "ÄTA" i synliga texter, och vyn `ata` heter "ÄTA". Använd "ÄTA" i ny text. Interna namn (`arendeRader`, `objectGuid`-kopplingar) behålls.
 - **Arbetssätt** (`projekt.metod`, `data/arbetssatt.js`) är bara en etikett. Bygg inget beteende på den utan att fråga.
 
 ## Gör inte

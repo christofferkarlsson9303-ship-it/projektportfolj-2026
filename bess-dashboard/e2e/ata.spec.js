@@ -2,10 +2,10 @@ import { expect, test } from "@playwright/test";
 import { oppna } from "./hjalpare.js";
 
 const REGISTER = "UR- och ÄTA-register";
-const ARENDE = /^Ärende /;
+const ARENDE = /^ÄTA /;
 
 test.beforeEach(async ({ page }) => {
-  await oppna(page, "ÄTA och hinder");
+  await oppna(page, "ÄTA");
 });
 
 /* Standardvyn är tavlan. Testerna som handlar om registret byter till
@@ -24,7 +24,7 @@ test("tavlan visar ÄTA-flödets fyra kolumner", async ({ page }) => {
   for (const namn of ["Identifierad", "ÄTA-granskning", "Godkänd", "Fakturerad"]) await expect(tavla.getByRole("heading", { name: namn })).toBeVisible();
 });
 
-test("ett kort på tavlan öppnar ärendepanelen", async ({ page }) => {
+test("ett kort på tavlan öppnar ÄTA-panelen", async ({ page }) => {
   const kort = page.locator(".atakort").first();
   test.skip((await kort.count()) === 0, "inga poster i grunddatan");
 
@@ -57,7 +57,7 @@ test("registret listar posterna med klass, status och grindar", async ({ page })
   await expect(tabell.locator("tfoot")).toBeVisible();
 });
 
-test("klick på numret öppnar hela ärendet", async ({ page }) => {
+test("klick på numret öppnar hela ÄTA:n", async ({ page }) => {
   await visaTabell(page);
   const forsta = page.getByRole("region", { name: REGISTER, exact: true }).locator("tbody tr").first();
   const nrKnapp = forsta.getByRole("button").first();
@@ -137,11 +137,11 @@ test("tidslinjen placerar en post med datum som händelse i Gantt-schemat", asyn
   await form.getByRole("button", { name: "Stäng" }).click();
 
   await page.getByRole("radio", { name: "Tidslinje" }).click();
-  const gantt = page.getByRole("group", { name: "ÄTA-ärenden på tidsaxel" });
+  const gantt = page.getByRole("group", { name: "ÄTA på tidsaxel" });
   const post = gantt.getByRole("button", { name: /, 2026-09-01, / });
   await expect(post).toHaveCount(1);
 
-  // Klick på posten öppnar ärendet, som i tavlan och registret.
+  // Klick på posten öppnar ÄTA:n, som i tavlan och registret.
   await post.click();
   await expect(page.getByRole("region", { name: ARENDE })).toBeVisible();
 });

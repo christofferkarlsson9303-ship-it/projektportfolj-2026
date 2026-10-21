@@ -40,7 +40,7 @@ export function AtaTableView({ rader, tomText, vald, onOppna, onKalkyl, verktyg 
               aria-expanded={vald === u.id}
             >
               {u.nr}
-              <span className="sr-only"> — öppna ärendet {u.benamning}</span>
+              <span className="sr-only"> — öppna ÄTA:n {u.benamning}</span>
             </button>
           ),
         },

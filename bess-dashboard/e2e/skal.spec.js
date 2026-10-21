@@ -15,7 +15,7 @@ const VYER = [
   "Budget och utfall",
   "Fakturaunderlag",
   "Milstolpar M1–M7",
-  "ÄTA och hinder",
+  "ÄTA",
   "Ekonomi",
   "Byggmöten",
   "Veckokoll",

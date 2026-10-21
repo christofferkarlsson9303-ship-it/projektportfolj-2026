@@ -434,10 +434,10 @@ export function Ekonomi() {
         <Card
           id="ek-ata"
           title="UR och ÄTA — sammanfattning"
-          subtitle="Hela ärendehanteringen med klassificering, 24-timmarsfrist, prissättning och fakturering ligger i ÄTA och hinder."
+          subtitle="Hela ÄTA-hanteringen med klassificering, 24-timmarsfrist, prissättning och fakturering ligger i ÄTA."
           action={
             <button type="button" className="btn sec mini" onClick={() => visa("ata")}>
-              Öppna ÄTA och hinder
+              Öppna ÄTA
             </button>
           }
         >

@@ -77,10 +77,10 @@ export function Projektmetod() {
       <div className="grid gap-3 text-sm sm:grid-cols-2">{[
         ["punkter", "Något behöver göras", "Skriv en uppgift med ansvarig och datum."],
         ["risker", "Något kan gå fel", "Skriv en risk och bestäm en förebyggande åtgärd."],
-        ["ata", "Arbetets omfattning ändras", "Skapa ÄTA-ärende och spara underrättelse eller beställning."],
+        ["ata", "Arbetets omfattning ändras", "Skapa ÄTA och spara underrättelse eller beställning."],
         ["storning", "Planerat arbete stoppas", "Dokumentera hindret, påverkan och underrättelsen."],
       ].map(([vy, t, beskrivning]) => <div key={vy} className="rounded-sm bg-sunken p-3"><b>{t}</b><p className="my-2">{beskrivning}</p>{knapp(vy)}</div>)}</div>
-      <p className="m-0 text-sm text-ink-soft">Samma händelse kan behöva både dagboksbevis och ett ÄTA-/hinderärende. Spara referenser mellan underlagen.</p>
+      <p className="m-0 text-sm text-ink-soft">Samma händelse kan behöva både dagboksbevis och en ÄTA. Spara referenser mellan underlagen.</p>
     </Card>
     <Card id="metod-anpassa" icon={SlidersHorizontal} title="Kontrollera detta i varje nytt projekt">
       <ul className="m-0 space-y-2 pl-5 text-sm"><li>Vad ingår i kontraktet, och vem ansvarar för varje del?</li><li>Stämmer tidplan, betalningssteg, priser, frister och dokumentkrav?</li><li>Vilka tillverkare och modeller används? Vilka manualrevisioner gäller?</li><li>Vilka kontroller behöver varje enhet? Vilka prov ska beställaren bevittna?</li><li>Var lagras originalhandlingar, foton och protokoll? Kontrollera synkstatus och ta backup.</li></ul>

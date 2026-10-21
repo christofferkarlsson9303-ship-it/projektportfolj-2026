@@ -146,7 +146,7 @@ export function Idag() {
   /* Brådskande: frister först, sedan det som passerat sitt datum. */
   const bradskande = l.frister.length + l.forfallet.length + (l.utanDatum.length ? 1 : 0);
   const narmast = l.idag.length + l.veckan.length;
-  /* Samma rader som listan visar — ärenden utan datum är en rad, inte en per ärende. */
+  /* Samma rader som listan visar — ÄTA utan datum är en rad, inte en per ÄTA. */
   const attGora = bradskande + narmast;
 
   /* Utförare med öppna punkter i listan, för valt projekt — papper via snabbutskrift. */
@@ -286,7 +286,7 @@ export function Idag() {
         <nav aria-label="Genvägar" className="flex flex-wrap gap-x-5 gap-y-1">
           <button type="button" className={lankKlass} onClick={() => visa("tidplan")}>Tidplan</button>
           <button type="button" className={lankKlass} onClick={() => visa("punkter")}>Öppna punkter</button>
-          <button type="button" className={lankKlass} onClick={() => visa("ata")}>ÄTA och hinder</button>
+          <button type="button" className={lankKlass} onClick={() => visa("ata")}>ÄTA</button>
           {harSite ? <button type="button" className={lankKlass} onClick={() => visa("site")}>Siten i 3D</button> : null}
         </nav>
       </section>
@@ -327,7 +327,7 @@ export function Idag() {
             <Arbetsrad
               nar="Datum?"
               markering="larm"
-              titel={`${l.utanDatum.length} ${l.utanDatum.length === 1 ? "ärende saknar" : "ärenden saknar"} händelsedatum`}
+              titel={`${l.utanDatum.length} ÄTA saknar händelsedatum`}
               undertext={`24-timmarsfristen kan inte räknas: ${l.utanDatum.slice(0, 5).map((u) => u.nr).join(", ")}${l.utanDatum.length > 5 ? " m.fl." : ""}`}
               onOppna={() => visa("ata")}
             />

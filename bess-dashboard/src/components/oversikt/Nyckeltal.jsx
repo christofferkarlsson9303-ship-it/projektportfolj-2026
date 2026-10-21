@@ -16,7 +16,7 @@ import { Lank } from "./Ruta.jsx";
 
    Formen följer vad siffran är. Portföljen har ingen historik för
    fakturering, så i stället för påhittade trendlinjer visar korten läget nu:
-   ärenden per steg i flödet, de närmaste hållpunkterna, dagar sedan rond mot
+   ÄTA per steg i flödet, de närmaste hållpunkterna, dagar sedan rond mot
    intervallet och segment för andel av en helhet. M1–M7 står i Gantt-schemat.
    Status bärs alltid av både färg och text. */
 
@@ -206,16 +206,16 @@ function Ata() {
       ikon={FileDiff}
       etikett="ÄTA-status"
       varde={a.oppna}
-      enhet={a.oppna === 1 ? "aktivt ärende" : "aktiva ärenden"}
+      enhet={a.oppna === 1 ? "aktiv ÄTA" : "aktiva ÄTA"}
       ton={a.larm ? "bad" : ""}
       status={a.larm ? `${a.larm} larmar` : null}
       under={`Godkänt ${fmtKompakt(a.godkant)} · under behandling ${fmtKompakt(a.pending)}`}
       delar={a.perProjekt.map(({ p, antal }) => ({ etikett: kortNamn(p), varde: `${antal} aktiva` }))}
       fot={a.larm ? "24-timmarsfrist eller pris saknas" : null}
-      lank={["ÄTA och hinder", "ata"]}
+      lank={["ÄTA", "ata"]}
     >
       <div>
-        <ul className="ov-kol" aria-label="Aktiva ärenden per steg i flödet">
+        <ul className="ov-kol" aria-label="Aktiva ÄTA per steg i flödet">
           {a.steg.map((s, k) => (
             <li key={s.id}>
               <span className="ov-kol-tal">

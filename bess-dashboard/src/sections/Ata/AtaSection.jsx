@@ -17,7 +17,7 @@ import { AtaDrawerDetails } from "./AtaDrawerDetails.jsx";
 import { AtaKalkyl } from "./AtaKalkyl.jsx";
 import { allaModellObjekt } from "../../lib/modellKoppling.js";
 
-/* ÄTA och hinder.
+/* ÄTA.
 
    Tre vyer över samma data — tavla, tabell och tidslinje — med en slide-over
    för detaljerna. ABT 06-motorn i berakningar.js och flaggor.js är orörd och
@@ -46,7 +46,7 @@ export function Ata() {
   const [oppen, setOppen] = useState(null);
   const [kalkylId, setKalkylId] = useState(null);
 
-  /* Idag-vyn och andra sektioner kan peka ut ett enskilt ärende. Justering
+  /* Idag-vyn och andra sektioner kan peka ut en enskild ÄTA. Justering
      under render så att panelen är öppen redan i första målningen. */
   const [sedd, setSedd] = useState(null);
   if (postFokus?.vy === "ata" && postFokus.tid !== sedd) {
@@ -68,7 +68,7 @@ export function Ata() {
     };
   }, [state, pid]);
 
-  /* Ett markerat objekt i 3D-vyn filtrerar registret till objektets ärenden. Finns objektet inte
+  /* Ett markerat objekt i 3D-vyn filtrerar registret till objektets ÄTA. Finns objektet inte
      (annat projekt, borttaget) gäller inget filter. */
   const filterObjekt = siteVal ? allaModellObjekt(state, pid).find((o) => o.id === siteVal) || null : null;
   const registerRader = filterObjekt ? n.rader.filter((u) => u.objectGuid === filterObjekt.id) : n.rader;
@@ -76,7 +76,7 @@ export function Ata() {
   const valdPost = n.rader.find((u) => u.id === oppen) || null;
   const kalkylPost = n.rader.find((u) => u.id === kalkylId) || null;
 
-  /* "Öppna i kalkyl" — från registret eller ärendepanelen. Panelen stängs så
+  /* "Öppna i kalkyl" — från registret eller ÄTA-panelen. Panelen stängs så
      att kalkylen syns. */
   const oppnaKalkyl = (id) => {
     setOppen(null);
@@ -180,7 +180,7 @@ export function Ata() {
           {filterObjekt ? (
             <div role="status" className="flex flex-wrap items-center gap-2 rounded-lg border border-solid border-hairline bg-info-bg px-3 py-2 text-[13px] text-info-ink">
               <span>
-                Visar ärenden på objektet <b>{filterObjekt.namn || filterObjekt.typ}</b> ({registerRader.length} av {n.rader.length}).
+                Visar ÄTA på objektet <b>{filterObjekt.namn || filterObjekt.typ}</b> ({registerRader.length} av {n.rader.length}).
               </span>
               <button type="button" className="btn sec mini" onClick={() => visaISite(filterObjekt.id)}>
                 Visa i 3D
@@ -204,7 +204,7 @@ export function Ata() {
           {vy === "table" ? (
             <AtaTableView
               rader={registerRader}
-              tomText={filterObjekt ? `Inga ärenden är kopplade till ${filterObjekt.namn || "objektet"}.` : `Inga poster registrerade för ${p.nr || p.namn}.`}
+              tomText={filterObjekt ? `Ingen ÄTA är kopplad till ${filterObjekt.namn || "objektet"}.` : `Inga poster registrerade för ${p.nr || p.namn}.`}
               vald={oppen}
               onOppna={setOppen}
               onKalkyl={oppnaKalkyl}

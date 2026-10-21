@@ -51,7 +51,7 @@ test("nytt projekt har tomma mallar och finns kvar efter omladdning", async ({ p
   await expect(page.getByRole("region", { name: "En arbetsmetod för varje projekt", exact: true })).toContainText("Kalmar nytt testprojekt");
   await gaTill(page, "Milstolpar M1–M7");
   await expect(page.locator("main")).toContainText("Standardmall från Batch C, inte ditt kontrakts betalplan");
-  await gaTill(page, "ÄTA och hinder");
+  await gaTill(page, "ÄTA");
   await expect(page.locator("main")).toContainText("Fristerna är en mall.");
   await gaTill(page, "Slutdokumentation");
   await expect(page.locator(".slutdok-rad").first()).toContainText("Ej påbörjad");

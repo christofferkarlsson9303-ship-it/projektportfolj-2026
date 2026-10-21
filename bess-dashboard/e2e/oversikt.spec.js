@@ -111,7 +111,7 @@ test("ett projekt utan datum får fälten direkt i Gantt-schemat", async ({ page
   await expect(gantt.getByLabel("Startdatum för Göteborg Skogome")).toBeVisible();
 });
 
-test("ledtidstrackern bockar av ett ärende med Klar", async ({ page }) => {
+test("ledtidstrackern bockar av en ÄTA med Klar", async ({ page }) => {
   const ruta = page.getByRole("region", { name: "Ligg steget före – ledtider" });
   const lista = ruta.getByRole("list", { name: "Ledtider att starta" });
   test.skip((await lista.count()) === 0, "inga aktuella ledtider mot dagens datum");
@@ -130,8 +130,8 @@ test("snabbåtgärden registrerar en ÄTA och öppnar den i ÄTA-vyn", async ({ 
   await dialog.getByLabel("Kort beskrivning av händelsen").fill("Berg i schakt vid trafo");
   await dialog.getByRole("button", { name: "Registrera" }).click();
 
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("ÄTA och hinder");
-  await expect(page.getByRole("region", { name: /^Ärende UR\d{3}$/ })).toContainText("Berg i schakt vid trafo");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("ÄTA");
+  await expect(page.getByRole("region", { name: /^ÄTA UR\d{3}$/ })).toContainText("Berg i schakt vid trafo");
 });
 
 /* Utpekningen ska gälla en gång. Förut öppnades samma post igen varje gång

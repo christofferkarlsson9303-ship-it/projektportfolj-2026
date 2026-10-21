@@ -157,7 +157,7 @@ test("en avvikelse kan bli en ÄTA-post och öppnar den", async ({ page }) => {
 
   await forsta.getByRole("group", { name: "Åtgärder för fråga 1" }).getByRole("button", { name: "Skapa ÄTA" }).click();
 
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("ÄTA och hinder");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("ÄTA");
   await expect
     .poll(async () => ((await portfolj(page)).ur || []).find((u) => /^Veckokoll .* fråga 1: Vet jag vad som ingår i kontraktet/.test(u.benamning || ""))?.projektId)
     .toBe("36037");
@@ -199,7 +199,7 @@ test("BESS-översikten visar nyckeltalen: besvarat, öppna avvikelser och ÄTA-p
   const tal = oversikt.getByRole("group", { name: "Nyckeltal för veckan" });
   await expect(tal).toContainText("0/9 frågor");
   await expect(tal).toContainText("Inga avvikelser");
-  await expect(tal.getByRole("button", { name: "Öppna ÄTA och hinder" })).toBeVisible();
+  await expect(tal.getByRole("button", { name: "Öppna ÄTA" })).toBeVisible();
 
   await page.locator(KORT).first().getByRole("button", { name: /Avvikelse/ }).click();
   await expect(tal).toContainText("1/9 frågor");
@@ -207,8 +207,8 @@ test("BESS-översikten visar nyckeltalen: besvarat, öppna avvikelser och ÄTA-p
   await page.locator(KORT).nth(1).getByRole("button", { name: /Varning/ }).click();
   await expect(tal).toContainText("1 varning att kontrollera");
 
-  await tal.getByRole("button", { name: "Öppna ÄTA och hinder" }).click();
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("ÄTA och hinder");
+  await tal.getByRole("button", { name: "Öppna ÄTA" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("ÄTA");
 });
 
 test("de fyra stegen i bygget är klickbara och visar vilka moment de bygger på", async ({ page }) => {
@@ -250,7 +250,7 @@ test("parkens komponenter kommer från siten: tomt läge leder dit, och en place
   await knapp.click();
   const detalj = page.locator("#bess-komp-detalj");
   await expect(detalj).toContainText("Monterad");
-  await expect(detalj).toContainText("Inga öppna ärenden");
+  await expect(detalj).toContainText("Ingen öppen ÄTA");
   await detalj.getByRole("button", { name: "Visa i 3D" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Siten i 3D");
   await expect(page.getByRole("region", { name: "Container 1" })).toBeVisible();

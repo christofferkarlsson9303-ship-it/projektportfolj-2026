@@ -2,7 +2,7 @@
 
 Skrivet 2026-10-21. Bygger på [`../projektmetod.md`](../projektmetod.md) (full metod) och [`../projektfaser.md`](../projektfaser.md) (åtta faser). Det här är den dagliga vyn ovanpå dem. Ingenting i den fulla metoden tas bort; här står bara vad man arbetar med varje dag.
 
-> **Status:** punkt 1–3 under *Vad som är gjort i appen* är byggda (2026-10-21). Ordbytet "Ärenden" → "Arbetspost" är inte gjort. Resten är förslag och visuellt underlag.
+> **Status:** punkt 1–3 under *Vad som är gjort i appen* är byggda (2026-10-21). Resten är förslag och visuellt underlag.
 
 ## 1. Modellen: tre saker
 
@@ -99,4 +99,4 @@ Verifierat: Mermaid-koden renderas, TypeScript-koden går igenom strikt typkontr
 4. **Metod per projekt** (Vattenfall, Agilt, Hybrid): fältet `metod` på projektet, valt under *Min projektmetod*. Det är en etikett som visar vad som är fast och rörligt. Det styr inga beräkningar och byter inte tavla.
 5. **Störning** ligger inte längre i menyn.
 
-**Inte gjort:** ordbytet "Ärenden" → "Arbetspost". I appen betyder "ärende" nästan alltid en ÄTA/UR-post, och ordet ingår i bl.a. "Ärenden på siten" och ÄTA-panelens rubrik. Ett generellt ordbyte skulle ändra mer än det förenklar. Vyn heter fortfarande "ÄTA och hinder".
+6. **Ordbyte.** I appen betyder "ärende" nästan alltid en ÄTA/UR-post, så synliga texter säger nu "ÄTA" (till exempel "ÄTA på siten", "Ingen ÄTA kopplad") i stället för "ärende". Vyn heter **ÄTA** (tidigare "ÄTA och hinder"). Ordet "Arbetspost" används inte i appen; punkter heter fortfarande punkter. Kommentarer i koden och interna namn (`arendeRader` m.fl.) är oförändrade.

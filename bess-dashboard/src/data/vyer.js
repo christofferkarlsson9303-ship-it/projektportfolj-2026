@@ -18,7 +18,7 @@ const TILLAGDA = [
   [
     "atakalkyl",
     "ÄTA-kalkyl",
-    "Räkna fram ett ÄTA-belopp rad för rad — arbete, maskin, fordon och material — och spara det på ärendet.",
+    "Räkna fram ett ÄTA-belopp rad för rad — arbete, maskin, fordon och material — och spara det på ÄTA:n.",
   ],
   [
     "bered",
@@ -93,12 +93,12 @@ const GRUPPER = [
 const ENKLA_LEADS = {
   start: "Gå igenom startens steg. När du är klar skapas projektet.",
   kontrakt: "Frister, betalningar och viten ur avtalet, med paragraf att slå upp.",
-  idag: "Vad behöver du ta hand om först? Öppna en rad för att komma till rätt ärende.",
+  idag: "Vad behöver du ta hand om först? Öppna en rad för att komma till rätt ÄTA.",
   oversikt: "Se läget i dina projekt, nästa arbete och frågor som behöver hjälp.",
   epc: "Följ batteriparken genom 16 moment. En grind är ett klartecken för nästa moment.",
   bered: "Generera beredningen ur MW och MWh. Få kabellista, materiel med E-nr och kalkyl.",
   site: "Placera skid, containrar och E-House på tomten och gå runt bland dem. Nålar visar öppna punkter.",
-  tavla: "Se uppgifter och ärenden som kort. Flytta dem när arbetsläget ändras.",
+  tavla: "Se uppgifter och ÄTA som kort. Flytta dem när arbetsläget ändras.",
   tidplan: "Se när arbeten och leveranser ska ske. Öppna en rad för detaljer.",
   handlingsplan: "Skriv målet och vad som behöver göras, av vem och när.",
   resurser: "Boka rätt personer och se om någon har för mycket arbete.",
@@ -106,7 +106,7 @@ const ENKLA_LEADS = {
   budget: "Jämför vad arbetet får kosta med vad ni har använt hittills.",
   faktura: "Samla tid och kostnader till ett granskat fakturaunderlag.",
   milstolpar: "Kontrollera underlag och status för projektets betalningar.",
-  atakalkyl: "Välj ärende, klicka på resurser och se beloppet. Spara det på ärendet, skriv ut avin eller ta CSV.",
+  atakalkyl: "Välj ÄTA, klicka på resurser och se beloppet. Spara det på ÄTA:n, skriv ut avin eller ta CSV.",
   ata: "Följ ändrat arbete och hinder från upptäckt till beslut och faktura.",
   ekonomi: "Se kontraktssumma, betalningsläge och ekonomi för ändrat arbete.",
   moten: "Spara mötets beslut, ansvariga och datum i ett protokoll.",
