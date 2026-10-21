@@ -411,6 +411,16 @@ describe("verifiering", () => {
     expect(faslage(s, "36037", NU)[7].verifiering.saknas.join(" ")).toMatch(/1 avvikelse öppen/);
   });
 
+  it("kontrollplanens enheter räknas även när de aldrig registrerats (granskning #73)", () => {
+    let s = kontrollera(seed(), "36037", 7);
+    expect(kontrollage(s, "36037")[7].kvar).toBe(0);
+    s = { ...s, projekt: s.projekt.map((p) => (p.id === "36037" ? { ...p, kontrollplan: { 7: ["Hela anläggningen", "SKID 1", "skid 1 "] } } : p)) };
+    const k = kontrollage(s, "36037")[7];
+    expect(k.omfattningar).toEqual(["Hela anläggningen", "SKID 1"]);
+    expect(k).toMatchObject({ verifierade: 0, kvar: k.totalt });
+    expect(k.tackning[PROJEKTMALLAR[7].punkter[0].id]).toEqual({ klara: 1, totalt: 2 });
+  });
+
   it("en komplett omfattning döljer inte en ofullständig (granskning F12/T07)", () => {
     let s = kontrollera(seed(), "36037", 7);
     const forsta = PROJEKTMALLAR[7].punkter[0];
