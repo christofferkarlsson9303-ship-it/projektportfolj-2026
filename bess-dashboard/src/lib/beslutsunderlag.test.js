@@ -33,7 +33,7 @@ describe("fas 1 i två delar", () => {
   it("anbudsfrågorna är en fast lista där varje svar är obligatoriskt", () => {
     const steg = STEG.find((s) => s.id === "anbudsfragor");
     expect(steg.falt.map((f) => f.id)).toEqual(ANBUDSFRAGOR.map(anbudsfragaId));
-    expect(steg.falt.every((f) => f.obligatoriskt && f.typ === "textarea")).toBe(true);
+    expect(steg.falt.every((f) => f.obligatoriskt && f.typ === "anbudsfraga" && f.val.length >= 2 && f.val.every(([v]) => !v.includes(" · ") && !v.includes(" — ")))).toBe(true);
     const u = tomtUtkast();
     expect(stegKrav(u, steg)).toEqual({ totalt: ANBUDSFRAGOR.length, klara: 0 });
     for (const f of ANBUDSFRAGOR) u.v[anbudsfragaId(f)] = "Svar";

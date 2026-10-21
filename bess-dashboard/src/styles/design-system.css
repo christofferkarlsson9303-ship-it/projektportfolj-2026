@@ -1669,6 +1669,32 @@ button.ov-chip:hover{border-color:var(--one-bla);color:var(--ink)}
 }
 @media(prefers-reduced-motion:reduce){.projkort-pil{transition:none}}
 
+/* Kortets knapprad: <footer> får annars den globala mörka sidfoten
+   (mörkgrå bakgrund + blå knapptext = oläsligt). Här är den en vanlig rad
+   som alltid ligger längst ned, så knapparna linjerar mellan korten. */
+.projkort>footer{background:none;color:inherit;font-size:inherit;margin:auto 0 0;padding:16px 0 0;
+  border-top:1px solid var(--hairline);display:flex;flex-wrap:wrap;gap:8px}
+.projkort>footer .btn{display:inline-flex;align-items:center;gap:6px}
+
+/* Projektuppgifter: varje kolumn har en minsta bredd (KOLUMNER i Projekt.jsx).
+   Tabellen får bli bredare än kortet och scrollar i sidled i stället för att
+   klämma ihop fälten till "Vä" och "360". */
+.projektred table{table-layout:fixed;min-width:100%}
+.projektred th{white-space:normal;vertical-align:bottom;line-height:1.3}
+.projektred td{padding:8px 6px}
+.projektred td input,.projektred td select{width:100%;min-width:0}
+.projektred td input[type=date]{padding-right:6px;font-variant-numeric:tabular-nums}
+.projektred .tscroll{border:1px solid var(--hairline);border-radius:10px;
+  background:linear-gradient(90deg,var(--surface) 30%,transparent),linear-gradient(90deg,transparent,var(--surface) 70%) 100% 0,
+    radial-gradient(farthest-side at 0 50%,rgba(0,0,0,.12),transparent),radial-gradient(farthest-side at 100% 50%,rgba(0,0,0,.12),transparent) 100% 0;
+  background-repeat:no-repeat;background-size:40px 100%,40px 100%,14px 100%,14px 100%;background-attachment:local,local,scroll,scroll}
+.projektred thead th:first-child,.projektred tbody td:first-child{position:sticky;left:0;z-index:1;background:var(--surface)}
+@media(max-width:640px){
+  .projektred table{width:100%!important;table-layout:auto}
+  .projektred thead th:first-child,.projektred tbody td:first-child{position:static}
+  .projektred .tscroll{border:0;background:none}
+}
+
 /* ---------- Handlingsplan (Vision to Action) ----------
    En vertikal kedja: mål → drivkraft/strategi → åtgärder → slutresultat.
    Varje led har en egen ton via --led/--led-bg; pilarna mellan leden är
@@ -2208,3 +2234,18 @@ button.ov-gantt-rad:hover>:first-child,button.ov-gantt-rad:focus-visible>:first-
 @media(max-width:640px){.projektmetod .ds-card{padding:20px;border-radius:14px}.metod-projekt{grid-template-columns:minmax(0,1fr);padding:16px}.projektmetod .metod-intro>header h3{font-size:21px}.metod-sektionshuvud{margin-bottom:18px}.metod-projekt-under .btn{width:100%}.projektmetod .ds-card>header h3{font-size:17px}}
 @media(prefers-reduced-motion:reduce){.projektmetod [role="progressbar"]>span{transition:none}}
 @media print{.projektmetod .ds-card{box-shadow:none;border-radius:0}.projektvaljare{display:none}}
+
+/* Anbudsfrågor: linjen att dra för hur säker bedömningen är. */
+.anbud-linje{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;cursor:pointer;margin:0}
+.anbud-linje:disabled{cursor:not-allowed;opacity:.45}
+.anbud-linje::-webkit-slider-runnable-track{height:6px;border-radius:99px;background:linear-gradient(90deg,var(--bad-ink),var(--warn-ink) 50%,var(--ok-ink))}
+.anbud-linje::-moz-range-track{height:6px;border-radius:99px;background:linear-gradient(90deg,var(--bad-ink),var(--warn-ink) 50%,var(--ok-ink))}
+.anbud-linje.tom::-webkit-slider-runnable-track{background:var(--hairline-stark)}
+.anbud-linje.tom::-moz-range-track{background:var(--hairline-stark)}
+.anbud-linje::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;margin-top:-8px;border-radius:50%;
+  background:var(--surface);border:3px solid var(--one-bla);box-shadow:var(--sh-sm);transition:transform .12s}
+.anbud-linje::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--surface);border:3px solid var(--one-bla);box-shadow:var(--sh-sm)}
+.anbud-linje:active::-webkit-slider-thumb{transform:scale(1.15)}
+.anbud-linje.tom::-webkit-slider-thumb{border-color:var(--ink-faint)}
+.anbud-linje:focus{outline:none}
+.anbud-linje:focus-visible::-webkit-slider-thumb{outline:2px solid var(--one-bla);outline-offset:2px}

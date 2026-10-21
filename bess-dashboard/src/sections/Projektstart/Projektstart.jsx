@@ -8,6 +8,7 @@ import { hamtaNamn } from "../../state/portfolj-reducer.js";
 import { idag } from "../../lib/datum.js";
 import { HeroBild, Kraftkurva } from "../../components/oversikt/Hero.jsx";
 import { TON_KLASS } from "../../lib/status.js";
+import { Anbudsfraga } from "./Anbudsfraga.jsx";
 import { RiskDonut } from "./RiskDonut.jsx";
 import { Styrtriangel } from "./Styrtriangel.jsx";
 import { FasIndikator } from "./FasIndikator.jsx";
@@ -61,7 +62,8 @@ function laddaUtkast() {
 /** Alternativ i en select är strängar eller [värde, etikett]-par. */
 const altPar = (a) => (Array.isArray(a) ? a : [a, a]);
 
-function Faltruta({ f, varde, onChange }) {
+function Faltruta({ f, nr, varde, onChange }) {
+  if (f.typ === "anbudsfraga") return <Anbudsfraga f={f} nr={nr} varde={varde} onChange={onChange} />;
   const id = `ps-${f.id}`;
   const bred = f.bred ? "md:col-span-2" : "";
   return (
@@ -688,7 +690,7 @@ export function Projektstart() {
           ) : null}
           {steg.falt ? (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {steg.falt.filter((f) => faltSynligt(f, utkast)).map((f) => <Faltruta key={f.id} f={f} varde={utkast.v[f.id] ?? ""} onChange={(v) => sattFalt(f.id, v)} />)}
+              {steg.falt.filter((f) => faltSynligt(f, utkast)).map((f, i) => <Faltruta key={f.id} f={f} nr={i + 1} varde={utkast.v[f.id] ?? ""} onChange={(v) => sattFalt(f.id, v)} />)}
             </div>
           ) : null}
         </Card>

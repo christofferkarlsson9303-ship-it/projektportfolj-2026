@@ -185,22 +185,25 @@ export function Projektkort({ p }) {
 /* ---------- Projektuppgifter (redigerbar tabell) ---------- */
 
 const KOLUMNER = [
-  ["bestallare", "Beställare", 140],
-  ["nr", "AO-nr", 90],
-  ["namn", "Namn", 170],
-  ["ort", "Ort", 120],
-  ["mw", "MW", 70],
-  ["mwh", "MWh", 70],
-  ["kontraktsvarde", "Kontraktssumma 🔒", 130],
-  ["natagare", "Nätägare", 150],
-  ["natkontakt", "Nätkontakt", 150],
-  ["startdatum", "Startdatum (NTP)", 150],
-  ["fardigstallande", "Färdigställande", 150],
-  ["status", "Status", 130],
-  ["mapp", "Projektmapp", 180],
-  ["underlag", "Underlag — källa och datum", 230],
-  ["anteckning", "Anteckning", 180],
+  ["bestallare", "Beställare", 170],
+  ["nr", "AO-nr", 100],
+  ["namn", "Namn", 200],
+  ["ort", "Ort", 130],
+  ["mw", "MW", 80],
+  ["mwh", "MWh", 80],
+  ["kontraktsvarde", "Kontraktssumma 🔒", 150],
+  ["natagare", "Nätägare", 170],
+  ["natkontakt", "Nätkontakt", 170],
+  ["startdatum", "Startdatum (NTP)", 165],
+  ["fardigstallande", "Färdigställande", 165],
+  ["status", "Status", 210],
+  ["mapp", "Projektmapp", 200],
+  ["underlag", "Underlag — källa och datum", 240],
+  ["anteckning", "Anteckning", 220],
 ];
+
+/** Summan av kolumnbredderna. Tabellen blir minst så bred och scrollar i sidled. */
+const TABELLBREDD = KOLUMNER.reduce((s, [, , w]) => s + w, 0);
 
 /** Visas när ett nyare justerat byggmöte går före källfältet i sidfoten. */
 function SenasteProtokoll({ u }) {
@@ -221,7 +224,7 @@ export function Projektredigering() {
       <div className="lead">Grunddata per projekt. Ändringar sparas direkt.</div>
 
       <TableRegion label="Projektuppgifter">
-        <table>
+        <table style={{ width: TABELLBREDD }}>
           <caption className="sr-only">
             Redigerbara grunduppgifter per projekt. Kontraktssumman kan bara ändras av administratören.
           </caption>

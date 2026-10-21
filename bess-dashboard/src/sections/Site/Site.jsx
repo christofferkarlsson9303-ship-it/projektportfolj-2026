@@ -1,4 +1,5 @@
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { lazyMedOmladdning } from "../../lib/laddaOm.js";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { Callout, Card, StatusBadge } from "../../components/ds/index.js";
 import { Falt, TaBortKnapp } from "../../components/ui/Falt.jsx";
@@ -59,9 +60,9 @@ import {
    sig; allt annat här (verktyg, egenskaper, lista, planvy) fungerar även
    när webbläsaren saknar WebGL. */
 
-const SiteScen = lazy(() => import("./SiteScen.jsx"));
+const SiteScen = lazyMedOmladdning(() => import("./SiteScen.jsx"));
 /* Anbudsmodellen (Vaggeryd m.fl.) laddas bara för projekt som har en — filen är stor. */
-const SiteAnbudsmodell = lazy(() => import("../../components/site/SiteAnbudsmodell.jsx").then((m) => ({ default: m.SiteAnbudsmodell })));
+const SiteAnbudsmodell = lazyMedOmladdning(() => import("../../components/site/SiteAnbudsmodell.jsx").then((m) => ({ default: m.SiteAnbudsmodell })));
 
 const MAX_BILD = 2400;
 const BESS_TALFALT = new Set(["mw", "mwh", "mva", "soc"]);

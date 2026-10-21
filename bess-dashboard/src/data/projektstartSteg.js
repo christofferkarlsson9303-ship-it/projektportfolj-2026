@@ -4,7 +4,7 @@
    fas: 1–8, vilken av de åtta projektfaserna sidan hör till (se projektfaser.ts).
    del: valfri undergrupp inom en fas. Fas 1 delas i Anbud och beslut, och Intressenter och kontrakt.
         Sista sidan, Granska och skapa, hör inte till någon fas (null).
-   falt: { id, etikett, typ: text | textarea | select | date, alternativ?, placeholder?, bred?,
+   falt: { id, etikett, typ: text | textarea | select | date | anbudsfraga, alternativ?, val?, placeholder?, bred?,
            obligatoriskt?, kravVarde?, visaNar? }
         visaNar: { id, varde }. Fältet visas, och räknas som obligatoriskt, bara när fältet `id` har `varde`.
         obligatoriskt: fältet måste vara ifyllt för att fasen ska kunna godkännas.
@@ -91,7 +91,7 @@ export const STEG = [
     del: "Anbud",
     titel: "Anbudsfrågor",
     sammanfattning: "Fast frågelista inför anbudsbeslutet. Svara kort, ange antaganden och var svaret kommer ifrån.",
-    falt: ANBUDSFRAGOR.map((f) => ({ id: anbudsfragaId(f), etikett: f.fraga, typ: "textarea", bred: true, obligatoriskt: true })),
+    falt: ANBUDSFRAGOR.map((f) => ({ id: anbudsfragaId(f), etikett: f.fraga, typ: "anbudsfraga", val: f.val, bred: true, obligatoriskt: true })),
   },
   {
     id: "kontrakt",
