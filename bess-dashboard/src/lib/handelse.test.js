@@ -15,12 +15,10 @@ describe("nyHandelse", () => {
 describe("nyKoppladPost", () => {
   const punkt = { id: "p9", projektId: "36037", titel: "Kabelskåp fel typ", agare: "Anna", kalla: "Registrerad händelse" };
 
-  it("ÄTA och hinder blir UR-poster med förifyllda grunduppgifter och backlänk", () => {
+  it("ÄTA blir en UR-post med förifyllda grunduppgifter och backlänk", () => {
     const ata = nyKoppladPost("ata", start(), punkt);
-    const hinder = nyKoppladPost("hinder", start(), punkt);
     expect(ata.lista).toBe("ur");
-    expect(ata.rad).toMatchObject({ projektId: "36037", benamning: "Kabelskåp fel typ", klass: "ata", punktId: "p9" });
-    expect(hinder.rad.klass).toBe("hinder");
+    expect(ata.rad).toMatchObject({ projektId: "36037", benamning: "Kabelskåp fel typ", klass: "ata", punktId: "p9", orsak: "" });
     expect(ata.lank).toMatchObject({ id: ata.rad.id, lista: "ur", typ: "ata" });
   });
 
@@ -28,6 +26,14 @@ describe("nyKoppladPost", () => {
     const r = nyKoppladPost("risk", start(), punkt);
     expect(r.lista).toBe("risker");
     expect(r.rad).toMatchObject({ titel: "Kabelskåp fel typ", agare: "Anna", punktId: "p9" });
+  });
+
+  it("hinder är en orsak på ÄTA:n, inte en egen post", () => {
+    expect(nyKoppladPost("hinder", start(), punkt)).toBeNull();
+    const h = nyKoppladPost("ata", start(), punkt, { orsak: "best_atagande" });
+    expect(h.rad).toMatchObject({ orsak: "best_atagande", klass: "hinder" });
+    expect(nyKoppladPost("ata", start(), punkt, { orsak: "fel_uppgift" }).rad.klass).toBe("ata");
+    expect(nyKoppladPost("ata", start(), punkt, { orsak: "one_vallande" }).rad.klass).toBe("ata");
   });
 
   it("okänd typ ger null", () => {
@@ -65,13 +71,13 @@ describe("HANDELSE_KOPPLA", () => {
     expect(reducer(s0, { type: "HANDELSE_KOPPLA", punktId: "x", ...post })).toBe(s0);
   });
 
-  it("två punkter kan ge en ÄTA och ett hinder med olika betydelse, båda länkade", () => {
+  it("två ÄTA från samma händelse får olika nummer och båda länkas", () => {
     const { s1, punkt } = med();
     const a = nyKoppladPost("ata", s1, punkt);
     const s2 = reducer(s1, { type: "HANDELSE_KOPPLA", punktId: punkt.id, ...a });
-    const h = nyKoppladPost("hinder", s2, punkt);
-    const s3 = reducer(s2, { type: "HANDELSE_KOPPLA", punktId: punkt.id, ...h });
-    expect(s3.punkter.find((p) => p.id === punkt.id).lankar.map((l) => l.typ)).toEqual(["ata", "hinder"]);
-    expect(a.rad.nr).not.toBe(h.rad.nr);
+    const b = nyKoppladPost("ata", s2, punkt, { orsak: "ue_material" });
+    const s3 = reducer(s2, { type: "HANDELSE_KOPPLA", punktId: punkt.id, ...b });
+    expect(s3.punkter.find((p) => p.id === punkt.id).lankar).toHaveLength(2);
+    expect(a.rad.nr).not.toBe(b.rad.nr);
   });
 });

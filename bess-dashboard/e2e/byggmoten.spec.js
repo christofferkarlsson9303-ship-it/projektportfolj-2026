@@ -44,7 +44,7 @@ test("ärende skapas ur punkten och kopplas ihop", async ({ page }) => {
   await form.getByLabel("Punkt under §5").fill("Nätägaren försenar inkoppling");
   await page.keyboard.press("Tab");
 
-  await form.getByRole("button", { name: "+ Skapa ÄTA/hinder" }).click();
+  await form.getByRole("button", { name: "+ Skapa ÄTA" }).click();
 
   // Varningen ska försvinna och ärendenumret visas på punkten.
   await expect(form.getByText(/risk för preskription/i)).toBeHidden();
@@ -64,11 +64,11 @@ test("§5 ger hinder, §4 ger ÄTA", async ({ page }) => {
   await form.getByRole("button", { name: /\+ Punkt under §5/ }).click();
   await form.getByLabel("Punkt under §5").fill("Hinder från nätägare");
   await page.keyboard.press("Tab");
-  await form.getByRole("button", { name: "+ Skapa ÄTA/hinder" }).click();
+  await form.getByRole("button", { name: "+ Skapa ÄTA" }).click();
   await form.getByRole("button", { name: /^UR\d+/ }).click();
 
   const arende = page.getByRole("region", { name: /^Ärende / });
-  await expect(arende.getByLabel(/Klassificering/)).toHaveValue("hinder");
+  await expect(arende.getByLabel(/^Behandlas som/)).toHaveValue("hinder");
 });
 
 test("nytt möte ärver öppna punkter från föregående", async ({ page }) => {

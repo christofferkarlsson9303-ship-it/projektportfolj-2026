@@ -2219,3 +2219,10 @@ button.ov-gantt-rad:hover>:first-child,button.ov-gantt-rad:focus-visible>:first-
 /* Synkläget under anslutningsraden (F03): osparat och senast bekräftad sparning. */
 .conn-synk{display:flex;flex-direction:column;gap:2px;margin-top:4px;padding-left:16px;font-size:11px;line-height:1.35;color:rgba(255,255,255,.72)}
 .conn-synk b{color:rgba(255,255,255,.95);font-weight:700}
+/* ÄTA-kortets checklista: art och fyra prickar (underrättad, art, pris, beslut). */
+.atakort-steg{display:flex;align-items:center;gap:5px;margin-top:2px}
+.atakort-art{font-size:11px;font-weight:700;color:var(--one-djup);margin-right:auto}
+.atakort-art.saknas{color:var(--ink-soft);font-weight:600}
+.atakort-prick{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--hairline-stark);background:transparent}
+.atakort-prick.klar{background:var(--ok-ink,#1e7b3a);border-color:var(--ok-ink,#1e7b3a)}
+.metod-arbetssatt{grid-column:1/-1;display:flex;flex-direction:column;gap:6px;max-width:520px}

@@ -64,7 +64,7 @@ describe("ataLage", () => {
     const a = ataLage(s);
     const stangda = s.ur.filter((u) => u.status === "stangd").length;
     expect(a.oppna).toBe(s.ur.length - stangda);
-    expect(a.steg.map((x) => x.id)).toEqual(["identifierad", "underrattad", "underlag", "godkand", "fakturerad"]);
+    expect(a.steg.map((x) => x.id)).toEqual(["identifierad", "granskning", "godkand", "fakturerad"]);
     expect(a.steg.reduce((sum, x) => sum + x.antal, 0)).toBe(a.oppna);
   });
 

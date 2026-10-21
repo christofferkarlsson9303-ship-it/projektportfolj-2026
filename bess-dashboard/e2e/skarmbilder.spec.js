@@ -18,7 +18,6 @@ const VYER = [
   "ÄTA och hinder",
   "Ekonomi",
   "Dagbok",
-  "Störning",
   "Risker",
   "Öppna punkter",
 ];

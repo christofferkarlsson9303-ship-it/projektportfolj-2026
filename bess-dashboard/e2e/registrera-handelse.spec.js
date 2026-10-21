@@ -24,9 +24,9 @@ test("en händelse registreras en gång och kan kompletteras med länkade poster
   await panel(page).getByLabel(/^Underlag/).fill("Följesedel 4711");
   await panel(page).getByRole("button", { name: "Spara händelse" }).click();
 
-  /* Tillägg: ett hinder och en ÄTA är två separata, länkade poster. */
-  await panel(page).getByRole("button", { name: "+ Hinder" }).click();
-  await expect(panel(page).getByRole("button", { name: "Hinder kopplad" })).toBeDisabled();
+  /* Tillägg: hinder är en orsak på ÄTA:n, inte en egen post. */
+  await panel(page).getByLabel(/^Orsak till en ÄTA/).selectOption("ue_material");
+  await expect(panel(page).getByRole("button", { name: "+ Hinder" })).toHaveCount(0);
   await panel(page).getByRole("button", { name: "+ ÄTA" }).click();
   await expect(panel(page).getByRole("button", { name: "ÄTA kopplad" })).toBeDisabled();
   await panel(page).getByRole("button", { name: "Klar" }).click();
@@ -37,7 +37,6 @@ test("en händelse registreras en gång och kan kompletteras med länkade poster
   await page.getByRole("button", { name: /Kabelskåp levererat med fel typ.*Ansvarig: Anna/ }).click();
   const pp = page.getByRole("region", { name: /^Punkt: Kabelskåp/ });
   await expect(pp).toContainText("Följesedel 4711");
-  await expect(pp.getByRole("button", { name: /^Hinder/ })).toBeVisible();
   await expect(pp.getByRole("button", { name: /^ÄTA/ })).toBeVisible();
   utanKonsolfel(fel);
 });

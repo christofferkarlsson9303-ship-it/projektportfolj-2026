@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { annatProjekt, oppna, gaTill, projektval, utanKonsolfel } from "./hjalpare.js";
+import { annatProjekt, oppna, gaTill, projektval, utanKonsolfel, valjProjekt } from "./hjalpare.js";
 import { VYER } from "../src/data/vyer.js";
 
 test("enkel meny, synlig sökknapp och ordlista hjälper utan att dölja funktioner", async ({ page }, info) => {
@@ -115,4 +115,18 @@ test("metoden visar projektval och sex fasgrindsmätare utan horisontell rullnin
   await page.screenshot({ path: info.outputPath("metod-morkt.png"), fullPage: true });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   utanKonsolfel(fel);
+});
+
+test("arbetssättet väljs per projekt och sparas på rätt projekt", async ({ page }) => {
+  await oppna(page, "Min projektmetod");
+  const val = page.getByLabel("ARBETSSÄTT");
+  await expect(val).toHaveValue("");
+  await val.selectOption("hybrid");
+  await expect(page.getByText("Kontrakt, budget, milstolpar och hållpunkter.")).toBeVisible();
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("batchc-portfolj-v1") || "{}").projekt?.filter((p) => p.metod === "hybrid").map((p) => p.id))).toEqual(["36037"]);
+
+  await valjProjekt(page, /Alvesta/);
+  await expect(page.getByLabel("ARBETSSÄTT")).toHaveValue("");
+  await valjProjekt(page, /Växjö/);
+  await expect(page.getByLabel("ARBETSSÄTT")).toHaveValue("hybrid");
 });

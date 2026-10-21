@@ -3,7 +3,7 @@ import { PdfExporter } from "../../components/print/PdfExporter.jsx";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { AtaPrisgodkannande, AtaUnderlag, AtaUnderrattelse } from "../../components/ui/AtaDokument.jsx";
 import { DatumFalt, Falt, Kryss, NumFalt, SelStatus } from "../../components/ui/Falt.jsx";
-import { ATA_KLASS, ATA_STATUS, ORSAKER, PRISGRUND } from "../../data/konstanter.js";
+import { ATA_ART, ATA_KLASS, ATA_STATUS, ORSAKER, PRISGRUND } from "../../data/konstanter.js";
 import { prisGrind, underrattelseLage } from "../../lib/berakningar.js";
 import { idag } from "../../lib/datum.js";
 import { nyDagboksrad } from "../../lib/nyaPoster.js";
@@ -167,6 +167,14 @@ export function AtaDrawerDetails({ u, onStang, onKalkyl }) {
   const satt = (falt, varde) =>
     falt === "status" ? uppdStatus("ur", u.id, falt, varde) : uppd("ur", u.id, falt, varde);
 
+  /* Orsaken säger om omständigheten är ett hinder eller ett tillkommande arbete. Är posten ännu
+     oklassificerad föreslås klassen ur orsaken; en klass någon redan satt skrivs aldrig över. */
+  const valjOrsak = (v) => {
+    satt("orsak", v);
+    const forslag = ORSAKER.find((o) => o[0] === v)?.[2];
+    if ((forslag === "ata" || forslag === "hinder") && (!u.klass || u.klass === "oklar")) satt("klass", forslag);
+  };
+
   /* Flytta in fokus när panelen öppnas, och stäng på Escape. */
   useEffect(() => {
     panelRef.current?.focus();
@@ -286,9 +294,10 @@ export function AtaDrawerDetails({ u, onStang, onKalkyl }) {
         </div>
 
         <div className="f">
-          <label htmlFor={`kl-${u.id}`}>Klassificering (flöde 2.4)</label>
-          <select id={`kl-${u.id}`} value={u.klass || ""} onChange={(e) => satt("klass", e.target.value)}>
-            {ATA_KLASS.map(([v, n]) => (
+          <label htmlFor={`art-${u.id}`}>Art</label>
+          <select id={`art-${u.id}`} value={u.art || ""} onChange={(e) => satt("art", e.target.value)}>
+            <option value="">— välj art —</option>
+            {ATA_ART.map(([v, n]) => (
               <option key={v} value={v}>
                 {n}
               </option>
@@ -297,8 +306,8 @@ export function AtaDrawerDetails({ u, onStang, onKalkyl }) {
         </div>
 
         <div className="f">
-          <label htmlFor={`or-${u.id}`}>Orsak enligt flödesschema 2.4</label>
-          <select id={`or-${u.id}`} value={u.orsak || ""} onChange={(e) => satt("orsak", e.target.value)}>
+          <label htmlFor={`or-${u.id}`}>Orsak (hinder och störning är orsaker)</label>
+          <select id={`or-${u.id}`} value={u.orsak || ""} onChange={(e) => valjOrsak(e.target.value)}>
             <option value="">— välj orsak —</option>
             {ORSAKER.map(([v, n]) => (
               <option key={v} value={v}>
@@ -318,6 +327,17 @@ export function AtaDrawerDetails({ u, onStang, onKalkyl }) {
               )}
             </div>
           ) : null}
+        </div>
+
+        <div className="f">
+          <label htmlFor={`kl-${u.id}`}>Behandlas som (följer orsaken)</label>
+          <select id={`kl-${u.id}`} value={u.klass || ""} onChange={(e) => satt("klass", e.target.value)}>
+            {ATA_KLASS.map(([v, n]) => (
+              <option key={v} value={v}>
+                {n}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="frow c2">

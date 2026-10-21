@@ -304,7 +304,7 @@ function Motespunkt({ m, pt }) {
         ) : kravAtaKoppling ? (
           <>
             <button type="button" className="btn sec mini" onClick={skapaArende}>
-              + Skapa ÄTA/hinder
+              + Skapa ÄTA
             </button>
             <select
               className={val}

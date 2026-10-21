@@ -170,6 +170,9 @@ export const ATA_STATUS = ["oppen","prissattning","skickad_best","godkand_dok","
 export const ATA_KLASS = [["ata","ÄTA — tillkommande arbete"],["hinder","Hinder — tid, normalt ej ersättning"],
                    ["bada","Både hinder och ÄTA"],["oklar","Ej klassificerad ännu"]];
 
+/* Art: vad ÄTA:n är. En ÄTA har alltid en art; orsaken (ORSAKER) säger varför den uppstod. */
+export const ATA_ART = [["andring","Ändring"],["tillagg","Tillägg"],["avgaende","Avgående"]];
+
 export const PRISGRUND = [["lopande","Löpande räkning / självkostnad"],["aprislista","Avtalad á-prislista"],
                    ["mangd","Mängdförteckning"],["ejavtalat","Inget avtalat — självkostnadsprincipen"]];
 

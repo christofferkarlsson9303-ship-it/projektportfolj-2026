@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { gaTill, oppna, utanKonsolfel } from "./hjalpare.js";
+import { gaTill, oppna, oppnaViaAdress, utanKonsolfel } from "./hjalpare.js";
 
 /* Alla vyer i menyn — ingen får fortfarande vara en platshållare. */
 const VYER = [
@@ -20,7 +20,6 @@ const VYER = [
   "Byggmöten",
   "Veckokoll",
   "Dagbok",
-  "Störning",
   "HSEQ / BAS-U",
   "Risker",
   "Öppna punkter",
@@ -45,6 +44,13 @@ test("alla vyer renderar utan konsolfel", async ({ page }) => {
   }
 
   utanKonsolfel(fel);
+});
+
+test("Störning ligger inte i menyn men går att nå, och hinder och störning är orsaker på ÄTA", async ({ page }) => {
+  await oppna(page);
+  await gaTill(page, "Risker"); // öppnar mobilmenyn och fäller ut alla funktioner
+  await expect(page.getByRole("navigation", { name: "Huvudmeny" }).getByRole("button", { name: "Störning", exact: true })).toHaveCount(0);
+  await oppnaViaAdress(page, "storning", "Störning");
 });
 
 test("aktiv vy markeras med aria-current", async ({ page }) => {

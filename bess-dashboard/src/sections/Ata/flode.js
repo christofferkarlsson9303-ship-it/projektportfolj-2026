@@ -12,9 +12,8 @@ import { idag } from "../../lib/datum.js";
    hemma i och skriver rätt fält vid släpp. */
 
 export const KOLUMNER = [
-  ["identifierad", "Identifierad / störning", "Ny omständighet. Underrättelse ska ut inom 24 timmar."],
-  ["underrattad", "Underrättad", "Underrättelse avsänd — fristen är stoppad."],
-  ["underlag", "Underlag & pris skickat", "Prissatt och skickat till beställaren."],
+  ["identifierad", "Identifierad", "Ny omständighet. Underrättelse ska ut inom 24 timmar."],
+  ["granskning", "ÄTA-granskning", "Underrättad. Ange art, pris och få beställarens skriftliga beslut."],
   ["godkand", "Godkänd", "Skriftligt godkänt pris — arbetet får utföras."],
   ["fakturerad", "Fakturerad", "Reglerad med UR-numret som referens."],
 ];
@@ -26,8 +25,8 @@ export function kolumnFor(u) {
   if (u.status === "stangd" || u.status === "utgar") return null;
   if (u.status === "fakturerad") return "fakturerad";
   if (u.status === "godkand") return "godkand";
-  if (UNDERLAGSSTATUS.includes(u.status)) return "underlag";
-  if (u.underrattelseDatum) return "underrattad";
+  if (UNDERLAGSSTATUS.includes(u.status)) return "granskning";
+  if (u.underrattelseDatum) return "granskning";
   return "identifierad";
 }
 
@@ -45,11 +44,10 @@ export function slappAtgard(u, kolumn) {
       // Tillbaka till början: underrättelsen måste bort, annars studsar kortet
       // direkt tillbaka till nästa kolumn.
       return { status: "oppen", falt: u.underrattelseDatum ? { underrattelseDatum: "" } : {} };
-    case "underrattad":
-      return { status: "oppen", falt: u.underrattelseDatum ? {} : { underrattelseDatum: nu } };
-    case "underlag":
-      // Prissättning säger inget om när underrättelsen gick — den lämnas ifred.
-      return { status: UNDERLAGSSTATUS.includes(u.status) ? u.status : "prissattning", falt: {} };
+    case "granskning":
+      // Att dra ett kort hit betyder att underrättelsen går ut nu. Ett pris- eller beslutsläge som redan
+      // är satt ligger kvar, och ett underrättelsedatum som redan står där skrivs aldrig över.
+      return { status: UNDERLAGSSTATUS.includes(u.status) ? u.status : "oppen", falt: u.underrattelseDatum ? {} : { underrattelseDatum: nu } };
     case "godkand":
       return { status: "godkand", falt: u.godkantDatum ? {} : { godkantDatum: nu } };
     case "fakturerad":
@@ -75,4 +73,17 @@ export function flagga(u) {
 /** Det datum som bäst beskriver var posten står just nu — för tidslinjen. */
 export function datumFor(u) {
   return u.fakturaDatum || u.godkantDatum || u.underrattelseDatum || u.handelseDatum || "";
+}
+
+/** De fyra stegen i ÄTA-granskningen, som en checklista på kortet. Härledd ur fälten — inget
+ *  lagras separat, så den kan aldrig säga något annat än posten själv. */
+export function checklista(u) {
+  const prissatt = (u.belopp !== null && u.belopp !== undefined && u.belopp !== "") || ["skickad_best", "godkand_dok", "godkand", "fakturerad"].includes(u.status);
+  const beslutad = u.status === "godkand" || u.status === "fakturerad" || !!u.godkantDatum;
+  return [
+    { id: "underratta", text: "Underrättad", klar: !!u.underrattelseDatum },
+    { id: "art", text: "Art vald", klar: !!u.art },
+    { id: "pris", text: "Pris och tid", klar: prissatt },
+    { id: "beslut", text: "Beslut", klar: beslutad },
+  ];
 }

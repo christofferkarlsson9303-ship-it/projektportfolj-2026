@@ -3,6 +3,7 @@ import { Slideover } from "../ui/Slideover.jsx";
 import { PTag } from "../ui/PTag.jsx";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { KOPPLINGSTYPER, nyHandelse, nyKoppladPost } from "../../lib/handelse.js";
+import { ORSAKER } from "../../data/konstanter.js";
 
 /* Registrera händelse — från vilken vy som helst.
 
@@ -25,6 +26,7 @@ function Panel({ onStang, pid, visaToast }) {
   const [v, setV] = useState({ titel: "", agare: "", uppfoljning: "", underlag: "" });
   const [sparad, setSparad] = useState(null);
   const [fel, setFel] = useState("");
+  const [orsak, setOrsak] = useState("");
 
   if (!proj) return null;
   const projektNamn = `${proj.nr ? `${proj.nr} ` : ""}${proj.namn}`;
@@ -47,7 +49,7 @@ function Panel({ onStang, pid, visaToast }) {
   const aktuell = sparad ? state.punkter.find((p) => p.id === sparad.id) || sparad : null;
 
   const koppla = (typ) => {
-    const post = nyKoppladPost(typ, state, aktuell);
+    const post = nyKoppladPost(typ, state, aktuell, { orsak });
     if (post) kopplaHandelse(aktuell.id, post);
   };
 
@@ -95,11 +97,23 @@ function Panel({ onStang, pid, visaToast }) {
             </p>
 
             <section aria-label="Komplettera" className="flex flex-col gap-2">
-              <h4 className="m-0 text-[13px] font-bold text-ink">Behöver den mer? Lägg till en länkad post</h4>
+              <h4 className="m-0 text-[13px] font-bold text-ink">Behöver den mer? Lägg till en ÄTA eller risk</h4>
               <p className="m-0 text-[12px] text-ink-soft">
                 Posten skapas separat i sitt register med texten förifylld, och kopplas till händelsen. Det går bra att göra
                 det senare.
               </p>
+              <label className="block text-[13px]">
+                <span className="font-semibold text-ink">Orsak till en ÄTA (valfritt)</span>
+                <select className={falt} value={orsak} onChange={(e) => setOrsak(e.target.value)}>
+                  <option value="">Ange senare</option>
+                  {ORSAKER.map(([v, n]) => (
+                    <option key={v} value={v}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+                <span className="mt-1 block text-[12px] text-ink-soft">Hinder och störning är orsaker, inte egna poster.</span>
+              </label>
               <div className="flex flex-wrap gap-2">
                 {Object.entries(KOPPLINGSTYPER).map(([typ, t]) => {
                   const finns = (aktuell.lankar || []).some((l) => l.typ === typ);

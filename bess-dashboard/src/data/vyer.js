@@ -86,7 +86,7 @@ const URSPRUNG = Object.fromEntries(medInskjutna([...TILLAGDA, ...VYER_ORIGINAL]
 const GRUPPER = [
   ["Börja här", ["metod", "start", "idag", "oversikt"]],
   ["Planera jobbet", ["kontrakt", "epc", "bered", "site", "tidplan", "handlingsplan", "resurser", "kontakter"]],
-  ["Gör och följ upp", ["punkter", "tavla", "moten", "vecka", "dagbok", "hseq", "risker", "storning"]],
+  ["Gör och följ upp", ["punkter", "tavla", "moten", "vecka", "dagbok", "hseq", "risker"]],
   ["Följ pengarna", ["ata", "atakalkyl", "budget", "tid", "ekonomi", "milstolpar", "faktura"]],
   ["Lämna över och spara", ["slutdok", "rapport", "rutiner", "data"]],
 ];
@@ -122,6 +122,9 @@ const ENKLA_LEADS = {
   kontakter: "Hitta ansvariga, leverantörer och rätt kontaktuppgifter.",
   data: "Kontrollera lagringen, granska importer och ta en säkerhetskopia.",
 };
+/* Vyer som finns kvar men inte ligger i menyn. Hinder och störning är orsaker till en ÄTA (ONE P Enkel);
+   Störning nås från ÄTA och Veckokoll och fungerar som förut. */
+const DOLDA_VYER = ["storning"];
 export const VYER = GRUPPER.flatMap(([namn, ids]) => [["_sek", namn], ...ids.map((id) => [id, URSPRUNG[id][1], ENKLA_LEADS[id] || URSPRUNG[id][2]])]);
 /* Den enkla menyn: det som används varje dag. Sju flikar, utan grupprubriker.
    Allt annat finns under "Visa alla funktioner" och i Ctrl/Cmd+K. ÄTA-kalkylen
@@ -131,9 +134,10 @@ export const ENKEL_MENY = new Set(["idag", "oversikt", "epc", "tidplan", "punkte
 export const NAVIKONER = { ...NAVIKON, ...IKONER_TILLAGDA, metod: '<path d="M4 5h16v14H4zM8 9h8M8 13h8M8 17h4"/>' };
 
 /** Uppslagstabell id → {namn, lead}. */
-export const VYMETA = Object.fromEntries(
-  VYER.filter((v) => v[0] !== "_sek").map(([id, namn, lead]) => [id, { namn, lead }])
-);
+export const VYMETA = Object.fromEntries([
+  ...VYER.filter((v) => v[0] !== "_sek").map(([id, namn, lead]) => [id, { namn, lead }]),
+  ...DOLDA_VYER.map((id) => [id, { namn: URSPRUNG[id][1], lead: ENKLA_LEADS[id] || URSPRUNG[id][2] }]),
+]);
 
 /** Giltiga vy-id, för adressfältet. */
 export const GILTIGA_VYER = new Set(Object.keys(VYMETA));

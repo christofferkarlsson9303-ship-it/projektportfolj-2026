@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { fmtSEK } from "../../lib/format.js";
-import { KOLUMNER, flagga, kolumnFor, slappAtgard } from "./flode.js";
+import { KOLUMNER, checklista, flagga, kolumnFor, slappAtgard } from "./flode.js";
+import { ATA_ART } from "../../data/konstanter.js";
 
 /* Kanban över ÄTA-flödet i ABT 06. Kolumnmodellen ligger i flode.js.
 
@@ -10,6 +11,9 @@ import { KOLUMNER, flagga, kolumnFor, slappAtgard } from "./flode.js";
 
 function Kort({ u, projektNamn, vald, onOppna, onDragStart }) {
   const f = flagga(u);
+  const steg = checklista(u);
+  const klara = steg.filter((s) => s.klar).length;
+  const art = ATA_ART.find(([k]) => k === u.art)?.[1];
 
   return (
     <article
@@ -28,6 +32,12 @@ function Kort({ u, projektNamn, vald, onOppna, onDragStart }) {
           ) : null}
         </span>
         <span className="atakort-titel">{u.benamning || "Utan benämning"}</span>
+        <span className="atakort-steg" role="img" aria-label={`Granskning: ${klara} av 4 steg klara. ${steg.map((s) => `${s.text} ${s.klar ? "klart" : "saknas"}`).join(", ")}`}>
+          {art ? <span className="atakort-art">{art}</span> : <span className="atakort-art saknas">Art saknas</span>}
+          {steg.map((s) => (
+            <span key={s.id} className={`atakort-prick${s.klar ? " klar" : ""}`} title={`${s.text}: ${s.klar ? "klart" : "saknas"}`} />
+          ))}
+        </span>
         <span className="atakort-fot">
           <span>{projektNamn}</span>
           <span className="atakort-belopp">{u.belopp ? fmtSEK(u.belopp) : "—"}</span>

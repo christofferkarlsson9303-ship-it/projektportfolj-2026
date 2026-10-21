@@ -2,7 +2,7 @@
 
 Skrivet 2026-10-21. Bygger på [`../projektmetod.md`](../projektmetod.md) (full metod) och [`../projektfaser.md`](../projektfaser.md) (åtta faser). Det här är den dagliga vyn ovanpå dem. Ingenting i den fulla metoden tas bort; här står bara vad man arbetar med varje dag.
 
-> **Status:** förslag och visuellt underlag. Inget av detta är byggt i appen än. Det som skulle kräva kodändring står under *Vad som skulle ändras i appen*.
+> **Status:** punkt 1–3 under *Vad som är gjort i appen* är byggda (2026-10-21). Ordbytet "Ärenden" → "Arbetspost" är inte gjort. Resten är förslag och visuellt underlag.
 
 ## 1. Modellen: tre saker
 
@@ -21,7 +21,7 @@ Veckorytmen är den befintliga (Veckokoll): titta på tavlan, ta bort hinder, ko
 | Idag | I ONE P Enkel | Kommentar |
 |---|---|---|
 | Punkt, uppgift, "ärende" | **Arbetspost** | Ett begrepp. "Ärenden" som eget ord försvinner. |
-| ÄTA/UR, hinder, avvikelse, störning | **ÄTA** med fältet *orsak* (ändring, tillägg, avgående, hinder) | Hinder finns redan som `klass` på UR-posten. Ett register, inte tre. |
+| ÄTA/UR, hinder, avvikelse, störning | **ÄTA** med fälten *art* (ändring, tillägg, avgående) och *orsak* (bl.a. hinder och störning) | Orsakerna finns redan i appen (`ORSAKER`). Störning är borta ur menyn men nås från ÄTA och Veckokoll. Ett register, inte tre. |
 | Godkännandekedja (flera steg) | **Ett beslut**: beställarens skriftliga beslut på ÄTA, ansvarigs beslut på HP | Beslutet förblir uttryckligt. Appen godkänner aldrig något åt någon. |
 | Risker, HSEQ-incidenter, tidrapport, dagbok, ekonomi | Ligger kvar i sina vyer, **utanför tavlan** | De är inte "ärenden". Se punkt 3. |
 
@@ -40,15 +40,7 @@ Fyra steg i kolumnen *ÄTA-granskning*:
 
 Sedan flyttas kortet tillbaka till *Pågående* (godkänd), eller till *Utgår* (avslagen). När arbetet är *Klart* faktureras ÄTA:n med sitt nummer som referens.
 
-Mappning mot dagens fem kolumner i appen (`src/sections/Ata/flode.js`):
-
-| Dagens kolumn | I ONE P Enkel |
-|---|---|
-| Identifierad / störning | Steg 1 (kortet hamnar i *ÄTA-granskning*) |
-| Underrättad | Steg 1 klart |
-| Underlag & pris skickat | Steg 3 |
-| Godkänd | Steg 4 klart, kortet går till *Pågående* |
-| Fakturerad | Efter *Klart* |
+ÄTA-tavlan i appen (`src/sections/Ata/flode.js`) har nu fyra kolumner: **Identifierad → ÄTA-granskning → Godkänd → Fakturerad**. Tidigare *Underrättad* och *Underlag & pris skickat* är slagna ihop till *ÄTA-granskning*. Statusarna (`prissattning`, `skickad_best` …) är oförändrade; bara kolumnerna är färre. På varje kort visas art och en checklista med fyra prickar (underrättad, art vald, pris och tid, beslut), härledd ur fälten.
 
 **Två gränser jag inte tar bort:**
 
@@ -99,11 +91,12 @@ Verifierat: Mermaid-koden renderas, TypeScript-koden går igenom strikt typkontr
 
 Ändra `KORT` och `KOLUMNER` överst i `code.ts` för att rita en annan tavla. Efter ändring: `npx tsc code.ts --ignoreConfig --target ES2017 --lib ES2017 --noCheck`.
 
-## 6. Vad som skulle ändras i appen (ej gjort)
+## 6. Vad som är gjort i appen
 
-1. **Art på ÄTA** (Ändring, Tillägg, Avgående). Ett nytt fält på UR-posten. Idag finns bara `klass` (ata, hinder, oklar).
-2. **Metod per projekt** (Vattenfall, Agilt, Hybrid) som ett fält på projektet, med förvald tavla efter metod.
-3. **Samlad ÄTA-granskning:** de fem kolumnerna i `flode.js` visas som fyra, med de fyra stegen som en checklista på kortet.
-4. **Ord:** "Ärenden" ersätts av "Arbetspost" i gränssnittet.
+1. **Art på ÄTA** (Ändring, Tillägg, Avgående): nytt fält `art` på UR-posten, val i ÄTA-panelen, kolumn i tabellen och med på utskrifterna.
+2. **Orsak bär hinder och störning.** Orsaken väljs först i ÄTA-panelen. "Behandlas som" (`klass`, som styr pris- och fristgrindar) föreslås ur orsaken när posten är oklassificerad, och skrivs aldrig över om någon redan satt den. Registrera händelse har inte längre en egen Hinder-knapp; i stället väljs orsak till ÄTA:n.
+3. **Fyra kolumner och checklista** på ÄTA-tavlan (se punkt 3).
+4. **Metod per projekt** (Vattenfall, Agilt, Hybrid): fältet `metod` på projektet, valt under *Min projektmetod*. Det är en etikett som visar vad som är fast och rörligt. Det styr inga beräkningar och byter inte tavla.
+5. **Störning** ligger inte längre i menyn.
 
-Inget av detta ändrar datamodellen utöver ett par nya fält. Säg till om du vill att jag bygger det.
+**Inte gjort:** ordbytet "Ärenden" → "Arbetspost". I appen betyder "ärende" nästan alltid en ÄTA/UR-post, och ordet ingår i bl.a. "Ärenden på siten" och ÄTA-panelens rubrik. Ett generellt ordbyte skulle ändra mer än det förenklar. Vyn heter fortfarande "ÄTA och hinder".

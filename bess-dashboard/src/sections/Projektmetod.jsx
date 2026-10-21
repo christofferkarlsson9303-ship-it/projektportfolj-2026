@@ -8,12 +8,13 @@ import { VYMETA } from "../data/vyer.js";
 import { faslage } from "../lib/epc.js";
 import { metodStegLage } from "../lib/metodlage.js";
 import { statusEtikett } from "../data/projektfaser.ts";
+import { ARBETSSATT, arbetssattFor } from "../data/arbetssatt.js";
 
 const STEGIKONER = [ClipboardList, CalendarDays, HardHat, ShieldCheck, ClipboardCheck, FileCheck2];
 const VYIKONER = { idag: CalendarDays, punkter: ListTodo, dagbok: FileText, vecka: ClipboardCheck, tidplan: CalendarDays, budget: Wallet, moten: Users, risker: TriangleAlert, storning: TriangleAlert };
 
 export function Projektmetod() {
-  const { state } = usePortfolj();
+  const { state, uppd } = usePortfolj();
   const { valtProjekt, setValtProjekt, visa, oppnaPost, oppnaFlagga, oppnaFaltmaterial } = useUi();
   const [ord, setOrd] = useState("");
   const p = state.projekt.find((r) => r.id === valtProjekt) || state.projekt[0];
@@ -27,6 +28,20 @@ export function Projektmetod() {
       <p className="m-0 text-sm">Metoden passar nyckelfärdiga batteriparker. I andra projekt kan du använda planering, ekonomi, möten och uppföljning. Anpassa tekniska steg, priser och dokumentkrav till uppdraget.</p>
       {p ? <div className="metod-projekt">
         <div className="metod-projekt-identitet"><span className="metod-overline">AKTIVT PROJEKT</span><b>Du arbetar med {p.nr ? `${p.nr} · ` : ""}{p.namn}.</b><StatusBadge label={statusEtikett(p.status)} ton="info" /></div>
+        <div className="metod-arbetssatt">
+          <label htmlFor="metod-arbetssatt" className="metod-overline">ARBETSSÄTT</label>
+          <select id="metod-arbetssatt" value={p.metod || ""} onChange={(e) => uppd("projekt", p.id, "metod", e.target.value)}>
+            <option value="">Inte valt</option>
+            {ARBETSSATT.map((a) => (
+              <option key={a.id} value={a.id}>{a.namn}</option>
+            ))}
+          </select>
+          {arbetssattFor(p.metod) ? (
+            <p className="m-0 text-sm"><b>Fast:</b> {arbetssattFor(p.metod).fast} <b>Rörligt:</b> {arbetssattFor(p.metod).rorligt}</p>
+          ) : (
+            <p className="m-0 text-sm">Välj hur projektet styrs. Det ändrar inga beräkningar, bara vad teamet utgår från.</p>
+          )}
+        </div>
         <div className="metod-projekt-framdrift"><div className="metod-matar-rad"><span>Fasgrindar</span><b>{total.passerade} / {total.totalt}</b></div><Meter value={total.passerade} max={total.totalt} label="Projektets passerade fasgrindar" /><small>Enligt byggöversikten. Provresultat granskas separat.</small></div>
         <div className="metod-projekt-under"><p className="m-0 text-sm">{saknas.length ? `Grunduppgifter att komplettera: ${saknas.join(", ")}.` : "De viktigaste grunduppgifterna finns. Kontrollera att de fortfarande stämmer."}</p><button type="button" className="btn sec mini metod-verktyg" onClick={() => oppnaFlagga(p.id, "oversikt", "projektdata")}><SlidersHorizontal size={15} aria-hidden="true" />Redigera projektets uppgifter</button></div>
       </div> : <p>Skapa ett projekt för att börja.</p>}

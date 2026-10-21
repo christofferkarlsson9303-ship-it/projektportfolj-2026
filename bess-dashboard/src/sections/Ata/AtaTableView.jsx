@@ -1,6 +1,6 @@
 import { usePortfolj } from "../../state/hooks.js";
 import { DataTable } from "../../components/ui/DataTable.jsx";
-import { ATA_KLASS } from "../../data/konstanter.js";
+import { ATA_ART, ATA_KLASS } from "../../data/konstanter.js";
 import { prisGrind, underrattelseLage } from "../../lib/berakningar.js";
 import { registerStatus } from "../../lib/status.js";
 
@@ -46,8 +46,17 @@ export function AtaTableView({ rader, tomText, vald, onOppna, onKalkyl, verktyg 
         },
         { nyckel: "benamning", rubrik: "Benämning", onCommit: (r, v) => uppd("ur", r.id, "benamning", v) },
         {
+          nyckel: "art",
+          rubrik: "Art",
+          bredd: 110,
+          filter: true,
+          filterEtikett: (v) => ATA_ART.find(([k]) => k === v)?.[1] || "Art saknas",
+          textVarde: (u) => ATA_ART.find(([k]) => k === u.art)?.[1] || "Art saknas",
+          render: (u) => ATA_ART.find(([k]) => k === u.art)?.[1] || <span className="text-ink-faint">Art saknas</span>,
+        },
+        {
           nyckel: "klass",
-          rubrik: "Klass",
+          rubrik: "Behandlas som",
           bredd: 150,
           filter: true,
           filterEtikett: klassNamn,
