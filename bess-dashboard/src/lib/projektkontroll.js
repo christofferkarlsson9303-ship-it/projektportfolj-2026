@@ -2,6 +2,7 @@ import { arGiltigtDatum, idag } from "./datum.js";
 export const KONTROLLRESULTAT = [["", "Ej kontrollerad"], ["ok", "OK"], ["ej-ok", "Ej OK"], ["ej-tillamplig", "Ej tillämplig"]];
 export const kontrollNamn = (v) => KONTROLLRESULTAT.find(([k]) => k === v)?.[1] || "Ej kontrollerad";
 export const kontrollId = (projektId, omfattning, punktId) => JSON.stringify([projektId, omfattning.trim() || "Hela anläggningen", punktId]);
+/** @param {import("./typer.js").Kontrollpost|null|undefined} r @param {string} revision @returns {string[]} */
 export function kontrollBrister(r, revision) {
   if (!r?.resultat) return ["Resultat saknas"];
   const fel = [];

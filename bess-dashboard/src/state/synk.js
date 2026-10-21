@@ -50,5 +50,5 @@ export function feltyp(e) {
 /** Text till statusraden efter en sammanslagning. */
 export function sammanslagningsText(konflikter) {
   if (!konflikter.length) return "Någon annan sparade samtidigt — ändringarna är sammanslagna";
-  return `Någon annan sparade samtidigt — sammanslaget. ${konflikter.length} fält ändrades av er båda; din version gäller, kontrollera`;
+  return `Någon annan sparade samtidigt — sammanslaget. ${konflikter.length} fält ändrades på två ställen; välj version under Konflikter`;
 }

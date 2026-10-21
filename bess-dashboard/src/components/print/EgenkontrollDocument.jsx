@@ -14,6 +14,7 @@ export function EgenkontrollDocument({ dokument: d }) {
           <h2>Moment {m.nr}: {m.titel}</h2>
           {m.flode ? <p className="field-source"><b>Arbetsordning:</b> {m.flode}</p> : null}
           <p className="field-source">{d.kalla} {d.komplett ? "Hela valda mallpaketet." : "Delurval – kontrollera överlämningar och återstående arbete."}</p>
+          {d.oppnaBeslut?.length ? <p className="field-verification"><b>Öppna beslut:</b> {d.oppnaBeslut.join(" ")}</p> : null}
           <p>{d.inledning || FALT_FORUTSATTNING}</p>
           <p><b>Utrustning:</b> {m.utrustning} · <b>Utförare:</b> {m.utforare || "________________"}</p>
           <p><b>Manual/provplan och revision:</b> {m.referens || "EJ ANGIVEN – verifieras före utförande"}</p>

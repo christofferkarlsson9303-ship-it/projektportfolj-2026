@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sammanfoga } from "./sammanfoga.js";
+import { sammanfoga, sattVidSteg } from "./sammanfoga.js";
 
 const bas = {
   risker: [
@@ -102,5 +102,31 @@ describe("sammanfoga", () => {
     const { varde, konflikter } = sammanfoga(undefined, { a: 1 }, { a: 2 });
     expect(varde).toEqual({ a: 1 });
     expect(konflikter).toEqual(["a"]);
+  });
+});
+
+describe("konfliktdetaljer och kritiska fält (#70)", () => {
+  it("ger tidigare, mitt och deras värde per fält", () => {
+    const bas = { risker: [{ id: "r1", atgard: "a" }] };
+    const r = sammanfoga(bas, { risker: [{ id: "r1", atgard: "min" }] }, { risker: [{ id: "r1", atgard: "deras" }] });
+    expect(r.varde.risker[0].atgard).toBe("min");
+    expect(r.detaljer).toEqual([{ vag: "risker[r1].atgard", steg: ["risker", { id: "r1" }, "atgard"], bas: "a", mina: "min", deras: "deras", kritisk: false }]);
+  });
+
+  it("kritiska fält löses inte automatiskt: databasens värde ligger kvar", () => {
+    const bas = { faltkontroller: [{ id: "k", resultat: "", datum: "" }], epcFaser: [{ id: "f", grindDatum: "" }] };
+    const mina = { faltkontroller: [{ id: "k", resultat: "ok", datum: "2026-10-01" }], epcFaser: [{ id: "f", grindDatum: "2026-10-02" }] };
+    const deras = { faltkontroller: [{ id: "k", resultat: "ej-ok", datum: "2026-10-01" }], epcFaser: [{ id: "f", grindDatum: "2026-10-05" }] };
+    const r = sammanfoga(bas, mina, deras);
+    expect(r.varde.faltkontroller[0].resultat).toBe("ej-ok");
+    expect(r.varde.epcFaser[0].grindDatum).toBe("2026-10-05");
+    expect(r.detaljer.map((d) => [d.vag, d.kritisk])).toEqual([["faltkontroller[k].resultat", true], ["epcFaser[f].grindDatum", true]]);
+  });
+
+  it("sattVidSteg sätter ett valt värde och tar bort rader", () => {
+    const dok = { risker: [{ id: "r1", atgard: "a" }, { id: 2, atgard: "b" }] };
+    expect(sattVidSteg(dok, ["risker", { id: "r1" }, "atgard"], "valt").risker[0].atgard).toBe("valt");
+    expect(sattVidSteg(dok, ["risker", { id: 2 }], undefined).risker).toHaveLength(1);
+    expect(dok.risker[0].atgard).toBe("a");
   });
 });

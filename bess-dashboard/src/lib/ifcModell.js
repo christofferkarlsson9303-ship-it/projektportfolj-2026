@@ -54,6 +54,7 @@ export function centreringsFlytt(bb) {
   return [r3(-(bb[0] + bb[3]) / 2), r3(-bb[1]), r3(-(bb[2] + bb[5]) / 2)];
 }
 
+/** @param {number[]} bb @param {number[]} flytt */
 export const flyttaBb = (bb, [dx, dy, dz]) => [r3(bb[0] + dx), r3(bb[1] + dy), r3(bb[2] + dz), r3(bb[3] + dx), r3(bb[4] + dy), r3(bb[5] + dz)];
 
 /**

@@ -11,7 +11,8 @@ import { KORYTOR, TOMT, TYPFARG, arNal } from "../../lib/site.js";
    objekt väljer det. Utan blir den en ren bild (Idag lägger den i en knapp). */
 
 const KANT = 2;
-const VY = `${-TOMT.bredd / 2 - KANT} ${-TOMT.djup / 2 - KANT} ${TOMT.bredd + KANT * 2} ${TOMT.djup + KANT * 2}`;
+/* Läses vid varje rendering: tomten är projektets egen (F11). */
+const vyFor = () => `${-TOMT.bredd / 2 - KANT} ${-TOMT.djup / 2 - KANT} ${TOMT.bredd + KANT * 2} ${TOMT.djup + KANT * 2}`;
 
 export function SiteToppvy({ objekt, valtId = null, onMark, onValj, etikett, className = "" }) {
   const svg = useRef(null);
@@ -42,7 +43,7 @@ export function SiteToppvy({ objekt, valtId = null, onMark, onValj, etikett, cla
   return (
     <svg
       ref={svg}
-      viewBox={VY}
+      viewBox={vyFor()}
       role="img"
       aria-label={etikett}
       onClick={interaktiv ? klick : undefined}

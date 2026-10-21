@@ -13,7 +13,7 @@ import { IfcImportDialog } from "../../components/site/IfcImportDialog.jsx";
 import { skapaIfcCache } from "../../lib/ifcCache.js";
 import { ifcObjektForProjekt, kortKlass } from "../../lib/ifcModell.js";
 import { diffStatusPerGuid, diffaModeller } from "../../lib/modellDiff.js";
-import { SEKTION_STANDARD, arendenFor, arendenPerObjekt, boundingBoxFor, byggKoppling, kopplingFel, viewpointForBox } from "../../lib/modellKoppling.js";
+import { sektionStandard, arendenFor, arendenPerObjekt, boundingBoxFor, byggKoppling, kopplingFel, viewpointForBox } from "../../lib/modellKoppling.js";
 import { nyAtaPost } from "../../lib/nyaPoster.js";
 import { hamtaNamn } from "../../state/portfolj-reducer.js";
 import { bcfFilnamn, byggBcf, dataUrlTillBytes, importSammanfattning, lasBcf, planeraImport } from "../../lib/bcfHanterare.js";
@@ -26,6 +26,8 @@ import { SiteFilterrad, SiteKameror, SiteProfilData } from "../../components/sit
 import { HeroBild, Kraftkurva } from "../../components/oversikt/Hero.jsx";
 import { RitningsKnapp, SiteRitningar, laddaUppRitning, placeringText, useRitningsCanvas } from "../../components/site/SiteRitningar.jsx";
 import { HARDVARUPROFILER, profilIdFor } from "../../data/hardvaruprofiler.js";
+import { avstandsbrott, luftFor, skyddsreglerFor } from "../../lib/siteSakerhet.js";
+import { SiteSakerhet } from "../../components/site/SiteSakerhet.jsx";
 import { anbudsmodellFor } from "../../lib/anbudsmodeller.js";
 import { ritningsText } from "../../lib/ritningar.js";
 import { STANDARDLAGER, kameravinklar, mattFor, profilKpi, ritningslayout, standardlayout } from "../../lib/siteLager.js";
@@ -34,6 +36,8 @@ import {
   MALLAR,
   SITE_STATUS,
   TOMT,
+  sattAktivTomt,
+  tomtFor,
   TYPFARG,
   arNal,
   arOppenPunkt,
@@ -153,6 +157,11 @@ export function Site() {
   /* Hårdvaruprofilen styr mått, etiketter, komponentdata och standardlayout (data/hardvaruprofiler.js). */
   const profilId = profilIdFor(p);
   const profil = HARDVARUPROFILER[profilId];
+  /* Projektets tomt och skyddsavstånd (F11). Tomten sätts före all geometri i den här renderingen. */
+  const tomt = tomtFor(p);
+  sattAktivTomt(tomt);
+  const skyddsregler = useMemo(() => skyddsreglerFor(profilId), [profilId]);
+  const brott = useMemo(() => avstandsbrott(objekt, skyddsregler), [objekt, skyddsregler]);
   const anbudsmodell = anbudsmodellFor(p);
   const vinklar = useMemo(() => kameravinklar(objekt), [objekt]);
   const punkter = useMemo(() => (pid ? punkterForSite(state, pid) : []), [state, pid]);
@@ -183,7 +192,7 @@ export function Site() {
   const [rutnat, setRutnat] = useState(true);
   const [spokRot, setSpokRot] = useState(0);
   const [nalPunkt, setNalPunkt] = useState("");
-  const [sektion, setSektion] = useState(SEKTION_STANDARD);
+  const [sektion, setSektion] = useState(sektionStandard);
   const [matning, setMatning] = useState(false);
   const [matt, setMatt] = useState(null);
   const [jamforId, setJamforId] = useState(null);
@@ -340,7 +349,7 @@ export function Site() {
     }
     if (valt && !arNal(valt) && !arIfc) {
       const kand = { ...valt, rotation: roteraSteg(valt.rotation) };
-      const res = provaPlacering(kand, { x: valt.x, z: valt.z }, objekt, { ignorera: valt.id, rutnat: rutnat ? RUTNAT : 0 });
+      const res = provaPlacering(kand, { x: valt.x, z: valt.z }, objekt, { ignorera: valt.id, rutnat: rutnat ? RUTNAT : 0, snappLuft: luftFor(skyddsregler, kand.typ) });
       if (!res.ok) {
         visaToast(placeringsText(res), "warn");
         return;
@@ -500,6 +509,7 @@ export function Site() {
       const m = mattFor(profilId, laddad) || MALLAR[laddad];
       const res = provaPlacering({ typ: laddad, bredd: m.bredd, djup: m.djup, hojd: m.hojd, rotation: spokRot }, { x, z }, objekt, {
         rutnat: rutnat ? RUTNAT : 0,
+        snappLuft: luftFor(skyddsregler, laddad),
       });
       if (!res.ok) {
         visaToast(placeringsText(res), "warn");
@@ -727,6 +737,7 @@ export function Site() {
             <SiteAnbudsmodell modell={anbudsmodell} />
           </Suspense>
         ) : null}
+        <SiteSakerhet p={p} tomt={tomt} regler={skyddsregler} brott={brott} />
         <Card
           id="site-scen"
           title={`Siten — ${p.nr ? `${p.nr} ` : ""}${p.namn}`}
@@ -845,6 +856,8 @@ export function Site() {
               ) : (
                 <Suspense fallback={<Skeleton etikett="Laddar 3D-vyn …" className="h-[62vh] max-h-[720px] min-h-[360px] w-full" />}>
                   <SiteScen
+                    key={`tomt-${tomt.bredd}x${tomt.djup}`}
+                    skyddsregler={skyddsregler}
                     objekt={objekt}
                     punkter={punkter}
                     plan={plan}

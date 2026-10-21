@@ -9,6 +9,7 @@ import { Utskriftsyta } from "../ui/Utskrift.jsx";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { underlagsstampel } from "../../lib/berakningar.js";
 import { Sidhjalp } from "../ui/Sidhjalp.jsx";
+import { KonfliktVy } from "../synk/KonfliktVy.jsx";
 
 export function AppShell({ children }) {
   const { state } = usePortfolj();
@@ -56,6 +57,7 @@ export function AppShell({ children }) {
         {/* tabIndex=-1 gör att hopplänken kan flytta fokus hit. */}
         <main id="innehall" ref={mainRef} tabIndex={-1}>
           <Sidhjalp />
+          <KonfliktVy />
           {children}
         </main>
 

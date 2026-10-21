@@ -179,6 +179,7 @@ export function EgenkontrollPdf({ dokument: d, typ = "egenkontroll" }) {
       const sidor = d.moment.map((m) => <Page key={`${t}-${m.id}`} size="A4" style={s.page} wrap>
         <Header d={d} titel={arbetslista ? "Arbetslista – BESS" : "Egenkontroll – BESS"} moment={m} />
         <Text style={s.source}>{d.kalla} {d.komplett ? "Hela valda mallpaketet." : "Delurval – kontrollera överlämningar och återstående arbete."}</Text>
+        {d.oppnaBeslut?.length ? <Text style={s.source}>Öppna beslut: {d.oppnaBeslut.join(" ")}</Text> : null}
         <Text style={s.intro}>{d.inledning || FALT_FORUTSATTNING}</Text>
         {m.flode ? <Text style={s.source}>{m.flode}</Text> : null}
         <Text style={s.intro}>Utrustning: {m.utrustning}. Manual/provplan och revision: {m.referens || "EJ ANGIVEN – verifieras före utförande"}</Text>

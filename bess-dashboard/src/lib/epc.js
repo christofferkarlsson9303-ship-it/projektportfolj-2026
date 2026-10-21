@@ -16,6 +16,9 @@
    Fasplanen är en utgångspunkt, inte en tidplan. Den räknas fram ur start,
    BESS-leverans och slutbesiktning, och varje fas kan få egna datum. */
 
+import { HELA, forvantadeOmfattningar, planeradeOmfattningar } from "./kontrollplan.js";
+import { gallerProfil } from "./tillampning.js";
+import { profilIdFor } from "../data/hardvaruprofiler.js";
 import {
   ALLA_PUNKTER,
   ANKARE_NAMN,
@@ -87,7 +90,7 @@ export const plusDagar = (iso, n) => {
   d.setDate(d.getDate() + Math.round(n));
   return lokaltDatum(d);
 };
-export const dagarMellan = (fran, till) => Math.round((tillDatum(till) - tillDatum(fran)) / 86400000);
+export const dagarMellan = (fran, till) => Math.round((tillDatum(till).getTime() - tillDatum(fran).getTime()) / 86400000);
 const giltigt = (iso) => typeof iso === "string" && /^\d{4}-\d{2}-\d{2}$/.test(iso);
 
 /* ---------- Sparade rader ---------- */
@@ -224,22 +227,32 @@ export function kontrollage(state, pid) {
     if (!perPunkt.has(r.punktId)) perPunkt.set(r.punktId, []);
     perPunkt.get(r.punktId).push(r);
   }
-  const omfattningAv = (r) => (r.omfattning || "").trim() || "Hela anläggningen";
+  const projekt = (state.projekt || []).find((p) => p.id === pid);
+  const profilId = profilIdFor(projekt);
+  const omfattningAv = (r) => (r.omfattning || "").trim() || HELA;
+  const nyckel = (o) => o.toLocaleLowerCase("sv");
   return FASER.map((f, i) => {
-    const punkter = PROJEKTMALLAR[i]?.punkter || [];
-    const omfattningar = [...new Set(punkter.flatMap((p) => (perPunkt.get(p.id) || []).map(omfattningAv)))].sort((a, b) => a.localeCompare(b, "sv"));
+    /* Bara punkter som gäller projektets hårdvaruprofil (F09). */
+    const punkter = (PROJEKTMALLAR[i]?.punkter || []).filter((p) => gallerProfil(p, profilId));
+    const plan = planeradeOmfattningar(projekt, i);
+    const registrerade = [...new Set(punkter.flatMap((p) => (perPunkt.get(p.id) || []).map(omfattningAv)))].sort((a, b) => a.localeCompare(b, "sv"));
+    /* Förväntat = kontrollplanens enheter + allt som registrerats (#73). */
+    const omfattningar = forvantadeOmfattningar(plan, registrerade);
     let verifierade = 0;
     let avvikelser = 0;
+    const tackning = {};
     for (const p of punkter) {
       const rader = perPunkt.get(p.id) || [];
+      const komplett = new Set(rader.filter((r) => !kontrollBrister(r, PROJEKTKONTROLL_REVISION).length).map((r) => nyckel(omfattningAv(r))));
+      const klara = omfattningar.filter((o) => komplett.has(nyckel(o))).length;
+      tackning[p.id] = { klara, totalt: omfattningar.length };
       if (rader.some((r) => r.resultat === "ej-ok")) {
         avvikelser++;
         continue;
       }
-      const komplett = new Set(rader.filter((r) => !kontrollBrister(r, PROJEKTKONTROLL_REVISION).length).map(omfattningAv));
-      if (omfattningar.length && omfattningar.every((o) => komplett.has(o))) verifierade++;
+      if (omfattningar.length && klara === omfattningar.length) verifierade++;
     }
-    return { totalt: punkter.length, verifierade, avvikelser, kvar: punkter.length - verifierade, omfattningar };
+    return { totalt: punkter.length, verifierade, avvikelser, kvar: punkter.length - verifierade, omfattningar, planerade: plan, tackning };
   });
 }
 

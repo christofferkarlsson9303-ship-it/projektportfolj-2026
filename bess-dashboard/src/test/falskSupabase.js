@@ -113,8 +113,18 @@ export function skapaFalskSupabase() {
     return q;
   }
 
+  /* registrera_godkannande (F05): kvittenserna i minnet. sattFel(("rpc", namn)) ger fel. */
+  let kvittenser = [];
   const klient = {
     from: fraga,
+    async rpc(namn, arg) {
+      const f = fel && fel("rpc", namn);
+      if (f) return { data: null, error: f };
+      if (namn !== "registrera_godkannande") return { data: null, error: { code: "PGRST202", message: "okänd funktion" } };
+      const rad = { id: `g${kvittenser.length + 1}`, ...arg, kvitterad_epost: "a@one-nordic.se", kvitterad_tid: new Date().toISOString() };
+      kvittenser.push(rad);
+      return { data: rad, error: null };
+    },
     channel() {
       const kanal = {
         on(_typ, { event, table, filter }, fn) {
@@ -139,9 +149,13 @@ export function skapaFalskSupabase() {
     get logg() {
       return logg;
     },
+    get kvittenser() {
+      return kvittenser;
+    },
     nollstall() {
       appState.clear();
       logg = [];
+      kvittenser = [];
       lyssnare.clear();
       fel = null;
       felEfter = null;

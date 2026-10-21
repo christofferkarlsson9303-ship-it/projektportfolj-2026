@@ -33,6 +33,7 @@ export function skalaUrText(text, format = "") {
 export function pappersformat(bPt, hPt) {
   const kort = Math.min(bPt, hPt) * PUNKT_M * 1000;
   const lang = Math.max(bPt, hPt) * PUNKT_M * 1000;
+  /** @type {Array<[string, number, number]>} */
   const format = [
     ["A0", 841, 1189],
     ["A1", 594, 841],

@@ -125,6 +125,7 @@ export async function lasXlsx(buffer) {
         if (!ref) continue;
         const typ = attr.match(/\bt="(\w+)"/)?.[1];
         const v = kropp.match(/<v>([\s\S]*?)<\/v>/)?.[1];
+        /** @type {string|number|boolean} */
         let varde = "";
         if (typ === "s") varde = delade[Number(v)] ?? "";
         else if (typ === "inlineStr") varde = text(kropp);

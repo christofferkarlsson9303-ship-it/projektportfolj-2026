@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Vyvaljare } from "../ui/Vyvaljare.jsx";
 import { DIFF_FARG, DIFF_TEXT, diffSammanfattning } from "../../lib/modellDiff.js";
-import { SEKTION_HOJD, SEKTION_STANDARD } from "../../lib/modellKoppling.js";
+import { SEKTION_HOJD, sektionStandard } from "../../lib/modellKoppling.js";
 import { TOMT, fmtTal } from "../../lib/site.js";
 import { datumKort } from "../../lib/datum.js";
 
@@ -117,7 +117,7 @@ export function SiteVerktygsfalt({
             <Slider id="sek-ymax" etikett="Höjd upp till" min={0} max={SEKTION_HOJD + 8} steg={0.25} varde={sektion.max.y} onAndra={(v) => sattMax("y", v)} />
           </div>
           <div className="flex gap-2">
-            <button type="button" className={KNAPP} onClick={() => onSektion({ ...SEKTION_STANDARD, aktiv: true })}>
+            <button type="button" className={KNAPP} onClick={() => onSektion({ ...sektionStandard(), aktiv: true })}>
               Återställ lådan
             </button>
             <button type="button" className={KNAPP} onClick={() => setSektionOppen(false)}>

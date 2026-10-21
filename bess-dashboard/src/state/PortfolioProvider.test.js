@@ -129,7 +129,21 @@ describe("samtidig redigering", () => {
     await act(async () => api.uppd("risker", "r1", "atgard", "A:s åtgärd"));
 
     await vantaTills(() => iDb("risker", "r1").atgard === "A:s åtgärd");
-    expect(toaster.some((t) => /1 fält ändrades av er båda/.test(t))).toBe(true);
+    expect(toaster.some((t) => /1 fält ändrades på två ställen/.test(t))).toBe(true);
+  });
+
+  it("konflikten listas med värden och kan lösas med den sparade versionen (#70)", async () => {
+    await montera();
+    const falt = document.getElementById("falt");
+    falt.focus();
+    await act(async () => api.uppd("risker", "r1", "atgard", "A:s text"));
+    bAndrar("risker", "r1", "atgard", "B:s text");
+    await act(async () => falt.blur());
+    await vantaTills(() => api.konflikter.length === 1);
+    const k = api.konflikter[0];
+    expect(k).toMatchObject({ vag: "risker[r1].atgard", mina: "A:s text", deras: "B:s text", kritisk: false });
+    await act(async () => api.losKonflikt(k, "deras"));
+    await vantaTills(() => iVyn("risker", "r1").atgard === "B:s text" && api.konflikter.length === 0);
   });
 
   it("väntande ändring läses in när fokus lämnar fältet", async () => {
@@ -256,6 +270,25 @@ describe("offline och återanslutning", () => {
     expect(iVyn("risker", "r2").atgard).toBe("B:s åtgärd");
   });
 
+  it("synkläget visar osparat, återförsök och senast bekräftad sparning (F03)", async () => {
+    await montera();
+    CONFIG.sparaOmMs = 50;
+    let nekade = 0;
+    falsk.sattFel((tabell, op) => {
+      if (tabell === "app_state" && op === "update" && nekade < 1) {
+        nekade += 1;
+        return { code: "PGRST000", message: "nät" };
+      }
+      return null;
+    });
+    await act(async () => api.uppd("risker", "r1", "atgard", "synkprov"));
+    await vantaTills(() => api.synk.osparat && api.synk.forsok === 1);
+    await vantaTills(() => iDb("risker", "r1").atgard === "synkprov" && !api.synk.osparat, 3000);
+    expect(api.synk.forsok).toBe(0);
+    expect(api.synk.senastBekraftad).toBe(localStorage.getItem(CONFIG.bekraftadKey));
+    expect(Number.isNaN(Date.parse(api.synk.senastBekraftad))).toBe(false);
+  });
+
   it("ett nätfel vid sparandet ger nytt försök utan ny redigering", async () => {
     await montera();
     CONFIG.sparaOmMs = 50;
@@ -302,5 +335,34 @@ describe("offline och återanslutning", () => {
 
     falsk.sattFel(null);
     await vantaTills(() => falsk.appState.has(STATE) && iDb("risker", "r1").atgard === "skriven före kontakt", 3000);
+  });
+});
+
+describe("serverkvittens av egenkontroller och grindar (F05)", () => {
+  const kontroll = (extra = {}) => ({
+    id: "k1", projektId: "36037", omfattning: "SKID 1", punktId: "P11.01", resultat: "ok",
+    datum: "2026-10-01", kontrollant: "A. Kontrollant", referens: "EK-1", mallrevision: "r", ...extra,
+  });
+
+  it("en komplett egenkontroll och en grindpassage kvitteras via RPC", async () => {
+    await montera();
+    await act(async () => api.dispatch({ type: "FALT_KONTROLL", rad: kontroll() }));
+    await act(async () => api.dispatch({ type: "EPC_FAS", pid: "36037", fas: 4, falt: "grindDatum", varde: "2026-10-02" }));
+    await vantaTills(() => falsk.kvittenser.length === 2 && api.kvittens.koade === 0);
+    expect(falsk.kvittenser[0]).toMatchObject({ p_typ: "egenkontroll", p_objekt_id: "k1", p_utford_av: "A. Kontrollant" });
+    expect(falsk.kvittenser[1]).toMatchObject({ p_typ: "grind", p_objekt_id: "G4", p_varde: { grindDatum: "2026-10-02" } });
+  });
+
+  it("en ofullständig kontroll kvitteras inte, och ett nätfel ger nytt försök", async () => {
+    await montera();
+    CONFIG.loggAterforsokMs = 50;
+    await act(async () => api.dispatch({ type: "FALT_KONTROLL", rad: kontroll({ referens: "" }) }));
+    let forsok = 0;
+    falsk.sattFel((tabell) => (tabell === "rpc" && ++forsok === 1 ? { code: "PGRST000", message: "nät" } : null));
+    await act(async () => api.dispatch({ type: "FALT_KONTROLL", rad: kontroll({ id: "k2" }) }));
+    await vantaTills(() => falsk.kvittenser.length === 1, 3000);
+    expect(falsk.kvittenser[0].p_objekt_id).toBe("k2");
+    expect(forsok).toBe(2); // ett misslyckat försök, sedan ett lyckat
+    CONFIG.loggAterforsokMs = 15000;
   });
 });

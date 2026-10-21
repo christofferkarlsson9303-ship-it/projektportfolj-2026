@@ -6,6 +6,7 @@ import { Felgrans } from "./components/Felgrans.jsx";
 import { Inloggning } from "./components/Inloggning.jsx";
 import { SEKTIONER } from "./sections/index.js";
 import { useAuth, useUi } from "./state/hooks.js";
+import { LOKALT_SPARRAT } from "./lib/supabase.js";
 
 function AktivSektion() {
   const { aktivVy } = useUi();
@@ -31,12 +32,29 @@ function Portfoljen() {
   );
 }
 
+/** Produktionsbygge utan databas: visa felet i stället för en tom lokal portfölj. */
+function LokaltSparrat() {
+  return (
+    <div className="inlogg">
+      <div className="card inlogg-kort" role="alert">
+        <h3>Databasen är inte konfigurerad</h3>
+        <div className="lead">
+          Den här publiceringen saknar Supabase-inställningarna (VITE_SUPABASE_URL och VITE_SUPABASE_ANON_KEY).
+          Appen öppnas inte i lokalt läge här, eftersom ändringarna då bara skulle sparas i den här webbläsaren.
+          Lägg in variablerna i Vercel och publicera om.
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* Släpper igenom direkt när Supabase inte är konfigurerat — då kör appen
    lokalt läge som tidigare, utan inloggning. Är den konfigurerad krävs både
    inloggning och en plats på allowed_users, för RLS ger ändå ingen data. */
 function Grind() {
   const { status, tillaten, kontrollerad } = useAuth();
 
+  if (status === "okonfigurerad" && LOKALT_SPARRAT) return <LokaltSparrat />;
   if (status === "okonfigurerad") return <Portfoljen />;
   if (status === "laddar" || (status === "inloggad" && !kontrollerad)) {
     return (

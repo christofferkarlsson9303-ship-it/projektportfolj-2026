@@ -37,18 +37,16 @@ Deno.serve(async (req) => {
       if (error) throw new Error(error.message);
       return portfoljUrDokument(dok?.value ?? {});
     },
-    async reservera(rader) {
-      const { data, error } = await db
-        .from("frist_paminnelser")
-        .upsert(rader, { onConflict: "nyckel,niva", ignoreDuplicates: true })
-        .select("nyckel, niva");
+    async reservera(rader, lasSekunder) {
+      // Atomisk reservation per kanal med lås som går ut (F07), se migreringen
+      // 20261021120000_frist_paminnelser_per_kanal.sql.
+      const { data, error } = await db.rpc("reservera_paminnelser", { p_rader: rader, p_las_sekunder: lasSekunder });
       if (error) throw new Error(error.message);
       return data ?? [];
     },
-    async slappa(rader) {
-      for (const r of rader) {
-        await db.from("frist_paminnelser").delete().eq("nyckel", r.nyckel).eq("niva", r.niva);
-      }
+    async markera(rader, status, fel) {
+      const { error } = await db.rpc("markera_paminnelser", { p_rader: rader, p_status: status, p_fel: fel ?? null });
+      if (error) throw new Error(error.message);
     },
   };
 

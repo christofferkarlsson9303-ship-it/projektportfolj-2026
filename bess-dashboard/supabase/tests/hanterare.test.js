@@ -1,24 +1,29 @@
 import { describe, expect, it, vi } from "vitest";
-import { kanalerFranMiljo, korPaminnelser, portfoljUrDokument } from "../functions/frist-paminnelser/hanterare.js";
+import { LAS_SEKUNDER, MAX_FORSOK, kanalerFranMiljo, korPaminnelser, portfoljUrDokument } from "../functions/frist-paminnelser/hanterare.js";
 
 const NU = new Date("2026-09-29T20:00:00+02:00").getTime();
 const iso = (h) => new Date(NU - h * 3600000).toISOString();
 
-/** Lager i minnet med samma semantik som frist_paminnelser. */
+/** Lager i minnet med samma semantik som frist_paminnelser per kanal (F07). */
 function minneslager(state) {
-  const reserverat = new Set();
+  const rader = new Map(); // nyckel → { status, forsok, lasTill }
+  let nu = 0;
+  const k = (r) => `${r.nyckel}|${r.niva}|${r.revision ?? ""}|${r.kanal}`;
   return {
-    reserverat,
+    rader,
     state,
+    sattTid: (ms) => (nu = ms),
     lasPortfolj: async () => structuredClone(state),
-    reservera: async (rader) =>
-      rader.filter((r) => {
-        const k = `${r.nyckel}|${r.niva}`;
-        if (reserverat.has(k)) return false;
-        reserverat.add(k);
-        return true;
+    reservera: async (lista, lasSekunder) =>
+      lista.filter((r) => {
+        const x = rader.get(k(r));
+        if (!x || (x.status === "failed" && x.forsok < MAX_FORSOK) || (x.status === "sending" && x.lasTill < nu)) {
+          rader.set(k(r), { status: "sending", forsok: (x?.forsok || 0) + 1, lasTill: nu + lasSekunder * 1000 });
+          return true;
+        }
+        return false;
       }),
-    slappa: async (rader) => rader.forEach((r) => reserverat.delete(`${r.nyckel}|${r.niva}`)),
+    markera: async (lista, status) => lista.forEach((r) => rader.set(k(r), { ...rader.get(k(r)), status, lasTill: null })),
   };
 }
 
@@ -76,22 +81,41 @@ describe("korPaminnelser", () => {
     expect(teams.skickat.map((m) => m.text).join()).not.toContain("UR001");
   });
 
-  it("släpper reservationen när alla kanaler fallerar, så att nästa körning försöker igen", async () => {
+  it("en kanal som fallerar försöks igen; den som lyckats skickar inte igen (F07)", async () => {
     const lager = minneslager(grund());
-    await expect(korPaminnelser({ lager, kanaler: [kanal("teams", "503")], nuMs: NU })).rejects.toThrow(/teams: 503/);
-    expect(lager.reserverat.size).toBe(0);
-    const ok = kanal("teams");
-    expect((await korPaminnelser({ lager, kanaler: [ok], nuMs: NU })).skickade).toBe(1);
+    const teams = kanal("teams");
+    const mejlFel = kanal("mejl", "503");
+    await expect(korPaminnelser({ lager, kanaler: [teams, mejlFel], nuMs: NU })).rejects.toThrow(/1 av 2 kanaler.*mejl: 503/);
+    expect(teams.skickat).toHaveLength(1);
+    const mejl = kanal("mejl");
+    const ut = await korPaminnelser({ lager, kanaler: [teams, mejl], nuMs: NU + 15 * 60000 });
+    expect(ut.kanalutfall).toEqual([
+      { kanal: "teams", ok: true, antal: 0 },
+      { kanal: "mejl", ok: true, antal: 1 },
+    ]);
+    expect(teams.skickat).toHaveLength(1);
+    expect(mejl.skickat).toHaveLength(1);
   });
 
-  it("en fungerande kanal räcker; den andras fel redovisas", async () => {
+  it("en körning som dör efter reservationen blockerar bara tills låset gått ut", async () => {
     const lager = minneslager(grund());
-    const ut = await korPaminnelser({ lager, kanaler: [kanal("teams", "503"), kanal("mejl")], nuMs: NU });
-    expect(ut.kanalutfall).toEqual([
-      { kanal: "teams", ok: false, fel: "503" },
-      { kanal: "mejl", ok: true },
-    ]);
-    expect(lager.reserverat.size).toBe(1);
+    const dor = { namn: "teams", skicka: () => new Promise(() => {}) }; // svarar aldrig
+    lager.sattTid(NU);
+    void korPaminnelser({ lager, kanaler: [dor], nuMs: NU });
+    await new Promise((r) => setTimeout(r, 0));
+    const teams = kanal("teams");
+    lager.sattTid(NU + 60_000);
+    expect((await korPaminnelser({ lager, kanaler: [teams], nuMs: NU + 60_000 })).skickade).toBe(0);
+    lager.sattTid(NU + LAS_SEKUNDER * 1000 + 1);
+    expect((await korPaminnelser({ lager, kanaler: [teams], nuMs: NU + LAS_SEKUNDER * 1000 + 1 })).skickade).toBe(1);
+  });
+
+  it("ett nytt händelsedatum är en ny frist som påminns igen", async () => {
+    const lager = minneslager(grund());
+    const teams = kanal("teams");
+    await korPaminnelser({ lager, kanaler: [teams], nuMs: NU });
+    lager.state.ur[0].handelseDatum = iso(14);
+    expect((await korPaminnelser({ lager, kanaler: [teams], nuMs: NU })).skickade).toBe(1);
   });
 
   it("torrkörning visar meddelandet utan att skicka eller reservera", async () => {
@@ -101,7 +125,7 @@ describe("korPaminnelser", () => {
     expect(ut.torr).toBe(true);
     expect(ut.meddelande.amne).toMatch(/inom 12 h/);
     expect(teams.skickat).toHaveLength(0);
-    expect(lager.reserverat.size).toBe(0);
+    expect(lager.rader.size).toBe(0);
   });
 
   it("utan kanal är det ett fel — inte tyst", async () => {

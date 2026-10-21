@@ -1,0 +1,16 @@
+{
+  // Typkontroll av JavaScript i src/lib (granskning #74). Icke-strikt: fångar fel
+  // anrop, felstavade fält och felaktiga returtyper, utan att kräva typer på allt.
+  // JSDoc-typerna för kärnposterna ligger i src/lib/typer.d.ts.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "allowImportingTsExtensions": true,
+    "strict": false,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"]
+  },
+  "include": ["src/**/*.ts", "src/lib/**/*.js"],
+  "exclude": ["src/**/*.test.js", "src/lib/__fixtures__/**"]
+}

@@ -125,6 +125,10 @@ function lokaltArkiv() {
       const blob = await idb(["filer"], "readonly", (tx) => tx.objectStore("filer").get(rad.id));
       return blob ? URL.createObjectURL(blob) : null;
     },
+    /** Filen själv, för säkerhetskopian (F06). */
+    async hamtaFil(rad) {
+      return (await idb(["filer"], "readonly", (tx) => tx.objectStore("filer").get(rad.id))) || null;
+    },
   };
 }
 
@@ -183,6 +187,12 @@ function deltArkiv() {
       const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(rad.sokvag, 300);
       if (error) throw error;
       return data.signedUrl;
+    },
+    /** Filen själv, för säkerhetskopian (F06). */
+    async hamtaFil(rad) {
+      const { data, error } = await supabase.storage.from(BUCKET).download(rad.sokvag);
+      if (error) throw error;
+      return data;
     },
   };
 }

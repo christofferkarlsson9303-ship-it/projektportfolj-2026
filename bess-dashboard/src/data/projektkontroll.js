@@ -3,6 +3,7 @@ import { FALTMALLAR } from "./faltmaterial.js";
 import { LAGMALLAR } from "./lagplan.js";
 export const PROJEKTKONTROLL_REVISION = "2026-10-17.1";
 export const PROJEKTKONTROLL_INLEDNING = "Följ projektet från första förberedelse till garantiuppföljning. Kontrollera arbetet mot rätt kontrakt, ritning, kontrollplan och tillverkarmanual. Skriv verkligt resultat, datum, kontrollant och bevis. För leverantörspunkter avser ONE:s kvittens mottaget/granskat underlag; leverantörens utförare och protokoll ska framgå. Öppna ansvarsgränser måste först fastställas skriftligt. STOPP betyder att utsedd ansvarig måste ge klartecken. En ifylld lista ersätter inte provprotokoll, tillstånd eller underskrift.";
+/** @type {Array<[string, string[][]]>} */
 const steg = [
   ["Förstudie och krav", [
     ["Bestäm anläggningens mål", "Bekräfta effekt, energimängd, användning och beställarens funktionskrav. Ange kravspecifikationens revision.", "Projektledare"],

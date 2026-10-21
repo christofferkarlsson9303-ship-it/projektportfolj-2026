@@ -2,20 +2,30 @@
    index.ts kopplar in lagret (databasen) och kanalerna (mejl, Teams); här
    ligger logiken så att den går att testa i Vitest.
 
-   Varje frist påminns en gång per nivå: när den blir akut (≤ 12 h kvar) och
-   när den passerat. Reservationen i frist_paminnelser görs FÖRE utskicket så
-   att två samtidiga körningar inte skickar samma sak; misslyckas alla kanaler
-   släpps reservationen och nästa körning försöker igen. */
+   Varje frist påminns en gång per nivå (akut ≤ 12 h kvar, passerad) och per
+   revision av fristen (händelsedatumet). Beslut 2026-10-21 (F07): ALLA kanaler
+   måste lyckas. Status hålls per kanal i frist_paminnelser:
+
+     sending  reserverad av en körning, med lås som går ut (LAS_SEKUNDER)
+     sent     kanalen har skickat
+     failed   kanalen misslyckades – nästa körning försöker igen
+
+   En körning som dör efter reservationen lämnar raden i sending; när låset gått
+   ut tar nästa körning den. En kanal som lyckats skickar inte igen för att en
+   annan misslyckats. Efter MAX_FORSOK ges kanalen upp för den fristen. */
 
 import { meddelande, paminnelser } from "../_shared/frister.js";
 
-const nyckelFor = (f) => `${f.nyckel}|${f.niva}`;
+export const LAS_SEKUNDER = 10 * 60;
+export const MAX_FORSOK = 12;
+
+const radNyckel = (r) => `${r.nyckel}|${r.niva}|${r.revision ?? ""}|${r.kanal}`;
 
 /**
  * @param {object} arg
  * @param {{lasPortfolj: () => Promise<object>,
- *          reservera: (rader: {nyckel:string, niva:string}[]) => Promise<{nyckel:string, niva:string}[]>,
- *          slappa: (rader: {nyckel:string, niva:string}[]) => Promise<void>}} arg.lager
+ *          reservera: (rader: {nyckel:string, niva:string, revision:string, kanal:string}[], lasSekunder:number) => Promise<{nyckel:string, niva:string, revision:string, kanal:string}[]>,
+ *          markera: (rader: {nyckel:string, niva:string, revision:string, kanal:string}[], status:"sent"|"failed", fel?:string) => Promise<void>}} arg.lager
  * @param {{namn:string, skicka: (m:{amne:string, text:string}) => Promise<void>}[]} arg.kanaler
  * @param {number} [arg.nuMs]
  * @param {boolean} [arg.torr] visa vad som skulle skickas, utan att skicka eller reservera
@@ -32,33 +42,39 @@ export async function korPaminnelser({ lager, kanaler, nuMs = Date.now(), torr =
       meddelande: aktuella.length ? meddelande(aktuella, state.projekt, appUrl) : null,
     };
   }
-  if (!aktuella.length) return { aktuella: 0, skickade: 0 };
+  if (!aktuella.length) return { aktuella: 0, skickade: 0, kanalutfall: [] };
   if (!kanaler.length) throw new Error("Ingen kanal konfigurerad (TEAMS_WEBHOOK_URL eller RESEND_API_KEY + PAMINNELSE_TILL)");
 
-  const reserverade = await lager.reservera(aktuella.map((f) => ({ nyckel: f.nyckel, niva: f.niva })));
-  const nya = new Set(reserverade.map(nyckelFor));
-  const attSkicka = aktuella.filter((f) => nya.has(nyckelFor(f)));
-  if (!attSkicka.length) return { aktuella: aktuella.length, skickade: 0 };
-
-  const m = meddelande(attSkicka, state.projekt, appUrl);
   const kanalutfall = [];
+  const skickadeFrister = new Set();
   for (const k of kanaler) {
+    const rader = aktuella.map((f) => ({ nyckel: f.nyckel, niva: f.niva, revision: f.revision ?? "", kanal: k.namn }));
+    const reserverade = await lager.reservera(rader, LAS_SEKUNDER);
+    const nya = new Set(reserverade.map(radNyckel));
+    const attSkicka = aktuella.filter((f) => nya.has(radNyckel({ ...f, revision: f.revision ?? "", kanal: k.namn })));
+    if (!attSkicka.length) {
+      kanalutfall.push({ kanal: k.namn, ok: true, antal: 0 });
+      continue;
+    }
     try {
-      await k.skicka(m);
-      kanalutfall.push({ kanal: k.namn, ok: true });
+      await k.skicka(meddelande(attSkicka, state.projekt, appUrl));
+      await lager.markera(reserverade, "sent");
+      attSkicka.forEach((f) => skickadeFrister.add(`${f.nyckel}|${f.niva}`));
+      kanalutfall.push({ kanal: k.namn, ok: true, antal: attSkicka.length });
     } catch (e) {
-      kanalutfall.push({ kanal: k.namn, ok: false, fel: String(e?.message || e) });
+      const fel = String(e?.message || e);
+      await lager.markera(reserverade, "failed", fel);
+      kanalutfall.push({ kanal: k.namn, ok: false, antal: attSkicka.length, fel });
     }
   }
 
-  if (!kanalutfall.some((k) => k.ok)) {
-    await lager.slappa(reserverade);
-    const e = new Error("Ingen kanal kunde skicka: " + kanalutfall.map((k) => `${k.kanal}: ${k.fel}`).join("; "));
+  const misslyckade = kanalutfall.filter((k) => !k.ok);
+  if (misslyckade.length) {
+    const e = new Error(`${misslyckade.length} av ${kanaler.length} kanaler kunde inte skicka (försöks igen): ` + misslyckade.map((k) => `${k.kanal}: ${k.fel}`).join("; "));
     e.kanalutfall = kanalutfall;
     throw e;
   }
-
-  return { aktuella: aktuella.length, skickade: attSkicka.length, amne: m.amne, kanalutfall };
+  return { aktuella: aktuella.length, skickade: skickadeFrister.size, kanalutfall };
 }
 
 /* ---------- Kanaler ---------- */

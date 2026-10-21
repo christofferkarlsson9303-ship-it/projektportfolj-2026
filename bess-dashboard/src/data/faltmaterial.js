@@ -82,3 +82,26 @@ export const FALTMALLAR = [
     ],
   },
 ];
+
+/* ---------- Tillämpning per hårdvaruprofil (granskning F09) ----------
+   Inventering 2026-10-21 (Claude, ANTAGANDE – ska granskas av el-/OEM-ansvarig):
+   punkter vars värden, beteckningar eller ansvarsfördelning kommer ur CATL-checklistan
+   eller Power Electronics-underlaget gäller bara profilen catl-pe. Övriga punkter är
+   allmänna och gäller alla profiler. Ett projekt med annan profil får inte CATL-punkterna;
+   de listas i stället som öppna beslut tills tillverkarens egna krav lagts in. */
+export const TILLAMPNING_CATL_PE = Object.freeze({
+  profil: "catl-pe",
+  manualRev: "CATL-checklista release 12.2025",
+  dokId: "AC2C leverantörsmatris 03.4 (2025-08-25)",
+  sida: null,
+});
+
+/** Punkter som gäller oavsett hårdvaruprofil. */
+export const ALLMANNA_FALTPUNKTER = new Set([
+  "M1.01", "M1.02", "M1.07", "M2.03", "M2.04", "M2.05", "M2.06", "M2.13", "M2.14",
+  "M3.01", "M3.07", "M3.08", "M4.01", "M4.12",
+]);
+
+for (const m of FALTMALLAR) {
+  for (const p of m.punkter) if (!ALLMANNA_FALTPUNKTER.has(p.id)) p.tillampning = TILLAMPNING_CATL_PE;
+}

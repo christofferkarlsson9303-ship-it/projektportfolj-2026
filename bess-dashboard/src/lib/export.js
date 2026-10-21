@@ -49,7 +49,9 @@ async function hamtaDownloads() {
   if (dlKlar) return DL;
   dlKlar = true;
   try {
-    DL = window.claude && typeof window.claude.use === "function" ? await window.claude.use("downloads") : null;
+    /** @type {any} */
+    const w = window;
+    DL = w.claude && typeof w.claude.use === "function" ? await w.claude.use("downloads") : null;
   } catch {
     DL = null;
   }

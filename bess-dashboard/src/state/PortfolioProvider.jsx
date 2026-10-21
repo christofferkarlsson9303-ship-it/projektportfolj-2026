@@ -4,7 +4,11 @@ import { nu } from "../lib/datum.js";
 import { PortfolioContext } from "./kontexter.js";
 import { skapaDb } from "./db-supabase.js";
 import { useUi } from "./hooks.js";
-import { arEkonomiAtgard, efterInlasning, normalisera, reducer } from "./portfolj-reducer.js";
+import { arEkonomiAtgard, efterInlasning, hamtaNamn, normalisera, reducer } from "./portfolj-reducer.js";
+import { kvittensFor, laggIKo, lasKo, sparaKo, tomKo } from "../lib/godkannanden.js";
+import { registreraGodkannande } from "./godkannanden.js";
+import { supabase } from "../lib/supabase.js";
+import { laggTillMatning, p95 } from "../lib/matning.js";
 import { aktivVy, forlorade } from "../lib/arkiv.js";
 import { lokalFelText, skrivLokalt } from "../lib/lokalLagring.js";
 import { sammanfoga } from "../lib/sammanfoga.js";
@@ -16,6 +20,7 @@ export const CONFIG = {
   sparaOmMs: 10_000, // nytt försök när portföljen inte gick att spara delat
   basKey: "batchc-portfolj-bas-v1", // senast gemensamma läge med databasen (basen i sammanslagningen)
   osparadKey: "batchc-portfolj-osparad-v1", // "1" så länge lokala ändringar inte nått databasen
+  bekraftadKey: "batchc-portfolj-bekraftad-v1", // ISO-tid för senaste sparning som databasen kvitterat (F03)
   storageKey: "batchc-portfolj-v1",
   dbPath: "portfolj/state", // huvuddokument — alla med länken kan ändra
   dbPathEkonomi: "portfolj/ekonomi", // kontraktsvärde + betalplan, write:admin
@@ -42,7 +47,20 @@ function lagraNyckel(nyckel, varde) {
     /* full eller blockerad lagring — då finns ingen bas att slå ihop mot */
   }
 }
-const markeraOsparad = (ja) => lagraNyckel(CONFIG.osparadKey, ja ? "1" : null);
+/* Synkläget (F03, förenklad kö) speglas till providern så att det kan visas:
+   osparat ja/nej, senast bekräftade sparning och antal återförsök. */
+let synkLyssnare = null;
+const markeraOsparad = (ja) => {
+  lagraNyckel(CONFIG.osparadKey, ja ? "1" : null);
+  synkLyssnare?.((s) => (s.osparat === ja ? s : { ...s, osparat: ja }));
+};
+function lasBekraftad() {
+  try {
+    return localStorage.getItem(CONFIG.bekraftadKey) || null;
+  } catch {
+    return null;
+  }
+}
 function arOsparad() {
   try {
     return localStorage.getItem(CONFIG.osparadKey) === "1";
@@ -111,6 +129,23 @@ export function PortfolioProvider({ children }) {
   const { visaToast } = useUi();
   const [state, rawDispatch] = useReducer(reducer, undefined, laddaLokalt);
   const [conn, setConn] = useState({ kl: "", txt: "Ansluter till delad lagring…" });
+  /** Konflikter som väntar på ett val i konfliktvyn (#70). @type {[import("../lib/typer.js").Konfliktdetalj[], Function]} */
+  const [konflikter, setKonflikter] = useState([]);
+  /** Portföljdokumentets storlek och sparlatens (F15). */
+  const [lagring, setLagring] = useState({ kB: null, p95Ms: null, antal: 0 });
+  const sparTider = useRef([]);
+  const laggTillKonflikter = useCallback((detaljer) => {
+    if (!detaljer?.length) return;
+    setKonflikter((nu) => [...nu.filter((k) => !detaljer.some((d) => d.vag === k.vag)), ...detaljer]);
+  }, []);
+  /** @type {[import("../lib/typer.js").Synkoperation, Function]} */
+  const [synk, setSynk] = useState(() => ({ osparat: arOsparad(), senastBekraftad: lasBekraftad(), forsok: 0, fel: null }));
+  useEffect(() => {
+    synkLyssnare = setSynk;
+    return () => {
+      if (synkLyssnare === setSynk) synkLyssnare = null;
+    };
+  }, []);
   const [ekonomiFel, setEkonomiFel] = useState("");
 
   const dbRef = useRef(null);
@@ -224,10 +259,16 @@ export function PortfolioProvider({ children }) {
       const str = JSON.stringify(payload);
       senastSynkad.current = str;
       komIhagSkickad(str);
+      const t0 = performance.now();
       await dbRef.current.doc(CONFIG.dbPath).set(payload);
+      sparTider.current = laggTillMatning(sparTider.current, Math.round(performance.now() - t0));
+      setLagring({ kB: Math.round(new TextEncoder().encode(str).length / 1024), p95Ms: p95(sparTider.current), antal: sparTider.current.length });
       sattBas(basState, payload);
       // Märkningen släpps bara om inget nytt hunnit ändras under skrivningen.
       if (JSON.stringify(packaStatePayload(stateRef.current)) === str) markeraOsparad(false);
+      const tid = new Date().toISOString();
+      lagraNyckel(CONFIG.bekraftadKey, tid);
+      setSynk((x) => ({ ...x, senastBekraftad: tid, forsok: 0, fel: null }));
       setConn({ kl: "ok", txt: "Delad · sparad " + nu() });
     } catch (e) {
       /* Konflikt betyder att någon hann spara mellan vår läsning och vår
@@ -247,6 +288,7 @@ export function PortfolioProvider({ children }) {
         return;
       }
       setConn({ kl: "err", txt: `Kunde inte spara delat (${e.code || e.message || "fel"}) — försöker igen, finns lokalt` });
+      setSynk((x) => ({ ...x, osparat: true, forsok: x.forsok + 1, fel: String(e.code || e.message || "fel") }));
       /* Nät- eller serverfel: ändringen ligger kvar, märkt som osparad, och
          skickas igen. Tidigare väntade den på nästa redigering — och vid nästa
          start ersattes den av serverns version. */
@@ -274,7 +316,8 @@ export function PortfolioProvider({ children }) {
     const deras = packaStatePayload(franPayload(raw));
     const mina = packaStatePayload(stateRef.current);
     const bas = basState.current ?? mina;
-    const { varde, konflikter } = sammanfoga(bas, mina, deras);
+    const { varde, konflikter, detaljer } = sammanfoga(bas, mina, deras);
+    laggTillKonflikter(detaljer);
 
     dbRef.current?.doc(CONFIG.dbPath).antaVersion?.(version);
     sattBas(basState, deras);
@@ -291,7 +334,7 @@ export function PortfolioProvider({ children }) {
     // Statusraden skrivs över av omsparningen direkt — toasten syns.
     if (konflikter.length) visaToast(sammanslagningsText(konflikter), "warn");
     return konflikter;
-  }, [franPayload, sparaState, visaToast, sattNu]);
+  }, [franPayload, sparaState, visaToast, sattNu, laggTillKonflikter]);
 
   useEffect(() => {
     tillampaFjarr.current = tillampaFjarrFn;
@@ -366,15 +409,50 @@ export function PortfolioProvider({ children }) {
   }, [skrivLokaltOchRapportera, sattNu]);
 
   /** Dispatch som också schemalägger autospar på rätt kanal. */
+  /* Serverkvittens av egenkontroller och grindar (F05). Kvittensen köas lokalt och
+     skickas till registrera_godkannande; misslyckas den försöks den igen. */
+  const kvittensKo = useRef(null);
+  if (kvittensKo.current === null) kvittensKo.current = lasKo();
+  const [kvittens, setKvittens] = useState(() => ({ koade: kvittensKo.current.length, nekade: [], senast: null }));
+  const kvittensTimer = useRef(null);
+  const skickaKvittenser = useCallback(async function skickaNu() {
+    if (!supabase || !kvittensKo.current.length) return;
+    clearTimeout(kvittensTimer.current);
+    const ko = kvittensKo.current;
+    const { kvar, nekade, skickade } = await tomKo(ko, registreraGodkannande);
+    // Det som lagts i kön under tiden ligger kvar.
+    kvittensKo.current = [...kvar, ...kvittensKo.current.filter((k) => !ko.includes(k))];
+    sparaKo(kvittensKo.current);
+    setKvittens((x) => ({ koade: kvittensKo.current.length, nekade: [...x.nekade, ...nekade].slice(-20), senast: skickade ? new Date().toISOString() : x.senast }));
+    if (nekade.length) visaToast(`Databasen nekade kvittens: ${nekade[0].fel}`, "warn");
+    if (kvittensKo.current.length) kvittensTimer.current = setTimeout(skickaNu, CONFIG.loggAterforsokMs);
+  }, [visaToast]);
+  useEffect(() => {
+    skickaKvittenser();
+    const vidOnline = () => skickaKvittenser();
+    window.addEventListener("online", vidOnline);
+    return () => {
+      window.removeEventListener("online", vidOnline);
+      clearTimeout(kvittensTimer.current);
+    };
+  }, [skickaKvittenser]);
+
   const dispatch = useCallback(
     (action) => {
       rawDispatch(action);
+      const k = supabase ? kvittensFor(action, hamtaNamn()) : null;
+      if (k) {
+        kvittensKo.current = laggIKo(kvittensKo.current, k);
+        sparaKo(kvittensKo.current);
+        setKvittens((x) => ({ ...x, koade: kvittensKo.current.length }));
+        setTimeout(() => skickaKvittenser(), 0);
+      }
       if (action.type === "SATT_STATE" && action.tyst) return;
       if (action.type === "SATT_LOGG") return; // loggen sparas i egen tabell
       koadKanal.current = arEkonomiAtgard(action) ? "ekonomi" : "state";
       if (koadKanal.current === "state" && dbRef.current) markeraOsparad(true);
     },
-    []
+    [skickaKvittenser]
   );
 
   // Autospar: körs efter att state faktiskt uppdaterats, så payloaden är färsk.
@@ -739,6 +817,15 @@ export function PortfolioProvider({ children }) {
       ejVunna,
       dispatch,
       conn,
+      synk,
+      konflikter,
+      kvittens,
+      lagring,
+      /** Väljer version för en konflikt. "mina" eller "deras". */
+      losKonflikt: (k, val) => {
+        dispatch({ type: "LOS_KONFLIKT", steg: k.steg, varde: val === "mina" ? k.mina : k.deras, vag: k.vag, val });
+        setKonflikter((nu) => nu.filter((x) => x.vag !== k.vag));
+      },
       ekonomiFel,
       uppd: (lista, id, falt, varde) => dispatch({ type: "UPPDATERA", lista, id, falt, varde }),
       uppdNum: (lista, id, falt, varde) =>
@@ -759,7 +846,7 @@ export function PortfolioProvider({ children }) {
       ateraktiveraAnbud: (id) => dispatch({ type: "ATERAKTIVERA_ANBUD", id }),
       markeraEjVunnet: (id, orsak, text) => dispatch({ type: "MARKERA_EJ_VUNNET", id, orsak, text }),
     }),
-    [state, vy, ejVunna, dispatch, conn, ekonomiFel, visaToast]
+    [state, vy, ejVunna, dispatch, conn, synk, konflikter, kvittens, lagring, ekonomiFel, visaToast]
   );
 
   return <PortfolioContext.Provider value={api}>{children}</PortfolioContext.Provider>;

@@ -60,7 +60,7 @@ function standardplan(state, pid) {
  * Prognos och kritisk linje för ett projekt.
  * @returns {null | {
  *   referens: "baslinje"|"standardplan", baslinje: object|null,
- *   kontrakt: string|null, slutPrognos: string, forsening: number|null,
+ *   kontrakt: string|null, slutPrognos: string, forsening: number|null, motBaslinje: number|null,
  *   faser: object[], kritiska: number[], milstolpar: object[]
  * }} null när planen saknar start eller slut.
  */

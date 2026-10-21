@@ -13,6 +13,7 @@ export function utforareMedUppgifter(state, pid) {
 }
 
 /** Arbetslista med öppna uppgifter — för en utförare, valda rader eller alla. */
+/** @param {any} state @param {any} projekt @param {{utforare?: string, ids?: string[], skapadAv?: string}} [val] */
 export function arbetslistaDokument(state, projekt, { utforare = "", ids, skapadAv = "" } = {}) {
   return byggFaltmaterial({
     projekt,

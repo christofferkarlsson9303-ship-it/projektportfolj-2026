@@ -43,6 +43,10 @@ export const HARDVARUPROFILER = {
       ],
       mwh: null,
     },
+    /* Skyddsavstånd som regelobjekt (F11). Används av lib/siteSakerhet.js. */
+    skyddsavstand: [
+      { id: "container-container", mellan: ["container", "container"], avstand: 3.0, sida: true, text: "Fritt mellan batterienheter, långsida mot långsida (rek. 3,5 m)", kalla: NYCKEL, verifierad: true },
+    ],
     skid: {
       benamning: "Power Electronics MV-skid",
       prefix: "SKID",
@@ -78,6 +82,9 @@ export const HARDVARUPROFILER = {
       ],
       mwh: 6.904,
     },
+    skyddsavstand: [
+      { id: "container-container", mellan: ["container", "container"], avstand: null, text: "Fritt mellan batterienheter", kalla: "Saknas – hämtas ur Sungrows installationsmanual för ST6900UX-4H", verifierad: false },
+    ],
     skid: {
       benamning: "Sungrow MV-station",
       prefix: "MVS",

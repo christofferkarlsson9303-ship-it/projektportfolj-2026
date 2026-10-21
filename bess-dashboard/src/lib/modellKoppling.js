@@ -92,6 +92,7 @@ export function kopplingFel(k) {
 }
 
 /** Fälten som sparas på ärendet när det kopplas till ett objekt. */
+/** @param {any} objekt @param {{viewpoint?: any, modelVersionId?: string}} [val] */
 export function byggKoppling(objekt, { viewpoint, modelVersionId = "" } = {}) {
   const boundingBox = boundingBoxFor(objekt);
   return {
@@ -158,6 +159,13 @@ export const SEKTION_STANDARD = {
   min: { x: -TOMT.bredd / 2, y: 0, z: -TOMT.djup / 2 },
   max: { x: TOMT.bredd / 2, y: SEKTION_HOJD, z: TOMT.djup / 2 },
 };
+
+/** Sektionslådan för den aktiva tomten (projektets egen, F11). */
+export const sektionStandard = () => ({
+  aktiv: false,
+  min: { x: -TOMT.bredd / 2, y: 0, z: -TOMT.djup / 2 },
+  max: { x: TOMT.bredd / 2, y: SEKTION_HOJD, z: TOMT.djup / 2 },
+});
 
 /** Håller min ≤ max på varje axel (en slider kan inte dra förbi sin motsats). */
 export function klippSektion(s) {

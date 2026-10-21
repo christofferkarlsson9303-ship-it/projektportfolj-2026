@@ -38,7 +38,7 @@ export function dagarTill(iso) {
   const a = new Date(idag() + "T00:00:00");
   const b = new Date(iso + "T00:00:00");
   if (Number.isNaN(b.getTime())) return null;
-  return Math.round((b - a) / 86400000);
+  return Math.round((b.getTime() - a.getTime()) / 86400000);
 }
 
 /** ISO-vecka på formen "2026-v37". */
@@ -47,7 +47,7 @@ export function isoVecka(d) {
   const dag = t.getUTCDay() || 7;
   t.setUTCDate(t.getUTCDate() + 4 - dag);
   const nyar = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
-  const v = Math.ceil(((t - nyar) / 86400000 + 1) / 7);
+  const v = Math.ceil(((t.getTime() - nyar.getTime()) / 86400000 + 1) / 7);
   return t.getUTCFullYear() + "-v" + String(v).padStart(2, "0");
 }
 

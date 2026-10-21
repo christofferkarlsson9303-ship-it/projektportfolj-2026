@@ -2215,3 +2215,7 @@ button.ov-gantt-rad:hover>:first-child,button.ov-gantt-rad:focus-visible>:first-
 @media(max-width:640px){.projektmetod .ds-card{padding:20px;border-radius:14px}.metod-projekt{grid-template-columns:minmax(0,1fr);padding:16px}.projektmetod .metod-intro>header h3{font-size:21px}.metod-sektionshuvud{margin-bottom:18px}.metod-projekt-under .btn{width:100%}.projektmetod .ds-card>header h3{font-size:17px}}
 @media(prefers-reduced-motion:reduce){.projektmetod [role="progressbar"]>span{transition:none}}
 @media print{.projektmetod .ds-card{box-shadow:none;border-radius:0}.projektvaljare{display:none}}
+
+/* Synkläget under anslutningsraden (F03): osparat och senast bekräftad sparning. */
+.conn-synk{display:flex;flex-direction:column;gap:2px;margin-top:4px;padding-left:16px;font-size:11px;line-height:1.35;color:rgba(255,255,255,.72)}
+.conn-synk b{color:rgba(255,255,255,.95);font-weight:700}

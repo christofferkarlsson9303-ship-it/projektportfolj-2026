@@ -24,6 +24,9 @@ Appen har två lägen, och väljer själv efter om Supabase är konfigurerat.
 
 **Lokalt läge** — utan `VITE_SUPABASE_URL` och `VITE_SUPABASE_ANON_KEY` sparas
 allt i `localStorage` och ingen inloggning krävs. Det är läget e2e-testen kör i.
+I ett produktionsbygge är lokalt läge spärrat (#71): `npm run build` utan variablerna
+ger en sida som säger att databasen saknas. `npm run build:lokal` och `build:single`
+tillåter det uttryckligen (`VITE_TILLAT_LOKALT=1`), och e2e bygger med `build:lokal`.
 
 **Delat läge** — med variablerna satta krävs inloggning med magisk länk, och
 adressen måste finnas i tabellen `allowed_users`. Se `.env.example`.

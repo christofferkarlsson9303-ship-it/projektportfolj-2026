@@ -5,7 +5,12 @@ import { DataTable } from "../components/ui/DataTable.jsx";
 import { Callout, Card, DataList, Overline, StatTile, StatusBadge } from "../components/ds/index.js";
 import { CSV_TABELLER } from "../data/konstanter.js";
 import { KONFIGURERAD } from "../lib/supabase.js";
-import { exporteraJson, exporteraLista } from "../lib/export.js";
+import { exporteraJson, exporteraLista, laddaNer } from "../lib/export.js";
+import { aterstallBilagor, bilagaSammanfattning, bilagekallor, byggSakerhetskopia, lasSakerhetskopia } from "../lib/sakerhetskopia.js";
+import { skapaRitningsArkiv } from "../state/ritningsArkiv.js";
+import { skapaIfcCache } from "../lib/ifcCache.js";
+import { idag } from "../lib/datum.js";
+import { F15_GRANSER, bedomLagring } from "../lib/matning.js";
 import { lasXlsx } from "../lib/xlsx.js";
 import {
   datumUrFilnamn,
@@ -70,6 +75,22 @@ function kandaPersoner(state) {
 async function tolkaFil(state, fil) {
   const typ = filtyp(fil.name);
   if (typ === "json") return forslagBackup(state, await fil.text(), { filnamn: fil.name });
+  if (typ === "zip") {
+    /* Fullständig säkerhetskopia (F06): state + bilagor, kontrollsummor prövas först. */
+    try {
+      const las = await lasSakerhetskopia(await fil.arrayBuffer());
+      const f = forslagBackup(state, las.stateText, { filnamn: fil.name });
+      return {
+        ...f,
+        titel: "Fullständig säkerhetskopia → portföljen och bilagorna",
+        varningar: [...(f.varningar || []), ...las.fel],
+        info: [...(f.info || []), ...bilagaSammanfattning(las.manifest), "Bilagor som redan finns skrivs inte över."],
+        bilagor: las.filer,
+      };
+    } catch (e) {
+      return { typ: "okand", titel: "Kan inte läsas in", filnamn: fil.name, nya: [], uppdateringar: [], varningar: [e.message || String(e)], info: [], fel: true };
+    }
+  }
   if (typ === "csv") return forslagCsv(state, await fil.text(), { filnamn: fil.name });
   if (typ === "xlsx") {
     try {
@@ -100,7 +121,7 @@ async function tolkaFil(state, fil) {
     filnamn: fil.name,
     nya: [],
     uppdateringar: [],
-    varningar: ["Filtypen stöds inte. Använd .json, .csv, .xlsx, .pdf eller .docx."],
+    varningar: ["Filtypen stöds inte. Använd .zip, .json, .csv, .xlsx, .pdf eller .docx."],
     info: [],
     fel: true,
   };
@@ -381,7 +402,7 @@ function Protokollarkiv({ rader, projekt, status, onOppna }) {
 
 export function Data() {
   /* Arkiv, export och import gäller hela datan, också förlorade anbud. */
-  const { heltState: state, dispatch, conn } = usePortfolj();
+  const { heltState: state, dispatch, conn, lagring } = usePortfolj();
   const { bekrafta, visaToast } = useUi();
   const [forslag, setForslag] = useState([]); // [{...forslag, nyckel, fil}]
   const [arbetar, setArbetar] = useState(null);
@@ -480,7 +501,21 @@ export function Data() {
         );
       } else {
         dispatch({ type: "IMPORTERA", forslag: f });
-        visaToast(f.typ === "backup" ? "Portföljen återställd från säkerhetskopian" : "Importen är tillämpad och loggad");
+        if (f.bilagor?.length) {
+          const res = await aterstallBilagor(f.bilagor, {
+            ritningsArkiv: skapaRitningsArkiv,
+            ifcCache: skapaIfcCache(),
+            protokollArkiv: arkiv,
+            befintligaProtokoll: protokoll,
+          });
+          await laddaArkiv();
+          visaToast(
+            `Portföljen återställd. Bilagor: ${res.aterlagda} återlagda, ${res.hoppade.length} fanns redan${res.fel.length ? `, ${res.fel.length} misslyckades (${res.fel[0]})` : ""}`,
+            res.fel.length ? "warn" : ""
+          );
+        } else {
+          visaToast(f.typ === "backup" ? "Portföljen återställd från säkerhetskopian" : "Importen är tillämpad och loggad");
+        }
       }
       setForslag((fore) => fore.filter((x) => x.nyckel !== f.nyckel));
     } catch (e) {
@@ -508,6 +543,22 @@ export function Data() {
   const spara = async (p) => {
     const r = await p;
     if (r && !r.tyst) visaToast(r.txt, r.typ || (r.ok ? "" : "bad"));
+  };
+
+  const [packar, setPackar] = useState(false);
+  const sparaFullstandig = async () => {
+    setPackar(true);
+    try {
+      const kallor = bilagekallor(state, { ritningsArkiv: skapaRitningsArkiv, ifcCache: skapaIfcCache(), protokoll, protokollArkiv: arkiv });
+      const { data, manifest } = await byggSakerhetskopia({ state, av: hamtaNamn(), kallor });
+      const r = await laddaNer(`Projektportfolj_sakerhetskopia_${idag()}.zip`, data, "application/zip");
+      if (r.ok && manifest.saknas.length) visaToast(`${r.txt}. ${manifest.saknas.length} bilagor kunde inte hämtas – se manifest.json`, "warn");
+      else if (!r.tyst) visaToast(r.txt, r.typ || (r.ok ? "" : "bad"));
+    } catch (e) {
+      visaToast(`Säkerhetskopian kunde inte skapas: ${e.message || e}`, "bad");
+    } finally {
+      setPackar(false);
+    }
   };
 
   const tabeller = CSV_TABELLER.map(([k, namn]) => ({ id: k, namn, rader: (state[k] || []).length }));
@@ -572,7 +623,10 @@ export function Data() {
               <b className="font-mono text-info-ink">.csv</b> Tabell från appens egen export → samma flik
             </li>
             <li>
-              <b className="font-mono text-info-ink">.json</b> Säkerhetskopia → hela portföljen
+              <b className="font-mono text-info-ink">.zip</b> Fullständig säkerhetskopia → portföljen och bilagorna
+            </li>
+            <li>
+              <b className="font-mono text-info-ink">.json</b> Dataexport → hela portföljen (utan bilagor)
             </li>
           </ul>
           <input
@@ -581,7 +635,7 @@ export function Data() {
             multiple
             className="sr-only"
             aria-label="Välj filer att läsa in"
-            accept=".json,.csv,.xlsx,.xlsm,.pdf,.doc,.docx,.odt"
+            accept=".zip,.json,.csv,.xlsx,.xlsm,.pdf,.doc,.docx,.odt"
             onChange={(e) => {
               lasIn([...e.target.files]);
               e.target.value = "";
@@ -617,11 +671,18 @@ export function Data() {
           title="Säkerhetskopia"
           subtitle={`Hela portföljen i en fil — ${totalt} rader, ca ${storlek} kB. Ta en kopia före större ändringar och inför varje milstolpe. Filen läses tillbaka genom att släppa den i rutan ovan.`}
         >
-          <div>
-            <button type="button" className="btn" onClick={() => spara(exporteraJson(state, hamtaNamn()))}>
-              Ladda ner säkerhetskopia (JSON)
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className="btn" disabled={packar} onClick={sparaFullstandig}>
+              {packar ? "Packar …" : "Fullständig säkerhetskopia (ZIP)"}
+            </button>
+            <button type="button" className="btn sec" onClick={() => spara(exporteraJson(state, hamtaNamn()))}>
+              Dataexport (utan bilagor, JSON)
             </button>
           </div>
+          <p className="mt-3 text-xs text-ink-soft">
+            ZIP-filen innehåller portföljen, ritningsfilerna, IFC-geometrin som finns i den här webbläsaren och
+            protokollfilerna, med kontrollsumma per fil. JSON-exporten saknar alla bilagor: ritningar, IFC och protokoll.
+          </p>
         </Card>
 
         <Card id="data-lagring" title="Var ligger datan?">
@@ -633,6 +694,12 @@ export function Data() {
                 badge: delad ? <StatusBadge ton="ok" label="Aktiv" /> : <StatusBadge ton="warn" label="Lokalt läge" />,
                 detail:
                   "Allt sparas automatiskt ungefär en sekund efter varje ändring och syns för alla inloggade. Kontraktsvärde och betalplan ligger i ett eget dokument som bara administratören kan ändra, och ändringsloggen i en egen tabell som bara går att lägga till i.",
+              },
+              {
+                label: "Portföljdokumentet",
+                value: lagring?.kB !== null && lagring?.kB !== undefined ? `${lagring.kB} kB · sparning p95 ${lagring.p95Ms} ms` : `ca ${storlek} kB lokalt`,
+                badge: lagring?.antal ? <StatusBadge ton={bedomLagring(lagring).ton} label={bedomLagring(lagring).ton === "ok" ? "Inom gräns" : "Över gräns"} /> : null,
+                detail: `${lagring?.antal ? `${bedomLagring(lagring).text} Mätt på de ${lagring.antal} senaste sparningarna i den här fliken. ` : ""}Hela portföljen är en rad som skrivs om vid varje ändring. Gränser för att dela upp den per projekt: ${F15_GRANSER.kB} kB eller ${F15_GRANSER.p95Ms} ms (F15).`,
               },
               {
                 label: "Protokollarkivet",
