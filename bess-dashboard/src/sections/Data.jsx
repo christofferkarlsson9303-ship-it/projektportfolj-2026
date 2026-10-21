@@ -10,6 +10,7 @@ import { aterstallBilagor, bilagaSammanfattning, bilagekallor, byggSakerhetskopi
 import { skapaRitningsArkiv } from "../state/ritningsArkiv.js";
 import { skapaIfcCache } from "../lib/ifcCache.js";
 import { idag } from "../lib/datum.js";
+import { F15_GRANSER, bedomLagring } from "../lib/matning.js";
 import { lasXlsx } from "../lib/xlsx.js";
 import {
   datumUrFilnamn,
@@ -401,7 +402,7 @@ function Protokollarkiv({ rader, projekt, status, onOppna }) {
 
 export function Data() {
   /* Arkiv, export och import gäller hela datan, också förlorade anbud. */
-  const { heltState: state, dispatch, conn } = usePortfolj();
+  const { heltState: state, dispatch, conn, lagring } = usePortfolj();
   const { bekrafta, visaToast } = useUi();
   const [forslag, setForslag] = useState([]); // [{...forslag, nyckel, fil}]
   const [arbetar, setArbetar] = useState(null);
@@ -693,6 +694,12 @@ export function Data() {
                 badge: delad ? <StatusBadge ton="ok" label="Aktiv" /> : <StatusBadge ton="warn" label="Lokalt läge" />,
                 detail:
                   "Allt sparas automatiskt ungefär en sekund efter varje ändring och syns för alla inloggade. Kontraktsvärde och betalplan ligger i ett eget dokument som bara administratören kan ändra, och ändringsloggen i en egen tabell som bara går att lägga till i.",
+              },
+              {
+                label: "Portföljdokumentet",
+                value: lagring?.kB !== null && lagring?.kB !== undefined ? `${lagring.kB} kB · sparning p95 ${lagring.p95Ms} ms` : `ca ${storlek} kB lokalt`,
+                badge: lagring?.antal ? <StatusBadge ton={bedomLagring(lagring).ton} label={bedomLagring(lagring).ton === "ok" ? "Inom gräns" : "Över gräns"} /> : null,
+                detail: `${lagring?.antal ? `${bedomLagring(lagring).text} Mätt på de ${lagring.antal} senaste sparningarna i den här fliken. ` : ""}Hela portföljen är en rad som skrivs om vid varje ändring. Gränser för att dela upp den per projekt: ${F15_GRANSER.kB} kB eller ${F15_GRANSER.p95Ms} ms (F15).`,
               },
               {
                 label: "Protokollarkivet",

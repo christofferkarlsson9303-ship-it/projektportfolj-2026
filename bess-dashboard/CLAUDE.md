@@ -38,6 +38,8 @@ Granskningen (commit `0e7f85961c8a`, fynd F01–F15) ligger till grund för GitH
 | Påminnelser: räcker en kanal eller måste alla lyckas? | **2026-10-21: Alla måste lyckas.** Status per kanal, misslyckad kanal försöks igen. | F07 |
 | Frys nya vyer tills Etapp A är mergad | **Inaktuellt:** Etapp A mergades i PR #76. | Alla |
 
+**Följd av besluten 2026-10-21:** F01 (RLS per projekt) och F15 (dela upp dokumentet) görs inte så länge appen har en användare. F15 mäts i stället: `lib/matning.js` och Data → Lagring varnar över 1024 kB eller 1500 ms p95. Behörighetsprovet (#75) körs i målmiljön med `supabase/prov/behorighetsprov.sql` och `scripts/behorighetsprov.mjs`; resultatet sparas i `docs/behorighetsprov-<datum>.md`.
+
 Fyll i datum och beslut i tabellen när det är fattat. Migrationer i `supabase/migrations/` appliceras manuellt efter granskning; skriv i filens huvud om den är applicerad.
 
 ## Projektval och Idag (2026-10-21)

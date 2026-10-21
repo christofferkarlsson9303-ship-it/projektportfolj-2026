@@ -8,6 +8,7 @@ import { arEkonomiAtgard, efterInlasning, hamtaNamn, normalisera, reducer } from
 import { kvittensFor, laggIKo, lasKo, sparaKo, tomKo } from "../lib/godkannanden.js";
 import { registreraGodkannande } from "./godkannanden.js";
 import { supabase } from "../lib/supabase.js";
+import { laggTillMatning, p95 } from "../lib/matning.js";
 import { aktivVy, forlorade } from "../lib/arkiv.js";
 import { lokalFelText, skrivLokalt } from "../lib/lokalLagring.js";
 import { sammanfoga } from "../lib/sammanfoga.js";
@@ -130,6 +131,9 @@ export function PortfolioProvider({ children }) {
   const [conn, setConn] = useState({ kl: "", txt: "Ansluter till delad lagring…" });
   /** Konflikter som väntar på ett val i konfliktvyn (#70). @type {[import("../lib/typer.js").Konfliktdetalj[], Function]} */
   const [konflikter, setKonflikter] = useState([]);
+  /** Portföljdokumentets storlek och sparlatens (F15). */
+  const [lagring, setLagring] = useState({ kB: null, p95Ms: null, antal: 0 });
+  const sparTider = useRef([]);
   const laggTillKonflikter = useCallback((detaljer) => {
     if (!detaljer?.length) return;
     setKonflikter((nu) => [...nu.filter((k) => !detaljer.some((d) => d.vag === k.vag)), ...detaljer]);
@@ -255,7 +259,10 @@ export function PortfolioProvider({ children }) {
       const str = JSON.stringify(payload);
       senastSynkad.current = str;
       komIhagSkickad(str);
+      const t0 = performance.now();
       await dbRef.current.doc(CONFIG.dbPath).set(payload);
+      sparTider.current = laggTillMatning(sparTider.current, Math.round(performance.now() - t0));
+      setLagring({ kB: Math.round(new TextEncoder().encode(str).length / 1024), p95Ms: p95(sparTider.current), antal: sparTider.current.length });
       sattBas(basState, payload);
       // Märkningen släpps bara om inget nytt hunnit ändras under skrivningen.
       if (JSON.stringify(packaStatePayload(stateRef.current)) === str) markeraOsparad(false);
@@ -813,6 +820,7 @@ export function PortfolioProvider({ children }) {
       synk,
       konflikter,
       kvittens,
+      lagring,
       /** Väljer version för en konflikt. "mina" eller "deras". */
       losKonflikt: (k, val) => {
         dispatch({ type: "LOS_KONFLIKT", steg: k.steg, varde: val === "mina" ? k.mina : k.deras, vag: k.vag, val });
@@ -838,7 +846,7 @@ export function PortfolioProvider({ children }) {
       ateraktiveraAnbud: (id) => dispatch({ type: "ATERAKTIVERA_ANBUD", id }),
       markeraEjVunnet: (id, orsak, text) => dispatch({ type: "MARKERA_EJ_VUNNET", id, orsak, text }),
     }),
-    [state, vy, ejVunna, dispatch, conn, synk, konflikter, kvittens, ekonomiFel, visaToast]
+    [state, vy, ejVunna, dispatch, conn, synk, konflikter, kvittens, lagring, ekonomiFel, visaToast]
   );
 
   return <PortfolioContext.Provider value={api}>{children}</PortfolioContext.Provider>;
