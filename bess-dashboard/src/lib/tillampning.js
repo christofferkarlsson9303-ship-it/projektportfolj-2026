@@ -3,7 +3,7 @@
 
 import { HARDVARUPROFILER } from "../data/hardvaruprofiler.js";
 
-/** @param {{tillampning?: {profil: string}}} punkt @param {string} profilId */
+/** @param {any} punkt @param {string} profilId @returns {boolean} */
 export const gallerProfil = (punkt, profilId) => !punkt?.tillampning || punkt.tillampning.profil === profilId;
 
 /**
