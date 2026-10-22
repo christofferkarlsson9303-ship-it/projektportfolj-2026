@@ -45,7 +45,7 @@ export function AppShell({ children }) {
   }, [fokus]);
 
   return (
-    <div className="appshell">
+    <div className={`appshell${aktivVy === "site" ? " site-shell" : ""}`}>
       <a className="skiplink" href="#innehall">
         Hoppa till innehållet
       </a>
@@ -56,7 +56,7 @@ export function AppShell({ children }) {
         <Topbar />
         {/* tabIndex=-1 gör att hopplänken kan flytta fokus hit. */}
         <main id="innehall" ref={mainRef} tabIndex={-1}>
-          <Sidhjalp />
+          {aktivVy !== "site" ? <Sidhjalp /> : null}
           <KonfliktVy />
           {children}
         </main>
@@ -83,3 +83,4 @@ export function AppShell({ children }) {
     </div>
   );
 }
+

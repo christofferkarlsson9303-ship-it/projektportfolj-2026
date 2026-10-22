@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { batterimodell } from "./siteBatterimodell.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 /* Texturer och himmel för "Hög kvalitet" i 3D-siten. Ligger bredvid scenen så att three bara
@@ -157,7 +158,7 @@ function ladda(url) {
 
 /** Texturer för en profil: { container, skid, mark, himmel, kalla } där kalla per del är
  *  "genererad" eller "ritad". Mark upprepas, himmeln är ekvirektangulär. */
-export async function laddaTexturer(profilId, bas = import.meta.env?.BASE_URL || "/") {
+export async function laddaTexturer(profilId, bas = import.meta.env?.BASE_URL || "/", { ritad = false } = {}) {
   const m = await manifest(bas);
   const finns = new Set(Array.isArray(m[profilId]) ? m[profilId] : []);
   const ut = { kalla: {}, modeller: {} };
@@ -165,11 +166,12 @@ export async function laddaTexturer(profilId, bas = import.meta.env?.BASE_URL ||
   for (const typ of MODELLTYPER) {
     if (finns.has(`${typ}.glb`)) ut.modeller[typ] = await laddaModell(`${bas}assets/site/${profilId}/${typ}.glb`);
   }
-  // Sungrow har ingen skid.glb: MV-stationen ritas i koden (se ritadMvStation).
+  if (!ut.modeller.container) ut.modeller.container = batterimodell(profilId);
+  // Den kapslade MV-stationen tillhör Sungrow. CATL/PE behåller sin öppna skid.
   if (!ut.modeller.skid && profilId === "sungrow") ut.modeller.skid = ritadMvStation();
   for (const del of DELAR) {
     const fil = FILAR[del];
-    const t = finns.has(fil) ? await ladda(`${bas}assets/site/${profilId}/${fil}`) : null;
+    const t = !ritad && finns.has(fil) ? await ladda(`${bas}assets/site/${profilId}/${fil}`) : null;
     ut[del] = t || ritadTextur(del);
     ut.kalla[del] = t ? "genererad" : "ritad";
   }
@@ -324,3 +326,4 @@ export function modellFor(modell, o, { anpassa = false } = {}) {
   k.userData.delad = true;
   return k;
 }
+

@@ -1,6 +1,6 @@
 # Modellbaserade ärenden på siten (Steg A)
 
-Siten (`src/sections/Site/`) är en delad vy: 3D till vänster, ärendepanel till höger, med en avdelare som går att dra eller flytta med piltangenter (läget sparas i `localStorage`). Under `lg` staplas delarna. Ärendena är UR/ÄTA-posterna (`state.ur`), samma som i ÄTA-vyn.
+Siten (`src/sections/Site/`) har en 3D-scen som fyller arbetsytan. Verktygspanelen ligger till vänster ovanpå scenen och kan fällas in. Flikarna Bygg, Visning, Objekt, Ärenden och Underlag delar samma projektmodell; Bygg öppnas först. På mobil visas panelen nedtill. Helskärm fyller webbläsarfönstret och lämnas med Escape; dialoger och sparmeddelanden fungerar även där. Ärendena är UR/ÄTA-posterna (`state.ur`), samma som i ÄTA-vyn.
 
 **Ingen IFC och ingen ny backend.** Ett "objekt" är ett `siteObjekt` (volym eller nål) och dess `id` är dess GUID. Finns ett explicit `guid` på objektet går det före `id` i jämförelsen (`lib/modellDiff.js`), så en framtida IFC-import kan fylla i `guid` utan att något annat ändras. Allt ligger i `portfolj/state`; inget schema eller Supabase-migrering ändrades.
 
@@ -84,3 +84,4 @@ Koden: `lib/ifcApi.js` (initiering), `lib/ifcLaddare.js` (läsning, ren funktion
 ## Inte gjort (Steg B, resten)
 
 Jämförelse mellan två IFC-versioner (`diffaModeller` är förberedd: den jämför på `guid`), en server-side `POST /api/models/diff` och modellversioner som egen tabell.
+

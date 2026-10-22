@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import JSZip from "jszip";
 import { expect, test } from "@playwright/test";
-import { oppna } from "./hjalpare.js";
+import { sitePanel, oppna } from "./hjalpare.js";
 
 /* BCF 2.1: export av valda ärenden och import igen. XML, zip och koordinater är
    enhetstestade i src/lib/bcfHanterare.test.js — här provas flödet i webbläsaren,
@@ -14,24 +14,32 @@ const arenden = (page) => page.getByRole("complementary", { name: "Ärenden på 
 const portfolj = (page) => page.evaluate(() => JSON.parse(localStorage.getItem("batchc-portfolj-v1") || "{}"));
 
 async function medArende(page, titel) {
+  await sitePanel(page, "Bygg");
   await kort(page).getByRole("button", { name: "+ Container", exact: true }).click();
+  await sitePanel(page, "Bygg");
   await kort(page).getByRole("button", { name: "Placera mitt på tomten" }).click();
   await page.keyboard.press("Escape");
+  await sitePanel(page, "Objekt");
   await lista(page).getByRole("button", { name: /Container 1/ }).click();
+  await sitePanel(page, "Ärenden");
   await arenden(page).getByRole("button", { name: "+ Ärende på objektet" }).click();
   await page.getByLabel("Kort beskrivning av händelsen").fill(titel);
   await page.getByRole("button", { name: "Registrera", exact: true }).click();
+  await sitePanel(page, "Ärenden");
   await expect(arenden(page).getByRole("listitem")).toHaveCount(1);
 }
 
 /** Väljer en fil ur minnet. (Sökvägen till testets utdatamapp innehåller å/ä/ö, och då levereras inte filen.) */
 async function valjFil(page, namn, buffer) {
+  await sitePanel(page, "Ärenden");
   await arenden(page).getByLabel("Välj BCF-fil att importera").setInputFiles({ name: namn, mimeType: "application/zip", buffer });
 }
 
 async function exportera(page, testInfo) {
+  await sitePanel(page, "Ärenden");
   await arenden(page).getByRole("checkbox").first().check();
   const nedladdning = page.waitForEvent("download");
+  await sitePanel(page, "Ärenden");
   await arenden(page).getByRole("button", { name: /^Exportera BCF \(1\)/ }).click();
   const d = await nedladdning;
   const sokvag = testInfo.outputPath("export.bcfzip");
@@ -41,6 +49,7 @@ async function exportera(page, testInfo) {
 
 test("exporterar det valda ärendet till en .bcfzip med markup, viewpoint och skärmdump", async ({ page }, info) => {
   await oppna(page, VY);
+  await sitePanel(page, "Ärenden");
   await expect(arenden(page).getByRole("button", { name: /^Exportera BCF \(0\)/ })).toBeDisabled();
   await medArende(page, "Extra kabelränna vid container");
 
@@ -92,12 +101,15 @@ test("importerar samma fil igen: uppdaterar, dubblerar inte, och en ändrad tite
   await expect
     .poll(async () => ((await portfolj(page)).ur || []).filter((x) => x.bcfGuid).map((x) => `${x.benamning}|${x.status}`))
     .toEqual(["Skadad dörr — åtgärdad & kontrollerad|stangd"]);
+  await sitePanel(page, "Ärenden");
   await expect(arenden(page).getByRole("listitem")).toHaveCount(1);
 });
 
 test("ett ärende från ett annat verktyg blir ett nytt ärende, kopplat till objektet och med kameravy", async ({ page }) => {
   await oppna(page, VY);
+  await sitePanel(page, "Bygg");
   await kort(page).getByRole("button", { name: "+ Container", exact: true }).click();
+  await sitePanel(page, "Bygg");
   await kort(page).getByRole("button", { name: "Placera mitt på tomten" }).click();
   await page.keyboard.press("Escape");
   await expect.poll(async () => ((await portfolj(page)).siteObjekt || []).length).toBe(1);
@@ -120,8 +132,11 @@ test("ett ärende från ett annat verktyg blir ett nytt ärende, kopplat till ob
   await expect(dialog).toContainText("1 kommentarer läses inte in.");
   await page.getByRole("button", { name: "Importera", exact: true }).click();
 
+  await sitePanel(page, "Ärenden");
   await expect(arenden(page).getByRole("listitem")).toHaveCount(1);
+  await sitePanel(page, "Ärenden");
   await expect(arenden(page)).toContainText("Importerat från extern");
+  await sitePanel(page, "Ärenden");
   await expect(arenden(page)).toContainText("Objekt: Container 1");
   await expect
     .poll(async () => ((await portfolj(page)).ur || []).find((u) => u.bcfGuid === guid))
@@ -139,3 +154,4 @@ test("en fil som inte är BCF ger ett tydligt fel och ändrar ingenting", async 
   await expect(page.getByRole("dialog")).toHaveCount(0);
   expect(((await portfolj(page)).ur || []).filter((u) => u.bcfGuid)).toHaveLength(0);
 });
+

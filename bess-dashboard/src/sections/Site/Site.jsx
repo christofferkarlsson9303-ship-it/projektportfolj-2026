@@ -4,7 +4,7 @@ import { Callout, Card, StatusBadge } from "../../components/ds/index.js";
 import { Falt, TaBortKnapp } from "../../components/ui/Falt.jsx";
 import { SiteToppvy } from "../../components/site/SiteToppvy.jsx";
 import { SiteMeny } from "../../components/site/SiteMeny.jsx";
-import { SplitVy } from "../../components/site/SplitVy.jsx";
+import { SiteWorkspace } from "../../components/site/SiteWorkspace.jsx";
 import { SiteVerktygsfalt } from "../../components/site/SiteVerktygsfalt.jsx";
 import { SiteArenden } from "../../components/site/SiteArenden.jsx";
 import { Skeleton } from "../../components/ui/Skeleton.jsx";
@@ -23,7 +23,6 @@ import { Meter } from "../../components/ds/index.js";
 import { useSnabbUtskrift } from "../../components/field/SnabbUtskrift.jsx";
 import { datumKort } from "../../lib/datum.js";
 import { SiteFilterrad, SiteKameror, SiteProfilData } from "../../components/site/SiteVisning.jsx";
-import { HeroBild, Kraftkurva } from "../../components/oversikt/Hero.jsx";
 import { RitningsKnapp, SiteRitningar, laddaUppRitning, placeringText, useRitningsCanvas } from "../../components/site/SiteRitningar.jsx";
 import { HARDVARUPROFILER, profilIdFor } from "../../data/hardvaruprofiler.js";
 import { avstandsbrott, luftFor, skyddsreglerFor } from "../../lib/siteSakerhet.js";
@@ -147,7 +146,7 @@ function Farg({ typ }) {
 }
 
 export function Site() {
-  const { state, dispatch, laggTill } = usePortfolj();
+  const { state, dispatch, laggTill, conn } = usePortfolj();
   const { valtProjekt, visaToast, bekrafta, fraga, visa, oppnaPost, siteVal: valtId, setSiteVal: setValtId, siteFlyg } = useUi();
   const snabb = useSnabbUtskrift();
 
@@ -189,7 +188,7 @@ export function Site() {
 
   const [lage, setLage] = useState("orbit");
   const [laddad, setLaddad] = useState(null);
-  const [rutnat, setRutnat] = useState(true);
+  const [rutnat, setRutnat] = useState(false);
   const [spokRot, setSpokRot] = useState(0);
   const [nalPunkt, setNalPunkt] = useState("");
   const [sektion, setSektion] = useState(sektionStandard);
@@ -199,7 +198,7 @@ export function Site() {
   const [flyg, setFlyg] = useState(null);
   const [visning, setVisning] = useState(() => {
     const v = lasVisning();
-    return { lager: { ...STANDARDLAGER, ...(v?.lager || {}) }, hogKvalitet: !!v?.hogKvalitet };
+    return { lager: { ...STANDARDLAGER, ...(v?.lager || {}) }, hogKvalitet: v?.hogKvalitet !== false };
   });
   const andraVisning = (andring) =>
     setVisning((v) => {
@@ -207,7 +206,9 @@ export function Site() {
       sparaVisning(ny);
       return ny;
     });
-  const [bred, setBred] = useState(0);
+  const [panel, setPanel] = useState("bygg");
+  const [panelBredd, setPanelBredd] = useState(374);
+  const [flyttaObjekt, setFlyttaObjekt] = useState(false);
   const [bcfJobb, setBcfJobb] = useState("");
   const sceneApi = useRef(null);
   const [fel3d, setFel3d] = useState(null);
@@ -236,6 +237,8 @@ export function Site() {
     setJamforId(null);
     setMatning(false);
     setMatt(null);
+    setFlyttaObjekt(false);
+    setPanel("bygg");
   }, [pid, setValtId]);
 
   const valt = objekt.find((o) => o.id === valtId) || ifcObjektById.get(valtId) || null;
@@ -644,16 +647,14 @@ export function Site() {
     : valt
       ? arIfc
         ? `${namnFor(valt)} (IFC) är markerad.`
-        : `${namnFor(valt)} är markerad. R roterar, dra för att flytta.`
-      : "Välj en komponent till vänster för att placera, eller klicka på ett objekt.";
+        : `${namnFor(valt)} är markerad. ${flyttaObjekt ? "Dra för att flytta." : "Aktivera Flytta objekt för att ändra läget."}`
+      : "Välj en komponent i Bygg för att placera, eller klicka på ett objekt.";
 
-  /* Vänstra delen är bred nog för att sidopanelen ska få ligga som överlägg i 3D-vyn;
-     annars ligger den som ett eget kort under. */
-  const overlay = bred >= 820;
+  /* Objektets egenskaper visas i samma verktygspanel som planvyn. */
   const markeratKort = (
             <Card
               id="site-markerat"
-              className={overlay ? `absolute bottom-3 right-3 top-3 z-[3] w-[340px] overflow-y-auto shadow-lg ${valt ? "" : "hidden"}` : ""}
+              className="site-object-editor"
               title={valt ? namnFor(valt) : "Markerat objekt"}
               subtitle={valt ? (arIfc ? `IFC · ${kortKlass(valt.klass)}` : arNal(valt) ? (arOppenPunkt(punktFor(valt)) ? "Nål på en öppen punkt" : "Nål på en punkt som inte är öppen") : `${MALLAR[valt.typ].namn} · mått i meter, rotation i grader`) : null}
               badge={valt && !arNal(valt) && !arIfc && valt.status ? <StatusBadge ton={STATUS_TON[valt.status] || "neutral"} label={SITE_STATUS.find(([id]) => id === valt.status)?.[1] || valt.status} /> : null}
@@ -712,82 +713,23 @@ export function Site() {
   const enhetNamn = profil.skid.prefix === "SKID" ? "skid" : "MV-stationer";
 
   return (
-    <div className="flex flex-col gap-4 lg:gap-6">
-      {/* Sidhuvud i profilfärgen med Kraftkurvan, samma grepp som Projektstart. Bara dekor och
-          en sammanfattning — reglagen ligger i kortet under. */}
-      <section aria-label="Sitöversikt" className="hero-med-bild relative overflow-hidden rounded-xl bg-one-djup px-4 py-4 text-white md:px-6 md:py-6">
-        <HeroBild fil="hero-bess.jpg" video="hero-bess.mp4" />
-        <Kraftkurva />
-        <div className="relative flex max-w-[44rem] flex-col gap-1.5">
-          <span className="text-[11px] font-bold uppercase tracking-wider opacity-80">Siten i 3D · {profil.kort}</span>
-          <h2 className="m-0 font-head text-[22px] leading-tight text-white">
-            {p.nr ? `${p.nr} ` : ""}
-            {p.namn}
-          </h2>
-          <p className="m-0 text-[12.5px] opacity-90">
-            {kpi.antalCont} batterienheter · {kpi.antalSkid} {enhetNamn}
-            {kpi.beraknadMwh !== null ? ` · ${String(kpi.beraknadMwh).replace(".", ",")} MWh beräknat` : " · kapacitet per enhet saknas"}
-            {` · ${profil.namn}`}
-          </p>
-        </div>
-      </section>
-      <div className="flex flex-col gap-4 lg:gap-6">
-        {anbudsmodell ? (
-          <Suspense fallback={<Skeleton etikett="Laddar anbudsmodellen …" className="h-[62vh] max-h-[760px] min-h-[380px] w-full" />}>
-            <SiteAnbudsmodell modell={anbudsmodell} />
-          </Suspense>
-        ) : null}
-        <SiteSakerhet p={p} tomt={tomt} regler={skyddsregler} brott={brott} />
-        <Card
-          id="site-scen"
-          title={`Siten — ${p.nr ? `${p.nr} ` : ""}${p.namn}`}
-          subtitle={`Tomt ${TOMT.bredd} × ${TOMT.djup} m. ${volymAntal} ${volymAntal === 1 ? "volym" : "volymer"}, ${nalAntal} ${nalAntal === 1 ? "nål" : "nålar"}.${plan ? " Situationsplan som mark." : " Utan situationsplan: grus och körytor."}`}
-          action={
-            <button type="button" className="btn sec mini" onClick={aterstall} disabled={!objekt.length}>
-              Återställ
-            </button>
-          }
-        >
-          <SiteVerktygsfalt
-            lage={lage}
-            onLage={(v) => {
-              setLage(v);
-              setLaddad(null);
-              if (v === "ga") setMatning(false);
-            }}
-            sektion={sektion}
-            onSektion={setSektion}
-            matning={matning}
-            onMatning={(v) => {
-              setMatning(v);
-              if (v) setLaddad(null);
-              if (!v) setMatt(null);
-            }}
-            matt={matt}
-            onRensaMatning={() => {
-              setMatt(null);
-              sceneApi.current?.rensaMatning?.();
-            }}
-            versioner={versioner}
-            jamforId={jamforId}
-            onJamfor={setJamforId}
-            onSparaVersion={sparaVersion}
-            onTaBortVersion={taBortVersion}
-            diff={diffData}
-          />
-
-          <SiteFilterrad
-            lager={visning.lager}
-            onLager={(lager) => andraVisning({ lager })}
-            hogKvalitet={visning.hogKvalitet}
-            onHogKvalitet={(hogKvalitet) => andraVisning({ hogKvalitet })}
-            profilId={profilId}
-            onProfil={bytProfil}
-            extra={<RitningsKnapp onFil={laddaRitning} upptagen={laddarRitning} />}
-          />
-          {visning.lager.dc || visning.lager.hsp || visning.lager.lsp || visning.lager.fiber || visning.lager.jord ? (
-            <p className="m-0 text-[12px] text-ink-soft">Kabelvägarna är schematiska, räknade ur enheternas lägen. De är inte en kabel- eller relationsritning.</p>
-          ) : null}
+    <>
+      <SiteWorkspace
+        titel={`Siten — ${p.nr ? `${p.nr} ` : ""}${p.namn}`}
+        sammanfattning={`${kpi.antalCont} batterienheter · ${kpi.antalSkid} ${enhetNamn} · ${profil.namn} · Tomt ${tomt.bredd} × ${tomt.djup} m`}
+        sparstatus={conn.txt}
+        panel={panel}
+        onPanel={setPanel}
+        onInset={setPanelBredd}
+        paneler={[{ id: "bygg", namn: "Bygg" }, { id: "visning", namn: "Visning" }, { id: "objekt", namn: "Objekt" }, { id: "arenden", namn: "Ärenden" }, { id: "underlag", namn: "Underlag" }]}
+        verktyg={<>
+          <section hidden={panel !== "bygg"} aria-label="Bygg parken">
+            <h3 className="m-0 mb-2 text-sm">Bygg din batteripark</h3>
+            <label className="mb-3 flex flex-col gap-1 text-xs">Utrustning för nya enheter
+              <select value={profilId} onChange={e => bytProfil(e.target.value)}>{Object.entries(HARDVARUPROFILER).map(([id, x]) => <option key={id} value={id}>{x.namn}</option>)}</select>
+            </label>
+            <SiteMeny className="site-build-menu" laddad={laddad} onVal={setLaddad} lage={lage} kanNal={oppnaPunkter.length > 0} rutnat={rutnat} onRutnat={setRutnat} spokRot={spokRot} onRotera={rotera} profilId={profilId} />
+            <button type="button" className="btn sec mini my-3" aria-pressed={flyttaObjekt} onClick={() => { setFlyttaObjekt(v => !v); setLaddad(null); }}>Flytta objekt</button>
           {!volymAntal ? (
             <Callout ton="info">
               <b>Inga enheter på tomten.</b> Placera enheter med menyn, eller lägg in en standardlayout för {profil.namn}.{" "}
@@ -834,119 +776,56 @@ export function Site() {
             ) : null}
           </div>
 
-          <SplitVy
-            onBredd={setBred}
-            vanster={
-              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[176px_minmax(0,1fr)] xl:items-start">
-            <SiteMeny
-              laddad={laddad}
-              onVal={setLaddad}
-              lage={lage}
-              kanNal={oppnaPunkter.length > 0}
-              rutnat={rutnat}
-              onRutnat={setRutnat}
-              spokRot={spokRot}
-              onRotera={rotera}
-            />
-            <div className="relative min-w-0">
-              {fel3d ? (
-                <Callout ton="warn">
-                  <b>3D-vyn kan inte visas.</b> {fel3d} Planvyn nedan visar samma objekt och går att klicka i.
-                </Callout>
-              ) : (
-                <Suspense fallback={<Skeleton etikett="Laddar 3D-vyn …" className="h-[62vh] max-h-[720px] min-h-[360px] w-full" />}>
-                  <SiteScen
-                    key={`tomt-${tomt.bredd}x${tomt.djup}`}
-                    skyddsregler={skyddsregler}
-                    objekt={objekt}
-                    punkter={punkter}
-                    plan={plan}
-                    valtId={valtId}
-                    laddad={laddad && !(laddad === "nal" && !nalPunkt) ? laddad : null}
-                    lage={lage}
-                    rutnat={rutnat}
-                    spokRot={spokRot}
-                    sektion={sektion}
-                    matning={matning}
-                    diff={diffProp}
-                    ifcModeller={ifcSynliga}
-                    ifcObjekt={ifcObjektById}
-                    arenden={arendenMap}
-                    flyg={flyg}
-                    lager={visning.lager}
-                    hogKvalitet={visning.hogKvalitet}
-                    profil={profilId}
-                    spokMatt={laddad ? mattFor(profilId, laddad) : null}
-                    ritningar={ritningar}
-                    onPlacera={placera}
-                    onValj={setValtId}
-                    onMatt={setMatt}
-                    onKlar={(api) => {
-                      sceneApi.current = api;
-                    }}
-                    onFlytta={(id, x, z) => dispatch({ type: "SITE_ANDRA", id, andring: { x, z } })}
-                    onFel={setFel3d}
-                  />
-                </Suspense>
-              )}
-              {!fel3d ? <SiteKameror vinklar={vinklar} onFlyg={flygTill} /> : null}
-              {overlay ? markeratKort : null}
-            </div>
-              </div>
-            }
-            hoger={
-              <aside aria-label="Ärenden på siten" className="flex flex-col gap-3 rounded-lg border border-solid border-hairline bg-sunken p-3 lg:h-full">
-                <h4 className="m-0 font-head text-[14px] font-bold text-ink">Ärenden</h4>
-                <SiteArenden
-                  rader={arendeRader}
-                  valt={valt}
-                  objektById={objektById}
-                  onVisa={visaArende}
-                  onVisaVy={visaArendeVy}
-                  onKoppla={kopplaArende}
-                  onLos={losArende}
-                  onOppna={(u) => oppnaPost("ata", u.id)}
-                  onNy={nyttArende}
-                  onExportBcf={exporteraBcf}
-                  onImportBcf={importeraBcf}
-                  bcfJobb={bcfJobb}
-                />
-              </aside>
-            }
+
+            <details className="mt-4"><summary>Tomt och skyddsavstånd</summary><SiteSakerhet p={p} tomt={tomt} regler={skyddsregler} brott={brott} /></details>
+            <button type="button" className="btn sec mini mt-4" onClick={aterstall} disabled={!objekt.length}>Återställ</button>
+          </section>
+          <section hidden={panel !== "visning"} aria-label="Visning av parken">
+            <button type="button" className="btn sec mini mb-3" onClick={() => { setLage("orbit"); sceneApi.current?.ramaIn?.(); }}>Visa hela parken</button>
+            <SiteKameror className="site-camera-menu" vinklar={vinklar} onFlyg={flygTill} />
+          <SiteVerktygsfalt
+            lage={lage}
+            onLage={(v) => {
+              setLage(v);
+              setLaddad(null);
+              if (v === "ga") setMatning(false);
+            }}
+            sektion={sektion}
+            onSektion={setSektion}
+            matning={matning}
+            onMatning={(v) => {
+              setMatning(v);
+              if (v) setLaddad(null);
+              if (!v) setMatt(null);
+            }}
+            matt={matt}
+            onRensaMatning={() => {
+              setMatt(null);
+              sceneApi.current?.rensaMatning?.();
+            }}
+            versioner={versioner}
+            jamforId={jamforId}
+            onJamfor={setJamforId}
+            onSparaVersion={sparaVersion}
+            onTaBortVersion={taBortVersion}
+            diff={diffData}
           />
-          {!overlay ? markeratKort : null}
-        </Card>
-        <IfcModeller
-          modeller={ifcModeller}
-          objekt={ifcObjekt}
-          geometriFinns={ifcGeometriFinns}
-          dolda={ifcDolda}
-          valtId={valtId}
-          onImportera={() => setIfcDialog(true)}
-          onVisaDold={vaxlaIfcDold}
-          onTaBort={taBortIfc}
-          onValj={(id) => {
-            setValtId(id);
-            const o = ifcObjektById.get(id);
-            if (o && lage === "orbit") flygTill(viewpointForBox(boundingBoxFor(o)));
-          }}
-        />
-        <Card id="site-park" title="Parkens BESS-data" subtitle="Summerat ur objekten på siten.">
-          <ParkSumma objekt={objekt} className="sm:grid-cols-4" />
-        </Card>
-        <Card
-          id="site-profil"
-          title={`Hårdvaruprofil — ${profil.namn}`}
-          subtitle={`${profil.anvands}. Värden med källa; det som inte är bekräftat mot datablad eller kontrakt är märkt.`}
-          badge={<StatusBadge ton="neutral" label={profil.kort} />}
-        >
-          <SiteProfilData profil={profil} kpi={kpi} />
-        </Card>
-      </div>
 
-      {ifcDialog ? <IfcImportDialog projektId={pid} filnamnFinns={ifcModeller.map((m) => m.filnamn)} onLagg={laggTillIfc} onStang={() => setIfcDialog(false)} /> : null}
+          <SiteFilterrad
+            lager={visning.lager}
+            onLager={(lager) => andraVisning({ lager })}
+            hogKvalitet={visning.hogKvalitet}
+            onHogKvalitet={(hogKvalitet) => andraVisning({ hogKvalitet })}
+            profilId={profilId}
+            onProfil={bytProfil}
+            extra={<RitningsKnapp onFil={laddaRitning} upptagen={laddarRitning} />}
+          />
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-6">
+            <p className="text-xs text-ink-soft">Kabelvägar är schematiska och ersätter inte kabel- eller relationsritning.</p>
+          </section>
+          <section hidden={panel !== "objekt"} aria-label="Objekt och egenskaper">
+            {markeratKort}
+      <div className="flex flex-col gap-4">
         <Card id="site-planvy" title="Planvy" subtitle="Samma objekt sedda ovanifrån. Norr uppåt.">
           <SiteToppvy
             objekt={objekt}
@@ -991,6 +870,7 @@ export function Site() {
 
         <SiteRitningar ritningar={ritningar} objekt={objekt} onLaddaUpp={laddaRitning} upptagen={laddarRitning} />
 
+        <p className="m-0 text-xs text-ink-soft">{plan ? "Situationsplan som mark." : "Utan situationsplan: grus och körytor."}</p>
         <Card
           id="site-situationsplan"
           title="Situationsplan"
@@ -1042,7 +922,86 @@ export function Site() {
           </Callout>
         </Card>
       </div>
-    </div>
+          </section>
+          <aside hidden={panel !== "arenden"} aria-label="Ärenden på siten">
+            <h3 className="m-0 mb-3 text-sm">Ärenden</h3>
+                <SiteArenden
+                  rader={arendeRader}
+                  valt={valt}
+                  objektById={objektById}
+                  onVisa={visaArende}
+                  onVisaVy={visaArendeVy}
+                  onKoppla={kopplaArende}
+                  onLos={losArende}
+                  onOppna={(u) => oppnaPost("ata", u.id)}
+                  onNy={nyttArende}
+                  onExportBcf={exporteraBcf}
+                  onImportBcf={importeraBcf}
+                  bcfJobb={bcfJobb}
+                />
+          </aside>
+          <section hidden={panel !== "underlag"} aria-label="Modeller och underlag">
+            <ParkSumma objekt={objekt} />
+        <IfcModeller
+          modeller={ifcModeller}
+          objekt={ifcObjekt}
+          geometriFinns={ifcGeometriFinns}
+          dolda={ifcDolda}
+          valtId={valtId}
+          onImportera={() => setIfcDialog(true)}
+          onVisaDold={vaxlaIfcDold}
+          onTaBort={taBortIfc}
+          onValj={(id) => {
+            setValtId(id);
+            if (id) setPanel("objekt");
+            const o = ifcObjektById.get(id);
+            if (o && lage === "orbit") flygTill(viewpointForBox(boundingBoxFor(o)));
+          }}
+        />
+
+            <details className="my-3"><summary>Komponentdata och källor</summary><SiteProfilData profil={profil} kpi={kpi} /></details>
+            {anbudsmodell ? <details><summary>Anbudsmodell som referens</summary><Suspense fallback={<p>Laddar referensmodellen …</p>}><SiteAnbudsmodell modell={anbudsmodell} /></Suspense></details> : null}
+          </section>
+        </>}
+      >
+        {fel3d ? <Callout ton="warn"><b>3D-vyn kan inte visas.</b> {fel3d} Öppna Objekt för att använda planvyn.</Callout> : <Suspense fallback={<Skeleton etikett="Laddar parken …" className="h-full w-full" />}>
+                  <SiteScen
+                    key={`${pid}-tomt-${tomt.bredd}x${tomt.djup}`}
+                    skyddsregler={skyddsregler}
+                    objekt={objekt}
+                    flyttaObjekt={flyttaObjekt}
+                    panelBredd={panelBredd}
+                    punkter={punkter}
+                    plan={plan}
+                    valtId={valtId}
+                    laddad={laddad && !(laddad === "nal" && !nalPunkt) ? laddad : null}
+                    lage={lage}
+                    rutnat={rutnat}
+                    spokRot={spokRot}
+                    sektion={sektion}
+                    matning={matning}
+                    diff={diffProp}
+                    ifcModeller={ifcSynliga}
+                    ifcObjekt={ifcObjektById}
+                    arenden={arendenMap}
+                    flyg={flyg}
+                    lager={visning.lager}
+                    hogKvalitet={visning.hogKvalitet}
+                    profil={profilId}
+                    spokMatt={laddad ? mattFor(profilId, laddad) : null}
+                    ritningar={ritningar}
+                    onPlacera={placera}
+                    onValj={(id) => { setValtId(id); if (id) setPanel("objekt"); }}
+                    onMatt={setMatt}
+                    onKlar={(api) => { sceneApi.current = api; }}
+                    onFlytta={(id, x, z) => dispatch({ type: "SITE_ANDRA", id, andring: { x, z } })}
+                    onFel={setFel3d}
+                  />
+        </Suspense>}
+        {brott.length ? <div className="site-workspace__notice"><StatusBadge ton="warn" label={`${brott.length} skyddsavstånd att kontrollera`} /></div> : null}
+      </SiteWorkspace>
+      {ifcDialog ? <IfcImportDialog projektId={pid} filnamnFinns={ifcModeller.map(m => m.filnamn)} onLagg={laggTillIfc} onStang={() => setIfcDialog(false)} /> : null}
+    </>
   );
 }
 
@@ -1146,3 +1105,4 @@ function NalPanel({ o, punkt, punkter, onPunkt, onOppna, onSkrivUt }) {
     </div>
   );
 }
+

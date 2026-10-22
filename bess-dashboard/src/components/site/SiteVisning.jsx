@@ -51,9 +51,9 @@ export function SiteFilterrad({ lager, onLager, hogKvalitet, onHogKvalitet, prof
 
 /** Kameraknapparna. Ligger ovanpå scenen till höger; en vinkel utan mål (ingen skid 3, inget
  *  ställverk) är avstängd och säger varför. */
-export function SiteKameror({ vinklar, onFlyg }) {
+export function SiteKameror({ vinklar, onFlyg, className = "" }) {
   return (
-    <nav aria-label="Kameravinklar" className="absolute right-3 top-3 z-[3] flex max-h-[calc(100%-24px)] flex-col gap-1.5 overflow-y-auto">
+    <nav aria-label="Kameravinklar" className={`absolute right-3 top-3 z-[3] flex max-h-[calc(100%-24px)] flex-col gap-1.5 overflow-y-auto ${className}`}>
       {vinklar.map((v) => (
         <button
           key={v.id}
@@ -80,7 +80,7 @@ export function SiteProfilData({ profil, kpi }) {
     badge: x.verifierad ? null : <StatusBadge ton="warn" label="Att verifiera" />,
   });
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-6">
       {[
         ["Batterienhet", profil.container],
         ["MV-utrustning", profil.skid],
@@ -92,10 +92,11 @@ export function SiteProfilData({ profil, kpi }) {
           <DataList items={[rad(["Mått (b × d × h)", del.mattKalla]), ...del.data.map(rad)]} />
         </section>
       ))}
-      <p className="m-0 text-[12.5px] text-ink-soft lg:col-span-2">
+      <p className="m-0 text-[12.5px] text-ink-soft">
         {kpi.antalCont} batterienheter och {kpi.antalSkid} {profil.skid.prefix === "SKID" ? "skid" : "MV-stationer"} på siten.
         {kpi.beraknadMwh !== null ? ` Beräknad energi: ${String(kpi.beraknadMwh).replace(".", ",")} MWh (${kpi.antalCont} × ${String(kpi.mwhPerEnhet).replace(".", ",")} MWh).` : " Kapacitet per enhet saknas i underlaget, så energin räknas inte."}
       </p>
     </div>
   );
 }
+
