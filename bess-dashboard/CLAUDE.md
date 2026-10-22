@@ -66,6 +66,11 @@ Fyll i datum och beslut i tabellen när det är fattat. Migrationer i `supabase/
 - **Frågetyper** (`typ` i `ANBUDSFRAGOR`, inmatning i `Projektstart/AnbudsInmatning.jsx`): bara osäkra händelser (`matris`, `tid`) placeras i matrisen. Avtal (standard/avvikelse), nyckelroller, gränsdragningslista (`rader.af_omfattning`), frågor och svar (`rader.af_qa`) och kassaflöde har egna val; `forslagLjus()` föreslår ljuset ur dem. Fråga 12 (`beslut`) har inget ljus, räknas inte i hjulet och skriver `v.beslut` (samma fält som Avropsacceptans). Datum och kassaflöde återanvänder fälten i andra steg; skapa inga dubbletter.
 - **Riskmatrisen** (`Projektstart/Riskmatris.jsx`) är 3 × 3 sannolikhet × konsekvens i fälten `af_sann_<id>`/`af_kons_<id>`. Placeringen skriver `af_ljus_<id>` via `matrisLjus()` (produkt 1–2 grön, 3–4 gul, 6–9 röd). Ljuset kan ändras för hand och visas då som avvikelse. Dra-och-släpp har alltid klick (välj fråga, klicka ruta) som alternativ.
 
+## Så styr appen projektet (2026-10-22)
+
+- Sammanfattningen för ledningen ligger i `src/data/styrningsrapport.js` och är enda källan. Den visas i Projektledarens handbok (`components/handbok/StyrningsrapportKort.jsx`), laddas ned som PDF (`print/StyrningsrapportPdf.jsx`) och Markdown, och `docs/sa-styr-appen-projektet.md` genereras med `npm run docs:styrning` (ett test larmar om den inte är omgenererad).
+- Ändras faser, frågor, lagring eller export: uppdatera texten där. Skriv luckor som luckor.
+
 ## Gör inte
 
 - Portera inte prototypens filer (`src/routes/*`, zustand-store, `@react-three/fiber`).

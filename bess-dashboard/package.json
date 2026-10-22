@@ -16,7 +16,8 @@
     "e2e:ui": "playwright test --ui",
     "e2e:bilder": "playwright test skarmbilder --project=desktop",
     "e2e:rapport": "playwright show-report",
-    "build:lokal": "VITE_TILLAT_LOKALT=1 vite build"
+    "build:lokal": "VITE_TILLAT_LOKALT=1 vite build",
+    "docs:styrning": "node scripts/styrningsrapport.mjs"
   },
   "dependencies": {
     "@react-pdf/renderer": "4.9.0",

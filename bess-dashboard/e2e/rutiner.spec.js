@@ -112,3 +112,23 @@ test("vyn renderar utan konsolfel", async ({ page }) => {
   await rubrik(kapitel(page).first()).click();
   utanKonsolfel(fel);
 });
+
+test("Så styr appen projektet visas i handboken och laddas ned som PDF och Markdown", async ({ page }) => {
+  const { fel } = await oppna(page, "Projektledarens handbok");
+  const kort = page.getByRole("region", { name: "Så styr appen projektet" });
+  await expect(kort).toContainText("Så styr appen projektet");
+  await kort.getByText("2. Anbudshjulet, riskmatrisen och frågorna: ett beslutsunderlag").click();
+  await expect(kort).toContainText("Riskmatrisen (3 × 3) tar bara de frågor som är osäkra händelser.");
+
+  const [pdf] = await Promise.all([page.waitForEvent("download"), kort.getByRole("button", { name: "Ladda ned PDF" }).click()]);
+  expect(pdf.suggestedFilename()).toBe("Sa_styr_appen_projektet_2026-10-22.pdf");
+  const fil = await pdf.path();
+  const { readFileSync } = await import("node:fs");
+  expect(readFileSync(fil).subarray(0, 5).toString()).toBe("%PDF-");
+  if (process.env.SPARA_STYRNING) await pdf.saveAs(process.env.SPARA_STYRNING);
+
+  const [md] = await Promise.all([page.waitForEvent("download"), kort.getByRole("button", { name: "Markdown" }).click()]);
+  expect(md.suggestedFilename()).toBe("Sa_styr_appen_projektet_2026-10-22.md");
+  expect(readFileSync(await md.path(), "utf8")).toMatch(/^# Så styr appen projektet/);
+  utanKonsolfel(fel);
+});

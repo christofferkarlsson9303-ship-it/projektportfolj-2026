@@ -4,6 +4,7 @@ import { usePortfolj, useUi } from "../state/hooks.js";
 import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
 import { Callout, Card, CheckList, Meter, Overline, StatTile, StatusBadge } from "../components/ds/index.js";
 import { RUTINER } from "../data/rutiner.js";
+import { StyrningsrapportKort } from "../components/handbok/StyrningsrapportKort.jsx";
 import { rutinAntal, rutinKlar, rutinNyckel } from "../lib/berakningar.js";
 
 /* Projektledarens handbok på designsystemet.
@@ -166,6 +167,8 @@ export function Rutiner() {
             ))}
           </ul>
         </Card>
+
+        <StyrningsrapportKort />
 
         <Callout ton="info">
           <b>Så hänger det ihop:</b> kapitel 2.4 och 2.4.1 arbetas operativt i fliken <b>Störning</b>,
