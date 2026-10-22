@@ -25,7 +25,7 @@ import { styrparametrar } from "../lib/styrparametrar.js";
 
 const FORM = ["ABT 06", "ABT-U 07", "AB 04", "ABT 06 med särskilda villkor", "Annan"];
 const NIVA = ["Ej klassad", "Nivå 1", "Nivå 2", "Nivå 3", "Nivå 4"];
-const BESLUT = ["Gå vidare", "Skjut upp", "Tacka nej"];
+export const BESLUT = ["Gå vidare", "Skjut upp", "Tacka nej"];
 const ERSATTNING = ["Fast pris", "Löpande räkning", "Fast pris med á-prislista för ÄTA", "Kombination", "Annan"];
 const roll = (id) => { const r = ROLLER.find((x) => x.id === id); return { id: `roll_${id}`, etikett: `Planerad ${r.namn.toLowerCase()}`, typ: "text", tips: "Samma uppgift återanvänds i Organisation och uppstart." }; };
 const TAL = ["1", "2", "3", "4", "5"];
@@ -94,7 +94,7 @@ export const STEG = [
     fas: 1,
     del: "Anbud",
     titel: "Anbudsfrågor",
-    sammanfattning: "Tolv frågor inför anbudsbeslutet. Sätt ett trafikljus per fråga och skriv kort vad det bygger på: antagande eller fakta, och källa.",
+    sammanfattning: "Tolv frågor inför anbudsbeslutet. Elva bedöms med trafikljus, den sista är PL:s rekommendation. Skriv kort vad svaret bygger på: antagande eller fakta, och källa.",
     /* Trafikljuset (`af_ljus_<id>`) är inget eget fält här: det ritas av Anbudsfragor.jsx och är frivilligt.
        Svaret är det obligatoriska fältet, så att ledningen alltid ser vad bedömningen bygger på. */
     falt: ANBUDSFRAGOR.map((f) => ({ id: anbudsfragaId(f), etikett: f.fraga, typ: "textarea", bred: true, obligatoriskt: true })),

@@ -519,7 +519,7 @@ test("styrparametertriangeln visar summan och fas 1 kräver 100 %", async ({ pag
 test("anbudsfrågorna har trafikljus och anbudshjulet ger domen", async ({ page }) => {
   const { fel } = await oppna(page, "Projektstart");
   await gaTillSteg(page, 3, "Anbudsfrågor");
-  await expect(page.getByText("12 av 12 frågor är inte bedömda.")).toBeVisible();
+  await expect(page.getByText("11 av 11 frågor är inte bedömda.")).toBeVisible();
   const forsta = page.getByRole("group", { name: "Trafikljus: Vad bygger vi – och vad bygger vi inte?" });
   await forsta.getByRole("button", { name: "Gul" }).click();
   await expect(forsta.getByRole("button", { name: "Gul" })).toHaveAttribute("aria-pressed", "true");
@@ -528,7 +528,7 @@ test("anbudsfrågorna har trafikljus och anbudshjulet ger domen", async ({ page 
   await expect(page.getByText("1 röd: ledningen måste ta ställning innan anbudet lämnas.")).toBeVisible();
   // Samma val igen tar bort bedömningen.
   await andra.getByRole("button", { name: "Röd" }).click();
-  await expect(page.getByText("11 av 12 frågor är inte bedömda.")).toBeVisible();
+  await expect(page.getByText("10 av 11 frågor är inte bedömda.")).toBeVisible();
   // Svaret är fortfarande det obligatoriska fältet, med frågan som etikett.
   await page.getByLabel(/^Vad ingår i uppdraget/).fill("Allt utom nätanslutningen.");
   await expect(page.locator("#ps-af_omfattning")).toHaveValue("Allt utom nätanslutningen.");
@@ -539,35 +539,65 @@ test("riskmatrisen sätter ljuset, hjulet filtrerar och kortets val följer med"
   const { fel } = await oppna(page, "Projektstart");
   await gaTillSteg(page, 3, "Anbudsfrågor");
   const matris = page.getByRole("region", { name: "Riskmatris" });
+  // Bara osäkra händelser ligger i matrisen: avtalet (2) gör det inte.
+  await expect(matris.getByRole("button", { name: /^2\. / })).toHaveCount(0);
 
   // Klicka på frågan och sedan på rutan: hög sannolikhet, hög konsekvens blir röd.
-  await matris.getByRole("button", { name: "2. Är avtalet tuffare än vanligt?" }).click();
+  await matris.getByRole("button", { name: "6. Vad kan bli dyrt eller farligt?" }).click();
   await matris.getByRole("button", { name: /sannolikhet hög, konsekvens hög \(Röd\)/ }).click();
-  const andra = page.getByRole("group", { name: "Trafikljus: Är avtalet tuffare än vanligt?" });
-  await expect(andra.getByRole("button", { name: "Röd" })).toHaveAttribute("aria-pressed", "true");
+  const risker = page.getByRole("group", { name: "Trafikljus: Vad kan bli dyrt eller farligt?" });
+  await expect(risker.getByRole("button", { name: "Röd" })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByText("1 röd: ledningen måste ta ställning innan anbudet lämnas.")).toBeVisible();
 
-  // Dra-och-släpp: fråga 1 till låg/låg blir grön.
-  await matris.getByRole("button", { name: "1. Vad bygger vi – och vad bygger vi inte?" }).dragTo(matris.getByRole("button", { name: /sannolikhet låg, konsekvens låg/ }).locator(".."));
-  const forsta = page.getByRole("group", { name: "Trafikljus: Vad bygger vi – och vad bygger vi inte?" });
-  await expect(forsta.getByRole("button", { name: "Grön" })).toHaveAttribute("aria-pressed", "true");
+  // Dra-och-släpp: fråga 4 till låg/låg blir grön.
+  await matris.getByRole("button", { name: "4. Vad kostar det om något går fel?" }).dragTo(matris.getByRole("button", { name: /sannolikhet låg, konsekvens låg/ }).locator(".."));
+  const viten = page.getByRole("group", { name: "Trafikljus: Vad kostar det om något går fel?" });
+  await expect(viten.getByRole("button", { name: "Grön" })).toHaveAttribute("aria-pressed", "true");
 
   // Kortets val flyttar frågan i matrisen: medel/medel blir gul.
-  const kort = page.locator("#af-kort-omfattning");
+  const kort = page.locator("#af-kort-viten");
   await kort.getByLabel("Sannolikhet").selectOption("2");
   await kort.getByLabel("Konsekvens").selectOption("2");
-  await expect(forsta.getByRole("button", { name: "Gul" })).toHaveAttribute("aria-pressed", "true");
+  await expect(viten.getByRole("button", { name: "Gul" })).toHaveAttribute("aria-pressed", "true");
 
   // Hjulet filtrerar listan.
   const filter = page.getByRole("group", { name: "Filtrera frågorna" });
   await filter.getByRole("button", { name: "1 röd" }).click();
-  await expect(page.getByText("Visar 1 av 12 frågor.")).toBeVisible();
+  await expect(page.getByText("Visar 1 av 11 frågor.")).toBeVisible();
   await expect(page.locator("[id^=af-kort-]")).toHaveCount(1);
   await filter.getByRole("button", { name: "1 röd" }).click();
   await expect(page.locator("[id^=af-kort-]")).toHaveCount(12);
 
   // Ändrat ljus för hand visas som avvikelse från matrisen.
-  await andra.getByRole("button", { name: "Gul" }).click();
-  await expect(page.locator("#af-kort-villkor")).toContainText("Avviker från matrisen (Röd)");
+  await risker.getByRole("button", { name: "Gul" }).click();
+  await expect(page.locator("#af-kort-risker")).toContainText("Avviker från matrisen (Röd)");
+  expect(fel).toEqual([]);
+});
+
+test("fakta- och statusfrågorna har egna val som föreslår ljuset, och beslutet sätter rekommendationen", async ({ page }) => {
+  const { fel } = await oppna(page, "Projektstart");
+  await gaTillSteg(page, 3, "Anbudsfrågor");
+
+  // Avtalet: Standard / Avvikelse.
+  await page.getByRole("group", { name: "Avtalet mot standard" }).getByRole("button", { name: "Avvikelse – reservation" }).click();
+  await expect(page.getByRole("group", { name: "Trafikljus: Är avtalet tuffare än vanligt?" }).getByRole("button", { name: "Gul" })).toHaveAttribute("aria-pressed", "true");
+
+  // Nyckelroller: en saknad roll ger rött.
+  await page.getByRole("group", { name: "Nyckelroller" }).getByLabel("BAS-U").selectOption("saknas");
+  await expect(page.getByRole("group", { name: "Trafikljus: Har vi folk till jobbet?" }).getByRole("button", { name: "Röd" })).toHaveAttribute("aria-pressed", "true");
+
+  // Frågor och svar: en obesvarad fråga ger gult, besvarad grönt.
+  const qa = page.locator("#af-kort-fragor");
+  await qa.getByRole("button", { name: "Frågor och svar: lägg till rad" }).click();
+  await qa.getByLabel("Frågor och svar, rad 1: Fråga").fill("Kabeldjup i schakt?");
+  const qaLjus = page.getByRole("group", { name: "Trafikljus: Vad har beställaren svarat?" });
+  await expect(qaLjus.getByRole("button", { name: "Gul" })).toHaveAttribute("aria-pressed", "true");
+  await qa.getByLabel("Frågor och svar, rad 1: Status").selectOption("Besvarad");
+  await expect(qaLjus.getByRole("button", { name: "Grön" })).toHaveAttribute("aria-pressed", "true");
+
+  // Beslutet har inget trafikljus och skriver PL:s rekommendation.
+  await expect(page.getByRole("group", { name: "Trafikljus: Ska vi lämna anbud?" })).toHaveCount(0);
+  await page.getByRole("group", { name: "PL:s rekommendation" }).getByRole("button", { name: "Lämna anbud" }).click();
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("bess-projektstart-utkast-v1") || "null")?.v?.beslut)).toBe("Gå vidare");
   expect(fel).toEqual([]);
 });

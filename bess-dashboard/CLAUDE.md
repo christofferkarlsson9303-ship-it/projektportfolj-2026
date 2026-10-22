@@ -63,6 +63,7 @@ Fyll i datum och beslut i tabellen när det är fattat. Migrationer i `supabase/
 ## Anbudsfrågor: hjul, matris och filter (2026-10-22)
 
 - **Anbudshjulet** (`Projektstart/AnbudsDonut.jsx`, Recharts) räknar gröna, gula, röda och ej bedömda ur `anbudsBedomning()`. En klickad färg filtrerar matrisen och listan; filtret sparas inte.
+- **Frågetyper** (`typ` i `ANBUDSFRAGOR`, inmatning i `Projektstart/AnbudsInmatning.jsx`): bara osäkra händelser (`matris`, `tid`) placeras i matrisen. Avtal (standard/avvikelse), nyckelroller, gränsdragningslista (`rader.af_omfattning`), frågor och svar (`rader.af_qa`) och kassaflöde har egna val; `forslagLjus()` föreslår ljuset ur dem. Fråga 12 (`beslut`) har inget ljus, räknas inte i hjulet och skriver `v.beslut` (samma fält som Avropsacceptans). Datum och kassaflöde återanvänder fälten i andra steg; skapa inga dubbletter.
 - **Riskmatrisen** (`Projektstart/Riskmatris.jsx`) är 3 × 3 sannolikhet × konsekvens i fälten `af_sann_<id>`/`af_kons_<id>`. Placeringen skriver `af_ljus_<id>` via `matrisLjus()` (produkt 1–2 grön, 3–4 gul, 6–9 röd). Ljuset kan ändras för hand och visas då som avvikelse. Dra-och-släpp har alltid klick (välj fråga, klicka ruta) som alternativ.
 
 ## Gör inte

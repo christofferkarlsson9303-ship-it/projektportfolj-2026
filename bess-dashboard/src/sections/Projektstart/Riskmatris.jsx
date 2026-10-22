@@ -5,7 +5,8 @@ import { TON_KLASS } from "../../lib/status.js";
 /* Riskmatrisen: 3 × 3, sannolikhet åt höger och konsekvens uppåt. Frågorna är numrerade
    brickor. Dra en bricka till en ruta, eller klicka på brickan och sedan på rutan (så
    fungerar det även med tangentbord och på mobil). Rutan ger trafikljuset. Dras brickan
-   tillbaka till "Inte placerade", eller väljs och klickas där, tas placeringen bort. */
+   tillbaka till "Inte placerade", eller väljs och klickas där, tas placeringen bort.
+   `per` är bara frågorna som hör hemma i matrisen, med sitt nummer i listan (`nr`). */
 
 const NIVA = Object.fromEntries(MATRISNIVAER.map((n) => [n.varde, n.namn]));
 const TON = { gron: "ok", gul: "warn", rod: "bad" };
@@ -33,7 +34,7 @@ function Bricka({ nr, fraga, vald, nedtonad, onVal }) {
 export function Riskmatris({ per, platser, filter, onPlacera }) {
   const [vald, setVald] = useState(null);
   const [over, setOver] = useState(null);
-  const nr = Object.fromEntries(per.map(({ fraga }, i) => [fraga.id, i + 1]));
+  const nr = Object.fromEntries(per.map((p) => [p.fraga.id, p.nr]));
   const brickor = (filt) =>
     per
       .filter(({ fraga }) => filt(platser[fraga.id]))

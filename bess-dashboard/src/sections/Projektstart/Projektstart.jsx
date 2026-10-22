@@ -688,7 +688,7 @@ export function Projektstart() {
             </Callout>
           ) : null}
           {steg.id === "anbudsfragor" ? (
-            <Anbudsfragor v={utkast.v} onFalt={sattFalt} />
+            <Anbudsfragor v={utkast.v} rader={utkast.rader} onFalt={sattFalt} onRader={sattRader} />
           ) : steg.falt ? (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {steg.falt.filter((f) => faltSynligt(f, utkast)).map((f) => <Faltruta key={f.id} f={f} varde={utkast.v[f.id] ?? ""} onChange={(v) => sattFalt(f.id, v)} />)}

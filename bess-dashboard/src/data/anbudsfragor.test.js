@@ -31,3 +31,29 @@ describe("riskmatrisen", () => {
     expect(bort[anbudsljusId(forsta)]).toBe("rod");
   });
 });
+
+describe("förslag på ljus efter frågans typ", () => {
+  const fraga = (id) => ANBUDSFRAGOR.find((f) => f.id === id);
+  it("bara osäkra händelser hör till matrisen", async () => {
+    const { I_MATRIS } = await import("./anbudsfragor.js");
+    expect(ANBUDSFRAGOR.filter((f) => I_MATRIS.has(f.typ)).map((f) => f.id)).toEqual(["tider", "viten", "risker", "antaganden", "lonsamhet", "hseq"]);
+  });
+
+  it("avtal, nyckelroller, gränsdragning och frågor och svar", async () => {
+    const { forslagLjus, AVTAL_ID, NYCKELROLLER, anbudsRollId, OMFATTNING_RADER, QA_RADER } = await import("./anbudsfragor.js");
+    expect(forslagLjus(fraga("villkor"), { [AVTAL_ID]: "standard" })).toBe("gron");
+    expect(forslagLjus(fraga("villkor"), { [AVTAL_ID]: "beslut" })).toBe("rod");
+
+    const roller = (st) => Object.fromEntries(NYCKELROLLER.map((r) => [anbudsRollId(r), st]));
+    expect(forslagLjus(fraga("resurser"), roller("sakrad"))).toBe("gron");
+    expect(forslagLjus(fraga("resurser"), { ...roller("sakrad"), af_roll_ue: "pagar" })).toBe("gul");
+    expect(forslagLjus(fraga("resurser"), { af_roll_pl: "saknas" })).toBe("rod");
+    expect(forslagLjus(fraga("resurser"), { af_roll_pl: "sakrad" })).toBe("");
+
+    expect(forslagLjus(fraga("omfattning"), {}, { [OMFATTNING_RADER]: [{ del: "Nätanslutning", val: "Ingår ej" }] })).toBe("gron");
+    expect(forslagLjus(fraga("omfattning"), {}, { [OMFATTNING_RADER]: [{ del: "Byggström", val: "Oklart" }] })).toBe("gul");
+    expect(forslagLjus(fraga("fragor"), {}, { [QA_RADER]: [{ fraga: "Kabeldjup?", status: "Väntar svar" }] })).toBe("gul");
+    expect(forslagLjus(fraga("fragor"), {}, { [QA_RADER]: [{ fraga: "Kabeldjup?", status: "Besvarad" }] })).toBe("gron");
+    expect(forslagLjus(fraga("betalning"), { kassaflodeLagst: "-2 Mkr" })).toBe("");
+  });
+});

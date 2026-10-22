@@ -103,7 +103,7 @@ describe("beslutsunderlaget", () => {
     const d = projektstartDokument(u, { datum: "2026-10-17" }).projektstart;
     const [samlad, forsta] = d.anbud[1].falt;
     expect(forsta[2][0]).toEqual({ typ: "stycke", nyckel: "Bedömning", text: "Gul" });
-    expect(samlad[1]).toMatch(/0 gröna, 1 gula, 1 röda, 10 ej bedömda\. 1 röd: ledningen måste ta ställning/);
+    expect(samlad[1]).toMatch(/0 gröna, 1 gula, 1 röda, 9 ej bedömda\. 1 röd: ledningen måste ta ställning/);
   });
 
   it("anbudsBedomning: röd vinner, obedömt blir aldrig grönt", () => {
@@ -112,7 +112,17 @@ describe("beslutsunderlaget", () => {
     expect(anbudsBedomning(alla("gron")).dom.ton).toBe("ok");
     expect(anbudsBedomning({ ...alla("gron"), [anbudsljusId(ANBUDSFRAGOR[3])]: "gul" }).dom.ton).toBe("warn");
     expect(anbudsBedomning({ [anbudsljusId(ANBUDSFRAGOR[3])]: "rod" }).dom.ton).toBe("bad");
-    expect(anbudsBedomning({ [anbudsljusId(ANBUDSFRAGOR[0])]: "lila" }).antal.obedomd).toBe(ANBUDSFRAGOR.length);
+    expect(anbudsBedomning({ [anbudsljusId(ANBUDSFRAGOR[0])]: "lila" }).antal.obedomd).toBe(ANBUDSFRAGOR.length - 1);
+  });
+
+  it("beslutsfrågan räknas inte i trafikljusen och visar PL:s rekommendation i PDF:en", () => {
+    const beslut = ANBUDSFRAGOR.find((f) => f.typ === "beslut");
+    expect(anbudsBedomning({ [anbudsljusId(beslut)]: "rod" }).antal.rod).toBe(0);
+    const u = ifyllt();
+    u.v.beslut = "Gå vidare";
+    const fragor = projektstartDokument(u, { datum: "2026-10-17" }).projektstart.anbud[1].falt;
+    const rad = fragor.find(([k]) => k === beslut.fraga);
+    expect(rad[2][0]).toEqual({ typ: "stycke", nyckel: "PL:s rekommendation", text: "Gå vidare" });
   });
 
   it("del 2 Planering har nulägesanalys och styrparametrar med summa", () => {

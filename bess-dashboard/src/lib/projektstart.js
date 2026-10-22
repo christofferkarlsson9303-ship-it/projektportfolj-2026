@@ -331,10 +331,11 @@ export function anbudsUnderlag(u) {
   const falt = (poster) => poster.filter(([, val]) => varde(val)).map(([k, val]) => [k, String(val).trim(), arLangText(String(val).trim()) ? textstycken(val) : null]);
   const fragor = ANBUDSFRAGOR.map((f) => {
     const svar = varde(v[anbudsfragaId(f)]);
-    const ljus = ANBUDSLJUS[v[anbudsljusId(f)]];
+    const ljus = f.typ === "beslut" ? null : ANBUDSLJUS[v[anbudsljusId(f)]];
+    const rek = f.typ === "beslut" && varde(v.beslut) ? [{ typ: "stycke", nyckel: "PL:s rekommendation", text: varde(v.beslut) }] : [];
     /* Frågan blir rubrik och svaret brödtext, även när svaret är kort. Trafikljuset står
        som första stycke, så att ledningen ser bedömningen före motiveringen. */
-    return [f.fraga, svar || "Ej besvarad", [...(ljus ? [{ typ: "stycke", nyckel: "Bedömning", text: ljus[1] }] : []), ...textstycken(svar || "Ej besvarad")]];
+    return [f.fraga, svar || "Ej besvarad", [...rek, ...(ljus ? [{ typ: "stycke", nyckel: "Bedömning", text: ljus[1] }] : []), ...textstycken(svar || "Ej besvarad")]];
   });
   const { antal, dom } = anbudsBedomning(v);
   const samlad = `${antal.gron} gröna, ${antal.gul} gula, ${antal.rod} röda, ${antal.obedomd} ej bedömda. ${dom.text}`;
