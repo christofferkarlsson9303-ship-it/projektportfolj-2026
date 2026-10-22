@@ -1,5 +1,5 @@
 -- Påminnelser per kanal med lås och återförsök (granskning F07).
--- EJ APPLICERAD. Granskas och körs manuellt i SQL-editorn (se CLAUDE.md).
+-- APPLICERAD 2026-10-22 i produktion (projektportfolj, eu-north-1), sats för sats. Se docs/behorighetsprov-2026-10-22.md.
 -- Driftsätt därefter Edge Function frist-paminnelser (index.ts anropar funktionerna nedan).
 --
 -- Beslut 2026-10-21: alla kanaler måste lyckas. Varje (frist, nivå, revision, kanal)

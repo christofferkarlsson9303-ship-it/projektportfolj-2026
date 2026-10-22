@@ -12,7 +12,7 @@
 -- Projekt tas aldrig bort ur katalogen av triggern. Ett projekt som tas bort
 -- ur portföljen behåller sina protokoll.
 --
--- EJ APPLICERAD. Kör i Supabase (SQL Editor eller CLI) efter granskning.
+-- APPLICERAD 2026-10-22 i produktion (projektportfolj, eu-north-1), sats för sats. Se docs/behorighetsprov-2026-10-22.md.
 -- Prova efteråt: skapa ett testprojekt i appen, spara, ladda upp ett
 -- protokoll på det och kontrollera att projekt_id står kvar.
 
