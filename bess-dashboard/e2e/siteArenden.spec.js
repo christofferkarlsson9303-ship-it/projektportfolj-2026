@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { gaTill, oppna, utanKonsolfel } from "./hjalpare.js";
+import { sitePanel, gaTill, oppna, utanKonsolfel } from "./hjalpare.js";
 
 /* Siten som modellbaserad ärendehantering: delad vy med avdelare, ärenden
    kopplade till objekt (objectGuid, viewpoint, boundingBox), filtrering mellan
@@ -14,13 +14,16 @@ const arenden = (page) => page.getByRole("complementary", { name: "Ärenden på 
 const portfolj = (page) => page.evaluate(() => JSON.parse(localStorage.getItem("batchc-portfolj-v1") || "{}"));
 
 async function laggContainer(page) {
+  await sitePanel(page, "Bygg");
   await kort(page).getByRole("button", { name: "+ Container", exact: true }).click();
+  await sitePanel(page, "Bygg");
   await kort(page).getByRole("button", { name: "Placera mitt på tomten" }).click();
   await page.keyboard.press("Escape");
 }
 
 /** Klickar i planvyn på en punkt i meter (x öster, z söder). */
 async function klickaPlan(page, x, z) {
+  await sitePanel(page, "Objekt");
   const plan = page.getByRole("img", { name: /^Planvy över siten/ });
   await plan.scrollIntoViewIfNeeded();
   const b = await plan.boundingBox();
@@ -28,52 +31,37 @@ async function klickaPlan(page, x, z) {
 }
 
 async function nyttArende(page, text) {
+  await sitePanel(page, "Ärenden");
   await arenden(page).getByRole("button", { name: "+ Ärende på objektet" }).click();
   await page.getByLabel("Kort beskrivning av händelsen").fill(text);
   await page.getByRole("button", { name: "Registrera", exact: true }).click();
 }
 
-test("ärendepanelen ligger till höger om 3D-vyn, och avdelaren flyttas med piltangenter", async ({ page }, info) => {
+test("ärenden öppnas i verktygspanelen och scenen behåller sin bredd", async ({ page }) => {
   const { fel } = await oppna(page, VY);
-  await expect(arenden(page)).toBeVisible();
+  await expect(arenden(page)).toBeHidden();
+  const scen = page.getByRole("application");
+  const bredd = (await scen.boundingBox()).width;
+  await sitePanel(page, "Ärenden");
   await expect(arenden(page).getByRole("heading", { name: "Ärenden" })).toBeVisible();
-  if (info.project.name !== "mobil") {
-    const sep = page.getByRole("separator", { name: /Ändra bredd/ });
-    await expect(sep).toBeVisible();
-    const start = Number(await sep.getAttribute("aria-valuenow"));
-    expect(start).toBeGreaterThan(50);
-    await sep.focus();
-    await page.keyboard.press("ArrowLeft");
-    await page.keyboard.press("ArrowLeft");
-    await expect(sep).toHaveAttribute("aria-valuenow", String(start - 4));
-    await page.keyboard.press("Home");
-    await expect(sep).toHaveAttribute("aria-valuenow", "30");
-    await page.keyboard.press("End");
-    await expect(sep).toHaveAttribute("aria-valuenow", "80");
-    // Läget sparas och gäller efter omladdning.
-    await page.reload();
-    await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 20_000 });
-    await gaTill(page, VY);
-    await expect(page.getByRole("separator", { name: /Ändra bredd/ })).toHaveAttribute("aria-valuenow", "80");
-    // Enter återställer.
-    await page.getByRole("separator", { name: /Ändra bredd/ }).focus();
-    await page.keyboard.press("Enter");
-    await expect(page.getByRole("separator", { name: /Ändra bredd/ })).toHaveAttribute("aria-valuenow", "62");
-  } else {
-    await expect(page.getByRole("separator", { name: /Ändra bredd/ })).toBeHidden();
-  }
+  expect((await scen.boundingBox()).width).toBeCloseTo(bredd, 0);
   utanKonsolfel(fel);
 });
 
 test("ett nytt ärende på ett objekt sparar objectGuid, viewpoint, boundingBox och modellversion", async ({ page }) => {
   await oppna(page, VY);
   await laggContainer(page);
+  await sitePanel(page, "Objekt");
   await lista(page).getByRole("button", { name: /Container 1/ }).click();
+  await sitePanel(page, "Ärenden");
   await expect(arenden(page).getByText("Inga ärenden är kopplade till Container 1 än.")).toBeVisible();
 
   await nyttArende(page, "Extra kabelränna vid container");
+  await sitePanel(page, "Ärenden");
   await expect(arenden(page).getByRole("listitem")).toHaveCount(1);
+  await sitePanel(page, "Ärenden");
   await expect(arenden(page)).toContainText("Extra kabelränna vid container");
+  await sitePanel(page, "Ärenden");
   await expect(arenden(page)).toContainText("Objekt: Container 1");
 
   await expect
@@ -97,8 +85,10 @@ test("ett nytt ärende på ett objekt sparar objectGuid, viewpoint, boundingBox 
 test("markerat objekt filtrerar ÄTA-listan, och Visa i 3D tar tillbaka till objektet", async ({ page }) => {
   await oppna(page, VY);
   await laggContainer(page);
+  await sitePanel(page, "Objekt");
   await lista(page).getByRole("button", { name: /Container 1/ }).click();
   await nyttArende(page, "Skadad dörr på container");
+  await sitePanel(page, "Ärenden");
   await expect(arenden(page).getByRole("listitem")).toHaveCount(1);
 
   await gaTill(page, "ÄTA och hinder");
@@ -113,16 +103,19 @@ test("markerat objekt filtrerar ÄTA-listan, och Visa i 3D tar tillbaka till obj
 
   // Filtret kommer tillbaka när objektet markeras igen, och leder tillbaka till 3D.
   await gaTill(page, VY);
+  await sitePanel(page, "Objekt");
   await lista(page).getByRole("button", { name: /Container 1/ }).click();
   await gaTill(page, "ÄTA och hinder");
   await page.getByRole("status").filter({ hasText: "Visar ärenden på objektet" }).getByRole("button", { name: "Visa i 3D" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(VY);
+  await sitePanel(page, "Objekt");
   await expect(page.getByRole("region", { name: "Container 1" })).toBeVisible();
 });
 
 test("ärendepanelen i ÄTA visar kopplingen och kan koppla och släppa objektet", async ({ page }) => {
   await oppna(page, VY);
   await laggContainer(page);
+  await sitePanel(page, "Objekt");
   await lista(page).getByRole("button", { name: /Container 1/ }).click();
   await nyttArende(page, "Behöver extra skärmning");
 
@@ -145,18 +138,24 @@ test("ärendepanelen i ÄTA visar kopplingen och kan koppla och släppa objektet
 test("ett ärende i panelen flyger inte kameran i gåläget men markerar objektet", async ({ page }) => {
   await oppna(page, VY);
   await laggContainer(page);
+  await sitePanel(page, "Objekt");
   await lista(page).getByRole("button", { name: /Container 1/ }).click();
   await nyttArende(page, "Kontrollera jordning");
+  await sitePanel(page, "Visning");
   await page.getByRole("radio", { name: "Gå in" }).click();
+  await sitePanel(page, "Objekt");
   await lista(page).getByRole("button", { name: /Container 1/ }).click();
+  await sitePanel(page, "Ärenden");
   await arenden(page).getByRole("button", { name: "Visa i 3D", exact: true }).first().click();
   // "Visa i 3D" lämnar gåläget och flyger i orbit.
+  await sitePanel(page, "Visning");
   await expect(page.getByRole("radio", { name: "Orbit" })).toHaveAttribute("aria-checked", "true");
 });
 
 test("modellversion och jämförelse: tillagt syns i sammanfattningen och versionen kan tas bort", async ({ page }) => {
   await oppna(page, VY);
   await laggContainer(page);
+  await sitePanel(page, "Visning");
   await page.getByRole("button", { name: "Spara modellversion" }).click();
   await page.getByLabel("Namn på versionen").fill("Före ändring");
   await page.getByRole("button", { name: "Spara", exact: true }).click();
@@ -164,26 +163,38 @@ test("modellversion och jämförelse: tillagt syns i sammanfattningen och versio
   const v = (await portfolj(page)).modellVersioner[0];
   expect(v.objekt).toHaveLength(1);
 
+  await sitePanel(page, "Visning");
   await page.getByLabel("Jämför med modellversion").selectOption({ index: 1 });
   const diff = page.getByRole("group", { name: "Jämförelse mot modellversion" });
+  await sitePanel(page, "Visning");
   await expect(diff).toContainText("0 tillagda · 0 borttagna · 0 modifierade");
 
   // Lägg till en trafo och flytta containern → 1 tillagd, 1 modifierad.
+  await sitePanel(page, "Bygg");
   await kort(page).getByRole("button", { name: "+ Trafo", exact: true }).click();
   await klickaPlan(page, 20, 10);
   await page.keyboard.press("Escape");
+  await sitePanel(page, "Visning");
   await expect(diff).toContainText("1 tillagda · 0 borttagna · 0 modifierade");
+  await sitePanel(page, "Objekt");
   await lista(page).getByRole("button", { name: /Container 1/ }).click();
   const panel = page.getByRole("region", { name: "Container 1" });
+  await sitePanel(page, "Objekt");
   await panel.getByLabel("Öster om mitten (m)").fill("20");
+  await sitePanel(page, "Objekt");
   await panel.getByLabel("Öster om mitten (m)").press("Enter");
+  await sitePanel(page, "Visning");
   await expect(diff).toContainText("1 tillagda · 0 borttagna · 1 modifierade");
 
   // Ta bort containern → borttagen.
+  await sitePanel(page, "Objekt");
   await panel.getByRole("button", { name: /^Ta bort Container 1/ }).click();
+  await sitePanel(page, "Visning");
   await expect(diff).toContainText("1 tillagda · 1 borttagna · 0 modifierade");
+  await sitePanel(page, "Visning");
   for (const t of ["Tillagd", "Borttagen", "Modifierad"]) await expect(diff).toContainText(t);
 
+  await sitePanel(page, "Visning");
   await diff.getByRole("button", { name: "Ta bort versionen" }).click();
   await page.getByRole("button", { name: "Ta bort", exact: true }).click();
   await expect.poll(async () => ((await portfolj(page)).modellVersioner || []).length).toBe(0);
@@ -192,6 +203,7 @@ test("modellversion och jämförelse: tillagt syns i sammanfattningen och versio
 
 test("sektionslådan har reglage som styr värdena och går att återställa", async ({ page }) => {
   const { fel } = await oppna(page, VY);
+  await sitePanel(page, "Visning");
   const sek = page.getByRole("button", { name: "Sektion", exact: true });
   await expect(sek).toHaveAttribute("aria-pressed", "false");
   await expect(page.getByRole("group", { name: "Sektionslåda" })).toHaveCount(0);
@@ -218,16 +230,19 @@ test("sektionslådan har reglage som styr värdena och går att återställa", a
 
 test("kryssmätning: två klick i 3D-vyn ger ett avstånd, och Rensa tar bort det", async ({ page }) => {
   await oppna(page, VY);
+  await sitePanel(page, "Visning");
   const mat = page.getByRole("button", { name: "Mät", exact: true });
   await mat.click();
   await expect(mat).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByText("Klicka på första punkten, sedan på nästa.")).toBeVisible();
 
+  await page.getByRole("button", { name: "Fäll in verktyg" }).click();
   const canvas = page.locator("[data-lage] canvas").first();
   await canvas.scrollIntoViewIfNeeded();
   const b = await canvas.boundingBox();
   await page.mouse.click(b.x + b.width * 0.4, b.y + b.height * 0.7);
   await page.mouse.click(b.x + b.width * 0.65, b.y + b.height * 0.7);
+  await page.getByRole("button", { name: "Visa verktyg" }).click();
   await expect(page.getByText(/Avstånd/)).toBeVisible();
   await expect(page.getByText(/horisontellt/)).toBeVisible();
 
@@ -236,3 +251,4 @@ test("kryssmätning: två klick i 3D-vyn ger ett avstånd, och Rensa tar bort de
   await mat.click();
   await expect(mat).toHaveAttribute("aria-pressed", "false");
 });
+

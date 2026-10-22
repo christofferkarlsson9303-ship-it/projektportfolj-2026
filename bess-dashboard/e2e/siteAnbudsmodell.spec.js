@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { oppna, utanKonsolfel } from "./hjalpare.js";
+import { sitePanel, oppna, utanKonsolfel } from "./hjalpare.js";
 import { SEED } from "../src/data/seed.js";
 
 /* Anbudsmodellen på siten: Vaggeryd-projektet visar den levererade 3D-filen i en sandlåda,
@@ -21,6 +21,8 @@ test("Vaggeryd visar anbudsmodellen i en sandlåda", async ({ page }) => {
   });
   await oppna(page, VY);
 
+  await sitePanel(page, "Underlag");
+  await page.getByText("Anbudsmodell som referens", { exact: true }).click();
   const kort = page.getByRole("region", { name: /^Anbudsmodell — Vaggeryd 100 MW/ });
   await expect(kort).toBeVisible();
   await expect(kort).toContainText("Båramo 1:17");
@@ -41,3 +43,4 @@ test("andra projekt har ingen anbudsmodell, och norrpilen syns i 3D-vyn", async 
   await expect(page.locator('[data-roll="norrpil"]')).toBeVisible();
   utanKonsolfel(fel);
 });
+

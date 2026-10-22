@@ -78,3 +78,10 @@ export async function annatProjekt(page) {
   const annat = alt.find((a) => a.v !== aktuellt && a.v !== "__alla");
   return annat;
 }
+
+
+/** Verktygen ligger i flikar ovanpå scenen; välj den del som används i flödet. */
+export async function sitePanel(page, namn) {
+  const knapp = page.getByRole("navigation", { name: "Verktyg i 3D-vyn" }).getByRole("button", { name: namn, exact: true });
+  if (await knapp.getAttribute("aria-pressed") !== "true") await knapp.click();
+}

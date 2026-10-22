@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { gaTill, oppna, utanKonsolfel } from "./hjalpare.js";
+import { sitePanel, gaTill, oppna, utanKonsolfel } from "./hjalpare.js";
 
 /* Siten i 3D. Testerna kräver inte WebGL: placering och val går via planvyn
    och listan, som visar samma objekt som scenen. Gångmatematiken (A är
@@ -13,6 +13,7 @@ const portfolj = (page) => page.evaluate(() => JSON.parse(localStorage.getItem("
 
 /** Klickar i planvyn på en punkt i meter (x öster, z söder). */
 async function klickaPlan(page, x, z) {
+  await sitePanel(page, "Objekt");
   const plan = page.getByRole("img", { name: /^Planvy över siten/ });
   /* Mitt i bild: den fasta toppraden får inte täcka planen vid klicket. */
   await plan.evaluate((el) => el.scrollIntoView({ block: "center" }));
@@ -28,25 +29,35 @@ async function fyll(falt, varde) {
 test("en skid placeras, får mått och rotation, och står kvar efter omladdning", async ({ page }) => {
   const { fel } = await oppna(page, VY);
   await expect(kort(page)).toContainText("Tomt 80 × 52 m");
+  await sitePanel(page, "Objekt");
   await expect(page.getByText("Tomten är tom.")).toBeVisible();
 
+  await sitePanel(page, "Bygg");
   await kort(page).getByRole("button", { name: "+ Skid", exact: true }).click();
+  await sitePanel(page, "Bygg");
   await expect(kort(page).getByRole("button", { name: "+ Skid", exact: true })).toHaveAttribute("aria-pressed", "true");
   await klickaPlan(page, -10, -10);
   await klickaPlan(page, 0, -10);
   await page.keyboard.press("Escape");
+  await sitePanel(page, "Bygg");
   await expect(kort(page).getByRole("button", { name: "+ Skid", exact: true })).toHaveAttribute("aria-pressed", "false");
 
+  await sitePanel(page, "Objekt");
   await expect(lista(page).getByRole("button")).toHaveCount(2);
+  await sitePanel(page, "Objekt");
   await expect(lista(page)).toContainText("Skid 1");
+  await sitePanel(page, "Objekt");
   await expect(lista(page)).toContainText("Skid 2");
+  await sitePanel(page, "Objekt");
   await expect(lista(page).getByRole("button", { name: /Skid 1/ })).toContainText("6,1 × 2,5 × 2,9 m");
 
+  await sitePanel(page, "Objekt");
   await lista(page).getByRole("button", { name: /Skid 1/ }).click();
   const markerat = page.getByRole("region", { name: "Skid 1" });
   await fyll(markerat.getByLabel("Bredd (m)"), "7,5");
   await fyll(markerat.getByLabel("Rotation (grader)"), "90");
   await fyll(markerat.getByLabel("Namn"), "Skid A");
+  await sitePanel(page, "Objekt");
   await expect(lista(page).getByRole("button", { name: /Skid A/ })).toContainText("7,5 × 2,5 × 2,9 m");
 
   // Ett mått på 0 sparas inte.
@@ -64,23 +75,31 @@ test("en skid placeras, får mått och rotation, och står kvar efter omladdning
   await page.reload();
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 20_000 });
   await gaTill(page, VY);
+  await sitePanel(page, "Objekt");
   await expect(lista(page)).toContainText("Skid A");
+  await sitePanel(page, "Objekt");
   await expect(lista(page)).toContainText("Skid 2");
   utanKonsolfel(fel);
 });
 
 test("en nål måste peka på en öppen punkt — utan punkt placeras ingenting", async ({ page }) => {
   await oppna(page, VY);
+  await sitePanel(page, "Bygg");
   await kort(page).getByRole("button", { name: "+ Nål", exact: true }).click();
   await expect(kort(page)).toContainText("Välj punkten nålen ska peka på.");
+  await sitePanel(page, "Bygg");
   await expect(kort(page).getByRole("button", { name: "Placera mitt på tomten" })).toHaveCount(0);
 
   await klickaPlan(page, 5, 5);
   await expect(page.getByText("Välj vilken punkt nålen ska peka på.")).toBeVisible();
+  await sitePanel(page, "Objekt");
   await expect(page.getByText("Tomten är tom.")).toBeVisible();
 
+  await sitePanel(page, "Bygg");
   await kort(page).getByLabel("Punkt för nålen").selectOption("p2");
+  await sitePanel(page, "Bygg");
   await kort(page).getByRole("button", { name: "Placera mitt på tomten" }).click();
+  await sitePanel(page, "Objekt");
   await expect(lista(page)).toContainText("Nål: Vågkvitto för deponimassor");
 
   await expect
@@ -100,7 +119,9 @@ test("Idag får en genväg till siten först när det finns volymer", async ({ p
   await expect(genvagar().getByRole("button", { name: VY, exact: true })).toHaveCount(0);
 
   await gaTill(page, VY);
+  await sitePanel(page, "Bygg");
   await kort(page).getByRole("button", { name: "+ Container", exact: true }).click();
+  await sitePanel(page, "Bygg");
   await kort(page).getByRole("button", { name: "Placera mitt på tomten" }).click();
 
   await gaTill(page, "Idag");
@@ -110,7 +131,9 @@ test("Idag får en genväg till siten först när det finns volymer", async ({ p
 
 test("situationsplanen ligger i sessionStorage och följer inte med portföljen", async ({ page }) => {
   await oppna(page, VY);
+  await sitePanel(page, "Bygg");
   await kort(page).getByRole("button", { name: "+ Trafo", exact: true }).click();
+  await sitePanel(page, "Bygg");
   await kort(page).getByRole("button", { name: "Placera mitt på tomten" }).click();
 
   // En bild som är dubbelt så bred som hög.
@@ -121,6 +144,7 @@ test("situationsplanen ligger i sessionStorage och följer inte med portföljen"
     c.getContext("2d").fillRect(0, 0, 200, 100);
     return c.toDataURL("image/png").split(",")[1];
   });
+  await sitePanel(page, "Objekt");
   await page.getByLabel("Välj bild för situationsplan").setInputFiles({ name: "situationsplan.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") });
 
   const plan = page.getByRole("region", { name: "Situationsplan" });
@@ -129,6 +153,7 @@ test("situationsplanen ligger i sessionStorage och följer inte med portföljen"
   await fyll(plan.getByLabel("Bredd i meter"), "120");
   await fyll(plan.getByLabel("Norr i grader"), "15");
   await expect(plan).toContainText("60 m");
+  await sitePanel(page, "Objekt");
   await expect(kort(page)).toContainText("Situationsplan som mark.");
 
   const session = await page.evaluate(() => JSON.parse(sessionStorage.getItem("batchc-situationsplan:36037")));
@@ -142,21 +167,27 @@ test("situationsplanen ligger i sessionStorage och följer inte med portföljen"
 
   await plan.getByRole("button", { name: "Ta bort planen" }).click();
   expect(await page.evaluate(() => sessionStorage.getItem("batchc-situationsplan:36037"))).toBeNull();
+  await sitePanel(page, "Objekt");
   await expect(kort(page)).toContainText("Utan situationsplan: grus och körytor.");
 });
 
 test("Återställ tömmer projektets site och genvägen på Idag försvinner", async ({ page }) => {
   await oppna(page, VY);
+  await sitePanel(page, "Bygg");
   await kort(page).getByRole("button", { name: "+ E-House", exact: true }).click();
   await klickaPlan(page, -30, 0);
+  await sitePanel(page, "Bygg");
   await kort(page).getByRole("button", { name: "+ Låda", exact: true }).click();
   await klickaPlan(page, 20, 10);
+  await sitePanel(page, "Objekt");
   await expect(lista(page).getByRole("button")).toHaveCount(2);
 
+  await sitePanel(page, "Bygg");
   await kort(page).getByRole("button", { name: "Återställ", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toContainText("Tomten blir tom igen.");
   await dialog.getByRole("button", { name: "Återställ", exact: true }).click();
+  await sitePanel(page, "Objekt");
   await expect(page.getByText("Tomten är tom.")).toBeVisible();
   await expect.poll(async () => ((await portfolj(page)).siteObjekt || []).filter((o) => o.projektId === "36037").length).toBe(0);
 
@@ -166,9 +197,12 @@ test("Återställ tömmer projektets site och genvägen på Idag försvinner", a
 
 test("Gå in och Orbit är knappar, och på pekskärm finns en joystick på minst 44 px", async ({ page, isMobile }) => {
   await oppna(page, VY);
+  await sitePanel(page, "Visning");
   await page.getByRole("radio", { name: "Gå in" }).click();
+  await sitePanel(page, "Visning");
   await expect(page.getByRole("radio", { name: "Gå in" })).toHaveAttribute("aria-checked", "true");
   // Placering är avstängd medan man går.
+  await sitePanel(page, "Bygg");
   await expect(kort(page).getByRole("button", { name: "+ Skid", exact: true })).toBeDisabled();
 
   const utanWebgl = await page.getByText("3D-vyn kan inte visas.").isVisible();
@@ -188,6 +222,9 @@ test("Gå in och Orbit är knappar, och på pekskärm finns en joystick på mins
     }
   }
 
+  await sitePanel(page, "Visning");
   await page.getByRole("radio", { name: "Orbit" }).click();
+  await sitePanel(page, "Bygg");
   await expect(kort(page).getByRole("button", { name: "+ Skid", exact: true })).toBeEnabled();
 });
+

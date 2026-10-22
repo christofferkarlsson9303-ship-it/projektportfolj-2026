@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { oppna, utanKonsolfel } from "./hjalpare.js";
+import { sitePanel, oppna, utanKonsolfel } from "./hjalpare.js";
 
 /* Parkbyggaren: komponentmeny, snapp och kollision, rotation med R och
    sidopanelen med BESS-data. Går via planvyn och listan så att testerna inte
@@ -22,6 +22,7 @@ async function fyll(falt, varde) {
 }
 
 async function klickaPlan(page, x, z) {
+  await sitePanel(page, "Objekt");
   const plan = page.getByRole("img", { name: /^Planvy över siten/ });
   await plan.scrollIntoViewIfNeeded();
   const b = await plan.boundingBox();
@@ -43,8 +44,11 @@ test("komponentmenyn har grupperna Containers, Inverters / MV-skids, Transformat
 
 test("objekt snappar till rutnätet och två moduler kan inte ligga i varandra", async ({ page }) => {
   await oppna(page, VY);
+  await kort(page).getByRole("button", { name: /^Rutnät/ }).click();
+  await sitePanel(page, "Bygg");
   await kort(page).getByRole("button", { name: "+ Container", exact: true }).click();
   await klickaPlan(page, -10.3, -10.1);
+  await sitePanel(page, "Objekt");
   await expect(lista(page).getByRole("button")).toHaveCount(1);
 
   // Hörnen ligger på hela meter: centrum = heltal ± halva måttet (6,1 × 2,5).
@@ -58,10 +62,12 @@ test("objekt snappar till rutnätet och två moduler kan inte ligga i varandra",
   // (Ett klick på själva objektet markerar det, så klicka en bit utanför kanten.)
   await klickaPlan(page, c.x + 4, c.z);
   await expect(page.getByText("Platsen är upptagen av Container 1.")).toBeVisible();
+  await sitePanel(page, "Objekt");
   await expect(lista(page).getByRole("button")).toHaveCount(1);
 
   // Intill går bra, och kanten möts exakt (6,1 m mellan centrum).
   await klickaPlan(page, c.x + 6.4, c.z);
+  await sitePanel(page, "Objekt");
   await expect(lista(page).getByRole("button")).toHaveCount(2);
   const alla = (await objektNar(page, 2)).filter((o) => o.typ === "container");
   expect(Math.abs(alla[1].x - alla[0].x - 6.1)).toBeLessThan(0.01);
@@ -69,9 +75,11 @@ test("objekt snappar till rutnätet och två moduler kan inte ligga i varandra",
 
 test("R roterar markerat objekt 90 grader och nekas om det inte får plats", async ({ page }) => {
   await oppna(page, VY);
+  await sitePanel(page, "Bygg");
   await kort(page).getByRole("button", { name: "+ Container", exact: true }).click();
   await klickaPlan(page, -10, -10);
   await page.keyboard.press("Escape");
+  await sitePanel(page, "Objekt");
   await lista(page).getByRole("button", { name: /Container 1/ }).click();
 
   await page.keyboard.press("r");
@@ -81,10 +89,13 @@ test("R roterar markerat objekt 90 grader och nekas om det inte får plats", asy
 
   // Ligger en annan container intill kan en vridning in i den inte ske.
   const c = (await objektNar(page, 1))[0];
+  await sitePanel(page, "Bygg");
   await kort(page).getByRole("button", { name: "+ Container", exact: true }).click();
   await klickaPlan(page, c.x, c.z + 3.2);
   await page.keyboard.press("Escape");
+  await sitePanel(page, "Objekt");
   await expect(lista(page).getByRole("button")).toHaveCount(2);
+  await sitePanel(page, "Objekt");
   await lista(page).getByRole("button", { name: /Container 1/ }).click();
   await page.keyboard.press("r");
   await expect(page.getByText(/Platsen är upptagen av Container 2\./)).toBeVisible();
@@ -94,12 +105,16 @@ test("R roterar markerat objekt 90 grader och nekas om det inte får plats", asy
 test("sidopanelen tar emot BESS-data, visar SoC och parkens summa följer med", async ({ page }) => {
   const { fel } = await oppna(page, VY);
   const park = page.getByRole("group", { name: "Parkens BESS-data" });
+  await sitePanel(page, "Underlag");
   await expect(park).toContainText("—");
 
+  await sitePanel(page, "Bygg");
   await kort(page).getByRole("button", { name: "+ Container", exact: true }).click();
+  await sitePanel(page, "Bygg");
   await kort(page).getByRole("button", { name: "Placera mitt på tomten" }).click();
   await page.keyboard.press("Escape");
 
+  await sitePanel(page, "Objekt");
   const panel = page.getByRole("region", { name: "Container 1" });
   await fyll(panel.getByLabel("Energi (MWh)"), "4,2");
   await fyll(panel.getByLabel("Effekt (MW)"), "2");
@@ -109,11 +124,15 @@ test("sidopanelen tar emot BESS-data, visar SoC och parkens summa följer med", 
 
   await expect(panel.getByRole("progressbar", { name: /Laddstatus Container 1/ })).toHaveAttribute("aria-valuenow", "65");
   await expect(panel).toContainText("Driftsatt");
+  await sitePanel(page, "Underlag");
   await expect(park).toContainText("4,2 MWh");
+  await sitePanel(page, "Underlag");
   await expect(park).toContainText("65 %");
+  await sitePanel(page, "Underlag");
   await expect(park).toContainText("1 av 1");
 
   // SoC över 100 sparas inte.
+  await sitePanel(page, "Objekt");
   await fyll(panel.getByLabel("Laddstatus SoC (%)"), "150");
   await expect(page.getByText(/kan högst vara 100/)).toBeVisible();
 
@@ -122,10 +141,13 @@ test("sidopanelen tar emot BESS-data, visar SoC och parkens summa följer med", 
     .toMatchObject({ mwh: 4.2, mw: 2, soc: 65, status: "driftsatt", spec: "LFP, vätskekyld" });
 
   // Hägnad har ingen BESS-data.
+  await sitePanel(page, "Bygg");
   await kort(page).getByRole("button", { name: "+ Hägnad", exact: true }).click();
   await klickaPlan(page, 20, 15);
   await page.keyboard.press("Escape");
+  await sitePanel(page, "Objekt");
   await lista(page).getByRole("button", { name: /Hägnad 1/ }).click();
   await expect(page.getByRole("region", { name: "Hägnad 1" }).getByText("BESS-data")).toHaveCount(0);
   utanKonsolfel(fel);
 });
+

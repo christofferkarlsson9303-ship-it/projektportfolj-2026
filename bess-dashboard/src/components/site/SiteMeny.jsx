@@ -1,3 +1,4 @@
+import { mattFor } from "../../lib/siteLager.js";
 import { KOMPONENTGRUPPER, MALLAR, TYPFARG, fmtTal } from "../../lib/site.js";
 
 /* Komponentmenyn till vänster om 3D-vyn. Grupperna kommer ur
@@ -19,7 +20,7 @@ const KNAPP =
 
 const mattText = (m) => `${fmtTal(m.bredd, 2)} × ${fmtTal(m.djup, 2)} × ${fmtTal(m.hojd, 2)} m`;
 
-export function SiteMeny({ laddad, onVal, lage, kanNal, rutnat, onRutnat, spokRot, onRotera, className = "" }) {
+export function SiteMeny({ laddad, onVal, lage, kanNal, rutnat, onRutnat, spokRot, onRotera, className = "", profilId = "catl-pe" }) {
   const ga = lage === "ga";
   return (
     <nav aria-label="Komponenter" className={`flex min-w-0 flex-row flex-wrap gap-x-4 gap-y-3 xl:flex-col xl:flex-nowrap xl:gap-4 ${className}`.trim()}>
@@ -29,7 +30,7 @@ export function SiteMeny({ laddad, onVal, lage, kanNal, rutnat, onRutnat, spokRo
             {g.namn}
           </p>
           {g.typer.map((typ) => {
-            const m = MALLAR[typ];
+            const m = { ...MALLAR[typ], ...mattFor(profilId, typ) };
             const beskr = typ === "nal" ? "pekar på en öppen punkt" : mattText(m);
             const id = `site-mall-${typ}`;
             return (
@@ -76,3 +77,4 @@ export function SiteMeny({ laddad, onVal, lage, kanNal, rutnat, onRutnat, spokRo
     </nav>
   );
 }
+

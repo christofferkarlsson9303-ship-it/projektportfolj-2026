@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { parkVy } from "../../lib/siteKamera.js";
 import { luftFor } from "../../lib/siteSakerhet.js";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -159,6 +160,7 @@ function Joystick({ onAxel }) {
 
 export default function SiteScen({
   objekt,
+  skyddsregler = [],
   punkter,
   plan,
   valtId,
@@ -178,6 +180,8 @@ export default function SiteScen({
   profil = "catl-pe",
   spokMatt = null,
   ritningar = null,
+  flyttaObjekt = false,
+  panelBredd = 0,
   onKlar,
   onPlacera,
   onValj,
@@ -196,7 +200,7 @@ export default function SiteScen({
 
   // Senaste props för händelser som registreras en gång.
   useEffect(() => {
-    senaste.current = { objekt, valtId, laddad, lage, rutnat, spokRot, spokMatt, matning, onPlacera, onValj, onFlytta, onMatt, onKlar, onFel };
+    senaste.current = { objekt, skyddsregler, valtId, laddad, lage, rutnat, spokRot, spokMatt, matning, onPlacera, onValj, onFlytta, onMatt, onKlar, onFel, flyttaObjekt, panelBredd };
   });
 
   /* ---------- Bygg scenen en gång ---------- */
@@ -219,7 +223,9 @@ export default function SiteScen({
     const programvara = /swiftshader|llvmpipe|software/i.test(info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : "");
     renderer.setPixelRatio(programvara ? 1 : Math.min(window.devicePixelRatio || 1, 1.5));
     renderer.shadowMap.enabled = !programvara;
-    renderer.shadowMap.type = THREE.PCFShadowMap;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
     renderer.domElement.className = "block h-full w-full touch-none";
     el.appendChild(renderer.domElement);
 
@@ -228,7 +234,7 @@ export default function SiteScen({
     el.appendChild(etiketter.domElement);
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(55, 1, 0.3, 1200);
+    const camera = new THREE.PerspectiveCamera(42, 1, 0.3, 6000);
     camera.position.set(...ORBITLAGE);
 
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -240,9 +246,8 @@ export default function SiteScen({
     controls.zoomSpeed = 0.9;
     controls.maxPolarAngle = rad(84);
     controls.minDistance = 8;
-    controls.maxDistance = 220;
-    const lugn = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    controls.autoRotate = !lugn && !programvara;
+    controls.maxDistance = Math.max(500, TOMT.bredd * 6, TOMT.djup * 6);
+    controls.autoRotate = false;
     controls.autoRotateSpeed = 0.6;
     // Orbit tills användaren tar över.
     controls.addEventListener("start", () => {
@@ -257,8 +262,8 @@ export default function SiteScen({
     };
     controls.addEventListener("change", markera);
 
-    scene.add(new THREE.HemisphereLight(new THREE.Color(1, 1, 1), farg("--web2"), 1.8));
-    const sol = new THREE.DirectionalLight(new THREE.Color(1, 1, 1), 2.2);
+    scene.add(new THREE.HemisphereLight(new THREE.Color(1, 1, 1), farg("--web2"), 1.35));
+    const sol = new THREE.DirectionalLight(new THREE.Color(1, 1, 1), 2.0);
     sol.position.set(-40, 70, 30);
     sol.castShadow = true;
     sol.shadow.mapSize.set(programvara ? 1024 : 2048, programvara ? 1024 : 2048);
@@ -342,13 +347,28 @@ export default function SiteScen({
     const kabelGrupp = new THREE.Group();
     scene.add(kabelGrupp);
 
+    let forstaStorlek = true;
+    const ramaIn = () => {
+      const w = el.clientWidth || 1, h = el.clientHeight || 1;
+      const inset = Math.min(senaste.current.panelBredd || 0, w * 0.48);
+      const vy = parkVy(senaste.current.objekt, TOMT, (w - inset) / h);
+      camera.position.set(...vy.cameraPosition);
+      controls.target.set(...vy.target);
+      camera.fov = vy.fov;
+      camera.updateProjectionMatrix();
+      controls.update();
+      smutsig = true;
+    };
     const storlek = () => {
       const w = el.clientWidth || 1;
       const h = el.clientHeight || 1;
       renderer.setSize(w, h, false);
       etiketter.setSize(w, h);
       camera.aspect = w / h;
+      const inset = Math.min(senaste.current.panelBredd || 0, w * 0.48);
+      camera.setViewOffset(w, h, -inset / 2, 0, w, h);
       camera.updateProjectionMatrix();
+      if (forstaStorlek) { ramaIn(); forstaStorlek = false; }
       smutsig = true;
     };
     storlek();
@@ -361,7 +381,7 @@ export default function SiteScen({
     io.observe(el);
 
     const ga = { pos: { x: INGANG.x, y: INGANG.y, z: INGANG.z }, yaw: INGANG.yaw, pitch: INGANG.pitch, avsikt: {}, joy: { fram: 0, sid: 0 } };
-    s.current = { renderer, etiketter, scene, camera, controls, objektGrupp, ifcGrupp, planGrupp, ritGrupp, ritTexturer: new Map(), kabelGrupp, tomt, mark, grus, ga, meshar: new Map(), markera, rutnatLinjer, spok, spokPunkt: null, matGrupp, sektionLinjer, flygning: null };
+    s.current = { ramaIn, storlek, renderer, etiketter, scene, camera, controls, objektGrupp, ifcGrupp, planGrupp, ritGrupp, ritTexturer: new Map(), kabelGrupp, tomt, mark, grus, ga, meshar: new Map(), markera, rutnatLinjer, spok, spokPunkt: null, matGrupp, sektionLinjer, flygning: null };
 
     /* ---------- Pekare: välja, placera, dra, titta ---------- */
     const ray = new THREE.Raycaster();
@@ -500,7 +520,7 @@ export default function SiteScen({
       start = { x: e.clientX, y: e.clientY };
       straale(e);
       const id = traffadId();
-      if (id && id === p.valtId && !p.matning) {
+      if (p.flyttaObjekt && id && id === p.valtId && !p.matning) {
         const m = s.current.meshar.get(id);
         const q = markpunkt();
         if (m && q) {
@@ -684,7 +704,7 @@ export default function SiteScen({
       }
     };
     s.current.startaFlyg = startaFlyg;
-    senaste.current.onKlar?.({ hamtaVy: nuVy, flygTill: startaFlyg, flyger: () => !!s.current.flygning, rensaMatning: () => s.current.rensaMatning?.(), skarmdump });
+    senaste.current.onKlar?.({ ramaIn, hamtaVy: nuVy, flygTill: startaFlyg, flyger: () => !!s.current.flygning, rensaMatning: () => s.current.rensaMatning?.(), skarmdump });
 
     /* ---------- Loop ---------- */
     let forra = performance.now();
@@ -949,7 +969,7 @@ export default function SiteScen({
     let avbruten = false;
     let laddade = null;
     if (!hogKvalitet) return undefined;
-    laddaTexturer(profil).then((t) => {
+    laddaTexturer(profil, undefined, { ritad: true }).then((t) => {
       if (avbruten) {
         frigorTexturer(t);
         return;
@@ -966,7 +986,8 @@ export default function SiteScen({
   useEffect(() => {
     const { scene, mark, grus, markera } = s.current;
     if (!scene) return;
-    scene.background = texturer?.himmel || null;
+    scene.background = texturer?.himmel || farg("--himmel");
+    scene.fog = new THREE.Fog(farg("--himmel"), Math.max(TOMT.bredd, TOMT.djup) * 3, 2400);
     /* Gruset inne på tomten får samma bild som marken, med samma kornstorlek: marken är 500 m
        med texturen upprepad 60 gånger, så tomten upprepar den i proportion till sina mått.
        Utan det blir kornen så små att ytan ser grå ut. */
@@ -1153,7 +1174,7 @@ export default function SiteScen({
 
   /* ---------- Läge ---------- */
   useEffect(() => {
-    const { controls, camera, ga, renderer } = s.current;
+    const { controls, ga, renderer } = s.current;
     if (!controls) return;
     if (lage === "ga") {
       controls.enabled = false;
@@ -1165,13 +1186,13 @@ export default function SiteScen({
       holder.current?.focus();
     } else {
       if (document.pointerLockElement === renderer.domElement) document.exitPointerLock?.();
-      camera.position.set(...ORBITLAGE);
-      controls.target.set(0, 0, 0);
       controls.enabled = true;
-      camera.lookAt(0, 0, 0);
+      s.current.ramaIn?.();
     }
     s.current.markera?.();
   }, [lage]);
+
+  useEffect(() => { s.current.storlek?.(); }, [panelBredd]);
 
   const hjalp =
     lage === "ga"
@@ -1180,7 +1201,7 @@ export default function SiteScen({
         : "Klicka i bilden för att titta med musen. W och S går, A och D åt sidan, Shift springer, Q och E upp och ner. Esc släpper musen."
       : laddad
         ? "Klicka på marken för att placera. Esc avbryter."
-        : "Dra för att snurra, scrolla för att zooma. Klicka på ett objekt för att markera det, dra det markerade för att flytta.";
+        : flyttaObjekt ? "Flytta: dra det markerade objektet. Stäng Flytta objekt för att rotera kameran över objektet." : "Dra för att rotera · högerdra för att panorera · scrolla för zoom · klicka för att välja";
 
   return (
     <div
@@ -1224,3 +1245,4 @@ export default function SiteScen({
     </div>
   );
 }
+

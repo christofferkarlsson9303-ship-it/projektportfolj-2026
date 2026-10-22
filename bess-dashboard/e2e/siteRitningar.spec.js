@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { oppna, utanKonsolfel } from "./hjalpare.js";
+import { sitePanel, oppna, utanKonsolfel } from "./hjalpare.js";
 
 /* Ritningar i 3D-vyn: uppladdning, skala ur ritningshuvudet, placering efter beteckningar,
    lagring (lokalt läge = IndexedDB) och att bilden aldrig hamnar i portfolj/state.
@@ -15,16 +15,23 @@ test("ritning laddas upp, läggs i skala över enheterna och finns kvar efter om
   test.setTimeout(90000);
   const { fel } = await oppna(page, "Siten i 3D");
 
+  await sitePanel(page, "Bygg");
   await kort(page).getByRole("button", { name: "Lägg in layout enligt E-63-1-100" }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toContainText("5 skid, 9 batterienheter");
   await dialog.getByRole("button", { name: "Lägg in", exact: true }).click();
+  await sitePanel(page, "Objekt");
   await expect(page.getByRole("list", { name: "Objekt" })).toContainText("+B1a");
 
-  await kort(page).getByLabel("Välj ritning (PDF eller bild)").setInputFiles(PLAN);
+  await sitePanel(page, "Visning");
+  await page.getByRole("region", { name: "Visning av parken" }).getByLabel("Välj ritning (PDF eller bild)").setInputFiles(PLAN);
+  await sitePanel(page, "Objekt");
   await expect(lista(page)).toContainText("testplan-A3-1250", { timeout: 20000 });
+  await sitePanel(page, "Objekt");
   await expect(lista(page)).toContainText("A3 · 1:250 · 105 × 74,3 m");
+  await sitePanel(page, "Objekt");
   await expect(lista(page)).toContainText("efter 14 beteckningar");
+  await sitePanel(page, "Objekt");
   await expect(lista(page)).toContainText("avvikelse 0");
 
   const rad = async () => ((await portfolj(page)).siteRitningar || [])[0];
@@ -44,8 +51,12 @@ test("ritning laddas upp, läggs i skala över enheterna och finns kvar efter om
 
   // Filen ligger kvar i arkivet efter omladdning och läses in igen.
   await page.reload();
+  await sitePanel(page, "Objekt");
+  await sitePanel(page, "Objekt");
   await expect(lista(page)).toContainText("testplan-A3-1250");
+  await sitePanel(page, "Objekt");
   await expect(lista(page).getByText("Kunde inte läsas")).toHaveCount(0);
+  await sitePanel(page, "Objekt");
   await expect(lista(page).getByText("Laddar")).toHaveCount(0, { timeout: 15000 });
 
   await ritKort(page).getByRole("button", { name: /^Ta bort testplan/ }).click();
@@ -56,7 +67,9 @@ test("ritning laddas upp, läggs i skala över enheterna och finns kvar efter om
 
 test("en fil som inte är ritning avvisas med ett begripligt fel", async ({ page }) => {
   await oppna(page, "Siten i 3D");
-  await kort(page).getByLabel("Välj ritning (PDF eller bild)").setInputFiles({ name: "anteckning.txt", mimeType: "text/plain", buffer: Buffer.from("hej") });
+  await sitePanel(page, "Visning");
+  await page.getByRole("region", { name: "Visning av parken" }).getByLabel("Välj ritning (PDF eller bild)").setInputFiles({ name: "anteckning.txt", mimeType: "text/plain", buffer: Buffer.from("hej") });
   await expect(page.getByText("Välj en PDF, PNG, JPG eller WebP.")).toBeVisible();
   expect(((await portfolj(page)).siteRitningar || []).length).toBe(0);
 });
+
