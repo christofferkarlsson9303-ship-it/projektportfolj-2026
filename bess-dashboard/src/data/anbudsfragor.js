@@ -54,3 +54,46 @@ export function anbudsBedomning(v = {}) {
   else dom = { ton: "ok", text: "Alla gröna: klart för anbud." };
   return { per, antal, dom };
 }
+
+/* ---------- Riskmatris (2026-10-22) ----------
+   Varje fråga kan placeras i en 3 × 3-matris: sannolikhet (`af_sann_<id>`) och konsekvens
+   (`af_kons_<id>`), 1–3. Placeringen föreslår trafikljuset och skriver det; ljuset går
+   fortfarande att ändra för hand, och då visas att det avviker från matrisen.
+   Gränserna: produkten 1–2 grön, 3–4 gul, 6–9 röd — tre rutor av varje färg. */
+
+export const MATRISNIVAER = [
+  { varde: 1, namn: "Låg" },
+  { varde: 2, namn: "Medel" },
+  { varde: 3, namn: "Hög" },
+];
+
+export const anbudsSannId = (f) => `af_sann_${f.id}`;
+export const anbudsKonsId = (f) => `af_kons_${f.id}`;
+
+const niva = (x) => (Number.isInteger(Number(x)) && Number(x) >= 1 && Number(x) <= 3 ? Number(x) : null);
+
+/** Trafikljuset för en ruta i matrisen. */
+export function matrisLjus(sannolikhet, konsekvens) {
+  const s = niva(sannolikhet);
+  const k = niva(konsekvens);
+  if (!s || !k) return "";
+  const p = s * k;
+  return p <= 2 ? "gron" : p <= 4 ? "gul" : "rod";
+}
+
+/** Frågans plats i matrisen, eller null om den inte är placerad. */
+export function matrisPlats(v = {}, f) {
+  const s = niva(v[anbudsSannId(f)]);
+  const k = niva(v[anbudsKonsId(f)]);
+  return s && k ? { sannolikhet: s, konsekvens: k, ljus: matrisLjus(s, k) } : null;
+}
+
+/** Fälten som skrivs när en fråga placeras (eller tas bort med null). */
+export function matrisFalt(f, plats) {
+  if (!plats) return { [anbudsSannId(f)]: "", [anbudsKonsId(f)]: "" };
+  return {
+    [anbudsSannId(f)]: plats.sannolikhet,
+    [anbudsKonsId(f)]: plats.konsekvens,
+    [anbudsljusId(f)]: matrisLjus(plats.sannolikhet, plats.konsekvens),
+  };
+}

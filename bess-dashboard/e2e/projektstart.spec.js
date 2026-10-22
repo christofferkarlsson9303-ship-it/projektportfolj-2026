@@ -534,3 +534,40 @@ test("anbudsfrågorna har trafikljus och anbudshjulet ger domen", async ({ page 
   await expect(page.locator("#ps-af_omfattning")).toHaveValue("Allt utom nätanslutningen.");
   expect(fel).toEqual([]);
 });
+
+test("riskmatrisen sätter ljuset, hjulet filtrerar och kortets val följer med", async ({ page }) => {
+  const { fel } = await oppna(page, "Projektstart");
+  await gaTillSteg(page, 3, "Anbudsfrågor");
+  const matris = page.getByRole("region", { name: "Riskmatris" });
+
+  // Klicka på frågan och sedan på rutan: hög sannolikhet, hög konsekvens blir röd.
+  await matris.getByRole("button", { name: "2. Är avtalet tuffare än vanligt?" }).click();
+  await matris.getByRole("button", { name: /sannolikhet hög, konsekvens hög \(Röd\)/ }).click();
+  const andra = page.getByRole("group", { name: "Trafikljus: Är avtalet tuffare än vanligt?" });
+  await expect(andra.getByRole("button", { name: "Röd" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByText("1 röd: ledningen måste ta ställning innan anbudet lämnas.")).toBeVisible();
+
+  // Dra-och-släpp: fråga 1 till låg/låg blir grön.
+  await matris.getByRole("button", { name: "1. Vad bygger vi – och vad bygger vi inte?" }).dragTo(matris.getByRole("button", { name: /sannolikhet låg, konsekvens låg/ }).locator(".."));
+  const forsta = page.getByRole("group", { name: "Trafikljus: Vad bygger vi – och vad bygger vi inte?" });
+  await expect(forsta.getByRole("button", { name: "Grön" })).toHaveAttribute("aria-pressed", "true");
+
+  // Kortets val flyttar frågan i matrisen: medel/medel blir gul.
+  const kort = page.locator("#af-kort-omfattning");
+  await kort.getByLabel("Sannolikhet").selectOption("2");
+  await kort.getByLabel("Konsekvens").selectOption("2");
+  await expect(forsta.getByRole("button", { name: "Gul" })).toHaveAttribute("aria-pressed", "true");
+
+  // Hjulet filtrerar listan.
+  const filter = page.getByRole("group", { name: "Filtrera frågorna" });
+  await filter.getByRole("button", { name: "1 röd" }).click();
+  await expect(page.getByText("Visar 1 av 12 frågor.")).toBeVisible();
+  await expect(page.locator("[id^=af-kort-]")).toHaveCount(1);
+  await filter.getByRole("button", { name: "1 röd" }).click();
+  await expect(page.locator("[id^=af-kort-]")).toHaveCount(12);
+
+  // Ändrat ljus för hand visas som avvikelse från matrisen.
+  await andra.getByRole("button", { name: "Gul" }).click();
+  await expect(page.locator("#af-kort-villkor")).toContainText("Avviker från matrisen (Röd)");
+  expect(fel).toEqual([]);
+});
