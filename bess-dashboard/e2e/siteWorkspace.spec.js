@@ -61,3 +61,18 @@ test("CATL och Sungrow byggs med egna mått och sparas per projekt även efter o
   await expect(page.getByRole("list", { name: "Objekt", exact: true })).toContainText("CATL Växjö");
   await expect(page.getByRole("list", { name: "Objekt", exact: true }).getByRole("button")).toHaveCount(1);
 });
+
+test("HTML-referensens palett och paneler följer temat utan att ändra projektdata", async ({ page }) => {
+  await oppna(page, "Siten i 3D");
+  await page.evaluate(() => document.documentElement.setAttribute("data-theme", "light"));
+  await expect(page.locator("#head")).toHaveCSS("border-radius", "6px");
+  await expect(page.locator("#head h2")).toHaveCSS("font-family", /IBM Plex Sans/);
+  await expect(page.locator("#head")).toHaveCSS("backdrop-filter", "blur(6px)");
+  await expect(page.locator("#head .seg button[aria-pressed=true]")).toHaveCSS("background-color", "rgb(14, 42, 56)");
+  const data = await sparat(page);
+  await page.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
+  await expect(page.locator("#head")).toHaveCSS("color", "rgb(228, 238, 242)");
+  await expect(page.locator("#head .seg button[aria-pressed=true]")).toHaveCSS("background-color", "rgb(228, 238, 242)");
+  expect((await sparat(page)).siteObjekt).toEqual(data.siteObjekt);
+  expect((await sparat(page)).projekt).toEqual(data.projekt);
+});

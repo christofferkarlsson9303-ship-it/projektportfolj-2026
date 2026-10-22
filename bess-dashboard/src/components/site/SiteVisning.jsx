@@ -61,7 +61,7 @@ export function SiteKameror({ vinklar, onFlyg, className = "" }) {
           disabled={!v.vy}
           title={v.vy ? `Flyg till ${v.namn}` : `${v.namn} finns inte på siten än`}
           onClick={() => v.vy && onFlyg(v.vy)}
-          className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-solid border-hairline bg-surface px-2.5 text-left text-[12.5px] font-semibold text-ink shadow-sm hover:border-one-bla hover:bg-sunken disabled:cursor-not-allowed disabled:opacity-50"
+          className="btn inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-solid border-hairline bg-surface px-2.5 text-left text-[12.5px] font-semibold text-ink shadow-sm hover:border-one-bla hover:bg-sunken disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Camera size={14} aria-hidden="true" className="shrink-0" />
           {v.namn}

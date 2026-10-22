@@ -16,8 +16,8 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
    himmel), inte gränssnittsfärger: på container och skid blandas typfärgen ur designsystemet in i
    materialet, så tonen följer temat. */
 
-const DELAR = ["container", "skid", "mark", "himmel"];
-const FILAR = { container: "container.jpg", skid: "skid.jpg", mark: "mark.jpg", himmel: "himmel.jpg" };
+const DELAR = ["container", "skid", "mark", "grass", "ehouse", "himmel"];
+const FILAR = { container: "container.jpg", skid: "skid.jpg", mark: "mark.jpg", himmel: "himmel.jpg", grass: "grass.jpg", ehouse: "ehouse.jpg" };
 
 function duk(b, h, rita) {
   const c = document.createElement("canvas");
@@ -70,21 +70,29 @@ export function ritadTextur(del) {
       g.strokeRect(3, 3, b - 6, h - 6);
     });
   }
-  if (del === "mark") {
-    // Grus: tusentals små korn i ljus och skugga på grå botten. Upprepas över marken.
+  if (del === "mark" || del === "grass") {
+    // Samma färger, kornstorlek och täthet som HTML-referensen. Fast frö undviker flimmer.
     return duk(256, 256, (g, b, h) => {
-      g.fillStyle = "rgb(150,152,150)";
+      const gras = del === "grass";
+      g.fillStyle = gras ? "#93a77f" : "#cdc6b8";
       g.fillRect(0, 0, b, h);
       let fro = 7;
       const slump = () => ((fro = (fro * 16807) % 2147483647) / 2147483647);
-      for (let i = 0; i < 4200; i++) {
-        const ljus = slump() > 0.5;
-        g.fillStyle = ljus ? `rgba(255,255,255,${0.08 + slump() * 0.22})` : `rgba(0,0,0,${0.08 + slump() * 0.22})`;
-        const r = 0.6 + slump() * 1.8;
-        g.fillRect(slump() * b, slump() * h, r, r);
+      for (let i = 0; i < (gras ? 2600 : 5000); i++) {
+        const v = 150 + (slump() * 80 | 0);
+        g.fillStyle = gras ? `rgba(${60 + (slump() * 50 | 0)},${80 + (slump() * 50 | 0)},${40 + (slump() * 30 | 0)},.18)` : `rgba(${v},${v - 6},${v - 16},.5)`;
+        g.fillRect(slump() * b, slump() * h, gras ? 2 : 1.5, gras ? 2 : 1.5);
       }
     });
   }
+  if (del === "ehouse") return duk(512, 256, (g, b, h) => {
+    g.fillStyle = "#2c4a59"; g.fillRect(0, 0, b, h);
+    g.strokeStyle = "rgba(255,255,255,.08)"; g.lineWidth = 3;
+    for (let x = 0; x < b; x += 12) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke(); }
+    g.fillStyle = "#1b3340";
+    for (const x of [60, 200, 340]) g.fillRect(x, h - 150, 70, 150);
+    g.fillStyle = "#00b9e4"; g.fillRect(0, 16, b, 4);
+  });
   if (del === "himmel") {
     // Himmel: ljus horisont mot djupare blått uppåt, och mark under horisonten.
     return duk(1024, 512, (g, b, h) => {
@@ -177,8 +185,10 @@ export async function laddaTexturer(profilId, bas = import.meta.env?.BASE_URL ||
   }
   if (ut.mark) {
     ut.mark.wrapS = ut.mark.wrapT = THREE.RepeatWrapping;
-    ut.mark.repeat.set(60, 60);
+    ut.mark.repeat.set(30, 30);
   }
+  if (ut.grass) { ut.grass.wrapS = ut.grass.wrapT = THREE.RepeatWrapping; ut.grass.repeat.set(60, 60); ut.grass.anisotropy = 4; }
+  if (ut.mark) ut.mark.anisotropy = 4;
   if (ut.himmel) ut.himmel.mapping = THREE.EquirectangularReflectionMapping;
   return ut;
 }
