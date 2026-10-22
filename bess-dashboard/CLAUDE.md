@@ -4,6 +4,10 @@ Du är i **bess-dashboard**: Vite, React, Tailwind, `localStorage` eller Supabas
 
 En visuell prototyp byggdes 2026-10-04 i ett annat verktyg (Grok). Den ligger **inte** i det här repot och ska inte klistras in. Beteendet som är värt att behålla står i [`docs/prototyp-36037.md`](docs/prototyp-36037.md). Läs den filen helt innan du rör Idag, tidplan, ÄTA eller site.
 
+## Röd tråd (2026-10-22)
+
+Läs [`docs/rod-trad.md`](docs/rod-trad.md) innan du lägger till eller ändrar en vy. Varje vy ska följa reglerna i §4 där. Ny vy kräver att en befintlig tas bort eller slås ihop. Specen är ett förslag tills besluten i §6 är ifyllda.
+
 ## Vad som redan är sant
 
 - **Tidplanen ”Blir vi klara i tid” finns.** `src/components/tidplan/KritiskLinje.jsx` + `src/lib/kritiskLinje.js` + `src/data/fasberoenden.js`. Kolumnerna fas, standardplan, beräknat, försening, marginal, väntar på, och tabellen M1–M7, är redan där. Prototypens ”0 dagar” och fasta datum 2026-12-02 är seed för 36037, inte en kalkyl. Byt inte ut motorn.
