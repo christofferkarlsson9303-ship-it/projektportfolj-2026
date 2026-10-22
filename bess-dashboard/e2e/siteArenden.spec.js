@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { sitePanel, gaTill, oppna, utanKonsolfel } from "./hjalpare.js";
 
-/* Siten som modellbaserad ärendehantering: delad vy med avdelare, ärenden
+/* Siten som modellbaserad ÄTA-hantering: delad vy med avdelare, ÄTA
    kopplade till objekt (objectGuid, viewpoint, boundingBox), filtrering mellan
    3D och ÄTA, modellversioner med jämförelse, sektionslåda och mätning.
    Logiken (kameraflygning, diff, klippplan, mått) är enhetstestad utan WebGL i
@@ -10,7 +10,7 @@ import { sitePanel, gaTill, oppna, utanKonsolfel } from "./hjalpare.js";
 const VY = "Siten i 3D";
 const kort = (page) => page.getByRole("region", { name: /^Siten — / });
 const lista = (page) => page.getByRole("list", { name: "Objekt" });
-const arenden = (page) => page.getByRole("complementary", { name: "Ärenden på siten" });
+const arenden = (page) => page.getByRole("complementary", { name: "ÄTA på siten" });
 const portfolj = (page) => page.evaluate(() => JSON.parse(localStorage.getItem("batchc-portfolj-v1") || "{}"));
 
 async function laggContainer(page) {
@@ -31,37 +31,37 @@ async function klickaPlan(page, x, z) {
 }
 
 async function nyttArende(page, text) {
-  await sitePanel(page, "Ärenden");
-  await arenden(page).getByRole("button", { name: "+ Ärende på objektet" }).click();
+  await sitePanel(page, "ÄTA");
+  await arenden(page).getByRole("button", { name: "+ ÄTA på objektet" }).click();
   await page.getByLabel("Kort beskrivning av händelsen").fill(text);
   await page.getByRole("button", { name: "Registrera", exact: true }).click();
 }
 
-test("ärenden öppnas i verktygspanelen och scenen behåller sin bredd", async ({ page }) => {
+test("ÄTA öppnas i verktygspanelen och scenen behåller sin bredd", async ({ page }) => {
   const { fel } = await oppna(page, VY);
   await expect(arenden(page)).toBeHidden();
   const scen = page.getByRole("application");
   const bredd = (await scen.boundingBox()).width;
-  await sitePanel(page, "Ärenden");
-  await expect(arenden(page).getByRole("heading", { name: "Ärenden" })).toBeVisible();
+  await sitePanel(page, "ÄTA");
+  await expect(arenden(page).getByRole("heading", { name: "ÄTA" })).toBeVisible();
   expect((await scen.boundingBox()).width).toBeCloseTo(bredd, 0);
   utanKonsolfel(fel);
 });
 
-test("ett nytt ärende på ett objekt sparar objectGuid, viewpoint, boundingBox och modellversion", async ({ page }) => {
+test("en ny ÄTA på ett objekt sparar objectGuid, viewpoint, boundingBox och modellversion", async ({ page }) => {
   await oppna(page, VY);
   await laggContainer(page);
   await sitePanel(page, "Objekt");
   await lista(page).getByRole("button", { name: /Container 1/ }).click();
-  await sitePanel(page, "Ärenden");
-  await expect(arenden(page).getByText("Inga ärenden är kopplade till Container 1 än.")).toBeVisible();
+  await sitePanel(page, "ÄTA");
+  await expect(arenden(page).getByText("Ingen ÄTA är kopplad till Container 1 än.")).toBeVisible();
 
   await nyttArende(page, "Extra kabelränna vid container");
-  await sitePanel(page, "Ärenden");
+  await sitePanel(page, "ÄTA");
   await expect(arenden(page).getByRole("listitem")).toHaveCount(1);
-  await sitePanel(page, "Ärenden");
+  await sitePanel(page, "ÄTA");
   await expect(arenden(page)).toContainText("Extra kabelränna vid container");
-  await sitePanel(page, "Ärenden");
+  await sitePanel(page, "ÄTA");
   await expect(arenden(page)).toContainText("Objekt: Container 1");
 
   await expect
@@ -88,11 +88,11 @@ test("markerat objekt filtrerar ÄTA-listan, och Visa i 3D tar tillbaka till obj
   await sitePanel(page, "Objekt");
   await lista(page).getByRole("button", { name: /Container 1/ }).click();
   await nyttArende(page, "Skadad dörr på container");
-  await sitePanel(page, "Ärenden");
+  await sitePanel(page, "ÄTA");
   await expect(arenden(page).getByRole("listitem")).toHaveCount(1);
 
-  await gaTill(page, "ÄTA och hinder");
-  const chip = page.getByRole("status").filter({ hasText: "Visar ärenden på objektet" });
+  await gaTill(page, "ÄTA");
+  const chip = page.getByRole("status").filter({ hasText: "Visar ÄTA på objektet" });
   await expect(chip).toContainText("Container 1");
   await expect(chip).toContainText("1 av");
   await expect(page.getByText("Skadad dörr på container").first()).toBeVisible();
@@ -105,37 +105,37 @@ test("markerat objekt filtrerar ÄTA-listan, och Visa i 3D tar tillbaka till obj
   await gaTill(page, VY);
   await sitePanel(page, "Objekt");
   await lista(page).getByRole("button", { name: /Container 1/ }).click();
-  await gaTill(page, "ÄTA och hinder");
-  await page.getByRole("status").filter({ hasText: "Visar ärenden på objektet" }).getByRole("button", { name: "Visa i 3D" }).click();
+  await gaTill(page, "ÄTA");
+  await page.getByRole("status").filter({ hasText: "Visar ÄTA på objektet" }).getByRole("button", { name: "Visa i 3D" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(VY);
   await sitePanel(page, "Objekt");
   await expect(page.getByRole("region", { name: "Container 1" })).toBeVisible();
 });
 
-test("ärendepanelen i ÄTA visar kopplingen och kan koppla och släppa objektet", async ({ page }) => {
+test("ÄTA-panelen i ÄTA visar kopplingen och kan koppla och släppa objektet", async ({ page }) => {
   await oppna(page, VY);
   await laggContainer(page);
   await sitePanel(page, "Objekt");
   await lista(page).getByRole("button", { name: /Container 1/ }).click();
   await nyttArende(page, "Behöver extra skärmning");
 
-  await gaTill(page, "ÄTA och hinder");
+  await gaTill(page, "ÄTA");
   await page.getByRole("status").getByRole("button", { name: "Visa alla" }).click();
   await page.getByText("Behöver extra skärmning").first().click();
-  const drawer = page.getByRole("region", { name: /^Ärende / });
+  const drawer = page.getByRole("region", { name: /^ÄTA / });
   const koppling = drawer.getByRole("region", { name: "Koppling till 3D-modellen" });
   await expect(koppling).toContainText("Objekt: Container 1");
   await expect(koppling).toContainText("Objekt-ID (GUID)");
   await expect(koppling.getByRole("button", { name: "Visa i 3D" })).toBeVisible();
 
   await koppling.getByRole("button", { name: "Ta bort koppling" }).click();
-  await expect(koppling).toContainText("inte kopplat till något objekt");
+  await expect(koppling).toContainText("inte kopplad till något objekt");
   await expect
     .poll(async () => ((await portfolj(page)).ur || []).find((u) => u.benamning === "Behöver extra skärmning")?.objectGuid)
     .toBeUndefined();
 });
 
-test("ett ärende i panelen flyger inte kameran i gåläget men markerar objektet", async ({ page }) => {
+test("en ÄTA i panelen flyger inte kameran i gåläget men markerar objektet", async ({ page }) => {
   await oppna(page, VY);
   await laggContainer(page);
   await sitePanel(page, "Objekt");
@@ -145,7 +145,7 @@ test("ett ärende i panelen flyger inte kameran i gåläget men markerar objekte
   await page.getByRole("radio", { name: "Gå in" }).click();
   await sitePanel(page, "Objekt");
   await lista(page).getByRole("button", { name: /Container 1/ }).click();
-  await sitePanel(page, "Ärenden");
+  await sitePanel(page, "ÄTA");
   await arenden(page).getByRole("button", { name: "Visa i 3D", exact: true }).first().click();
   // "Visa i 3D" lämnar gåläget och flyger i orbit.
   await sitePanel(page, "Visning");

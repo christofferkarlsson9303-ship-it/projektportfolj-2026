@@ -1,6 +1,6 @@
 import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import logotyp from "../../assets/one-nordic-logo.png";
-import { ATA_KLASS, ORSAKER, PRISGRUND } from "../../data/konstanter.js";
+import { ATA_ART, ATA_KLASS, ORSAKER, PRISGRUND } from "../../data/konstanter.js";
 import { fmtSEK, fmtTal } from "../../lib/format.js";
 import { MOMS_PROCENT, radFaktor, radSumma } from "../../lib/atakalkyl.js";
 
@@ -48,7 +48,7 @@ export function AtaPdf({ dokument: d, typ }) {
   ] : [
     ["UR/ÄTA-nummer", u.nr], ["Projekt / AO", `${p.nr || p.id} · ${p.namn}`],
     ["AffärsID", p.affarsId || p.nr], ["Beställare", p.bestallare],
-    ["Klassificering", klass], ["Status", u.status], ["Prisgrund", pris], ["Belopp", fmtSEK(u.belopp)],
+    ["Art", ATA_ART.find(([k]) => k === u.art)?.[1] || "—"], ["Behandlas som", klass], ["Orsak", orsak], ["Status", u.status], ["Prisgrund", pris], ["Belopp", fmtSEK(u.belopp)],
     ["Händelsedatum", u.handelseDatum], ["Underrättelse avsänd", u.underrattelseDatum],
     ["Pris godkänt", u.godkantDatum], ["Fakturerat", u.fakturaDatum],
   ];

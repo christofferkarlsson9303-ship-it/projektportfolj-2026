@@ -13,7 +13,7 @@
 -- Ordning: kan köras före eller efter att appen deployats. Utan kolumnen
 -- faller klienten tillbaka till vanlig INSERT utan nyckel.
 --
--- EJ APPLICERAD. Kör i Supabase efter granskning.
+-- APPLICERAD 2026-10-22 i produktion (projektportfolj, eu-north-1), sats för sats. Se docs/behorighetsprov-2026-10-22.md.
 
 alter table public.andringslogg
   add column if not exists klient_nyckel text;

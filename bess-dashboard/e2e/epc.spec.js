@@ -25,7 +25,7 @@ test("guiden har 16 moment, de löpande punkterna och alla 288 kontrollpunkter a
   await expect(page.locator(".epc-rad")).toHaveCount(288);
   await expect(page.locator(".epc-rad.hp")).toHaveCount(48);
   await expect(page.locator(".epc-rad input[type=checkbox]")).toHaveCount(288);
-  // Checklistan skapar inga ärenden.
+  // Checklistan skapar inga ÄTA.
   await expect(page.getByRole("button", { name: /Skapa UR\/ÄTA/ })).toHaveCount(0);
 });
 

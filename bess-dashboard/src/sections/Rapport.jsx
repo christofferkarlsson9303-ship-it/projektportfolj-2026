@@ -135,11 +135,11 @@ export function Rapport() {
         ) : null}
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
-          <Card id="rapport-ata" title="ÄTA i rapporten" subtitle="Summering av ärenden och belopp.">
+          <Card id="rapport-ata" title="ÄTA i rapporten" subtitle="Summering av ÄTA och belopp.">
             {ata ? (
               <DataList
                 items={[
-                  { label: "Ärenden", value: `${ata.antal} st`, detail: `${ata.oppna} öppna` },
+                  { label: "ÄTA", value: `${ata.antal} st`, detail: `${ata.oppna} öppna` },
                   { label: "Godkänt", value: fmtSEK(ata.godkant) },
                   {
                     label: "Ej fakturerat",

@@ -2,10 +2,10 @@ import { expect, test } from "@playwright/test";
 import { oppna } from "./hjalpare.js";
 
 const REGISTER = "UR- och ÄTA-register";
-const ARENDE = /^Ärende /;
+const ARENDE = /^ÄTA /;
 
 test.beforeEach(async ({ page }) => {
-  await oppna(page, "ÄTA och hinder");
+  await oppna(page, "ÄTA");
 });
 
 /* Standardvyn är tavlan. Testerna som handlar om registret byter till
@@ -17,13 +17,14 @@ async function visaTabell(page) {
 
 /* ---------- Tavlan ---------- */
 
-test("tavlan visar ÄTA-flödets fem steg", async ({ page }) => {
+test("tavlan visar ÄTA-flödets fyra kolumner", async ({ page }) => {
   const tavla = page.getByRole("list", { name: "ÄTA-flödet" });
   await expect(tavla).toBeVisible();
-  await expect(tavla.getByRole("listitem")).toHaveCount(5);
+  await expect(tavla.getByRole("listitem")).toHaveCount(4);
+  for (const namn of ["Identifierad", "ÄTA-granskning", "Godkänd", "Fakturerad"]) await expect(tavla.getByRole("heading", { name: namn })).toBeVisible();
 });
 
-test("ett kort på tavlan öppnar ärendepanelen", async ({ page }) => {
+test("ett kort på tavlan öppnar ÄTA-panelen", async ({ page }) => {
   const kort = page.locator(".atakort").first();
   test.skip((await kort.count()) === 0, "inga poster i grunddatan");
 
@@ -56,7 +57,7 @@ test("registret listar posterna med klass, status och grindar", async ({ page })
   await expect(tabell.locator("tfoot")).toBeVisible();
 });
 
-test("klick på numret öppnar hela ärendet", async ({ page }) => {
+test("klick på numret öppnar hela ÄTA:n", async ({ page }) => {
   await visaTabell(page);
   const forsta = page.getByRole("region", { name: REGISTER, exact: true }).locator("tbody tr").first();
   const nrKnapp = forsta.getByRole("button").first();
@@ -67,7 +68,7 @@ test("klick på numret öppnar hela ärendet", async ({ page }) => {
 
   const form = page.getByRole("region", { name: ARENDE });
   await expect(form).toBeVisible();
-  await expect(form.getByLabel("Klassificering (flöde 2.4)")).toBeVisible();
+  await expect(form.getByLabel("Behandlas som (följer orsaken)")).toBeVisible();
   await expect(form.getByLabel("Prissättningsgrund")).toBeVisible();
 
   await form.getByRole("button", { name: "Stäng" }).click();
@@ -79,7 +80,7 @@ test("orsaksvalet styr vägledningen om ÄTA eller hinder", async ({ page }) => 
   await page.getByRole("region", { name: REGISTER, exact: true }).locator("tbody tr").first().getByRole("button").first().click();
 
   const form = page.getByRole("region", { name: ARENDE });
-  const orsak = form.getByLabel("Orsak enligt flödesschema 2.4");
+  const orsak = form.getByLabel(/^Orsak/);
 
   const varden = await orsak.locator("option").evaluateAll((o) =>
     o.map((x) => x.value).filter(Boolean)
@@ -136,11 +137,37 @@ test("tidslinjen placerar en post med datum som händelse i Gantt-schemat", asyn
   await form.getByRole("button", { name: "Stäng" }).click();
 
   await page.getByRole("radio", { name: "Tidslinje" }).click();
-  const gantt = page.getByRole("group", { name: "ÄTA-ärenden på tidsaxel" });
+  const gantt = page.getByRole("group", { name: "ÄTA på tidsaxel" });
   const post = gantt.getByRole("button", { name: /, 2026-09-01, / });
   await expect(post).toHaveCount(1);
 
-  // Klick på posten öppnar ärendet, som i tavlan och registret.
+  // Klick på posten öppnar ÄTA:n, som i tavlan och registret.
   await post.click();
   await expect(page.getByRole("region", { name: ARENDE })).toBeVisible();
+});
+
+test("ÄTA-kortet visar art och en checklista med fyra steg, och art sätts i panelen", async ({ page }) => {
+  const kort = page.locator(".atakort").first();
+  test.skip((await kort.count()) === 0, "inga poster i grunddatan");
+  await expect(kort.getByRole("img", { name: /^Granskning: \d av 4 steg klara/ })).toBeVisible();
+
+  await kort.getByRole("button").first().click();
+  const form = page.getByRole("region", { name: ARENDE });
+  await form.getByLabel("Art", { exact: true }).selectOption("tillagg");
+  await expect(form.getByLabel("Art", { exact: true })).toHaveValue("tillagg");
+  await expect(page.locator(".atakort").first().getByText("Tillägg")).toBeVisible();
+});
+
+test("orsaken hinder föreslår klassen hinder på en oklassificerad post, och skriver aldrig över en vald klass", async ({ page }) => {
+  await visaTabell(page);
+  await page.getByRole("region", { name: REGISTER, exact: true }).locator("tbody tr").first().getByRole("button").first().click();
+  const form = page.getByRole("region", { name: ARENDE });
+  await form.getByLabel(/^Behandlas som/).selectOption("oklar");
+  await form.getByLabel(/^Orsak/).selectOption("ue_material");
+  await expect(form.getByLabel(/^Behandlas som/)).toHaveValue("hinder");
+
+  // En klass någon redan satt ligger kvar.
+  await form.getByLabel(/^Behandlas som/).selectOption("ata");
+  await form.getByLabel(/^Orsak/).selectOption("omvarld");
+  await expect(form.getByLabel(/^Behandlas som/)).toHaveValue("ata");
 });

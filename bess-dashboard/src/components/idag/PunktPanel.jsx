@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Slideover } from "../ui/Slideover.jsx";
 import { PTag } from "../ui/PTag.jsx";
 import { DatumFalt, Falt, SelStatus } from "../ui/Falt.jsx";
-import { usePortfolj } from "../../state/hooks.js";
+import { usePortfolj, useUi } from "../../state/hooks.js";
 import { hamtaNamn } from "../../state/portfolj-reducer.js";
 import { datumKort } from "../../lib/datum.js";
 import { nyttId } from "../../lib/id.js";
@@ -15,9 +15,11 @@ import { nyttId } from "../../lib/id.js";
    och kan flyttas här utan att fristen skrivs om. */
 
 const falt = "mt-1 block w-full";
+const KOPPLING_TEXT = { ata: "ÄTA", hinder: "Hinder", risk: "Risk" };
 
 export function PunktPanel({ id, onStang, onOppnaRegister }) {
   const { state, uppd, uppdStatus, kommenteraPunkt } = usePortfolj();
+  const { oppnaPost } = useUi();
   const [utkast, setUtkast] = useState("");
   const pt = state.punkter.find((x) => x.id === id);
 
@@ -40,6 +42,18 @@ export function PunktPanel({ id, onStang, onOppnaRegister }) {
         </p>
 
         {pt.kalla ? <p className="m-0 text-[13px] text-ink-soft">Källa: {pt.kalla}</p> : null}
+
+        {pt.underlag ? <p className="m-0 text-[13px] text-ink-soft">Underlag: {pt.underlag}</p> : null}
+        {(pt.lankar || []).length ? (
+          <p className="m-0 flex flex-wrap items-center gap-2 text-[13px] text-ink-soft">
+            Kopplat till:
+            {pt.lankar.map((l) => (
+              <button key={l.id} type="button" className="btn sec mini" onClick={() => oppnaPost(l.lista === "ur" ? "ata" : "risker", l.id)}>
+                {KOPPLING_TEXT[l.typ] || l.typ} {l.etikett && l.etikett !== KOPPLING_TEXT[l.typ] ? l.etikett : ""}
+              </button>
+            ))}
+          </p>
+        ) : null}
 
         <label className="block">
           <span className="font-semibold text-ink">Ansvarig</span>

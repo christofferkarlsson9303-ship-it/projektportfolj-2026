@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SPLIT_MAX, SPLIT_MIN, klammaAndel } from "../../lib/splitVy.js";
 
-/* Delad vy: 3D till vänster, ärendepanel till höger, med en avdelare som går
+/* Delad vy: 3D till vänster, ÄTA-panel till höger, med en avdelare som går
    att dra (mus och touch) eller flytta med piltangenter. Under lg staplas
    delarna och avdelaren döljs — då finns inget att dra.
 
@@ -95,7 +95,7 @@ export function SplitVy({ vanster, hoger, nyckel = "bess-site-split", start = 0.
       <div
         role="separator"
         aria-orientation="vertical"
-        aria-label="Ändra bredd på 3D-vyn och ärendepanelen"
+        aria-label="Ändra bredd på 3D-vyn och ÄTA-panelen"
         aria-valuemin={Math.round(SPLIT_MIN * 100)}
         aria-valuemax={Math.round(SPLIT_MAX * 100)}
         aria-valuenow={Math.round(andel * 100)}

@@ -13,9 +13,9 @@ import { MOMS_PROCENT, radSumma } from "../../lib/atakalkyl.js";
 import { KalkylTabell } from "./KalkylTabell.jsx";
 import { useAtaKalkyl } from "./useAtaKalkyl.jsx";
 
-/* Fliken ÄTA-kalkyl — samma kalkyl som kortet under ÄTA och hinder, med
-   artefaktens enkla upplägg: ärende överst, snabbval, rader, och en
-   sammanställning till höger. Raderna och beloppet ligger på ärendet i
+/* Fliken ÄTA-kalkyl — samma kalkyl som kortet under ÄTA, med
+   artefaktens enkla upplägg: ÄTA överst, snabbval, rader, och en
+   sammanställning till höger. Raderna och beloppet ligger på ÄTA:n i
    portföljen; fliken har ingen egen lagring och ingen egen prislista. */
 
 /* Färgpunkt per kategori i sammanställningen och på snabbvalens rubrik. */
@@ -36,7 +36,7 @@ export function AtaKalkylVy() {
   const { valtProjekt: pid, fraga, postFokus } = useUi();
   const [valdId, setValdId] = useState(null);
 
-  /* Andra vyer kan peka ut ett ärende: oppnaPost("atakalkyl", id). */
+  /* Andra vyer kan peka ut en ÄTA: oppnaPost("atakalkyl", id). */
   const [sedd, setSedd] = useState(null);
   if (postFokus?.vy === "atakalkyl" && postFokus.tid !== sedd) {
     setSedd(postFokus.tid);
@@ -47,7 +47,7 @@ export function AtaKalkylVy() {
   if (!p) return null;
 
   const arenden = state.ur.filter((u) => u.projektId === pid);
-  // Senaste ärendet först i listan och som förval.
+  // Senaste ÄTA:n först i listan och som förval.
   const lista = [...arenden].reverse();
   const u = arenden.find((x) => x.id === valdId) || lista[0] || null;
 
@@ -70,8 +70,8 @@ export function AtaKalkylVy() {
       {u ? (
         <Kalkyl key={u.id} u={u} p={p} lista={lista} onValj={setValdId} onNy={nyPost} />
       ) : (
-        <Card id="ata-kalkyl-tom" title="Inget ÄTA-ärende i projektet">
-          <p className="m-0 text-[13.5px] text-ink-soft">Kalkylen räknar på ett ärende. Registrera ett först, så öppnas det här.</p>
+        <Card id="ata-kalkyl-tom" title="Ingen ÄTA i projektet">
+          <p className="m-0 text-[13.5px] text-ink-soft">Kalkylen räknar på en ÄTA. Registrera ett först, så öppnas det här.</p>
           <div>
             <button type="button" className="btn" onClick={nyPost}>
               + Ny ÄTA
@@ -105,12 +105,12 @@ function Kalkyl({ u, p, lista, onValj, onNy }) {
     <div className="flex flex-col gap-4 lg:gap-6">
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-6">
         <div className="flex min-w-0 flex-col gap-4 lg:gap-6">
-          {/* ---------- Ärendet ---------- */}
+          {/* ---------- ÄTA:n ---------- */}
           <Card id="ata-kalkyl-arende" title={`ÄTA-kalkyl — ${u.nr}${u.benamning ? ` ${u.benamning}` : ""}`}>
             <div className="flex flex-wrap items-end gap-3">
               <label className="flex min-w-[240px] flex-1 flex-col gap-1">
-                <Overline as="span">ÄTA-ärende</Overline>
-                <select value={u.id} onChange={(e) => onValj(e.target.value)} aria-label="ÄTA-ärende">
+                <Overline as="span">ÄTA</Overline>
+                <select value={u.id} onChange={(e) => onValj(e.target.value)} aria-label="ÄTA">
                   {lista.map((x) => (
                     <option key={x.id} value={x.id}>
                       {x.nr} {x.benamning || "(utan benämning)"}
@@ -146,7 +146,7 @@ function Kalkyl({ u, p, lista, onValj, onNy }) {
               </label>
               <div className="flex flex-col gap-1">
                 <Overline as="span">Orsak</Overline>
-                <p className="m-0 py-1 text-[14px] text-ink-soft">{orsak ? orsak[1] : "Ej vald — sätts på ärendet under ÄTA och hinder."}</p>
+                <p className="m-0 py-1 text-[14px] text-ink-soft">{orsak ? orsak[1] : "Ej vald — sätts på ÄTA:n under ÄTA."}</p>
               </div>
             </div>
           </Card>
@@ -175,7 +175,7 @@ function Kalkyl({ u, p, lista, onValj, onNy }) {
           <Card
             id="ata-kalkyl-summa"
             title="Sammanställning"
-            badge={sparat ? <StatusBadge ton="ok" label="Belopp sparat" /> : tom ? null : <StatusBadge ton="warn" label="Ej sparat på ärendet" />}
+            badge={sparat ? <StatusBadge ton="ok" label="Belopp sparat" /> : tom ? null : <StatusBadge ton="warn" label="Ej sparat på ÄTA:n" />}
           >
             <ul className="m-0 flex list-none flex-col gap-2 p-0 text-[13.5px]">
               {perKategori.map(({ kat, namn, summa }) => (
@@ -215,7 +215,7 @@ function Kalkyl({ u, p, lista, onValj, onNy }) {
 
             <div className="flex flex-col gap-2">
               <button type="button" className="btn" onClick={spara} disabled={tom}>
-                Spara belopp på ärendet
+                Spara belopp på ÄTA:n
               </button>
               <button type="button" className="btn sec" onClick={skrivUtAvi} disabled={tom}>
                 Skriv ut avi
@@ -228,7 +228,7 @@ function Kalkyl({ u, p, lista, onValj, onNy }) {
           </Card>
 
           <Callout ton="info">
-            Raderna sparas på ärendet {u.nr}. Beloppet på ärendet är {harBelopp ? fmtSEK(u.belopp) : "inte satt"}
+            Raderna sparas på ÄTA:n {u.nr}. Beloppet på ÄTA:n är {harBelopp ? fmtSEK(u.belopp) : "inte satt"}
             {sparat || tom ? "." : ` — spara för att föra över ${fmtSEK(summor.netto)}.`} Á-priser från Bilaga 06.1 och Resurser. Material och UE: faktisk
             kostnad + 10 % (ABT 06 kap. 6 § 9).
           </Callout>

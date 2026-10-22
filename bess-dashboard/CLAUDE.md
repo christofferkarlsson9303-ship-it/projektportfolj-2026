@@ -12,6 +12,7 @@ En visuell prototyp byggdes 2026-10-04 i ett annat verktyg (Grok). Den ligger **
 - **ÄTA-kalkylen finns på två ställen med samma kod.** Kortet i vy `ata` (”Öppna i kalkyl”) och egen flik `atakalkyl` (`AtaKalkylVy.jsx`). Logiken ligger i `src/sections/Ata/useAtaKalkyl.jsx` och tabellen i `KalkylTabell.jsx`. Ändra där, inte i två kopior.
 - **Ärenden på siten.** UR/ÄTA-poster kan kopplas till ett `siteObjekt` (`objectGuid`, `viewpoint`, `boundingBox`, `modelVersionId`) och 3D-vyn kan jämföra modellversioner. Läs [`docs/modellarenden.md`](docs/modellarenden.md) innan du ändrar det. IFC-import (web-ifc, metadata i state, geometri i IndexedDB) och BCF-export finns; läs avsnitten där. Ingen egen backend.
 - **Anbudsmodeller på siten.** Fristående 3D-filer från anbudsskedet ligger orörda i `src/sections/Site/anbud/` och registreras i `src/lib/anbudsmodeller.js`. `SiteAnbudsmodell.jsx` visar dem i en iframe med `sandbox="allow-scripts"` för det projekt som matchar (Vaggeryd: namn/ort/plats). Redigera inte filerna — ersätt med en ny daterad fil. De skrivs aldrig till `portfolj/state`.
+- **Ritningar på siten** tar PDF, bild och DXF (`lib/dxfRitning.js`, dxf-parser, MIT). En DXF läses i webbläsaren, sparas som PNG i bucketen och får måtten ur `$INSUNITS` (`kalla: "dxf"`, `skala` = enhetsbyte). DWG läses inte: enda webbläsarläsaren (libredwg-web) är GPL-3.0 och kräver ett licensbeslut först. IFC är fortsatt 3D-modellen.
 - **Data** är två JSONB-rader: `portfolj/state` och `portfolj/ekonomi`. RLS skyddar. Ändra inte schemat för en kalkylator eller en bild. Undantag och beslut om schema står under *Teknisk granskning 2026-10-16* nedan.
 
 ## Teknisk granskning 2026-10-16
@@ -50,6 +51,14 @@ Fyll i datum och beslut i tabellen när det är fattat. Migrationer i `supabase/
 - **Frist och uppföljning är två fält på punkter** (`forfaller`, `uppfoljning`). `punktDatum()` avgör var punkten hamnar: en passerad frist vinner alltid. Uppföljning skriver aldrig om fristen.
 - **Kommentarer på punkter** är en lista med id (`kommentarer`) via `PUNKT_KOMMENTAR`, så att `sammanfoga.js` slår ihop två personers kommentarer. `av` är det inskrivna namnet i sidomenyn, inte en verifierad identitet.
 - **"Mina uppgifter" finns inte än.** `agare` är fritext; bygg det först när ansvar tilldelas uttryckligen.
+
+## ÄTA: art, orsak och fyra kolumner (2026-10-21)
+
+- **Art** (`art`: andring, tillagg, avgaende; `ATA_ART`) är vad ÄTA:n är. **Orsak** (`orsak`, `ORSAKER`) är varför. Hinder och störning är orsaker, inte egna poster. `klass` ("Behandlas som") finns kvar eftersom `prisGrind()` hoppar över hinder; den föreslås ur orsaken bara när posten är oklassificerad.
+- **ÄTA-tavlan har fyra kolumner** (`KOLUMNER` i `Ata/flode.js`): Identifierad, ÄTA-granskning, Godkänd, Fakturerad. `checklista()` härleds ur fälten. Lägg inte till lagrade steg-flaggor.
+- **Störning** är dold ur menyn (`DOLDA_VYER` i `data/vyer.js`) men vyn och datan finns kvar och nås via länkar.
+- **Ordet ärende** är ersatt av "ÄTA" i synliga texter, och vyn `ata` heter "ÄTA". Använd "ÄTA" i ny text. Interna namn (`arendeRader`, `objectGuid`-kopplingar) behålls.
+- **Arbetssätt** (`projekt.metod`, `data/arbetssatt.js`) är bara en etikett. Bygg inget beteende på den utan att fråga.
 
 ## Gör inte
 

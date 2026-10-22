@@ -1,5 +1,5 @@
 import logotyp from "../../assets/one-nordic-logo.png";
-import { ATA_KLASS, ORSAKER, PRISGRUND } from "../../data/konstanter.js";
+import { ATA_ART, ATA_KLASS, ORSAKER, PRISGRUND } from "../../data/konstanter.js";
 import { fmtSEK } from "../../lib/format.js";
 import { idag } from "../../lib/datum.js";
 import { underrattelseLage } from "../../lib/berakningar.js";
@@ -51,7 +51,8 @@ function Grunddata({ u, projekt }) {
       <tbody>
         <Rad rubrik="UR/ÄTA-nummer" varde={u.nr} rubrik2="AffärsID" varde2={projekt?.affarsId || projekt?.nr} />
         <Rad rubrik="Projekt" varde={projekt?.namn} rubrik2="AO-nummer" varde2={projekt?.nr} />
-        <Rad rubrik="Beställare" varde={projekt?.bestallare} rubrik2="Klassificering" varde2={KLASSNAMN[u.klass]} />
+        <Rad rubrik="Beställare" varde={projekt?.bestallare} rubrik2="Art" varde2={ATA_ART.find(([k]) => k === u.art)?.[1] || "—"} />
+        <Rad rubrik="Behandlas som" varde={KLASSNAMN[u.klass]} rubrik2="Orsak" varde2={ORSAKER.find(([k]) => k === u.orsak)?.[1] || "Ej angiven"} />
         <tr>
           <th>Benämning</th>
           <td colSpan={3}>{u.benamning || "—"}</td>

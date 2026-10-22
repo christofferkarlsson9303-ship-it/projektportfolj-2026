@@ -150,12 +150,12 @@ describe("parkens komponenter", () => {
     const l = komponentLage(c, ur);
     expect(l.ton).toBe("varning");
     expect(l.oppnaArenden.map((u) => u.id)).toEqual(["u1"]);
-    expect(l.text).toBe("1 öppet ärende");
+    expect(l.text).toBe("1 öppen ÄTA");
     expect(l.statusText).toBe("Monterad");
     // Inga ärenden är ingen driftstatus: neutral ton, aldrig "ok" (granskning F14).
-    expect(komponentLage(c, [])).toMatchObject({ ton: "ingen", text: "Inga öppna ärenden", statusText: "Monterad" });
+    expect(komponentLage(c, [])).toMatchObject({ ton: "ingen", text: "Ingen öppen ÄTA", statusText: "Monterad" });
     expect(komponentLage(o("trafo"), [])).toMatchObject({ statusText: "Status ej angiven" });
-    expect(komponentLage(c, [{ id: "a", objectGuid: c.id, status: "oppen" }, { id: "b", objectGuid: c.id, status: "prissattning" }]).text).toBe("2 öppna ärenden");
+    expect(komponentLage(c, [{ id: "a", objectGuid: c.id, status: "oppen" }, { id: "b", objectGuid: c.id, status: "prissattning" }]).text).toBe("2 öppna ÄTA");
   });
 
   it("effekttext: ur siten först, annars projektets egna fält, annars tom", () => {

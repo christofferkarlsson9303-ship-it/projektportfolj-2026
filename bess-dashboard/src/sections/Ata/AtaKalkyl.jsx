@@ -9,9 +9,9 @@ import { useAtaKalkyl } from "./useAtaKalkyl.jsx";
 
 const tal = "text-right tabular-nums";
 
-/* ÄTA-kalkylen — rader på ett befintligt ärende.
+/* ÄTA-kalkylen — rader på en befintlig ÄTA.
 
-   Öppnas från registret eller ärendepanelen ("Öppna i kalkyl"); numret och
+   Öppnas från registret eller ÄTA-panelen ("Öppna i kalkyl"); numret och
    benämningen kommer från posten. Raderna sparas på posten (kalkyl.rader)
    precis som alla andra fält. Beloppet på posten ändras först när
    användaren sparar kalkylen — då skrivs nettot, exkl. moms.
@@ -40,8 +40,8 @@ export function AtaKalkyl({ u, onStang }) {
       <Card
         id="ata-kalkyl"
         title={`ÄTA-kalkyl — ${u.nr}${u.benamning ? ` ${u.benamning}` : ""}`}
-        subtitle="Raderna sparas på ärendet. Spara skriver nettot på ärendets belopp. Material och UE: faktisk kostnad + 10 % (ABT 06 kap. 6 § 9)."
-        badge={sparat ? <StatusBadge ton="ok" label="Belopp sparat" /> : rader.length ? <StatusBadge ton="warn" label="Ej sparat på ärendet" /> : null}
+        subtitle="Raderna sparas på ÄTA:n. Spara skriver nettot på ÄTA:ns belopp. Material och UE: faktisk kostnad + 10 % (ABT 06 kap. 6 § 9)."
+        badge={sparat ? <StatusBadge ton="ok" label="Belopp sparat" /> : rader.length ? <StatusBadge ton="warn" label="Ej sparat på ÄTA:n" /> : null}
         action={
           <button type="button" className="btn sec mini" onClick={onStang}>
             Stäng kalkylen
@@ -89,7 +89,7 @@ export function AtaKalkyl({ u, onStang }) {
         {/* ---------- Summering ---------- */}
         <div className="flex flex-wrap items-start justify-between gap-4">
           <p className="m-0 max-w-[46ch] text-[12.5px] leading-snug text-ink-soft">
-            Beloppet på ärendet är {u.belopp === null || u.belopp === undefined || u.belopp === "" ? "inte satt" : fmtSEK(u.belopp)}
+            Beloppet på ÄTA:n är {u.belopp === null || u.belopp === undefined || u.belopp === "" ? "inte satt" : fmtSEK(u.belopp)}
             {sparat ? "." : rader.length ? `. Kalkylens netto är ${fmtSEK(summor.netto)} — spara för att föra över det.` : "."}
           </p>
           <dl aria-label="Summering" className="m-0 grid min-w-[260px] grid-cols-[1fr_auto] gap-x-6 gap-y-1 text-[13.5px]">
@@ -106,7 +106,7 @@ export function AtaKalkyl({ u, onStang }) {
 
         <div className="flex flex-wrap gap-2">
           <button type="button" className="btn" onClick={spara} disabled={!rader.length}>
-            Spara belopp på ärendet
+            Spara belopp på ÄTA:n
           </button>
           <button
             type="button"

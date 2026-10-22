@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { annatProjekt, oppna, gaTill, projektval, utanKonsolfel } from "./hjalpare.js";
+import { annatProjekt, oppna, gaTill, projektval, utanKonsolfel, valjProjekt } from "./hjalpare.js";
 import { VYER } from "../src/data/vyer.js";
 
 test("enkel meny, synlig sökknapp och ordlista hjälper utan att dölja funktioner", async ({ page }, info) => {
@@ -51,7 +51,7 @@ test("nytt projekt har tomma mallar och finns kvar efter omladdning", async ({ p
   await expect(page.getByRole("region", { name: "En arbetsmetod för varje projekt", exact: true })).toContainText("Kalmar nytt testprojekt");
   await gaTill(page, "Milstolpar M1–M7");
   await expect(page.locator("main")).toContainText("Standardmall från Batch C, inte ditt kontrakts betalplan");
-  await gaTill(page, "ÄTA och hinder");
+  await gaTill(page, "ÄTA");
   await expect(page.locator("main")).toContainText("Fristerna är en mall.");
   await gaTill(page, "Slutdokumentation");
   await expect(page.locator(".slutdok-rad").first()).toContainText("Ej påbörjad");
@@ -115,4 +115,18 @@ test("metoden visar projektval och sex fasgrindsmätare utan horisontell rullnin
   await page.screenshot({ path: info.outputPath("metod-morkt.png"), fullPage: true });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   utanKonsolfel(fel);
+});
+
+test("arbetssättet väljs per projekt och sparas på rätt projekt", async ({ page }) => {
+  await oppna(page, "Min projektmetod");
+  const val = page.getByLabel("ARBETSSÄTT");
+  await expect(val).toHaveValue("");
+  await val.selectOption("hybrid");
+  await expect(page.getByText("Kontrakt, budget, milstolpar och hållpunkter.")).toBeVisible();
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("batchc-portfolj-v1") || "{}").projekt?.filter((p) => p.metod === "hybrid").map((p) => p.id))).toEqual(["36037"]);
+
+  await valjProjekt(page, /Alvesta/);
+  await expect(page.getByLabel("ARBETSSÄTT")).toHaveValue("");
+  await valjProjekt(page, /Växjö/);
+  await expect(page.getByLabel("ARBETSSÄTT")).toHaveValue("hybrid");
 });

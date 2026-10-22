@@ -10,6 +10,7 @@ import { usePortfolj, useUi } from "../../state/hooks.js";
 import { underlagsstampel } from "../../lib/berakningar.js";
 import { Sidhjalp } from "../ui/Sidhjalp.jsx";
 import { KonfliktVy } from "../synk/KonfliktVy.jsx";
+import { HandelsePanel } from "../idag/HandelsePanel.jsx";
 
 export function AppShell({ children }) {
   const { state } = usePortfolj();
@@ -72,6 +73,7 @@ export function AppShell({ children }) {
       <Toast />
       <Dialog />
       <Kommandopalett />
+      <HandelsePanel />
       {faltmaterial && state.projekt.length ? <FaltmaterialPanel
         key={valtProjekt}
         projekt={state.projekt.find((p) => p.id === valtProjekt) || state.projekt[0]}

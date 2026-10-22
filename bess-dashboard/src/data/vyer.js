@@ -18,7 +18,7 @@ const TILLAGDA = [
   [
     "atakalkyl",
     "ÄTA-kalkyl",
-    "Räkna fram ett ÄTA-belopp rad för rad — arbete, maskin, fordon och material — och spara det på ärendet.",
+    "Räkna fram ett ÄTA-belopp rad för rad — arbete, maskin, fordon och material — och spara det på ÄTA:n.",
   ],
   [
     "bered",
@@ -86,19 +86,19 @@ const URSPRUNG = Object.fromEntries(medInskjutna([...TILLAGDA, ...VYER_ORIGINAL]
 const GRUPPER = [
   ["Börja här", ["metod", "start", "idag", "oversikt"]],
   ["Planera jobbet", ["kontrakt", "epc", "bered", "site", "tidplan", "handlingsplan", "resurser", "kontakter"]],
-  ["Gör och följ upp", ["punkter", "tavla", "moten", "vecka", "dagbok", "hseq", "risker", "storning"]],
+  ["Gör och följ upp", ["punkter", "tavla", "moten", "vecka", "dagbok", "hseq", "risker"]],
   ["Följ pengarna", ["ata", "atakalkyl", "budget", "tid", "ekonomi", "milstolpar", "faktura"]],
   ["Lämna över och spara", ["slutdok", "rapport", "rutiner", "data"]],
 ];
 const ENKLA_LEADS = {
   start: "Gå igenom startens steg. När du är klar skapas projektet.",
   kontrakt: "Frister, betalningar och viten ur avtalet, med paragraf att slå upp.",
-  idag: "Vad behöver du ta hand om först? Öppna en rad för att komma till rätt ärende.",
+  idag: "Vad behöver du ta hand om först? Öppna en rad för att komma till rätt ÄTA.",
   oversikt: "Se läget i dina projekt, nästa arbete och frågor som behöver hjälp.",
   epc: "Följ batteriparken genom 16 moment. En grind är ett klartecken för nästa moment.",
   bered: "Generera beredningen ur MW och MWh. Få kabellista, materiel med E-nr och kalkyl.",
   site: "Placera skid, containrar och E-House på tomten och gå runt bland dem. Nålar visar öppna punkter.",
-  tavla: "Se uppgifter och ärenden som kort. Flytta dem när arbetsläget ändras.",
+  tavla: "Se uppgifter och ÄTA som kort. Flytta dem när arbetsläget ändras.",
   tidplan: "Se när arbeten och leveranser ska ske. Öppna en rad för detaljer.",
   handlingsplan: "Skriv målet och vad som behöver göras, av vem och när.",
   resurser: "Boka rätt personer och se om någon har för mycket arbete.",
@@ -106,7 +106,7 @@ const ENKLA_LEADS = {
   budget: "Jämför vad arbetet får kosta med vad ni har använt hittills.",
   faktura: "Samla tid och kostnader till ett granskat fakturaunderlag.",
   milstolpar: "Kontrollera underlag och status för projektets betalningar.",
-  atakalkyl: "Välj ärende, klicka på resurser och se beloppet. Spara det på ärendet, skriv ut avin eller ta CSV.",
+  atakalkyl: "Välj ÄTA, klicka på resurser och se beloppet. Spara det på ÄTA:n, skriv ut avin eller ta CSV.",
   ata: "Följ ändrat arbete och hinder från upptäckt till beslut och faktura.",
   ekonomi: "Se kontraktssumma, betalningsläge och ekonomi för ändrat arbete.",
   moten: "Spara mötets beslut, ansvariga och datum i ett protokoll.",
@@ -122,6 +122,9 @@ const ENKLA_LEADS = {
   kontakter: "Hitta ansvariga, leverantörer och rätt kontaktuppgifter.",
   data: "Kontrollera lagringen, granska importer och ta en säkerhetskopia.",
 };
+/* Vyer som finns kvar men inte ligger i menyn. Hinder och störning är orsaker till en ÄTA (ONE P Enkel);
+   Störning nås från ÄTA och Veckokoll och fungerar som förut. */
+const DOLDA_VYER = ["storning"];
 export const VYER = GRUPPER.flatMap(([namn, ids]) => [["_sek", namn], ...ids.map((id) => [id, URSPRUNG[id][1], ENKLA_LEADS[id] || URSPRUNG[id][2]])]);
 /* Den enkla menyn: det som används varje dag. Sju flikar, utan grupprubriker.
    Allt annat finns under "Visa alla funktioner" och i Ctrl/Cmd+K. ÄTA-kalkylen
@@ -131,9 +134,10 @@ export const ENKEL_MENY = new Set(["idag", "oversikt", "epc", "tidplan", "punkte
 export const NAVIKONER = { ...NAVIKON, ...IKONER_TILLAGDA, metod: '<path d="M4 5h16v14H4zM8 9h8M8 13h8M8 17h4"/>' };
 
 /** Uppslagstabell id → {namn, lead}. */
-export const VYMETA = Object.fromEntries(
-  VYER.filter((v) => v[0] !== "_sek").map(([id, namn, lead]) => [id, { namn, lead }])
-);
+export const VYMETA = Object.fromEntries([
+  ...VYER.filter((v) => v[0] !== "_sek").map(([id, namn, lead]) => [id, { namn, lead }]),
+  ...DOLDA_VYER.map((id) => [id, { namn: URSPRUNG[id][1], lead: ENKLA_LEADS[id] || URSPRUNG[id][2] }]),
+]);
 
 /** Giltiga vy-id, för adressfältet. */
 export const GILTIGA_VYER = new Set(Object.keys(VYMETA));

@@ -5,7 +5,7 @@ export function NyttProjekt() {
   const { heltState: state, dispatch } = usePortfolj();
   const { fraga, visaToast, setValtProjekt, visa } = useUi();
   const skapa = async () => {
-    const v = await fraga({ titel: "Skapa nytt projekt", lead: "Ett tomt projekt med projektmetodens mallar. Inga gamla resultat, belopp, datum eller ärenden kopieras. Mallkraven behöver anpassas till ditt kontrakt.", ok: "Skapa projekt", validera: (varden) => projektstartFel(state, varden), falt: [
+    const v = await fraga({ titel: "Skapa nytt projekt", lead: "Ett tomt projekt med projektmetodens mallar. Inga gamla resultat, belopp, datum eller ÄTA kopieras. Mallkraven behöver anpassas till ditt kontrakt.", ok: "Skapa projekt", validera: (varden) => projektstartFel(state, varden), falt: [
       { namn: "namn", etikett: "Projektnamn", placeholder: "Till exempel Kalmar batteripark", obligatoriskt: true, maxLength: 120 },
       { namn: "nr", etikett: "Projektnummer (om du har det)", maxLength: 40 },
       { namn: "ort", etikett: "Ort", maxLength: 120 }, { namn: "bestallare", etikett: "Beställare", maxLength: 160 },

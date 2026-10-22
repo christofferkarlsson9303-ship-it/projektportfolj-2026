@@ -7,7 +7,7 @@ import { datumKort } from "../../lib/datum.js";
 
 /* Projektets IFC-modeller: lista, dölj/visa i 3D-vyn, ta bort, och sökning bland modellens objekt.
    Geometrin finns bara i webbläsaren som laddade upp filen; i en annan webbläsare syns objekten här
-   (och kan väljas och få ärenden) men inte i 3D, tills samma fil importeras igen. */
+   (och kan väljas och få ÄTA) men inte i 3D, tills samma fil importeras igen. */
 export function IfcModeller({ modeller, objekt, geometriFinns, dolda, valtId, onImportera, onVisaDold, onTaBort, onValj }) {
   const [fraga, setFraga] = useState("");
   const traffar = useMemo(() => sokIfcObjekt(objekt, fraga, 20), [objekt, fraga]);
@@ -17,7 +17,7 @@ export function IfcModeller({ modeller, objekt, geometriFinns, dolda, valtId, on
     <Card
       id="site-ifc"
       title="IFC-modeller"
-      subtitle="Importera arkitekt- eller konstruktörsmodellen och koppla ärenden till dess objekt via GlobalId."
+      subtitle="Importera arkitekt- eller konstruktörsmodellen och koppla ÄTA till dess objekt via GlobalId."
       badge={<StatusBadge ton="neutral" label={String(modeller.length)} />}
       action={
         <button type="button" className="btn sec mini" onClick={onImportera} disabled={full} title={full ? `Högst ${IFC_MAX_MODELLER} modeller per projekt` : undefined}>
@@ -39,7 +39,7 @@ export function IfcModeller({ modeller, objekt, geometriFinns, dolda, valtId, on
                   </div>
                   {!finns ? (
                     <div className="mt-1 text-[12px] text-warn-ink">
-                      Geometrin saknas i den här webbläsaren. Importera {m.filnamn || "samma fil"} igen för att se modellen i 3D. Objekten och ärendena fungerar ändå.
+                      Geometrin saknas i den här webbläsaren. Importera {m.filnamn || "samma fil"} igen för att se modellen i 3D. Objekten och ÄTA fungerar ändå.
                     </div>
                   ) : null}
                 </div>

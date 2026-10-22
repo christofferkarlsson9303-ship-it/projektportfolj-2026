@@ -238,7 +238,7 @@ export function Bestallarrapport({ state, pid }) {
                 <td>{fmtSEK(ata.godkant)}</td>
               </tr>
               <tr>
-                <th>Antal ÄTA-ärenden</th>
+                <th>Antal ÄTA</th>
                 <td>
                   {ata.antal} varav {ata.oppna} öppna
                 </td>

@@ -51,7 +51,7 @@ export const VYER=[
   ["faktura","Fakturaunderlag","Sammanställ ofakturerad tid och kostnad till ett underlag — självkostnad plus arvode."],
   ["_sek","Kontrakt och pengar"],
   ["milstolpar","Milstolpar M1–M7","Betalningsmilstolparna med underlagskrav och faktureringsstatus."],
-  ["ata","ÄTA och hinder","Hela ärendehanteringen: klassificering, 24-timmarsfrist, prissättning och fakturering."],
+  ["ata","ÄTA","Hela ÄTA-hanteringen: klassificering, 24-timmarsfrist, prissättning och fakturering."],
   ["ekonomi","Ekonomi","Kontraktsvärde, betalplan och ÄTA-ekonomi per projekt."],
   ["_sek","Utförande"],
   ["moten","Byggmöten","Protokoll med ÄTA- och hinderbevakning per byggmöte."],
@@ -158,17 +158,20 @@ export const SEKRETESSFALT = [
 
 export const RAPPORT_SEKTIONER=[
   ["sammanfattning","Sammanfattning"],["framdrift","Framdrift och status"],
-  ["milstolpar","Milstolpar i huvudtidplanen"],["ata","Aviserade ÄTA och hinder"],
+  ["milstolpar","Milstolpar i huvudtidplanen"],["ata","Aviserade ÄTA"],
   ["hms","HMS och BAS-U"],["beslut","Beslut som krävs av beställaren"],
   ["risker","Projektrisker och åtgärdsplaner"]
 ];
 
-/* ---------- ÄTA och hinder ---------- */
+/* ---------- ÄTA ---------- */
 
 export const ATA_STATUS = ["oppen","prissattning","skickad_best","godkand_dok","godkand","fakturerad","stangd","utgar"];
 
 export const ATA_KLASS = [["ata","ÄTA — tillkommande arbete"],["hinder","Hinder — tid, normalt ej ersättning"],
                    ["bada","Både hinder och ÄTA"],["oklar","Ej klassificerad ännu"]];
+
+/* Art: vad ÄTA:n är. En ÄTA har alltid en art; orsaken (ORSAKER) säger varför den uppstod. */
+export const ATA_ART = [["andring","Ändring"],["tillagg","Tillägg"],["avgaende","Avgående"]];
 
 export const PRISGRUND = [["lopande","Löpande räkning / självkostnad"],["aprislista","Avtalad á-prislista"],
                    ["mangd","Mängdförteckning"],["ejavtalat","Inget avtalat — självkostnadsprincipen"]];
@@ -315,7 +318,7 @@ export const RISKSTATUS_NY = [["oppen","Aktiv"],["overvakad","Mitigerad / bevaka
 export const SNABBFILTER=[["alla","Alla"],["min","Kräver min åtgärd"],["larm","Vitesrisk / 24h-larm"],["oppna","Mina öppna"]];
 
 export const CSV_TABELLER = [
-  ["ur","ÄTA och hinder"], ["risker","Risker"], ["punkter","Öppna punkter"],
+  ["ur","ÄTA"], ["risker","Risker"], ["punkter","Öppna punkter"],
   ["tidrader","Tidrader"], ["kostnader","Kostnader"], ["bemanning","Bemanning"],
   ["aktiviteter","Aktiviteter och budget"], ["fakturor","Fakturaunderlag"],
   ["milstolpar","Milstolpar"], ["leveranser","Leveranser"], ["betalplan","Betalplan"],

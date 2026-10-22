@@ -366,7 +366,7 @@ export async function lasBcf(data) {
   if (version && !version.startsWith("2.")) throw new Error(`BCF ${version} stöds inte — bara 2.0 och 2.1.`);
 
   const mappar = [...new Set(Object.keys(zip.files).filter((n) => n.endsWith("/markup.bcf")).map((n) => n.slice(0, -"/markup.bcf".length)))];
-  if (!mappar.length) throw new Error("Filen innehåller inga ärenden (ingen markup.bcf hittades).");
+  if (!mappar.length) throw new Error("Filen innehåller inga ÄTA (ingen markup.bcf hittades).");
 
   const topics = [];
   let antalKommentarer = 0;
@@ -417,7 +417,7 @@ export async function lasBcf(data) {
       varningar.push(`Mappen ${mapp} hoppades över: ${e.message}.`);
     }
   }
-  if (!topics.length) throw new Error(`Inga ärenden gick att läsa. ${varningar.join(" ")}`.trim());
+  if (!topics.length) throw new Error(`Inga ÄTA gick att läsa. ${varningar.join(" ")}`.trim());
   return { version: version || "okänd", topics, varningar, antalKommentarer };
 }
 
@@ -447,7 +447,7 @@ export function planeraImport(topics, { ur, projektId, objekt, skapaPost, lada }
 
   for (const t of topics) {
     const falt = {
-      benamning: t.titel || "Importerat ärende",
+      benamning: t.titel || "Importerad ÄTA",
       status: bcfStatusTillAta(t.status, t.ataStatus),
       klass: bcfTypTillKlass(t.typ, t.ataKlass),
       bcfGuid: t.guid,
@@ -491,7 +491,7 @@ export function planeraImport(topics, { ur, projektId, objekt, skapaPost, lada }
 
 /** Text till bekräftelsen före import. */
 export function importSammanfattning(plan, { antalKommentarer = 0, varningar = [] } = {}) {
-  const delar = [`${plan.nya.length} nya ärenden`, `${plan.uppdatera.length} uppdateras`];
+  const delar = [`${plan.nya.length} ${plan.nya.length === 1 ? "ny ÄTA" : "nya ÄTA"}`, `${plan.uppdatera.length} uppdateras`];
   if (plan.kopplade) delar.push(`${plan.kopplade} kopplas till objekt`);
   if (plan.utanKoppling) delar.push(`${plan.utanKoppling} pekar på objekt som inte finns i modellen`);
   let t = delar.join(", ") + ".";

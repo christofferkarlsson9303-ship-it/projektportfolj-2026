@@ -1,18 +1,18 @@
 import { expect, test } from "@playwright/test";
 import { oppna, utanKonsolfel } from "./hjalpare.js";
 
-/* Fliken ÄTA-kalkyl: samma kalkyl som kortet under ÄTA och hinder, i egen
-   flik. Beloppet hamnar på ärendet i portföljen, inte i en egen nyckel. */
+/* Fliken ÄTA-kalkyl: samma kalkyl som kortet under ÄTA, i egen
+   flik. Beloppet hamnar på ÄTA:n i portföljen, inte i en egen nyckel. */
 
 async function fyll(falt, varde) {
   await falt.fill(varde);
   await falt.press("Tab");
 }
 
-test("fliken räknar på valt ärende och sparar beloppet på det", async ({ page }) => {
+test("fliken räknar på valt ÄTA och sparar beloppet på det", async ({ page }) => {
   const { fel } = await oppna(page, "ÄTA-kalkyl");
 
-  await page.getByLabel("ÄTA-ärende").selectOption({ label: "UR001 Projektering" });
+  await page.getByLabel("ÄTA", { exact: true }).selectOption({ label: "UR001 Projektering" });
   await expect(page.getByRole("region", { name: "ÄTA-kalkyl — UR001 Projektering" })).toBeVisible();
 
   const snabbval = page.getByRole("group", { name: "Lägg till rad" });
@@ -31,7 +31,7 @@ test("fliken räknar på valt ärende och sparar beloppet på det", async ({ pag
   await expect(summa.getByLabel("Summering")).toContainText(/Att betala\s*16\s113 kr/);
   await expect(summa).toContainText("2 poster · 2 timmar");
 
-  await summa.getByRole("button", { name: "Spara belopp på ärendet" }).click();
+  await summa.getByRole("button", { name: "Spara belopp på ÄTA:n" }).click();
   await expect(summa.getByText("Belopp sparat")).toBeVisible();
   await page.waitForFunction(() => {
     const s = JSON.parse(localStorage.getItem("batchc-portfolj-v1") || "{}");
@@ -40,11 +40,11 @@ test("fliken räknar på valt ärende och sparar beloppet på det", async ({ pag
   utanKonsolfel(fel);
 });
 
-test("ett nytt ärende från fliken väljs direkt", async ({ page }) => {
+test("en ny ÄTA från fliken väljs direkt", async ({ page }) => {
   await oppna(page, "ÄTA-kalkyl");
   await page.getByRole("button", { name: "+ Ny ÄTA" }).click();
   await page.getByLabel("Kort beskrivning av händelsen").fill("Extra kabelschakt");
-  await page.getByRole("button", { name: "Registrera" }).click();
+  await page.getByRole("button", { name: "Registrera", exact: true }).click();
   await expect(page.getByRole("region", { name: /^ÄTA-kalkyl — UR\d+ Extra kabelschakt$/ })).toBeVisible();
   await expect(page.getByText("Inga poster ännu. Klicka på ett snabbval ovan.")).toBeVisible();
 });

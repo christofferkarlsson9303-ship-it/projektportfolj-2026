@@ -3,13 +3,13 @@ import { sitePanel, oppna, utanKonsolfel } from "./hjalpare.js";
 import { miniIfc } from "../src/test/miniIfc.js";
 
 /* IFC-import: filen läses i webbläsaren med web-ifc (riktig wasm), metadata hamnar i portföljen,
-   geometrin i IndexedDB, och ett ärende kan kopplas till ett objekt via GlobalId. Parsning,
+   geometrin i IndexedDB, och en ÄTA kan kopplas till ett objekt via GlobalId. Parsning,
    enheter och centrering är enhetstestade mot samma fixtur (src/lib/ifcLaddare.test.js). */
 
 const VY = "Siten i 3D";
 const GUID = "3YvctVUKr0kugbFTf53O9L";
 const modeller = (page) => page.getByRole("region", { name: /^IFC-modeller/ });
-const arenden = (page) => page.getByRole("complementary", { name: "Ärenden på siten" });
+const arenden = (page) => page.getByRole("complementary", { name: "ÄTA på siten" });
 const portfolj = (page) => page.evaluate(() => JSON.parse(localStorage.getItem("batchc-portfolj-v1") || "{}"));
 
 async function importera(page) {
@@ -23,7 +23,7 @@ async function importera(page) {
   await expect(dialog).toBeHidden();
 }
 
-test("importerar en IFC-fil, söker upp ett objekt och registrerar ett ärende på dess GlobalId", async ({ page }) => {
+test("importerar en IFC-fil, söker upp ett objekt och registrerar en ÄTA på dess GlobalId", async ({ page }) => {
   const { fel } = await oppna(page, VY);
   await sitePanel(page, "Underlag");
   await importera(page);
@@ -41,11 +41,11 @@ test("importerar en IFC-fil, söker upp ett objekt och registrerar ett ärende p
   await expect(page.getByText(GUID, { exact: true })).toBeVisible();
   await expect(page.getByText("expressID", { exact: true })).toBeVisible();
 
-  await sitePanel(page, "Ärenden");
-  await arenden(page).getByRole("button", { name: "+ Ärende på objektet" }).click();
+  await sitePanel(page, "ÄTA");
+  await arenden(page).getByRole("button", { name: "+ ÄTA på objektet" }).click();
   await page.getByLabel("Kort beskrivning av händelsen").fill("Kabelränna saknas vid containern");
   await page.getByRole("button", { name: "Registrera", exact: true }).click();
-  await sitePanel(page, "Ärenden");
+  await sitePanel(page, "ÄTA");
   await expect(arenden(page).getByRole("listitem")).toHaveCount(1);
 
   await expect.poll(async () => ((await portfolj(page)).ur || []).find((u) => u.benamning === "Kabelränna saknas vid containern")?.objectGuid).toBe(GUID);

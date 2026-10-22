@@ -3,9 +3,9 @@ import { StatusBadge } from "../ds/index.js";
 import { registerStatus } from "../../lib/status.js";
 import { arKopplad } from "../../lib/modellKoppling.js";
 
-/* Ärendepanelen till höger om 3D-vyn: UR/ÄTA-posterna för projektet, i
+/* ÄTA-panelen till höger om 3D-vyn: UR/ÄTA-posterna för projektet, i
    CDE/BCF-anda. Ett klick på objekt i 3D filtrerar listan till objektets
-   ärenden, och ett klick på ett ärende flyger kameran till objektet.
+   ÄTA, och ett klick på en ÄTA flyger kameran till objektet.
 
    Panelen äger ingen data — den får raderna och gör bara det användaren ber
    om via callbacks. Varje rad är en grupp med egna knappar (Visa i 3D, Öppna,
@@ -22,7 +22,7 @@ export function SiteArenden({ rader, valt, objektById, onVisa, onVisaVy, onKoppl
   const medObjekt = !!valt && vy === "objekt";
   const synliga = medObjekt ? rader.filter((u) => u.objectGuid === valt.id) : rader;
   const antalObjekt = valt ? rader.filter((u) => u.objectGuid === valt.id).length : 0;
-  // Valet gäller bara ärenden som finns kvar — ett borttaget ärende ska inte exporteras.
+  // Valet gäller bara ÄTA som finns kvar — en borttagen ÄTA ska inte exporteras.
   const giltiga = rader.filter((u) => valda.has(u.id)).map((u) => u.id);
   const vaxla = (id) =>
     setValda((f) => {
@@ -35,15 +35,15 @@ export function SiteArenden({ rader, valt, objektById, onVisa, onVisaVy, onKoppl
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Vilka ärenden som visas">
+      <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Vilka ÄTA som visas">
         <button type="button" className={SEG} aria-pressed={medObjekt} disabled={!valt} onClick={() => setVy("objekt")}>
           {valt ? `${valt.namn || "Valt objekt"} (${antalObjekt})` : "Valt objekt"}
         </button>
         <button type="button" className={SEG} aria-pressed={!medObjekt} onClick={() => setVy("alla")}>
           Alla ({rader.length})
         </button>
-        <button type="button" className="btn mini ml-auto" onClick={onNy} disabled={!valt} title={valt ? `Registrera ett ärende på ${valt.namn || "objektet"} med kamerans vy` : "Markera ett objekt först"}>
-          + Ärende på objektet
+        <button type="button" className="btn mini ml-auto" onClick={onNy} disabled={!valt} title={valt ? `Registrera en ÄTA på ${valt.namn || "objektet"} med kamerans vy` : "Markera ett objekt först"}>
+          + ÄTA på objektet
         </button>
       </div>
 
@@ -51,7 +51,7 @@ export function SiteArenden({ rader, valt, objektById, onVisa, onVisaVy, onKoppl
         <button type="button" className="btn sec mini" disabled={!synliga.length} onClick={() => setValda(alla ? new Set() : new Set(synliga.map((u) => u.id)))}>
           {alla ? "Avmarkera alla" : "Markera alla synliga"}
         </button>
-        <button type="button" className="btn mini" disabled={!giltiga.length || !!bcfJobb} onClick={() => onExportBcf(giltiga)} title="Spara de markerade ärendena som en .bcfzip med kameravy och skärmdump">
+        <button type="button" className="btn mini" disabled={!giltiga.length || !!bcfJobb} onClick={() => onExportBcf(giltiga)} title="Spara de markerade ÄTA som en .bcfzip med kameravy och skärmdump">
           {bcfJobb || `Exportera BCF (${giltiga.length})`}
         </button>
         <input
@@ -70,10 +70,10 @@ export function SiteArenden({ rader, valt, objektById, onVisa, onVisaVy, onKoppl
         </button>
       </div>
 
-      {!valt ? <p className="m-0 text-[12.5px] text-ink-soft">Klicka på ett objekt i 3D-vyn för att se dess ärenden och registrera nya.</p> : null}
+      {!valt ? <p className="m-0 text-[12.5px] text-ink-soft">Klicka på ett objekt i 3D-vyn för att se dess ÄTA och registrera nya.</p> : null}
 
       {synliga.length ? (
-        <ul aria-label="Ärenden" className="m-0 flex list-none flex-col gap-2 p-0">
+        <ul aria-label="ÄTA" className="m-0 flex list-none flex-col gap-2 p-0">
           {synliga.map((u) => {
             const o = u.objectGuid ? objektById.get(u.objectGuid) : null;
             const s = registerStatus(u.status);
@@ -86,13 +86,13 @@ export function SiteArenden({ rader, valt, objektById, onVisa, onVisaVy, onKoppl
                     className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-[var(--knapp-bla)]"
                     checked={valda.has(u.id)}
                     onChange={() => vaxla(u.id)}
-                    aria-label={`Välj ${u.nr || "ärendet"} för BCF-export`}
+                    aria-label={`Välj ${u.nr || "ÄTA:n"} för BCF-export`}
                   />
                   <button
                     type="button"
                     className="min-w-0 flex-1 cursor-pointer rounded border-0 bg-transparent p-0 text-left font-body focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-one-bla"
                     onClick={() => onVisa(u)}
-                    aria-label={`Visa ${u.nr || ""} ${u.benamning || "ärende"} i 3D`.replace(/\s+/g, " ").trim()}
+                    aria-label={`Visa ${u.nr || ""} ${u.benamning || "ÄTA"} i 3D`.replace(/\s+/g, " ").trim()}
                     disabled={!o}
                   >
                     <span className="block text-[11px] font-bold uppercase tracking-wider text-ink-soft">{u.nr || "Utan nummer"}</span>
@@ -111,12 +111,12 @@ export function SiteArenden({ rader, valt, objektById, onVisa, onVisaVy, onKoppl
                     </button>
                   ) : null}
                   {o && u.viewpoint ? (
-                    <button type="button" className="btn sec mini" onClick={() => onVisaVy(u)} title="Flyg till kameravyn som sparades med ärendet">
-                      Ärendets vy
+                    <button type="button" className="btn sec mini" onClick={() => onVisaVy(u)} title="Flyg till kameravyn som sparades med ÄTA:n">
+                      ÄTA:ns vy
                     </button>
                   ) : null}
                   <button type="button" className="btn sec mini" onClick={() => onOppna(u)}>
-                    Öppna ärendet
+                    Öppna ÄTA:n
                   </button>
                   {valt && u.objectGuid !== valt.id ? (
                     <button type="button" className="btn sec mini" onClick={() => onKoppla(u)}>
@@ -135,7 +135,7 @@ export function SiteArenden({ rader, valt, objektById, onVisa, onVisaVy, onKoppl
         </ul>
       ) : (
         <p className="m-0 text-[13px] text-ink-soft">
-          {medObjekt ? `Inga ärenden är kopplade till ${valt.namn || "objektet"} än.` : "Inga ärenden registrerade för projektet."}
+          {medObjekt ? `Ingen ÄTA är kopplad till ${valt.namn || "objektet"} än.` : "Ingen ÄTA registrerad för projektet."}
         </p>
       )}
     </div>

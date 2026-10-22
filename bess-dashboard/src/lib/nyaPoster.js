@@ -22,6 +22,7 @@ export function nyAtaPost(state, pid, falt = {}) {
     benamning: "",
     status: "oppen",
     klass: "oklar",
+    art: "",
     handelseDatum: idag(),
     underrattelseDatum: "",
     prisgrund: "lopande",

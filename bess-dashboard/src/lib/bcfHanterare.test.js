@@ -279,7 +279,7 @@ describe("byggBcf och lasBcf — rundtur genom en riktig zip", () => {
 
   it("tom lista ger en giltig zip utan ärenden som lasBcf avvisar med förklaring", async () => {
     const { data } = await byggBcf([]);
-    await expect(lasBcf(data)).rejects.toThrow(/inga ärenden/);
+    await expect(lasBcf(data)).rejects.toThrow(/inga ÄTA/);
   });
 });
 
@@ -315,7 +315,7 @@ describe("lasBcf — felhantering och främmande filer", () => {
   });
 
   it("när inget går att läsa kastas ett fel med varningarna", async () => {
-    await expect(lasBcf(await zipMed({ "a/markup.bcf": "<x" }))).rejects.toThrow(/Inga ärenden gick att läsa/);
+    await expect(lasBcf(await zipMed({ "a/markup.bcf": "<x" }))).rejects.toThrow(/Inga ÄTA gick att läsa/);
   });
 
   it("en trasig viewpoint tar inte med sig topicet", async () => {
@@ -458,7 +458,7 @@ describe("planeraImport()", () => {
 
   it("sammanfattningen säger vad som händer, inklusive kommentarer och varningar", () => {
     const p = planeraImport([topic({ viewpoint: { komponenter: [{ ifcGuid: "", authoringId: "so1" }], kamera: null } }), topic()], ctx());
-    expect(importSammanfattning(p)).toBe("2 nya ärenden, 0 uppdateras, 1 kopplas till objekt.");
+    expect(importSammanfattning(p)).toBe("2 nya ÄTA, 0 uppdateras, 1 kopplas till objekt.");
     expect(importSammanfattning(p, { antalKommentarer: 4, varningar: ["a", "b"] })).toMatch(/4 kommentarer läses inte in.*2 varningar/);
   });
 });

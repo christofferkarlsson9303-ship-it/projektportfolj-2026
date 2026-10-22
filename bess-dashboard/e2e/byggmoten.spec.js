@@ -22,7 +22,7 @@ test("nytt byggmöte får löpnummer och full paragrafstruktur", async ({ page }
   utanKonsolfel(fel);
 });
 
-test("punkt under §4 flaggas tills den har ett ärende", async ({ page }) => {
+test("punkt under §4 flaggas tills den har en ÄTA", async ({ page }) => {
   await oppna(page, "Byggmöten");
   const form = await nyttMote(page);
 
@@ -33,10 +33,10 @@ test("punkt under §4 flaggas tills den har ett ärende", async ({ page }) => {
 
   // Varningen om preskription ska slå till.
   await expect(form.getByText(/risk för preskription/i)).toBeVisible();
-  await expect(form.getByText(/saknar registrerat ärende/)).toBeVisible();
+  await expect(form.getByText(/saknar registrerad ÄTA/)).toBeVisible();
 });
 
-test("ärende skapas ur punkten och kopplas ihop", async ({ page }) => {
+test("ÄTA skapas ur punkten och kopplas ihop", async ({ page }) => {
   await oppna(page, "Byggmöten");
   const form = await nyttMote(page);
 
@@ -44,17 +44,17 @@ test("ärende skapas ur punkten och kopplas ihop", async ({ page }) => {
   await form.getByLabel("Punkt under §5").fill("Nätägaren försenar inkoppling");
   await page.keyboard.press("Tab");
 
-  await form.getByRole("button", { name: "+ Skapa ÄTA/hinder" }).click();
+  await form.getByRole("button", { name: "+ Skapa ÄTA" }).click();
 
-  // Varningen ska försvinna och ärendenumret visas på punkten.
+  // Varningen ska försvinna och ÄTA-numret visas på punkten.
   await expect(form.getByText(/risk för preskription/i)).toBeHidden();
   const arendeknapp = form.getByRole("button", { name: /^UR\d+/ });
   await expect(arendeknapp).toBeVisible();
 
-  // Och ärendet ska gå att öppna i ÄTA-vyn.
+  // Och ÄTA:n ska gå att öppna i ÄTA-vyn.
   await arendeknapp.click();
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("ÄTA och hinder");
-  await expect(page.getByRole("region", { name: /^Ärende / })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("ÄTA");
+  await expect(page.getByRole("region", { name: /^ÄTA / })).toBeVisible();
 });
 
 test("§5 ger hinder, §4 ger ÄTA", async ({ page }) => {
@@ -64,11 +64,11 @@ test("§5 ger hinder, §4 ger ÄTA", async ({ page }) => {
   await form.getByRole("button", { name: /\+ Punkt under §5/ }).click();
   await form.getByLabel("Punkt under §5").fill("Hinder från nätägare");
   await page.keyboard.press("Tab");
-  await form.getByRole("button", { name: "+ Skapa ÄTA/hinder" }).click();
+  await form.getByRole("button", { name: "+ Skapa ÄTA" }).click();
   await form.getByRole("button", { name: /^UR\d+/ }).click();
 
-  const arende = page.getByRole("region", { name: /^Ärende / });
-  await expect(arende.getByLabel(/Klassificering/)).toHaveValue("hinder");
+  const arende = page.getByRole("region", { name: /^ÄTA / });
+  await expect(arende.getByLabel(/^Behandlas som/)).toHaveValue("hinder");
 });
 
 test("nytt möte ärver öppna punkter från föregående", async ({ page }) => {

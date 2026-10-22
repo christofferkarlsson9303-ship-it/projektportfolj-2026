@@ -3,7 +3,7 @@ import { useUi } from "../../state/hooks.js";
 import { Projektrad } from "./Projektrad.jsx";
 
 export function Topbar() {
-  const { aktivVy, navOppen, setNavOppen, tema, vaxlaTema, oppnaFaltmaterial, setSokOppen } = useUi();
+  const { aktivVy, navOppen, setNavOppen, tema, vaxlaTema, oppnaFaltmaterial, setSokOppen, setHandelseOppen } = useUi();
   const m = META[aktivVy] || { namn: "", lead: "" };
 
   const temaEtikett =
@@ -29,7 +29,8 @@ export function Topbar() {
       </div>
 
       <Projektrad />
-      <button type="button" className="kbd !text-xs" onClick={() => setSokOppen(true)} aria-haspopup="dialog" title="Sök sidor, projekt och ärenden (Ctrl/Cmd+K)">Sök</button>
+      <button type="button" className="kbd !text-xs !font-bold" onClick={() => setHandelseOppen(true)} aria-haspopup="dialog">Registrera händelse</button>
+      <button type="button" className="kbd !text-xs" onClick={() => setSokOppen(true)} aria-haspopup="dialog" title="Sök sidor, projekt och ÄTA (Ctrl/Cmd+K)">Sök</button>
       <button type="button" className="kbd !text-xs" onClick={() => oppnaFaltmaterial()} aria-haspopup="dialog">Fältmaterial</button>
 
       <button type="button" className="kbd" onClick={vaxlaTema} aria-label={temaEtikett} title={temaEtikett}>

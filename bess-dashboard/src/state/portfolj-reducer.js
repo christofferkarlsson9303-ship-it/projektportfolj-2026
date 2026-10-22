@@ -391,6 +391,22 @@ export function reducer(state, action) {
       return loggat(nytt, info?.projektId, `${info?.etikett || id}: kommentar — ${text.slice(0, 100)}`);
     }
 
+    /* Komplettera en händelse med en länkad post (ÄTA, hinder, risk). Posten och
+       länken läggs till tillsammans så att ingen av dem kan finnas utan den andra. */
+    case "HANDELSE_KOPPLA": {
+      const { punktId, lista, rad, lank } = action;
+      const punkt = (state.punkter || []).find((r) => r.id === punktId);
+      if (!punkt || !state[lista] || !rad?.id || !lank?.id) return state;
+      if ((punkt.lankar || []).some((l) => l.id === lank.id)) return state;
+      const nytt = {
+        ...state,
+        [lista]: [...state[lista], rad],
+        punkter: byt(state.punkter, punktId, (r) => ({ ...r, lankar: [...(r.lankar || []), lank] })),
+      };
+      const info = etikettFor(state, "punkter", punktId);
+      return loggat(nytt, punkt.projektId, `${info?.etikett || punktId}: kopplad till ${lank.etikett}`);
+    }
+
     /* Statusändring loggas — det är den som revisionsspåret bygger på. */
     case "UPPDATERA_STATUS": {
       const { lista, id, falt, varde } = action;

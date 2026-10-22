@@ -250,7 +250,7 @@ function Riskkort({ r }) {
           <div className="text-[13px] leading-snug">
             {r.arendeId ? (
               <span className="text-ink">
-                Utlöst — ärende {(state.ur.find((u) => u.id === r.arendeId) || {}).nr || ""} skapat.
+                Utlöst — ÄTA {(state.ur.find((u) => u.id === r.arendeId) || {}).nr || ""} skapad.
               </span>
             ) : r.status === "utlost" ? (
               r.agarskap === "bestallare" ? (
@@ -272,7 +272,7 @@ function Riskkort({ r }) {
   );
 }
 
-/** Utlöst risk som ligger hos beställaren blir ett hinderärende med 24-timmarsklocka. */
+/** Utlöst risk som ligger hos beställaren blir ett hinder-ÄTA med 24-timmarsklocka. */
 function RiskTillArende({ r }) {
   const { state, laggTill, uppd } = usePortfolj();
   const { visaToast } = useUi();
@@ -298,7 +298,7 @@ function RiskTillArende({ r }) {
       ansvarig: hamtaNamn() || "",
     });
     uppd("risker", r.id, "arendeId", id);
-    visaToast("Hinderärende skapat — 24-timmarsfristen räknas från idag");
+    visaToast("Hinder-ÄTA skapad — 24-timmarsfristen räknas från idag");
   };
 
   return (

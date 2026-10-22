@@ -40,9 +40,9 @@ export function AtaTimelineView({ rader, onOppna }) {
   if (!spar.length) {
     return (
       <Callout ton="bad">
-        <b>Ingen post går att placera på tidsaxeln.</b> Tidslinjen behöver minst ett datum per ärende —
+        <b>Ingen post går att placera på tidsaxeln.</b> Tidslinjen behöver minst ett datum per ÄTA —
         händelsedatum, underrättelse, godkänt pris eller fakturadatum. Just nu saknar samtliga{" "}
-        {rader.length} poster alla fyra. Fyll i händelsedatum i ärendepanelen, så blir både tidslinjen och
+        {rader.length} poster alla fyra. Fyll i händelsedatum i ÄTA-panelen, så blir både tidslinjen och
         24-timmarsfristen användbara.
       </Callout>
     );
@@ -52,7 +52,7 @@ export function AtaTimelineView({ rader, onOppna }) {
     <>
       <Tidslinje
         rader={spar}
-        etikett="ÄTA-ärenden på tidsaxel"
+        etikett="ÄTA på tidsaxel"
         onValjPost={(post) => onOppna(post.id)}
       />
       {utanDatum.length ? (

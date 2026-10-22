@@ -85,3 +85,9 @@ export async function sitePanel(page, namn) {
   const knapp = page.getByRole("navigation", { name: "Verktyg i 3D-vyn" }).getByRole("button", { name: namn, exact: true });
   if (await knapp.getAttribute("aria-pressed") !== "true") await knapp.click();
 }
+
+/** Öppnar en vy som inte ligger i menyn (t.ex. Störning) via adressfältet. Samma som en länk i appen. */
+export async function oppnaViaAdress(page, vyId, rubrik, projektId = "36037") {
+  await page.evaluate(([v, p]) => { window.location.hash = `#/${v}/${p}`; }, [vyId, projektId]);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(rubrik);
+}

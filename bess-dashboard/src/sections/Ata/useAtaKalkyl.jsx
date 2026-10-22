@@ -8,9 +8,9 @@ import { fmtSEK } from "../../lib/format.js";
 import { kalkylResurser } from "../../lib/planering.js";
 import { kalkylCsv, kalkylRader, kalkylSummor, nyKalkylRad, tidrapportRader } from "../../lib/atakalkyl.js";
 
-/* ÄTA-kalkylens logik för ett ärende — samma i kortet under ÄTA och hinder
+/* ÄTA-kalkylens logik för en ÄTA — samma i kortet under ÄTA
    (AtaKalkyl) och i fliken ÄTA-kalkyl (AtaKalkylVy). Raderna ligger på
-   ärendet (kalkyl.rader); inget sparas vid sidan av portföljen. */
+   ÄTA:n (kalkyl.rader); inget sparas vid sidan av portföljen. */
 
 /** Avins dokumentmodell — samma för utskrift och PDF. */
 export function aviDokument(u, projekt, rader) {
@@ -25,7 +25,7 @@ export function aviDokument(u, projekt, rader) {
   };
 }
 
-/** Allt kalkylen gör med ett ärende: rader, summor och åtgärder. */
+/** Allt kalkylen gör med en ÄTA: rader, summor och åtgärder. */
 export function useAtaKalkyl(u) {
   const { state, dispatch } = usePortfolj();
   const { skrivUt, visaToast } = useUi();
@@ -69,7 +69,7 @@ export function useAtaKalkyl(u) {
 
   const spara = () => {
     dispatch({ type: "ATA_KALKYL_SPARA", id: u.id });
-    visaToast(`${u.nr}: ${fmtSEK(summor.netto)} sparat på ärendet`);
+    visaToast(`${u.nr}: ${fmtSEK(summor.netto)} sparat på ÄTA:n`);
   };
 
   const exporteraCsv = async () => {

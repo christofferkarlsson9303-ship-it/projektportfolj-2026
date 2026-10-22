@@ -1,6 +1,6 @@
 -- Serverkvitterade egenkontroller och grindgodkännanden (granskning F05).
 -- Beslut 2026-10-21: formella godkännanden i egen tabell med auth.uid() och servertid.
--- EJ APPLICERAD. Granskas och körs manuellt i SQL-editorn (se CLAUDE.md).
+-- APPLICERAD 2026-10-22 i produktion (projektportfolj, eu-north-1), sats för sats. Se docs/behorighetsprov-2026-10-22.md.
 -- Kräver public.projekt (20261016180000_projektkatalog.sql).
 --
 -- Portföljens JSON (app_state) är fortfarande arbetskopian. Det formella beviset är

@@ -60,6 +60,8 @@ export function UiProvider({ children }) {
   const [utskrift, setUtskrift] = useState(null);
   const [faltmaterial, setFaltmaterial] = useState(null);
   const [sokOppen, setSokOppen] = useState(false);
+  /* Panelen "Registrera händelse" — nåbar från toppraden i alla vyer. */
+  const [handelseOppen, setHandelseOppen] = useState(false);
   /* Markerat objekt på siten (objektets id = dess GUID). Delas mellan 3D-vyn och ÄTA-listan:
      ett klick på ett objekt i 3D filtrerar ärendena, och ett ärende kan be 3D-vyn flyga dit. */
   const [siteVal, setSiteVal] = useState(null);
@@ -240,6 +242,7 @@ export function UiProvider({ children }) {
       rensaUtskrift,
       faltmaterial, oppnaFaltmaterial, stangFaltmaterial,
       sokOppen, setSokOppen,
+      handelseOppen, setHandelseOppen,
       projektstartMal, oppnaProjektstart, rensaProjektstartMal,
       siteVal, setSiteVal, siteFlyg, visaISite,
     }),
@@ -248,7 +251,7 @@ export function UiProvider({ children }) {
       siteVal, siteFlyg, visaISite,
       aktivVy, visa, valtProjekt, lage, tema, vaxlaTema, tathet, setTathet, toast, visaToast,
       modal, fraga, bekrafta, stangModal, navOppen, fokus, oppnaFlagga,
-      postFokus, oppnaPost, utskrift, skrivUt, rensaUtskrift, faltmaterial, oppnaFaltmaterial, stangFaltmaterial, sokOppen,
+      postFokus, oppnaPost, utskrift, skrivUt, rensaUtskrift, faltmaterial, oppnaFaltmaterial, stangFaltmaterial, sokOppen, handelseOppen,
     ]
   );
 

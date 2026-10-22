@@ -17,9 +17,9 @@ import { lankadAtgard, motespunktStatus, nyAtgardFranMotespunkt } from "../lib/m
 
    Protokollet förs i en fast paragrafstruktur (§1–§7). Poängen med modulen är
    inte att skriva protokoll snyggt, utan att fånga det som annars faller bort:
-   ÄTA och hinder som behandlas muntligt under §4 och §5 men aldrig registreras
+   ÄTA som behandlas muntligt under §4 och §5 men aldrig registreras
    formellt kan preskriberas enligt ABT 06 kap. 2 § 7. Därför flaggas varje
-   sådan punkt tills den har ett kopplat ärende.
+   sådan punkt tills den har en kopplad ÄTA.
 
    Vyn står på designsystemet: nyckeltal överst, registret och protokollet
    som kort, paragraferna som avsnitt och varje punkt som en ruta där en
@@ -83,7 +83,7 @@ function Protokoll({ m, p, ur, punkter: register }) {
                     <th style={{ width: "auto" }}>Punkt</th>
                     <th style={{ width: 90 }}>Ansvarig</th>
                     <th style={{ width: 80 }}>Status</th>
-                    <th style={{ width: 80 }}>Ärende</th>
+                    <th style={{ width: 80 }}>ÄTA</th>
                   </tr>
                   {punkter.map((pt) => {
                     const a = pt.urId ? ur.find((u) => u.id === pt.urId) : null;
@@ -188,7 +188,7 @@ function Motespunkt({ m, pt }) {
   const satt = (falt, varde) =>
     dispatch({ type: "UPPD_MOTESPUNKT", moteId: m.id, ptId: pt.id, falt, varde });
 
-  /* Skapar ärendet ur punkten och kopplar ihop dem. Händelsedatum blir mötets
+  /* Skapar ÄTA:n ur punkten och kopplar ihop dem. Händelsedatum blir mötets
      datum — det är då omständigheten blev känd, och det startar 24-timmarsfristen. */
   const skapaArende = () => {
     if (!pt.text) {
@@ -203,7 +203,7 @@ function Motespunkt({ m, pt }) {
     });
     laggTill("ur", post);
     satt("urId", post.id);
-    visaToast(`Ärende skapat ur ${m.nr} §${pt.para}`);
+    visaToast(`ÄTA skapad ur ${m.nr} §${pt.para}`);
   };
 
   const val = "w-auto min-h-9 py-1 text-xs";
@@ -299,18 +299,18 @@ function Motespunkt({ m, pt }) {
             onClick={() => oppnaPost("ata", arende.id)}
           >
             {arende.nr}
-            <span className="sr-only"> — öppna ärendet</span>
+            <span className="sr-only"> — öppna ÄTA:n</span>
           </button>
         ) : kravAtaKoppling ? (
           <>
             <button type="button" className="btn sec mini" onClick={skapaArende}>
-              + Skapa ÄTA/hinder
+              + Skapa ÄTA
             </button>
             <select
               className={val}
               value=""
               onChange={(e) => e.target.value && satt("urId", e.target.value)}
-              aria-label="Koppla till befintligt ärende"
+              aria-label="Koppla till befintlig ÄTA"
             >
               <option value="">Koppla befintlig…</option>
               {state.ur
@@ -359,7 +359,7 @@ function Moteformular({ m, p }) {
       id={`protokoll-${m.id}`}
       title={`Protokoll ${m.nr}`}
       subtitle={`${m.datum || "Datum saknas"}${m.plats ? " · " + m.plats : ""}`}
-      badge={fl.length ? <StatusBadge ton="bad" label={`${fl.length} utan ärende`} /> : null}
+      badge={fl.length ? <StatusBadge ton="bad" label={`${fl.length} utan ÄTA`} /> : null}
       action={
         <>
           <SelStatus
@@ -427,10 +427,10 @@ function Moteformular({ m, p }) {
       {fl.length ? (
         <Callout ton="bad">
           <b>
-            {fl.length} punkt{fl.length > 1 ? "er" : ""} under §4/§5 saknar registrerat ärende.
+            {fl.length} punkt{fl.length > 1 ? "er" : ""} under §4/§5 saknar registrerad ÄTA.
           </b>{" "}
-          ÄTA och hinder som bara behandlas muntligt riskerar preskription enligt ABT 06 kap. 2 § 7 — skapa
-          ärendet och skicka underrättelse.
+          ÄTA som bara behandlas muntligt riskerar preskription enligt ABT 06 kap. 2 § 7 — skapa
+          ÄTA:n och skicka underrättelse.
         </Callout>
       ) : null}
 
@@ -563,17 +563,17 @@ export function Byggmoten() {
             hint={senaste ? `i ${senaste.nr} — förs vidare till nästa möte` : "—"}
           />
           <StatTile
-            label="Utan registrerat ärende"
+            label="Utan registrerad ÄTA"
             value={oregistrerade}
             ton={oregistrerade ? "bad" : ""}
-            hint={oregistrerade ? "§4/§5-punkter — risk för preskription" : "alla §4/§5-punkter har ärende"}
+            hint={oregistrerade ? "§4/§5-punkter — risk för preskription" : "alla §4/§5-punkter har ÄTA"}
           />
         </div>
 
         <Card
           id="bm-register"
           title={`Byggmöten — ${(p.nr ? p.nr + " " : "") + p.namn}`}
-          subtitle="Protokollet förs i standardiserad paragrafstruktur. Punkter under §4 och §5 som saknar registrerat ärende flaggas — muntligt behandlade ÄTA och hinder riskerar annars att preskriberas enligt ABT 06 kap. 2 § 7."
+          subtitle="Protokollet förs i standardiserad paragrafstruktur. Punkter under §4 och §5 som saknar registrerad ÄTA flaggas — muntligt behandlade ÄTA riskerar annars att preskriberas enligt ABT 06 kap. 2 § 7."
           action={<Tathetsvaljare />}
         >
           <DataTable
@@ -627,13 +627,13 @@ export function Byggmoten() {
                   const n = motesFlagga(x).length;
                   if (!n) return <span className="text-ink-faint">—</span>;
                   return (
-                    <span title="Punkter under §4/§5 utan registrerat ärende">
+                    <span title="Punkter under §4/§5 utan registrerad ÄTA">
                       <StatusBadge
                         ton="bad"
                         label={
                           <>
                             {n}
-                            <span className="sr-only"> punkter under §4 eller §5 saknar ärende</span>
+                            <span className="sr-only"> punkter under §4 eller §5 saknar ÄTA</span>
                           </>
                         }
                       />

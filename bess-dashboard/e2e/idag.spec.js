@@ -45,7 +45,7 @@ test("horisonten styr hur långt fram listan når", async ({ page }) => {
   await expect(page.getByRole("region", { name: "Längre fram — inom 90 dagar" })).toBeVisible();
 });
 
-test("en frist leder direkt till rätt ÄTA-ärende", async ({ page }) => {
+test("en frist leder direkt till rätt ÄTA", async ({ page }) => {
   await oppna(page);
 
   const bradskande = page.getByRole("region", { name: /^Brådskande/ });
@@ -57,9 +57,9 @@ test("en frist leder direkt till rätt ÄTA-ärende", async ({ page }) => {
 
   await rader.first().getByRole("button", { name: /^Öppna/ }).click();
 
-  // Vi ska landa i ÄTA-vyn med just det ärendet utfällt.
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("ÄTA och hinder");
-  const form = page.getByRole("region", { name: /^Ärende / });
+  // Vi ska landa i ÄTA-vyn med just det ÄTA:n utfällt.
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("ÄTA");
+  const form = page.getByRole("region", { name: /^ÄTA / });
   await expect(form).toBeVisible();
   await expect(form.getByRole("heading", { level: 3 })).toContainText(nr);
 });
