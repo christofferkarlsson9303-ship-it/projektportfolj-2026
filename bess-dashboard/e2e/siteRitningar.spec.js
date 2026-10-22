@@ -24,7 +24,7 @@ test("ritning laddas upp, läggs i skala över enheterna och finns kvar efter om
   await expect(page.getByRole("list", { name: "Objekt" })).toContainText("+B1a");
 
   await sitePanel(page, "Visning");
-  await page.getByRole("region", { name: "Visning av parken" }).getByLabel("Välj ritning (PDF eller bild)").setInputFiles(PLAN);
+  await page.getByRole("region", { name: "Visning av parken" }).getByLabel("Välj ritning (PDF, DXF eller bild)").setInputFiles(PLAN);
   await sitePanel(page, "Objekt");
   await expect(lista(page)).toContainText("testplan-A3-1250", { timeout: 20000 });
   await sitePanel(page, "Objekt");
@@ -68,8 +68,35 @@ test("ritning laddas upp, läggs i skala över enheterna och finns kvar efter om
 test("en fil som inte är ritning avvisas med ett begripligt fel", async ({ page }) => {
   await oppna(page, "Siten i 3D");
   await sitePanel(page, "Visning");
-  await page.getByRole("region", { name: "Visning av parken" }).getByLabel("Välj ritning (PDF eller bild)").setInputFiles({ name: "anteckning.txt", mimeType: "text/plain", buffer: Buffer.from("hej") });
-  await expect(page.getByText("Välj en PDF, PNG, JPG eller WebP.")).toBeVisible();
+  await page.getByRole("region", { name: "Visning av parken" }).getByLabel("Välj ritning (PDF, DXF eller bild)").setInputFiles({ name: "anteckning.txt", mimeType: "text/plain", buffer: Buffer.from("hej") });
+  await expect(page.getByText("Välj en PDF, DXF, PNG, JPG eller WebP.")).toBeVisible();
   expect(((await portfolj(page)).siteRitningar || []).length).toBe(0);
 });
 
+
+test("DXF läses i webbläsaren och läggs i skala ur enheten; DWG ger en tydlig väg", async ({ page }) => {
+  test.setTimeout(60000);
+  const { fel } = await oppna(page, "Siten i 3D");
+  const valj = () => page.getByRole("region", { name: "Visning av parken" }).getByLabel("Välj ritning (PDF, DXF eller bild)");
+
+  await sitePanel(page, "Visning");
+  await valj().setInputFiles({ name: "plan.dwg", mimeType: "application/acad", buffer: Buffer.from("AC1032") });
+  await expect(page.getByText(/DWG kan inte läsas i webbläsaren\. Spara ritningen som DXF/)).toBeVisible();
+
+  await valj().setInputFiles("e2e/fixtures/testplan-mm.dxf");
+  await sitePanel(page, "Objekt");
+  await expect(lista(page)).toContainText("DXF · mm · 120 × 60 m", { timeout: 20000 });
+  const rad = async () => ((await portfolj(page)).siteRitningar || [])[0];
+  await expect.poll(async () => (await rad())?.kalla).toBe("dxf");
+  const r = await rad();
+  expect(r).toMatchObject({ kalla: "dxf", mime: "image/png", skala: 1, filnamn: "testplan-mm.dxf" });
+  expect(JSON.stringify(r)).not.toMatch(/data:|base64/);
+  await expect(lista(page).getByText("Laddar")).toHaveCount(0, { timeout: 15000 });
+  await expect(lista(page).getByText("Kunde inte läsas")).toHaveCount(0);
+
+  // Fel enhet i filen: byt till cm och måtten följer med.
+  await ritKort(page).getByLabel("Enhet i DXF").selectOption("cm");
+  await expect.poll(async () => (await rad())?.skala).toBe(10);
+  await expect(lista(page)).toContainText("DXF · cm · 1200 × 600 m");
+  utanKonsolfel(fel);
+});

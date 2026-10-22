@@ -129,7 +129,7 @@ test("ÄTA-panelen i ÄTA visar kopplingen och kan koppla och släppa objektet",
   await expect(koppling.getByRole("button", { name: "Visa i 3D" })).toBeVisible();
 
   await koppling.getByRole("button", { name: "Ta bort koppling" }).click();
-  await expect(koppling).toContainText("inte kopplat till något objekt");
+  await expect(koppling).toContainText("inte kopplad till något objekt");
   await expect
     .poll(async () => ((await portfolj(page)).ur || []).find((u) => u.benamning === "Behöver extra skärmning")?.objectGuid)
     .toBeUndefined();

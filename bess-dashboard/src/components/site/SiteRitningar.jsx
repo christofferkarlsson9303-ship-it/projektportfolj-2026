@@ -4,7 +4,8 @@ import { Callout, Card, StatusBadge } from "../ds/index.js";
 import { TaBortKnapp } from "../ui/Falt.jsx";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { nyRitning, placeraEfterEtiketter, ritningsMatt, ritningsText } from "../../lib/ritningar.js";
-import { arPdf, lasPdfSida, ritaRitning } from "../../lib/ritningRender.js";
+import { arPdf, lasPdfSida, ritaDxf, ritaRitning } from "../../lib/ritningRender.js";
+import { arDwg, arDxf, dxfText, dxfUnderlag, lasDxf } from "../../lib/dxfRitning.js";
 import { MAX_BYTE, arEjAktiverat, skapaRitningsArkiv, sokvagFor } from "../../state/ritningsArkiv.js";
 
 /* Ritningar i 3D-vyn: uppladdning, listan med placering och kroken som ritar filerna till
@@ -74,12 +75,36 @@ export function useRitningsCanvas(rader) {
   );
 }
 
+/* DXF: ritningen läses i webbläsaren och sparas som PNG i arkivet (bucketen tar bara PDF och
+   bilder). Måtten kommer ur DXF-enheten, inte ur en pappersskala: sidan anges i punkter
+   motsvarande metrarna och skalan är 1, så att mått och placering efter etiketter är samma
+   kod som för en PDF. Ändras enheten blir skalan kvoten mot den lästa enheten. */
+const DXF_VAL = [
+  { namn: "mm", tillMeter: 0.001 },
+  { namn: "cm", tillMeter: 0.01 },
+  { namn: "m", tillMeter: 1 },
+];
+
+function dxfEnhetNu(r) {
+  const m = (Number(r.enhet?.tillMeter) || 1) * (Number(r.skala) || 1);
+  return DXF_VAL.find((e) => Math.abs(e.tillMeter / m - 1) < 1e-6)?.namn || "";
+}
+
+async function dxfTillPng(fil) {
+  const underlag = dxfUnderlag(lasDxf(dxfText(new Uint8Array(await fil.arrayBuffer()))));
+  const { canvas, proportion } = ritaDxf(underlag.geometri);
+  const png = await new Promise((ok, fel) => canvas.toBlob((b) => (b ? ok(b) : fel(new Error("Kunde inte rita DXF-filen."))), "image/png"));
+  return { underlag, png, proportion };
+}
+
 /** Laddar upp en fil och lägger in ritningen. Returnerar raden eller kastar ett fel med text. */
 export async function laddaUppRitning(fil, { projektId, objekt }) {
   if (!fil) return null;
   if (fil.size > MAX_BYTE) throw new Error("Filen är större än 50 MB.");
+  if (arDwg(fil)) throw new Error("DWG kan inte läsas i webbläsaren. Spara ritningen som DXF (i AutoCAD: Spara som → AutoCAD DXF) och ladda upp den.");
+  if (arDxf(fil)) return laddaUppDxf(fil, { projektId, objekt });
   const pdf = arPdf(fil);
-  if (!pdf && !/^image\/(png|jpeg|webp)$/i.test(fil.type)) throw new Error("Välj en PDF, PNG, JPG eller WebP.");
+  if (!pdf && !/^image\/(png|jpeg|webp)$/i.test(fil.type)) throw new Error("Välj en PDF, DXF, PNG, JPG eller WebP.");
   const id = nyttId();
   const arkiv = skapaRitningsArkiv();
   const sokvag = sokvagFor(projektId, id, fil.name);
@@ -101,6 +126,26 @@ export async function laddaUppRitning(fil, { projektId, objekt }) {
   return { ...rad, ...placeraOver(rad, objekt) };
 }
 
+async function laddaUppDxf(fil, { projektId, objekt }) {
+  const { underlag, png, proportion } = await dxfTillPng(fil);
+  const id = nyttId();
+  const arkiv = skapaRitningsArkiv();
+  const sokvag = sokvagFor(projektId, id, fil.name.replace(/\.dxf$/i, "") + ".png");
+  try {
+    await arkiv.ladda(png, sokvag);
+  } catch (e) {
+    if (arEjAktiverat(e)) throw new Error("Ritningsarkivet finns inte i Supabase än. Migreringen site_ritningar behöver köras.");
+    throw new Error(`Uppladdningen misslyckades: ${e?.message || e}`);
+  }
+  const rad = {
+    ...nyRitning({ id, projektId, filnamn: fil.name, mime: "image/png", storlek: png.size, lagring: arkiv.lage, sokvag, sida: underlag.sida, skala: 1, proportion, etiketter: underlag.etiketter }),
+    kalla: "dxf",
+    skalaKalla: "dxf",
+    enhet: underlag.enhet,
+  };
+  return { ...rad, ...placeraOver(rad, objekt) };
+}
+
 /** Knappen som öppnar filväljaren. Används i 3D-vyns filterrad och i kortet. */
 export function RitningsKnapp({ onFil, upptagen, etikett = "Ladda upp ritning" }) {
   const ref = useRef(null);
@@ -109,9 +154,9 @@ export function RitningsKnapp({ onFil, upptagen, etikett = "Ladda upp ritning" }
       <input
         ref={ref}
         type="file"
-        accept="application/pdf,.pdf,image/png,image/jpeg,image/webp"
+        accept="application/pdf,.pdf,.dxf,.dwg,image/png,image/jpeg,image/webp"
         className="sr-only"
-        aria-label="Välj ritning (PDF eller bild)"
+        aria-label="Välj ritning (PDF, DXF eller bild)"
         onChange={(e) => {
           onFil(e.target.files?.[0]);
           e.target.value = "";
@@ -184,7 +229,7 @@ export function SiteRitningar({ ritningar, objekt, onLaddaUpp, upptagen }) {
     <Card
       id="site-ritningar"
       title="Ritningar på siten"
-      subtitle="PDF eller bild i skala på marken. Skalan läses ur ritningshuvudet; justera läget mot enheterna."
+      subtitle="PDF, DXF eller bild i skala på marken. Skalan läses ur ritningshuvudet; justera läget mot enheterna."
       action={<RitningsKnapp onFil={onLaddaUpp} upptagen={upptagen} />}
     >
       {ritningar.length ? (
@@ -212,7 +257,29 @@ export function SiteRitningar({ ritningar, objekt, onLaddaUpp, upptagen }) {
               {r.fel ? <p className="m-0 text-[12.5px] text-bad-ink">{r.fel}</p> : null}
               {placeringText(r) ? <p className="m-0 text-[12.5px] text-ink-soft">{placeringText(r)}</p> : null}
               <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
-                {r.sida ? (
+                {r.kalla === "dxf" ? (
+                  <div className="flex min-w-0 flex-col gap-1">
+                    <label htmlFor={`rit-${r.id}-enhet`} className="text-[12px] font-semibold text-ink-soft">
+                      Enhet i DXF
+                    </label>
+                    <select
+                      id={`rit-${r.id}-enhet`}
+                      className="min-h-[32px] rounded-md border border-solid border-hairline-stark bg-surface px-2 text-[13px] text-ink"
+                      value={dxfEnhetNu(r)}
+                      onChange={(e) => {
+                        const val = DXF_VAL.find((v) => v.namn === e.target.value);
+                        if (val) andra(r, { skala: val.tillMeter / (Number(r.enhet?.tillMeter) || 1) });
+                      }}
+                    >
+                      {dxfEnhetNu(r) ? null : <option value="">{r.enhet?.namn || "okänd"}</option>}
+                      {DXF_VAL.map((v) => (
+                        <option key={v.namn} value={v.namn}>
+                          {v.namn}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : r.sida ? (
                   <TalRuta id={`rit-${r.id}-skala`} etikett="Skala 1:" varde={r.skala} steg={10} onAndra={(v) => v > 0 && andra(r, { skala: v })} />
                 ) : (
                   <TalRuta id={`rit-${r.id}-bredd`} etikett="Bredd (m)" varde={r.bredd} steg={1} enhet=" m" onAndra={(v) => v > 0 && andra(r, { bredd: v })} />
@@ -256,12 +323,13 @@ export function SiteRitningar({ ritningar, objekt, onLaddaUpp, upptagen }) {
           ))}
         </ul>
       ) : (
-        <p className="m-0 text-[13px] text-ink-soft">Inga ritningar än. Ladda upp en situationsplan, kanalisationsplan eller elplan som PDF eller bild.</p>
+        <p className="m-0 text-[13px] text-ink-soft">Inga ritningar än. Ladda upp en situationsplan, kanalisationsplan eller elplan som PDF, DXF eller bild.</p>
       )}
       <Callout ton="info">
         Filen sparas i portföljens ritningsarkiv och placeringen i portföljen, så att alla med åtkomst ser samma
         ritning på samma plats. En PDF läggs i skala ur pappersformatet och skalan i ritningshuvudet (t.ex. A3 1:250).
-        Står skalan inte på ritningen antas 1:100 — ändra den då.
+        Står skalan inte på ritningen antas 1:100 — ändra den då. En DXF läggs i skala ur ritningens enhet; DWG
+        behöver sparas som DXF först.
       </Callout>
     </Card>
   );

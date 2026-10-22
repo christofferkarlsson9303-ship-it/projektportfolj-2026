@@ -109,7 +109,11 @@ export function ritningsText(r) {
   const { bredd, djup } = ritningsMatt(r);
   const m = (v) => String(Math.round(v * 10) / 10).replace(".", ",");
   const delar = [];
-  if (r.sida) {
+  if (r.kalla === "dxf") {
+    const enhet = (Number(r.enhet?.tillMeter) || 1) * (Number(r.skala) || 1);
+    const namn = { 0.001: "mm", 0.01: "cm", 1: "m" }[Math.round(enhet * 1e6) / 1e6] || r.enhet?.namn || "";
+    delar.push(`DXF${namn ? ` · ${namn}` : ""}${r.enhet?.antagen && Number(r.skala) === 1 ? " (antagen)" : ""}`);
+  } else if (r.sida) {
     const f = pappersformat(r.sida.b, r.sida.h);
     if (f) delar.push(f);
     delar.push(`1:${r.skala}${r.skalaKalla === "antagen" ? " (antagen)" : ""}`);
