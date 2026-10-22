@@ -721,6 +721,10 @@ export function Site() {
         panel={panel}
         onPanel={setPanel}
         onInset={setPanelBredd}
+        konfiguration={<div className="seg site-profile-seg" role="group" aria-label="Batterialternativ">{Object.entries(HARDVARUPROFILER).map(([id]) => <button key={id} type="button" aria-pressed={profilId === id} onClick={() => bytProfil(id)}>{id === "sungrow" ? "Sungrow" : "CATL / PE"}</button>)}</div>}
+        vyer={<SiteKameror className="site-camera-menu" vinklar={vinklar} onFlyg={flygTill} />}
+        legend={<><ul>{Object.entries(MALLAR).filter(([typ]) => objekt.some(o => o.typ === typ)).map(([typ, mall]) => <li key={typ}><Farg typ={typ} />{mall.namn} · {objekt.filter(o => o.typ === typ).length} st</li>)}</ul><p className="note">{profil.namn}. Mått och placeringar följer projektets sparade modell.</p></>}
+        info={valt && !arNal(valt) && !arIfc ? <><h2>{namnFor(valt)}</h2><dl><dt>Typ</dt><dd>{MALLAR[valt.typ]?.namn}</dd><dt>Mått</dt><dd>{fmtM(valt.bredd)} × {fmtM(valt.djup)} × {fmtM(valt.hojd)} m</dd><dt>Rotation</dt><dd>{fmtM(valt.rotation || 0)}°</dd></dl><button type="button" className="btn mt-3" onClick={() => setPanel("objekt")}>Redigera objekt</button></> : null}
         paneler={[{ id: "bygg", namn: "Bygg" }, { id: "visning", namn: "Visning" }, { id: "objekt", namn: "Objekt" }, { id: "arenden", namn: "Ärenden" }, { id: "underlag", namn: "Underlag" }]}
         verktyg={<>
           <section hidden={panel !== "bygg"} aria-label="Bygg parken">
@@ -782,7 +786,6 @@ export function Site() {
           </section>
           <section hidden={panel !== "visning"} aria-label="Visning av parken">
             <button type="button" className="btn sec mini mb-3" onClick={() => { setLage("orbit"); sceneApi.current?.ramaIn?.(); }}>Visa hela parken</button>
-            <SiteKameror className="site-camera-menu" vinklar={vinklar} onFlyg={flygTill} />
           <SiteVerktygsfalt
             lage={lage}
             onLage={(v) => {

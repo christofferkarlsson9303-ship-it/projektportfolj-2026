@@ -91,7 +91,7 @@ const kortTitel = (t) => (String(t).length > 42 ? String(t).slice(0, 39) + "…"
 
 function etikett(text, ton = "", onKlick = null) {
   const el = document.createElement(onKlick ? "button" : "div");
-  el.className = `${onKlick ? "pointer-events-auto cursor-pointer hover:border-one-bla focus-visible:outline focus-visible:outline-2 focus-visible:outline-one-bla" : "pointer-events-none"} whitespace-nowrap rounded-md border border-solid px-1.5 py-0.5 font-body text-[11px] font-semibold shadow-sm ${
+  el.className = `site-label ${onKlick ? "pointer-events-auto cursor-pointer hover:border-one-bla focus-visible:outline focus-visible:outline-2 focus-visible:outline-one-bla" : "pointer-events-none"} whitespace-nowrap rounded-md border border-solid px-1.5 py-0.5 font-body text-[11px] font-semibold shadow-sm ${
     ton === "nal" ? "border-orange bg-surface text-ink" : ton === "valt" ? "border-orange bg-surface text-ink" : "border-hairline bg-surface text-ink"
   }`;
   el.textContent = text;
@@ -224,8 +224,8 @@ export default function SiteScen({
     renderer.setPixelRatio(programvara ? 1 : Math.min(window.devicePixelRatio || 1, 1.5));
     renderer.shadowMap.enabled = !programvara;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.05;
+    renderer.toneMapping = THREE.NoToneMapping;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.domElement.className = "block h-full w-full touch-none";
     el.appendChild(renderer.domElement);
 
@@ -262,12 +262,13 @@ export default function SiteScen({
     };
     controls.addEventListener("change", markera);
 
-    scene.add(new THREE.HemisphereLight(new THREE.Color(1, 1, 1), farg("--web2"), 1.35));
-    const sol = new THREE.DirectionalLight(new THREE.Color(1, 1, 1), 2.0);
-    sol.position.set(-40, 70, 30);
+    // r128-referensens intensiteter, omräknade till modern Three.js ljusenheter.
+    scene.add(new THREE.HemisphereLight(0xeaf4ff, 0x6b6a55, 0.75 * Math.PI));
+    const sol = new THREE.DirectionalLight(0xfff4e2, 0.95 * Math.PI);
+    sol.position.set(-120, 160, 90);
     sol.castShadow = true;
-    sol.shadow.mapSize.set(programvara ? 1024 : 2048, programvara ? 1024 : 2048);
-    Object.assign(sol.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, near: 1, far: 200 });
+    sol.shadow.mapSize.set(programvara ? 1024 : 4096, programvara ? 1024 : 4096);
+    Object.assign(sol.shadow.camera, { left: -150, right: 150, top: 150, bottom: -150, near: 10, far: 500 });
     // Mjuk kant och inga skuggränder på plana tak och marken (samma värden som Vaggeryd-modellen).
     sol.shadow.radius = 3;
     sol.shadow.bias = -0.0005;
@@ -275,7 +276,7 @@ export default function SiteScen({
     scene.add(sol);
 
     // Marken runt tomten, tomtens grus och körytor.
-    const mark = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.MeshStandardMaterial({ color: farg("--web2"), roughness: 1 }));
+    const mark = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000), new THREE.MeshStandardMaterial({ color: 0x93a77f, roughness: 1 }));
     mark.rotation.x = -Math.PI / 2;
     mark.receiveShadow = true;
     scene.add(mark);
@@ -283,14 +284,14 @@ export default function SiteScen({
     const tomt = new THREE.Group();
     const grus = new THREE.Mesh(
       new THREE.PlaneGeometry(TOMT.bredd, TOMT.djup),
-      new THREE.MeshStandardMaterial({ color: farg("--ink-faint"), roughness: 1, ...djupLager(1) })
+      new THREE.MeshStandardMaterial({ color: 0xcdc6b8, roughness: 1, ...djupLager(1) })
     );
     grus.rotation.x = -Math.PI / 2;
     grus.position.y = 0.01;
     grus.receiveShadow = true;
     tomt.add(grus);
     for (const k of KORYTOR) {
-      const v = new THREE.Mesh(new THREE.PlaneGeometry(k.bredd, k.djup), new THREE.MeshStandardMaterial({ color: farg("--morkgra"), roughness: 0.9, ...djupLager(2) }));
+      const v = new THREE.Mesh(new THREE.PlaneGeometry(k.bredd, k.djup), new THREE.MeshStandardMaterial({ color: 0x4d5458, roughness: 0.95, ...djupLager(2) }));
       v.rotation.x = -Math.PI / 2;
       v.position.set(k.x, 0.02, k.z);
       v.receiveShadow = true;
@@ -834,10 +835,10 @@ export default function SiteScen({
         const ds = diff?.status?.get(o.id);
         /* Hög kvalitet: container och skid får textur, med typfärgen inblandad så att tonen följer
            designsystemet. En jämförelse (diff) vinner — då gäller bara diffens färg. */
-        const del = o.typ === "container" ? "container" : o.typ === "skid" ? "skid" : "";
+        const del = o.typ === "container" ? "container" : o.typ === "skid" ? "skid" : o.typ === "ehouse" ? "ehouse" : "";
         const tex = !ds && texturer ? texturer[del] : null;
         // Ett genererat foto får bara en aning typfärg; en ritad textur mer, så att typen syns.
-        const ton = texturer?.kalla?.[del] === "genererad" ? 0.12 : 0.45;
+        const ton = 0;
         const material = tex
           ? new THREE.MeshStandardMaterial({ map: tex, color: vit.clone().lerp(farg(TYPFARG[o.typ]), ton), roughness: 0.6, metalness: 0.2 })
           : new THREE.MeshStandardMaterial({ color: farg(ds ? DIFF_FARG[ds] : TYPFARG[o.typ]), roughness: 0.75, metalness: 0.05 });
@@ -986,28 +987,32 @@ export default function SiteScen({
   useEffect(() => {
     const { scene, mark, grus, markera } = s.current;
     if (!scene) return;
-    scene.background = texturer?.himmel || farg("--himmel");
-    scene.fog = new THREE.Fog(farg("--himmel"), Math.max(TOMT.bredd, TOMT.djup) * 3, 2400);
-    /* Gruset inne på tomten får samma bild som marken, med samma kornstorlek: marken är 500 m
-       med texturen upprepad 60 gånger, så tomten upprepar den i proportion till sina mått.
-       Utan det blir kornen så små att ytan ser grå ut. */
+    const themeSky = () => {
+      const sky = getComputedStyle(holder.current).getPropertyValue("--sky").trim() || "#dfe8ec";
+      scene.background = new THREE.Color(sky);
+      scene.fog = new THREE.Fog(sky, 420, 1300);
+      markera?.();
+    };
+    themeSky();
+    const observer = new MutationObserver(themeSky);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    const scheme = window.matchMedia("(prefers-color-scheme: dark)");
+    scheme.addEventListener("change", themeSky);
     let tomtGrus = null;
     if (texturer?.mark) {
-      const meterPerRuta = 500 / (texturer.mark.repeat.x || 1);
       tomtGrus = texturer.mark.clone();
-      tomtGrus.repeat.set(TOMT.bredd / meterPerRuta, TOMT.djup / meterPerRuta);
+      tomtGrus.repeat.set(TOMT.bredd / 8, TOMT.djup / 8);
       tomtGrus.needsUpdate = true;
     }
     for (const yta of [mark, grus]) {
       if (!yta) continue;
-      const tex = yta === mark ? texturer?.mark : tomtGrus;
+      const tex = yta === mark ? texturer?.grass : tomtGrus;
       yta.material.map = tex || null;
-      // Tomten något ljusare än marken utanför, så att gränsen syns.
-      yta.material.color = tex ? new THREE.Color(1, 1, 1).lerp(farg(yta === mark ? "--web2" : "--ink-faint"), yta === mark ? 0.35 : 0.12) : farg(yta === mark ? "--web2" : "--ink-faint");
+      yta.material.color = new THREE.Color(tex ? 0xffffff : yta === mark ? 0x93a77f : 0xcdc6b8);
       yta.material.needsUpdate = true;
     }
     markera?.();
-    return () => tomtGrus?.dispose();
+    return () => { tomtGrus?.dispose(); observer.disconnect(); scheme.removeEventListener("change", themeSky); };
   }, [texturer]);
 
   /* ---------- IFC-modeller ----------
