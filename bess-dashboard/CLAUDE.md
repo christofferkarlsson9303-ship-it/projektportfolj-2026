@@ -60,6 +60,11 @@ Fyll i datum och beslut i tabellen när det är fattat. Migrationer i `supabase/
 - **Ordet ärende** är ersatt av "ÄTA" i synliga texter, och vyn `ata` heter "ÄTA". Använd "ÄTA" i ny text. Interna namn (`arendeRader`, `objectGuid`-kopplingar) behålls.
 - **Arbetssätt** (`projekt.metod`, `data/arbetssatt.js`) är bara en etikett. Bygg inget beteende på den utan att fråga.
 
+## Anbudsfrågor: hjul, matris och filter (2026-10-22)
+
+- **Anbudshjulet** (`Projektstart/AnbudsDonut.jsx`, Recharts) räknar gröna, gula, röda och ej bedömda ur `anbudsBedomning()`. En klickad färg filtrerar matrisen och listan; filtret sparas inte.
+- **Riskmatrisen** (`Projektstart/Riskmatris.jsx`) är 3 × 3 sannolikhet × konsekvens i fälten `af_sann_<id>`/`af_kons_<id>`. Placeringen skriver `af_ljus_<id>` via `matrisLjus()` (produkt 1–2 grön, 3–4 gul, 6–9 röd). Ljuset kan ändras för hand och visas då som avvikelse. Dra-och-släpp har alltid klick (välj fråga, klicka ruta) som alternativ.
+
 ## Gör inte
 
 - Portera inte prototypens filer (`src/routes/*`, zustand-store, `@react-three/fiber`).

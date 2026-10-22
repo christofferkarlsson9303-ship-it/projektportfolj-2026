@@ -128,7 +128,7 @@ test("en ÄTA från ett annat verktyg blir en ny ÄTA, kopplad till objektet och
   );
   await valjFil(page, "extern.bcfzip", await zip.generateAsync({ type: "nodebuffer" }));
   const dialog = page.getByRole("dialog");
-  await expect(dialog).toContainText("1 nya ÄTA, 0 uppdateras, 1 kopplas till objekt.");
+  await expect(dialog).toContainText("1 ny ÄTA, 0 uppdateras, 1 kopplas till objekt.");
   await expect(dialog).toContainText("1 kommentarer läses inte in.");
   await page.getByRole("button", { name: "Importera", exact: true }).click();
 

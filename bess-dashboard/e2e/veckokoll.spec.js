@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { gaTill, oppna, utanKonsolfel } from "./hjalpare.js";
+import { gaTill, oppna, sitePanel, utanKonsolfel } from "./hjalpare.js";
 
 const KORT = ".veckokort";
 const FRAGOR = { name: /frågor besvarade/ };
@@ -234,7 +234,7 @@ test("parkens komponenter kommer från siten: tomt läge leder dit, och en place
   await kort.getByRole("button", { name: "+ Container", exact: true }).click();
   await kort.getByRole("button", { name: "Placera mitt på tomten" }).click();
   await page.keyboard.press("Escape");
-  await page.getByRole("list", { name: "Objekt" }).getByRole("button", { name: /Container 1/ }).click();
+  await sitePanel(page, "Objekt"); // den placerade containern är redan markerad
   const panel = page.getByRole("region", { name: "Container 1" });
   await panel.getByLabel("Laddstatus SoC (%)").fill("62");
   await panel.getByLabel("Laddstatus SoC (%)").press("Enter");
@@ -253,6 +253,7 @@ test("parkens komponenter kommer från siten: tomt läge leder dit, och en place
   await expect(detalj).toContainText("Ingen öppen ÄTA");
   await detalj.getByRole("button", { name: "Visa i 3D" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Siten i 3D");
+  await sitePanel(page, "Objekt");
   await expect(page.getByRole("region", { name: "Container 1" })).toBeVisible();
 });
 
