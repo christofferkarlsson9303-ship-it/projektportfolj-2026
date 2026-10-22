@@ -202,6 +202,8 @@ const KOLUMNER = [
   ["anteckning", "Anteckning", 180],
 ];
 
+const TABELLBREDD = KOLUMNER.reduce((s, [, , w]) => s + w, 0);
+
 /** Visas när ett nyare justerat byggmöte går före källfältet i sidfoten. */
 function SenasteProtokoll({ u }) {
   if (u?.fran !== "byggmote") return null;
@@ -221,7 +223,7 @@ export function Projektredigering() {
       <div className="lead">Grunddata per projekt. Ändringar sparas direkt.</div>
 
       <TableRegion label="Projektuppgifter">
-        <table>
+        <table style={{ "--tabellbredd": `${TABELLBREDD}px` }}>
           <caption className="sr-only">
             Redigerbara grunduppgifter per projekt. Kontraktssumman kan bara ändras av administratören.
           </caption>

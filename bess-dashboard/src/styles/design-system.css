@@ -413,8 +413,13 @@ main{padding-top:30px}
   transition:all .16s var(--ease)}
 .kbd:hover{border-color:var(--one-bla);color:var(--one-djup)}
 
+/* ---------- Projektuppgifter: kolumnerna får sin bredd och tabellen rullar i sidled ---------- */
+.projektred table{table-layout:fixed;min-width:var(--tabellbredd,100%)}
+.projektred td input,.projektred td select,.projektred td textarea{width:100%;box-sizing:border-box}
+
 /* ---------- Mobil: tabeller blir kort ---------- */
 @media(max-width:640px){
+  main .projektred table{min-width:0;table-layout:auto}
   main table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
   main table,main tbody,main tr,main td{display:block;width:100%}
   main tbody tr{background:var(--surface);border:1px solid var(--hairline);border-radius:12px;
