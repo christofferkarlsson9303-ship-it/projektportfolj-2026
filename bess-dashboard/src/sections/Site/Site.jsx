@@ -71,11 +71,16 @@ const BESS_TALFALT = new Set(["mw", "mwh", "mva", "soc"]);
 const STATUS_TON = { planerad: "neutral", levererad: "info", monterad: "warn", driftsatt: "ok" };
 /* Visningsval per webbläsare (filter, Hög kvalitet). Bekvämlighet, inte data: kan saknas eller
    kasta i privat läge, och då gäller standardvärdena. */
-const VISNING_NYCKEL = "bess-site-visning-v1";
+/* v2: referensutseendet (texturer) är standard. Ett "av" sparat under v1 kom ofta från det gamla
+   standardvärdet, inte från ett val, så bara lagren följer med därifrån. */
+const VISNING_NYCKEL = "bess-site-visning-v2";
+const VISNING_NYCKEL_V1 = "bess-site-visning-v1";
 function lasVisning() {
   try {
     const v = JSON.parse(window.localStorage.getItem(VISNING_NYCKEL) || "null");
-    return v && typeof v === "object" ? v : null;
+    if (v && typeof v === "object") return v;
+    const gammal = JSON.parse(window.localStorage.getItem(VISNING_NYCKEL_V1) || "null");
+    return gammal && typeof gammal === "object" ? { lager: gammal.lager } : null;
   } catch {
     return null;
   }
