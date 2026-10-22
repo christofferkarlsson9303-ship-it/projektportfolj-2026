@@ -7,6 +7,15 @@
 --      select vault.create_secret('<samma som PAMINNELSE_NYCKEL>', 'paminnelse_nyckel');
 -- 2. Kör resten av filen.
 
+-- Starta inte ett tomt/bortkopplat jobb. Edge-funktionens kanaler kontrolleras separat
+-- med ett autentiserat ?torr=1-anrop innan schemat aktiveras.
+do $$ begin
+  if not exists (select 1 from vault.decrypted_secrets where name='projekt_url' and coalesce(decrypted_secret,'') <> '')
+     or not exists (select 1 from vault.decrypted_secrets where name='paminnelse_nyckel' and coalesce(decrypted_secret,'') <> '') then
+    raise exception 'Schemaläggning avbruten: projekt_url och paminnelse_nyckel måste finnas i Vault';
+  end if;
+end $$;
+
 create extension if not exists pg_cron;
 create extension if not exists pg_net;
 
