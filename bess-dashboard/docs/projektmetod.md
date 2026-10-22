@@ -1,8 +1,8 @@
 ---
 titel: Min projektmetod – ONE P för BESS och tekniska entreprenader
 ägare: Christoffer Karlsson, projektledare ONE Nordic AB (Växjö)
-version: 1.0
-datum: 2026-09-29
+version: 1.1
+datum: 2026-10-22
 avtalsgrund: ABT 06 (totalentreprenad/EPC), ABT-U 07 mot UE, AB 04 där tillämpligt
 källor:
   - Inklistrad metodtext (Arbetsplatstavla, APD-plan, ONE P-faser, fas-checklistor BESS)
@@ -14,6 +14,8 @@ källor:
   - Projektmetodik/Anläggningsprov.docx (protokoll prov före drifttagning)
   - Projektmetodik/Utbildning Projektmetodik.pdf (Sjuttioett, ONE P-utbildning, inskannad)
   - Projektmetodik/Konstruktionshandbok - EL.pdf (ONE Nordic, ritnings- och märkningsstandard)
+  - 5.2.1: Kraftringen Nät, krav och verifiering för batterilager (RfG, Svk EIFS 2018:2-revision, bilaga 3–7), hämtad 2026-10-22
+  - 5.3.3: WSP, Boverkets regler för batterilager (gäller från 1 juli 2025), hämtad 2026-10-22
 syfte_för_ai: Kontextdokument för Claude vid vidareutveckling av projektledarverktyget
   (repo projektportfolj-2026/bess-dashboard). Se avsnitt 11–12.
 ---
@@ -261,6 +263,35 @@ Faserna följer projektets tidsordning. Varje fas anger ONE P-fas och motsvarand
 - [ ] Tekniska krav avstämda: reläskydd, spänningssättningsprotokoll.
 - [ ] Möte inför spänningssättning bokat tidigt.
 
+#### 5.2.1 Nätanslutning – krav och verifiering (start i anbudet, klar före spänningssättning)
+*Batterilager räknas som kraftparksmodul enligt RfG (EU 2016/631) och Svenska kraftnäts föreskrift EIFS 2018:2 med tillägg för batterilager. Kraven och verifieringen bestäms av nätägaren per projekt. Vid 100 MW-skala styr detta ofta den kritiska linjen – behandla det som ett eget delprojekt.*
+
+**Anbud och uppstart**
+- [ ] Projektspecifik kravspecifikation begärd från nätägaren (typ B/C/D, anslutningspunkt, spänningsnivå). **[K]**
+- [ ] Ansvar för RfG-verifiering fastställt i kontraktet: vem tar fram simuleringsmodeller, överensstämmelsesimulering och prov – OEM, EMS-leverantör, beställare eller ONE? Skriv in i interface-listan (6.7). **[HP]**
+- [ ] Kravspecifikationen skickad till OEM (BESS/PCS) och EMS-leverantör innan utrustningen låses – utrustning som saknar en krävd funktion går inte att rätta på plats. **[HP → godkänd lösning 6.8]**
+- [ ] Nätägarens tidsåtgång för granskning av modeller och protokoll inlagd i tidplanen.
+- [ ] Prissatt i kalkylen: konsultstöd för simulering, provutrustning, nätägarens avgifter.
+
+**Steg 1 – Tillstånd för spänningssättning och provdrift** **[HP]**
+- [ ] Anläggningsdata (Svk bilaga 3) inlämnad.
+- [ ] Simuleringsmodeller (Svk bilaga 4) inlämnade och godkända.
+- [ ] Överensstämmelsesimulering (Svk bilaga 5) inlämnad.
+- [ ] Reläskydd, skyddsinställningar och kommunikation med nätägarens driftcentral avstämda.
+- [ ] Skriftligt tillstånd för spänningssättning och provdrift mottaget **innan** spänningssättning.
+
+**Steg 2 – Slutligt driftmeddelande** **[HP → slutbesiktning]**
+- [ ] Anläggningsdata uppdaterad (bilaga 3) och överensstämmelsesimulering (bilaga 5) med verkliga inställningar.
+- [ ] Överensstämmelseprovning (Svk bilaga 6) genomförd och protokollförd.
+- [ ] Modellvalidering (Svk bilaga 7) godkänd av nätägaren.
+- [ ] Slutligt driftmeddelande mottaget. Utan det är anläggningen inte klar för kommersiell drift – koppla till kontraktets färdigställandedefinition. **[K]**
+
+**Löpande**
+- [ ] Varje ändring av PCS-firmware, regulatorinställningar eller skydd efter steg 1 stäms av mot nätägaren – den kan kräva ny simulering. **[L]**
+- [ ] Bilagornas versioner och nätägarens svar arkiveras i projektmappen.
+
+*Kontrollera alltid aktuell version av EIFS 2018:2 och nätägarens instruktion – föreskriften håller på att revideras.*
+
 **📋 Test- och kontrollplan**
 - [ ] Test- och kontrollplan ("Check before commissioning") till beställaren senast 2 månader före planerad driftsättning. **[K]**
 - [ ] FAT planerat hos leverantörer.
@@ -361,6 +392,34 @@ Faserna följer projektets tidsordning. Varje fas anger ONE P-fas och motsvarand
 - [ ] HSEQ-vite 10 000 kr/tillfälle kommunicerat till alla UE.
 - [ ] BAS-U-ronder varannan vecka dokumenterade.
 - [ ] KPI: LTIFR.
+
+#### 5.3.3 Brandskydd och räddningstjänst – BESS
+*Brand i ett litiumjonlager kan inte släckas på vanligt sätt och kan ge explosiva gaser. Det är projektets största myndighets- och anseenderisk. Kraven beror på placering (fristående container eller byggnad) och kommun – kontrollera per projekt.*
+
+**Projektering (fas 2)**
+- [ ] Ansvar för brandskyddet fastställt: brandskyddsprojektör, OEM och beställare. Skrivet i interface-listan. **[HP]**
+- [ ] Brandskyddsbeskrivning för anläggningen framtagen och granskad. **[K]**
+- [ ] OEM:s brandtestunderlag (cell-, modul- och enhetsnivå) och riskanalys för termisk rusning inhämtade och granskade.
+- [ ] Explosionsskydd för batterienheten: tryckavlastning och/eller gasdetektering med ventilation – enligt OEM, verifierat i underlaget.
+- [ ] Avstånd mellan batterienheter och till ställverk, transformator, tomtgräns och byggnader fastställda med källa. Läggs in i 3D-sitens skyddsavstånd. **[HP]**
+- [ ] Släckvatten: tillgång (brandpost eller tank), flöde och tid enligt räddningstjänstens behov. Uppsamling av förorenat släckvatten utredd.
+- [ ] Gäller lagret i eller i anslutning till byggnad: Boverkets regler för batterilager (egen brandcell över 20 kWh, brandgasventilation) beaktade. **[K]**
+
+**Samråd (fas 2, före bygglov/startbesked)**
+- [ ] Tidigt samråd med kommunens räddningstjänst – protokoll arkiverat. **[HP]**
+- [ ] Insatsplan framtagen tillsammans med räddningstjänsten: angreppsvägar, avstängning, nödkontakt dygnet runt, riskområde, släckstrategi (normalt kylning av omgivning och låt brinna ut).
+- [ ] Larmvägar bekräftade: brand- och gaslarm till larmcentral och till anläggningsägarens jour.
+- [ ] Behov av skriftlig redogörelse för brandskyddet enligt lag om skydd mot olyckor kontrollerat med kommunen.
+
+**Etablering och montage (fas 3)**
+- [ ] Byggskedets brandskyddsplan omfattar levererade batterienheter: uppställningsplats, avstånd, laddningsnivå vid leverans enligt OEM, åtgärd vid skadad enhet.
+- [ ] Rutin för skadad eller tappad batterienhet: avspärrning, OEM kontaktas, ingen spänningssättning. **[HP]**
+- [ ] Räddningstjänsten bjuden till platsbesök före spänningssättning.
+
+**Provning och överlämning**
+- [ ] Brand- och gasdetektering, släcksystem, ventilation och nödstopp funktionsprovade och protokollförda (se 5.6). **[HP → M5]**
+- [ ] Insatsplan, nyckelhantering och kontaktlista överlämnade till beställaren och räddningstjänsten.
+- [ ] Brandskyddsdokumentation i slutdokumentationen (se 5.7).
 
 ### 5.4 Mark & betong – cBoP (ONE P fas 3 · G6–G9)
 *Kritisk fas. Schakt och fundament ska vara godkända innan BESS och ställverk levereras. Fel här är dyra.*
@@ -485,7 +544,7 @@ Varje prov: Kontrollerad · Datum · Signatur · Ej tillämplig. Protokoll signe
 - [ ] Reläprovning protokollförd.
 - [ ] CATL SAT funktionsprovning.
 - [ ] EMS (FlexGen) och SCADA/larmkedja verifierade.
-- [ ] Nätanslutningstest med nätägaren.
+- [ ] Nätanslutningstest med nätägaren – överensstämmelseprovning enligt nätägarens krav (se 5.2.1).
 - [ ] Inkopplingstransient och skyddsutlösning verifierad (inrusning 5–10× märkström kan ge felutlösning).
 - [ ] Kapacitetstest dokumenterat.
 
@@ -494,7 +553,7 @@ Varje prov: Kontrollerad · Datum · Signatur · Ej tillämplig. Protokoll signe
 - [ ] CATL-tekniker på plats vid uppstart.
 - [ ] Initial laddnings-/urladdningscykel.
 - [ ] Batterisystem verifierat av CATL. **[HP → M5]**
-- [ ] Brandlarm och brandsystem funktionstestade.
+- [ ] Brandlarm, gasdetektering, släcksystem och ventilation funktionstestade (se 5.3.3).
 - [ ] Nödstopp verifierat.
 - [ ] Driftberedskapsbesiktning.
 
@@ -871,6 +930,8 @@ Verktyget: `projektportfolj-2026/bess-dashboard` (React/Vite, Supabase, data i `
 - ❌ Inga inköp utan godkänd lösning.
 - ❌ Ingen gjutning utan verifierad hålbild.
 - ❌ Inget arbete utan Risk-U.
+- ❌ Ingen spänningssättning utan nätägarens skriftliga tillstånd.
+- ❌ Ingen spänningssättning innan räddningstjänsten har insatsplanen.
 - ✅ Dokumentera allt – dagbok varje dag.
 - ✅ Fakturera tidigt – notification först.
 - ✅ Prognos varje vecka.
