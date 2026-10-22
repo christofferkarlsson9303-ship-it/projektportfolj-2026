@@ -6,6 +6,7 @@ import { fmtProcent, fmtSEK } from "../../lib/format.js";
 import { bestallarrapportData, statusrad } from "../../lib/bestallarrapport.js";
 import { Kraftkurva } from "../oversikt/Hero.jsx";
 import { hamtaNamn } from "../../state/portfolj-reducer.js";
+import { KUNDOMRADEN, OMRADEN, TONNAMN, statusOmraden } from "../../lib/statusomraden.js";
 
 /* Statusrapport till beställaren — ett A4-underlag som går att ta med till
    byggmötet eller bifoga i mejl.
@@ -175,6 +176,39 @@ function Anlaggning({ a }) {
   );
 }
 
+/* Status per område som i kundmallen: Tid, Leverabler, Kvalitet, Resurser, Budget och
+   Fakturering. Förslagen ur lib/statusomraden.js med `kund: true`, så att inga internkalkyler
+   eller namn kommer med. */
+const STATUSKLASS = { ok: "st-ok", warn: "st-warn", bad: "st-bad", neutral: "" };
+const KUNDNAMN = { ...OMRADEN, ekonomi: "Budget" };
+
+function StatusPerOmrade({ state, pid }) {
+  const f = statusOmraden(state, pid, { kund: true });
+  return (
+    <div className="rap-sektion">
+      <div className="delrubrik">Status per område</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Område</th>
+            <th>Status</th>
+            <th>Kommentar</th>
+          </tr>
+        </thead>
+        <tbody>
+          {KUNDOMRADEN.map((o) => (
+            <tr key={o}>
+              <td>{KUNDNAMN[o]}</td>
+              <td className={STATUSKLASS[f[o].ton]}>{TONNAMN[f[o].ton]}</td>
+              <td>{f[o].text}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function Nyckeltal({ etiketter }) {
   return (
     <div className="rapgrid5">
@@ -223,6 +257,7 @@ export function Bestallarrapport({ state, pid }) {
         ]}
       />
 
+      {pid ? <StatusPerOmrade state={state} pid={pid} /> : null}
       {d ? <Faser d={d} /> : null}
       {d ? <Anlaggning a={d.anlaggning} /> : null}
 

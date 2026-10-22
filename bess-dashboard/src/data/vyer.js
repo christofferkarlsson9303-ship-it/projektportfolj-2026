@@ -26,6 +26,11 @@ const TILLAGDA = [
     "Beredning för batteriparken: generera containrar, MV-skids och kabelnät ur MW och MWh, få kabellista, materiellista med E-nr och kalkyl på KLG och BESS-schablon.",
   ],
   [
+    "intern",
+    "Intern statusrapport",
+    "Månadens status till ledningen och styrgruppen: trafikljus per område, prognos mot förra månaden och eskalerade frågor.",
+  ],
+  [
     "site",
     "Siten i 3D",
     "Projektets tomt med skid, containrar, E-House, trafo och nålar på öppna punkter. Gå runt i den.",
@@ -68,6 +73,8 @@ const IKONER_TILLAGDA = {
   site: '<path d="M12 2.5 3.5 7v10L12 21.5 20.5 17V7z"/><path d="M3.5 7 12 11.5 20.5 7M12 11.5v10"/>',
   // Flagga på stolpe: start.
   start: '<path d="M5 21V4"/><path d="M5 4h12l-2.5 4L17 12H5"/>',
+  // Trafikljus: intern statusrapport.
+  intern: '<rect x="8" y="2.5" width="8" height="19" rx="2.5"/><circle cx="12" cy="7" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="17" r="1.6"/>',
   // Måltavla: mål → åtgärder.
   handlingsplan: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>',
 };
@@ -88,7 +95,7 @@ const GRUPPER = [
   ["Planera jobbet", ["kontrakt", "epc", "bered", "site", "tidplan", "handlingsplan", "resurser", "kontakter"]],
   ["Gör och följ upp", ["punkter", "tavla", "moten", "vecka", "dagbok", "hseq", "risker"]],
   ["Följ pengarna", ["ata", "atakalkyl", "budget", "tid", "ekonomi", "milstolpar", "faktura"]],
-  ["Lämna över och spara", ["slutdok", "rapport", "rutiner", "data"]],
+  ["Lämna över och spara", ["slutdok", "rapport", "intern", "rutiner", "data"]],
 ];
 const ENKLA_LEADS = {
   start: "Gå igenom startens steg. När du är klar skapas projektet.",
@@ -118,6 +125,7 @@ const ENKLA_LEADS = {
   punkter: "En uppgift, en ansvarig och ett datum. Skapa arbetslistor till fältet.",
   slutdok: "Samla, granska och lämna ritningar, provresultat och manualer till beställaren.",
   rapport: "Granska och skriv ut projektets läge till beställaren.",
+  intern: "Sätt månadens trafikljus per område, jämför med förra månaden och skriv ut till ledningen.",
   rutiner: "Slå upp rätt arbetssätt när du behöver hjälp med en projektsituation.",
   kontakter: "Hitta ansvariga, leverantörer och rätt kontaktuppgifter.",
   data: "Kontrollera lagringen, granska importer och ta en säkerhetskopia.",

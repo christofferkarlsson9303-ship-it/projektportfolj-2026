@@ -254,6 +254,9 @@ export const SEED = {
   ifcModeller: [],
   // Ritningar i 3D-vyn: bara metadata och placering. Filen ligger i Storage/IndexedDB (lib/ritningar.js).
   siteRitningar: [],
+  /* Intern statusrapport per projekt och månad (lib/statusomraden.js). Ljus och kommentar per
+     område, eskalerade frågor; nyckeltalen fryses när rapporten låses. */
+  statusrapporter: [],
 
   /* Ändringslogg — statusändringar m.fl. händelser, senaste ~150 posterna, nyast först. */
   andringslogg: []

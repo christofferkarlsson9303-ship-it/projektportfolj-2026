@@ -1168,6 +1168,9 @@ tr.lastrad:hover{opacity:.8}
   #utskrift td.fas-klar{color:#0f6b6d;font-weight:700}
   #utskrift td.fas-pagar{color:#005f76;font-weight:700}
   #utskrift td.sen{color:#b8322a;font-weight:700}
+  #utskrift td.st-ok{color:#0f6b6d;font-weight:700}
+  #utskrift td.st-warn{color:#a85a12;font-weight:700}
+  #utskrift td.st-bad{color:#b8322a;font-weight:700}
   #utskrift .rap-not{font-size:8.5pt;color:#555;margin:-4px 0 10px}
 }
 

@@ -746,6 +746,34 @@ export function reducer(state, action) {
       return loggat({ ...state, siteRitningar: state.siteRitningar.filter((x) => x.id !== r.id) }, r.projektId, `Ritning borttagen från siten: ${r.namn}`);
     }
 
+    /* Intern statusrapport: ett utkast per projekt och månad som PL ändrar fritt. Låst rapport
+       ändras aldrig; låsningen fryser nyckeltalen som nästa månad jämförs mot. */
+    case "STATUSRAPPORT_SPARA": {
+      const r = action.rad;
+      if (!r?.id || !r.projektId || !/^\d{4}-\d{2}$/.test(r.period || "") || !state.projekt.some((p) => p.id === r.projektId)) return state;
+      const lista = state.statusrapporter || [];
+      const fore = lista.find((x) => x.id === r.id);
+      if (fore?.status === "last") return state;
+      const rad = { ...r, status: "utkast", nyckeltal: null, last: null };
+      return { ...state, statusrapporter: fore ? lista.map((x) => (x.id === r.id ? rad : x)) : [...lista, rad] };
+    }
+
+    case "STATUSRAPPORT_LAS": {
+      const lista = state.statusrapporter || [];
+      const r = lista.find((x) => x.id === action.id);
+      if (!r || r.status === "last" || !action.nyckeltal) return state;
+      const last = { datum: action.datum || idag(), av: hamtaNamn() || "" };
+      const ut = { ...state, statusrapporter: lista.map((x) => (x.id === r.id ? { ...x, status: "last", nyckeltal: action.nyckeltal, last } : x)) };
+      return loggat(ut, r.projektId, `Intern statusrapport ${r.period} låst`);
+    }
+
+    case "STATUSRAPPORT_TA_BORT": {
+      const lista = state.statusrapporter || [];
+      const r = lista.find((x) => x.id === action.id);
+      if (!r || r.status === "last") return state;
+      return { ...state, statusrapporter: lista.filter((x) => x.id !== r.id) };
+    }
+
     /* Återställ = tomt läge för projektet. Andra projekts objekt lämnas. */
     case "SITE_ATERSTALL": {
       const { projektId } = action;

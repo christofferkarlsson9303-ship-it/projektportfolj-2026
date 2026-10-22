@@ -29,6 +29,7 @@ export const SIDHJALP = {
   faktura: ["Samla underlag till fakturan", "Kontrollera ofakturerad tid och kostnad.", "Granska priser och ersättningsform mot kontraktet.", "Skapa underlag och hantera den riktiga fakturan i företagets ekonomisystem."],
   slutdok: ["Visa vad som är färdigt och kontrollerat", "Samla ritningar, egenkontroller, prov och manualer.", "Granska handlingarna och redovisa öppna fel.", "Skapa egenkontrollrapport och dokumentindex. Registrera beställarens mottagande separat."],
   rapport: ["Berätta det beställaren behöver veta", "Välj projekt och kontrollera vad rapporten tar med.", "Kontrollera datum, öppna frågor, risker och avvikelser i förhandsvisningen.", "Skriv ut den granskade rapporten eller spara den som PDF."],
+  intern: ["Rapportera läget till ledningen varje månad", "Välj projekt. Appen föreslår ett ljus per område och säger varför.", "Sätt ditt eget ljus, skriv en kommentar och lägg till frågor som kräver beslut över projektnivå.", "Lås rapporten när den är klar. Nyckeltalen sparas och jämförs med nästa månad."],
   rutiner: ["Slå upp hur du ska hantera en situation", "Välj kapitlet som passar frågan.", "Läs stegen och kontrollera projektets egna avtal.", "Gör den verkliga åtgärden och spara beviset. En bock är bara din uppföljning."],
   data: ["Kontrollera lagring och säkerhetskopiera", "Se om sidan arbetar lokalt eller mot den gemensamma lagringen.", "Ladda ned en säkerhetskopia innan större ändringar.", "Granska importförslaget innan du läser in en fil. System som nämns i mallarna uppdateras inte automatiskt."],
 };

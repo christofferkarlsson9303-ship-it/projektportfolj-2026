@@ -23,3 +23,17 @@ test("beställarrapporten visar faser, M1–M7 och anläggning, och skriver ut d
   await expect(doc).toContainText(/Återstår: fas \d/);
   utanKonsolfel(fel);
 });
+
+test("beställarrapporten har status per område som i kundmallen, utan internkalkyl", async ({ page }) => {
+  const { fel } = await oppna(page, "Beställarrapport");
+  const status = page.getByRole("region", { name: "Status per område" });
+  for (const omrade of ["Tid", "Leverabler", "Kvalitet", "Resurser", "Budget", "Fakturering"]) await expect(status).toContainText(omrade);
+  await expect(status).not.toContainText(/utfall|budget per aktivitet/i);
+
+  await page.evaluate(() => { window.print = () => {}; });
+  await page.getByRole("button", { name: "Skriv ut som PDF" }).click();
+  const doc = page.locator("#utskrift");
+  await expect(doc).toContainText("Status per område");
+  await expect(doc).toContainText("Fakturering");
+  utanKonsolfel(fel);
+});

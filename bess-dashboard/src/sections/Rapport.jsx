@@ -9,11 +9,29 @@ import { dagarTill } from "../lib/datum.js";
 import { fmtProcent, fmtSEK } from "../lib/format.js";
 import { bestallarrapportData, statusrad } from "../lib/bestallarrapport.js";
 import { FASSTATUS } from "../lib/fasmappning.js";
+import { KUNDOMRADEN, OMRADEN, TONNAMN, statusOmraden } from "../lib/statusomraden.js";
 
 /* Beställarrapporten på designsystemet. Vyn är en förhandsgranskning av
    vad rapporten tar med — nyckeltal, ÄTA-läget och det som kräver beslut —
    och skriver ut den som PDF. Själva dokumentet ligger i
    Bestallarrapport.jsx och renderas i utskriftsytan, inte här. */
+
+/** Status per område som i kundmallen, samma förslag som i utskriften. */
+function StatusKund({ state, pid }) {
+  const f = statusOmraden(state, pid, { kund: true });
+  return (
+    <Card id="rapport-status" title="Status per område" subtitle="Som i kundmallen. Räknas ur portföljen; regeln står under varje rad. Inga internkalkyler eller namn kommer med.">
+      <DataList
+        items={KUNDOMRADEN.map((o) => ({
+          label: o === "ekonomi" ? "Budget" : OMRADEN[o],
+          value: f[o].text,
+          detail: f[o].regel,
+          badge: <StatusBadge ton={f[o].ton} label={TONNAMN[f[o].ton]} />,
+        }))}
+      />
+    </Card>
+  );
+}
 
 export function Rapport() {
   const { state } = usePortfolj();
@@ -76,6 +94,8 @@ export function Rapport() {
             hint={slutdok ? "av dokumentkraven klara" : "välj ett projekt"}
           />
         </div>
+
+        {pid ? <StatusKund state={state} pid={pid} /> : null}
 
         {d ? (
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">

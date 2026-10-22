@@ -10,7 +10,7 @@ Appen är projektledarens arbetsverktyg för BESS-entreprenader. Den följer ONE
 
 - Ledningen får ett beslutsunderlag ur Projektstart: anbudsfrågornas trafikljus, riskmatrisen, ekonomin och PL:s rekommendation, som PDF.
 - Under genomförandet styr Idag, tidplanen med kritisk linje, ÄTA-flödet och betalningsmilstolparna M1–M7 det dagliga arbetet.
-- Beställaren får en statusrapport ur samma data. Inget skrivs in två gånger.
+- Beställaren får en statusrapport ur samma data, och ledningen en intern statusrapport per månad. Inget skrivs in två gånger.
 - Allt sparas i portföljen (Supabase eller webbläsaren) och kan tas ut som PDF, CSV och säkerhetskopia.
 
 ## 1. Från projektstart till avslut, steg för steg
@@ -83,7 +83,8 @@ Arbetar man utan nät flaggas ändringarna som osparade och skickas när nätet 
 | Export | Innehåll | Mottagare |
 | --- | --- | --- |
 | Beslutsunderlag (PDF, Projektstart) | Försättsblad, läge till ledningen, anbudsfrågor med trafikljus, ekonomi, projektdirektiv, kontrollpunkter, logg och signaturfält. | Ledningen, intern beställare |
-| Beställarrapport (utskrift till PDF) | Faser, betalningsmilstolpar M1–M7, anläggning, ekonomi och ÄTA, tidplan, passerade punkter, kräver beslut. | Beställaren |
+| Beställarrapport (utskrift till PDF) | Status per område (tid, leverabler, kvalitet, resurser, budget, fakturering), faser, betalningsmilstolpar M1–M7, anläggning, ekonomi och ÄTA, tidplan, passerade punkter, kräver beslut. Inga internkalkyler eller namn. | Beställaren |
+| Intern statusrapport (utskrift till PDF) | Månadens ljus per område med föregående månad bredvid, PL:s kommentarer, nyckeltal mot förra rapporten, topp 3 risker, öppna ÄTA och eskalerade frågor. Låst rapport ändras inte. | Ledning, styrgrupp |
 | ÄTA (PDF och avi) | ÄTA-underlag och avisering med belopp och underrättelse. | Beställaren |
 | Arbetslista och fasblankett (PDF) | Snabbutskrift med ett klick, eller fler val i Fältmaterial. | Lagen på plats |
 | Säkerhetskopia (zip/JSON) | Hela portföljen med bilagor. Kan läsas tillbaka under Data och backup. | Arkiv |
@@ -100,14 +101,16 @@ Arbetar man utan nät flaggas ändringarna som osparade och skickas när nätet 
 | ÄTA / change requests | ÄTA-tavlan och beställarrapportens ÄTA-läge | Finns |
 | Risker (topp 3) | Riskregistret; topprisker i beslutsunderlaget | Finns |
 | Eskalerade frågor och beslut | Kräver beslut eller åtgärd i beställarrapporten; Beslut som behövs från ledningen i Projektkort | Finns |
-| Resurser (FTE, status OK/NOK) | Resurser per vecka; inte som egen ruta i rapporterna | Lucka |
-| Kvalitet och leverabler | Egenkontroller och slutdokumentation; inget samlat statusfält | Lucka |
-| Fakturering (släpande UE-fakturor) | Milstolpar och faktura; inte i beställarrapporten | Lucka |
-| Intern statusrapport (månadsavstämning) | Ledningsrapporten i beslutsunderlaget täcker anbud och start, inte månadsrapporten under genomförandet | Lucka |
+| Resurser (status OK/NOK) | Status per område i båda rapporterna: bemanning kommande fyra veckor och överbelastning | Finns |
+| Kvalitet och leverabler | Status per område: egenkontroller med avvikelse, skyddsronder, grindar och slutdokumentation | Finns |
+| Fakturering (släpande fakturor) | Status per område: milstolpar att avisera, godkänd ÄTA ej fakturerad; internt även ofakturerad tid | Finns |
+| Intern statusrapport (månadsavstämning) | Intern statusrapport: ljus per område, föregående månad, nyckeltal och eskalerade frågor | Finns |
+| Resurser i FTE per resursägare | Bemanning räknas i timmar per person, inte FTE per resursägare | Lucka |
+| Ekonomi: TG1, EBIT och kassaflöde fakturerat–upparbetat | Budget, utfall och PL:s EAC; marginal och upparbetat räknas inte | Lucka |
 
 ## 6. Rekommenderade nästa steg
 
-1. Bygg en intern statusrapport per månad ur samma data som beställarrapporten: trafikljus per område (tid, ekonomi, resurser, ÄTA, risker), prognos mot föregående rapport och eskalerade frågor.
-2. Lägg till resurser, kvalitet och fakturering som statusrader i beställarrapporten, så att den täcker kundmallen.
-3. Fastställ ONE Nordics frågelista och färggränser för riskmatrisen; listan är ett utkast från 2026-10-17.
+1. Lägg till marginal (TG1) och upparbetat mot fakturerat i den interna rapporten när ekonomin per projekt följs i appen.
+2. Räkna resurser i FTE per resursägare om mallens tabell ska fyllas automatiskt.
+3. Fastställ ONE Nordics frågelista och färggränser för riskmatrisen och statusområdena; listan är ett utkast från 2026-10-17.
 4. Lägg in en betalplan per månad i steg 4, så att fråga 5 kan visa en kassaflödeskurva och föreslå ljus mot en gräns.

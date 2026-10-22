@@ -19,6 +19,7 @@ import { Byggmoten } from "./Byggmoten.jsx";
 import { Dagbok } from "./Dagbok.jsx";
 import { Storning } from "./Storning.jsx";
 import { Rapport } from "./Rapport.jsx";
+import { InternRapport } from "./InternRapport.jsx";
 import { Veckokoll } from "./Veckokoll.jsx";
 import { Rutiner } from "./Rutiner.jsx";
 import { Hseq } from "./Hseq.jsx";
@@ -60,6 +61,7 @@ export const SEKTIONER = {
   punkter: Punkter,
   kontakter: Kontakter,
   rapport: Rapport,
+  intern: InternRapport,
   vecka: Veckokoll,
   rutiner: Rutiner,
   hseq: Hseq,
