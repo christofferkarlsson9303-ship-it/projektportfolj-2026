@@ -1,6 +1,8 @@
 import { useEffect, useId, useRef, useState } from "react";
 import logotyp from "../../assets/one-nordic-logo.png";
 import { ENKEL_MENY, NAVIKONER, VYER } from "../../data/vyer.js";
+
+const FLIKAR_NYCKEL = "bess-meny-flikar-v1";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { hamtaNamn, sparaNamn } from "../../state/portfolj-reducer.js";
 import { useMedia } from "../../lib/useMedia.js";
@@ -38,6 +40,29 @@ export function Sidebar() {
   const { aktivVy, visa, navOppen, setNavOppen } = useUi();
   const [namn, setNamn] = useState(hamtaNamn);
   const [hela, setHela] = useState(() => { try { return localStorage.getItem("bess-meny-v1") === "alla"; } catch { return false; } });
+  /* Flikarna i den enkla menyn väljer du själv (stjärnan i hela menyn). Standard är
+     ENKEL_MENY. Valet är en bekvämlighet per webbläsare, inte data. */
+  const [valda, setValda] = useState(() => {
+    try {
+      const v = JSON.parse(localStorage.getItem(FLIKAR_NYCKEL) || "null");
+      if (Array.isArray(v)) return new Set(v);
+    } catch {
+      /* blockerad lagring: standardmenyn gäller */
+    }
+    return new Set(ENKEL_MENY);
+  });
+  const vaxlaFlik = (id) =>
+    setValda((fore) => {
+      const ny = new Set(fore);
+      if (ny.has(id)) ny.delete(id);
+      else ny.add(id);
+      try {
+        localStorage.setItem(FLIKAR_NYCKEL, JSON.stringify([...ny]));
+      } catch {
+        /* sessionens val gäller */
+      }
+      return ny;
+    });
   const vaxlaMeny = () => setHela((v) => { try { localStorage.setItem("bess-meny-v1", v ? "enkel" : "alla"); } catch { /* sessionens val gäller */ } return !v; });
   const sidebarRef = useRef(null);
   const namnId = useId();
@@ -91,15 +116,17 @@ export function Sidebar() {
         </div>
 
         <nav className="sidenav" id="nav" aria-label="Huvudmeny">
-          {GRUPPER.map((g) => ({ ...g, poster: g.poster.filter((v) => hela || ENKEL_MENY.has(v.id) || v.id === aktivVy) })).filter((g) => g.poster.length).map((g, gi) => (
+          {hela ? <p className="navtips">★ = visas i din enkla meny. Klicka för att välja.</p> : null}
+          {GRUPPER.map((g) => ({ ...g, poster: g.poster.filter((v) => hela || valda.has(v.id) || v.id === aktivVy) })).filter((g) => g.poster.length).map((g, gi) => (
             <div key={g.rubrik || `grupp-${gi}`} className="nav-grupp" role="group" aria-label={g.rubrik || "Portfölj"}>
               {/* Grupprubriker bara i hela menyn — sju flikar behöver inga. */}
               {g.rubrik && hela ? <div className="navsek">{g.rubrik}</div> : null}
               {g.poster.map((v) => {
                 const aktiv = v.id === aktivVy;
+                const vald = valda.has(v.id);
                 return (
+                  <div key={v.id} className="navrad">
                   <button
-                    key={v.id}
                     type="button"
                     className={aktiv ? "on" : ""}
                     onClick={() => visa(v.id)}
@@ -110,6 +137,19 @@ export function Sidebar() {
                     <svg viewBox="0 0 24 24" aria-hidden="true" dangerouslySetInnerHTML={{ __html: NAVIKONER[v.id] || "" }} />
                     <span>{v.namn}</span>
                   </button>
+                  {hela ? (
+                    <button
+                      type="button"
+                      className={`navpin${vald ? " vald" : ""}`}
+                      aria-pressed={vald}
+                      aria-label={`${v.namn} i enkel meny`}
+                      title={vald ? "Ta bort ur enkel meny" : "Visa i enkel meny"}
+                      onClick={() => vaxlaFlik(v.id)}
+                    >
+                      {vald ? "★" : "☆"}
+                    </button>
+                  ) : null}
+                  </div>
                 );
               })}
             </div>

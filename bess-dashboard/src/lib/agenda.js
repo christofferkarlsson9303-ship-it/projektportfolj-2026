@@ -104,7 +104,8 @@ export function agendarader(state, dagar, bakat = 0) {
     if (m.status !== "klar") lagg(m.datum, m.titel, "Milstolpe", m.projektId, m.id);
   });
 
-  state.leveranser.forEach((l) =>
+  /* En levererad (klar) leverans är inget att göra. Tidigare låg den kvar som "förfallen". */
+  state.leveranser.filter((l) => l.status !== "klar").forEach((l) =>
     lagg(
       l.datum,
       l.benamning + (l.leverantor && l.leverantor !== "—" ? " — " + l.leverantor : ""),

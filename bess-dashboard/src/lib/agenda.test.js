@@ -85,3 +85,20 @@ describe("uppföljning i arbetslistan", () => {
     expect(arbetslage(s, 30, "36037").idag).toEqual([]);
   });
 });
+
+describe("klara leveranser och milstolpar", () => {
+  it("en levererad (klar) leverans ligger inte kvar som förfallen", () => {
+    const s = {
+      ...tom([]),
+      leveranser: [
+        { id: "l1", projektId: "36037", benamning: "BESS-batteri", leverantor: "CATL", datum: dag(-9), status: "klar" },
+        { id: "l2", projektId: "36037", benamning: "MV-station", leverantor: "", datum: dag(-1), status: "bekraftad" },
+      ],
+      milstolpar: [
+        { id: "m1", projektId: "36037", titel: "Levererad", datum: dag(-5), status: "klar" },
+        { id: "m2", projektId: "36037", titel: "Cold Comm.", datum: dag(-2), status: "planerad" },
+      ],
+    };
+    expect(arbetslage(s).forfallet.map((r) => r.id).sort()).toEqual(["l2", "m2"]);
+  });
+});
