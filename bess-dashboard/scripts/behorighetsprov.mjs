@@ -18,6 +18,7 @@
    ekonomin syns i del 1 (policyn) och provas i appen (Data → Lagring). */
 
 import { createClient } from "@supabase/supabase-js";
+import { bedomProvsvar, slutresultat, kontrolleraStadning } from "./behorighetsprov-resultat.mjs";
 
 const URL = process.env.SUPABASE_URL;
 const ANON = process.env.SUPABASE_ANON_KEY;
@@ -40,67 +41,68 @@ const ID = `behorighetsprov-${Date.now()}`;
 
 /* Förväntat utfall per roll: [anonym, ej tillåten, montör, admin]. true = ska lyckas. */
 const PROV = [
-  ["Läsa portfolj/state", [false, false, true, true], (db) => db.from("app_state").select("key").eq("key", "portfolj/state").then(raderFinns)],
-  ["Läsa portfolj/ekonomi", [false, false, true, true], (db) => db.from("app_state").select("key").eq("key", "portfolj/ekonomi").then(raderFinns)],
-  ["Skapa egen app_state-rad", [false, false, true, true], async (db) => {
+  ["Läsa portfolj/state", [false, false, true, true], (db) => db.from("app_state").select("key").eq("key", "portfolj/state").then(kandRad)],
+  ["Läsa portfolj/ekonomi", [false, false, true, true], (db) => db.from("app_state").select("key").eq("key", "portfolj/ekonomi").then(kandRad)],
+  ["Skapa egen app_state-rad", [false, false, false, true], async (db) => {
+    if (!process.env.JWT_ADMIN) return { ok: null, text: "Admininloggning krävs för säker städning" };
     const r = await db.from("app_state").insert({ key: ID, value: { prov: true } }).select("key");
-    if (!r.error) await klient(process.env.JWT_ADMIN).from("app_state").delete().eq("key", ID);
+    if (!r.error) kontrolleraStadning(await klient(process.env.JWT_ADMIN).from("app_state").delete().eq("key", ID).select("key"));
     return utfall(r);
   }],
   ["Läsa andringslogg", [false, false, true, true], (db) => db.from("andringslogg").select("id").limit(1).then(raderFinns)],
   ["Ändra en loggpost (ska alltid nekas)", [false, false, false, false], async (db) => {
     const r = await db.from("andringslogg").update({ text: "ändrad" }).eq("text", "__finns_inte__").select("id");
-    return { ok: !r.error && (r.data || []).length > 0, text: r.error?.message || "0 rader" };
+    return bedomProvsvar(r);
   }],
   ["Läsa allowed_users", [false, false, true, true], (db) => db.from("allowed_users").select("email").limit(1).then(raderFinns)],
   ["Lägga till sig själv i allowed_users", [false, false, false, true], async (db) => {
+    if (!process.env.JWT_ADMIN) return { ok: null, text: "Admininloggning krävs för säker städning" };
     const r = await db.from("allowed_users").insert({ email: `${ID}@exempel.invalid`, role: "montor" }).select("email");
-    if (!r.error) await klient(process.env.JWT_ADMIN).from("allowed_users").delete().eq("email", `${ID}@exempel.invalid`);
+    if (!r.error) kontrolleraStadning(await klient(process.env.JWT_ADMIN).from("allowed_users").delete().eq("email", `${ID}@exempel.invalid`).select("email"));
     return utfall(r);
   }],
   ["Lista protokoll", [false, false, true, true], (db) => db.from("protokoll").select("id").limit(1).then(raderFinns)],
   ["Ladda ner en ritning (Storage)", [false, false, true, true], async (db) => {
     const lista = await klient(process.env.JWT_ADMIN).storage.from("ritningar").list("", { limit: 1 });
     const mapp = lista.data?.[0]?.name;
-    if (!mapp) return { ok: false, text: "inga ritningar att prova mot" };
+    if (!mapp) return { ok: null, text: "inga ritningar att prova mot" };
     const filer = await klient(process.env.JWT_ADMIN).storage.from("ritningar").list(mapp, { limit: 1 });
     const fil = filer.data?.[0]?.name;
-    if (!fil) return { ok: false, text: "inga ritningar att prova mot" };
+    if (!fil) return { ok: null, text: "inga ritningar att prova mot" };
     const r = await db.storage.from("ritningar").download(`${mapp}/${fil}`);
-    return { ok: !r.error && !!r.data, text: r.error?.message || "nedladdad" };
+    return r.error ? bedomProvsvar(r) : { ok: !!r.data || null, text: "nedladdad" };
   }],
   ["Ladda upp en fil till ritningar", [false, false, true, true], async (db) => {
+    if (!process.env.JWT_ADMIN) return { ok: null, text: "Admininloggning krävs för säker städning" };
     const sokvag = `${ID}/prov.txt`;
     const r = await db.storage.from("ritningar").upload(sokvag, new Blob(["prov"]), { upsert: false });
-    if (!r.error) await klient(process.env.JWT_ADMIN).storage.from("ritningar").remove([sokvag]);
-    return { ok: !r.error, text: r.error?.message || "uppladdad" };
+    if (!r.error) kontrolleraStadning(await klient(process.env.JWT_ADMIN).storage.from("ritningar").remove([sokvag]));
+    return r.error ? bedomProvsvar(r) : { ok: true, text: "uppladdad" };
   }],
   ["Läsa godkannanden (F05)", [false, false, true, true], (db) => db.from("godkannanden").select("id").limit(1).then(raderFinns)],
   ["Skriva godkannanden direkt (ska alltid nekas)", [false, false, false, false], async (db) => {
-    const r = await db.from("godkannanden").insert({ projekt_id: "36037", typ: "grind", objekt_id: ID, varde: {}, kvitterad_av: "00000000-0000-0000-0000-000000000000", kvitterad_epost: "x" }).select("id");
+    const r = await db.from("godkannanden").insert({ projekt_id: "__behorighetsprov_finns_inte__", typ: "grind", objekt_id: ID, varde: {}, kvitterad_av: "00000000-0000-0000-0000-000000000000", kvitterad_epost: "x" }).select("id");
     return utfall(r);
   }],
   ["RPC reservera_paminnelser (ska alltid nekas för klienter)", [false, false, false, false], async (db) => {
     const r = await db.rpc("reservera_paminnelser", { p_rader: [], p_las_sekunder: 1 });
-    return { ok: !r.error, text: r.error?.message || "kördes" };
+    return bedomProvsvar(r, { tomtArTillatet: true });
   }],
 ];
 
-function utfall(r) {
-  return { ok: !r.error && (r.data ?? true) !== null, text: r.error ? `${r.error.code || ""} ${r.error.message}`.trim() : "lyckades" };
-}
-function raderFinns(r) {
-  /* RLS ger tomt svar i stället för fel vid läsning: 0 rader räknas som nekad. */
-  return { ok: !r.error && (r.data || []).length > 0, text: r.error ? `${r.error.code || ""} ${r.error.message}`.trim() : `${(r.data || []).length} rader` };
-}
+function utfall(r) { return bedomProvsvar(r); }
+function raderFinns(r) { return bedomProvsvar(r); }
+function kandRad(r) { return bedomProvsvar(r, { tomtArNekat: true }); }
 
 const datum = new Date().toISOString().slice(0, 16).replace("T", " ");
 const ut = [`# Behörighetsprov ${datum}`, "", `Mål: ${URL}`, "", "| Prov | Roll | Förväntat | Utfall | Svar |", "| --- | --- | --- | --- | --- |"];
 let avvikelser = 0;
+let ejProvade = 0;
 for (const [namn, forvantat, kor] of PROV) {
   for (let i = 0; i < ROLLER.length; i++) {
     const [roll, jwt] = ROLLER[i];
     if (i > 0 && !jwt) {
+      ejProvade++;
       ut.push(`| ${namn} | ${roll} | ${forvantat[i] ? "tillåtet" : "nekat"} | ej provad | token saknas |`);
       continue;
     }
@@ -108,13 +110,19 @@ for (const [namn, forvantat, kor] of PROV) {
     try {
       r = await kor(klient(jwt));
     } catch (e) {
-      r = { ok: false, text: String(e?.message || e) };
+      r = { ok: null, text: `Provet kunde inte köras: ${String(e?.message || e)}` };
+    }
+    if (r.ok === null) {
+      ejProvade++;
+      ut.push(`| ${namn} | ${roll} | ${forvantat[i] ? "tillåtet" : "nekat"} | ej verifierat | ${String(r.text).replace(/\|/g, "/")} |`);
+      continue;
     }
     const stammer = r.ok === forvantat[i];
     if (!stammer) avvikelser++;
     ut.push(`| ${namn} | ${roll} | ${forvantat[i] ? "tillåtet" : "nekat"} | ${stammer ? "som väntat" : "**AVVIKER**"} (${r.ok ? "lyckades" : "nekades"}) | ${String(r.text).replace(/\|/g, "/")} |`);
   }
 }
-ut.push("", avvikelser ? `**${avvikelser} avvikelser.** Åtgärda innan issue #75 stängs.` : "Inga avvikelser.", "", "Del 1 (grants, policyer, backup): klistra in utdata från supabase/prov/behorighetsprov.sql nedan.", "");
+const slut = slutresultat(avvikelser, ejProvade);
+ut.push("", slut.text, "", "Del 1 (grants, policyer, backup): lägg till utdata från supabase/prov/behorighetsprov.sql.", "");
 console.log(ut.join("\n"));
-process.exit(avvikelser ? 1 : 0);
+process.exit(slut.kod);
