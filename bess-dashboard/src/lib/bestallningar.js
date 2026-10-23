@@ -49,9 +49,12 @@ export const BESTALLNING_STATUS = {
 const ORDNING = { sen: 0, forsenar: 1, snart: 2, underlag: 3, "i-tid": 4, bestalld: 5, levererad: 6 };
 
 const giltigt = (iso) => typeof iso === "string" && /^\d{4}-\d{2}-\d{2}$/.test(iso);
+/** Ledtid i veckor. 0 är en giltig ledtid (lager), tomt är okänt. */
 const veckor = (v) => {
-  const n = Number(String(v ?? "").replace(",", "."));
-  return Number.isFinite(n) && n > 0 ? n : null;
+  const t = String(v ?? "").trim().replace(",", ".");
+  if (!t) return null;
+  const n = Number(t);
+  return Number.isFinite(n) && n >= 0 ? n : null;
 };
 
 /** Varje leverans för projektet med behovsdatum, beställ-senast och läge,
@@ -64,7 +67,7 @@ export function bestallningslage(state, pid, nu = idag()) {
       const m = behovsmoment(l);
       const behov = m ? faser[m.nr]?.start || null : null;
       const v = veckor(l.ledtidVeckor);
-      const senast = behov && v ? plusDagar(behov, -Math.round(v * 7)) : null;
+      const senast = behov && v !== null ? plusDagar(behov, -Math.round(v * 7)) : null;
       const dagarKvar = senast ? dagarMellan(nu, senast) : null;
       const bestalld = giltigt(l.bestalld) ? l.bestalld : null;
       const levSen = behov && giltigt(l.datum) ? dagarMellan(behov, l.datum) : null;
