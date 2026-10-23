@@ -30,14 +30,14 @@ test("guiden har 16 moment, de löpande punkterna och alla 288 kontrollpunkter a
 });
 
 test("summeringen visar exakt status per fas och följer avbockningen", async ({ page }) => {
-  // Moment 0–9 är passerade i Växjö: 166 punkter klara via grindarna.
-  await expect(status(page)).toContainText("166/288");
+  // Moment 0–9 är passerade i Växjö, men en grind bockar inte av punkter: inget är registrerat.
+  await expect(status(page)).toContainText("0/288");
   await expect(status(page).getByRole("row", { name: /^10 · Stationshus/ })).toContainText("0/15");
 
   await oppnaFas(page, 10);
   await rad(page, "10.7").getByRole("checkbox").check();
   await expect(status(page).getByRole("row", { name: /^10 · Stationshus/ })).toContainText("1/15");
-  await expect(status(page)).toContainText("167/288");
+  await expect(status(page)).toContainText("1/288");
   await expect(rad(page, "10.7")).toContainText(/Klar \d{4}-\d{2}-\d{2}/);
 
   // Ej aktuell räknas bort ur det som återstår.
@@ -49,11 +49,27 @@ test("summeringen visar exakt status per fas och följer avbockningen", async ({
   await expect(page.getByRole("region", { name: "Aktivitet" })).toContainText("EPC 10.7 hållpunkt godkänd");
 });
 
-test("punkter i en passerad fas är klara via grinden", async ({ page }) => {
+test("en passerad grind bockar inte av punkter — de registreras en och en eller i ett svep", async ({ page }) => {
   await oppnaFas(page, 7);
+  await expect(rad(page, "7.3").getByRole("checkbox")).not.toBeChecked();
+  await expect(rad(page, "7.3").getByRole("checkbox")).toBeEnabled();
+  await expect(rad(page, "7.3")).toContainText("Ej registrerad · G7 passerad");
+
+  const fas = page.locator("#fas-7");
+  const registrera = fas.getByRole("button", { name: /^Registrera \d+ som klara$/ });
+  await registrera.click();
   await expect(rad(page, "7.3").getByRole("checkbox")).toBeChecked();
-  await expect(rad(page, "7.3").getByRole("checkbox")).toBeDisabled();
-  await expect(rad(page, "7.3")).toContainText("Klar via G7");
+  await expect(rad(page, "7.3")).toContainText(/Klar \d{4}-\d{2}-\d{2}/);
+  await expect(registrera).toHaveCount(0);
+});
+
+test("grindrutan listar exakt vad som saknas, och en bockad punkt försvinner ur listan", async ({ page }) => {
+  await oppnaFas(page, 10);
+  const saknas = page.locator("#fas-10").getByRole("group", { name: "Det här saknas för G10" });
+  await expect(saknas).toContainText("Klartecken: datum då G10 passerades");
+  await expect(saknas.getByRole("button", { name: "10.7" })).toBeVisible();
+  await rad(page, "10.7").getByRole("checkbox").check();
+  await expect(saknas.getByRole("button", { name: "10.7" })).toHaveCount(0);
 });
 
 test("en avvikelse på en punkt hamnar i erfarenhetslistan och visas på punkten i nästa projekt", async ({ page }) => {
