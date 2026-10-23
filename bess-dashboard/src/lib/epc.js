@@ -101,9 +101,12 @@ export function fasRad(state, pid, nr) {
 
 /* ---------- Fasplan ---------- */
 
+/* En BESS-leverans som uttryckligen kopplats till ett annat moment än 11
+   (lib/bestallningar.js) styr det momentet, inte moment 11 — annars skulle samma
+   leverans binda två moment i kritisk linje. */
 const BESS_LEVERANS = (state, pid) =>
   state.leveranser
-    .filter((l) => l.projektId === pid && giltigt(l.datum) && BESS_MATCH.test(l.benamning))
+    .filter((l) => l.projektId === pid && giltigt(l.datum) && BESS_MATCH.test(l.benamning) && !(Number.isInteger(l.moment) && l.moment !== 11))
     .sort((a, b) => a.datum.localeCompare(b.datum))[0] || null;
 
 /** Projektets tre ankare för standardplanen. null om start eller slut saknas. */

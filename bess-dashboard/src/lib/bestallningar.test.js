@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SEED } from "../data/seed.js";
 import { efterInlasning, normalisera, reducer } from "../state/portfolj-reducer.js";
 import { behovsmoment, bestallningslage, leveransbindningar } from "./bestallningar.js";
-import { faslage, plusDagar } from "./epc.js";
+import { ankardatum, faslage, plusDagar } from "./epc.js";
 import { kritiskLinje } from "./kritiskLinje.js";
 import { agendarader } from "./agenda.js";
 
@@ -80,5 +80,27 @@ describe("kritisk linje och Idag", () => {
     expect(r).toBeTruthy();
     expect(r.titel).toBe("Beställ senast: Huvudtransformator");
     expect(r.d).toBeLessThan(0);
+  });
+});
+
+describe("granskningsfynd #102", () => {
+  it("ledtid 0 veckor ger beställ senast = momentets start", () => {
+    const s = ny(seed(), { benamning: "Lagerartikel", moment: 13, ledtidVeckor: 0 });
+    const b = rad(s, "lx");
+    expect(b.ledtidVeckor).toBe(0);
+    expect(b.senast).toBe(b.behov);
+    expect(b.status).not.toBe("underlag");
+  });
+
+  it("en BESS-leverans kopplad till ett annat moment styr inte också moment 11", () => {
+    let s = seed();
+    const bess = s.leveranser.find((l) => l.projektId === "36037" && /BESS/i.test(l.benamning));
+    expect(ankardatum(s, "36037").bessLeverans).toMatchObject({ kalla: "leveranslistan", datum: bess.datum });
+    s = satt(s, bess.id, "moment", 12);
+    expect(ankardatum(s, "36037").bessLeverans.kalla).toBe("fasplan");
+    expect(leveransbindningar(s, "36037").get(12).datum).toBe(bess.datum);
+    // Kopplad till moment 11 uttryckligen gäller den fortfarande där.
+    s = satt(s, bess.id, "moment", 11);
+    expect(ankardatum(s, "36037").bessLeverans.kalla).toBe("leveranslistan");
   });
 });
