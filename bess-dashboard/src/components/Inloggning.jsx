@@ -31,7 +31,11 @@ export function Inloggning() {
   return (
     <div className="inlogg">
       <div className="card inlogg-kort">
-        <img src={logotyp} alt="ONE Nordic" className="inlogg-logo" />
+        {/* Logotypen med one-nordic.se under, i samma blå (grafiska manualen 2025). */}
+        <div className="inlogg-marke">
+          <img src={logotyp} alt="ONE Nordic" className="inlogg-logo" />
+          <span className="inlogg-dom">one-nordic.se</span>
+        </div>
         <h1>Projektportfölj</h1>
         <div className="lead">BESS — batteriparker i drift och under uppförande</div>
 
