@@ -213,7 +213,13 @@ export function Idag() {
           {r.extra === "avvikelse" ? <StatusBadge status="forsenad" label="Avvikelse" className="ml-2" /> : null}
         </>
       }
-      undertext={r.typ === "Punkt" ? punktText(r) : `${r.typ} · ${r.datum}`}
+      undertext={
+        r.typ === "Punkt"
+          ? punktText(r)
+          : r.typ === "Beställning"
+            ? `Beställ senast ${r.datum} · ledtid ${r.ledtidVeckor} v till moment ${r.moment}`
+            : `${r.typ} · ${r.datum}`
+      }
       pid={r.pid}
       onOppna={() => oppnaAgenda(r)}
     />
