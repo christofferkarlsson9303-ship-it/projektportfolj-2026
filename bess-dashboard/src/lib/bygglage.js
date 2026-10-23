@@ -13,10 +13,21 @@ import { arVolym, nyttObjekt, provaPlacering } from "./site.js";
 export const MAX_RAD = 40;
 export const MAX_ANGRA = 50;
 
-/** Objektets utsträckning längs x och z, efter rotationen (90°-steg). */
+const avr = (v) => Math.round(v * 1000) / 1000;
+
+/** Objektets utsträckning längs x och z (omslutande rektangel) vid valfri rotation. */
 export function utstrackning(o) {
-  const vrid = Math.round(((((o.rotation || 0) % 180) + 180) % 180)) === 90;
-  return { x: vrid ? o.djup : o.bredd, z: vrid ? o.bredd : o.djup };
+  const t = ((o.rotation || 0) * Math.PI) / 180;
+  const c = Math.abs(Math.cos(t));
+  const s = Math.abs(Math.sin(t));
+  return { x: avr(o.bredd * c + o.djup * s), z: avr(o.bredd * s + o.djup * c) };
+}
+
+/** Riktningen längs objektets kortsida i världen, efter rotationen — samma axlar
+ *  som siteSakerhet (bredd längs (cos, −sin), djup längs (sin, cos)). */
+function kortsidaRiktning(o) {
+  const t = ((o.rotation || 0) * Math.PI) / 180;
+  return (o.djup || 0) <= (o.bredd || 0) ? { x: Math.sin(t), z: Math.cos(t) } : { x: Math.cos(t), z: -Math.sin(t) };
 }
 
 /** Lägena för en rad, från `start`. Antingen `slut` (dragning) eller `antal`. */
@@ -74,9 +85,11 @@ export const radLuft = (regler, typ) => kravMellan(regler, typ, typ) || 0;
 export function kopia(o, objekt, { regler = [], rutnat = 0, luftFor = undefined } = {}) {
   if (!arVolym(o)) return null;
   const luft = radLuft(regler, o.typ);
+  /* Bredvid längs objektets egen kortsida, oavsett rotation: kortsidans mått plus skyddsavstånd. */
+  const r = kortsidaRiktning(o);
+  const steg = Math.min(o.bredd || 0, o.djup || 0) + luft;
   for (const sida of [1, -1]) {
-    const [, q] = radPositioner(o, { x: o.x, z: o.z }, { antal: 2, luft });
-    const mal = { x: o.x + (q.x - o.x) * sida, z: o.z + (q.z - o.z) * sida };
+    const mal = { x: avr(o.x + r.x * steg * sida), z: avr(o.z + r.z * steg * sida) };
     const res = provaPlacering(o, mal, objekt, { rutnat, snappLuft: luftFor });
     if (!res.ok) continue;
     const ny = nyttObjekt(o.typ, o.projektId, { x: res.x, z: res.z }, objekt, { exakt: true, rotation: o.rotation || 0 });

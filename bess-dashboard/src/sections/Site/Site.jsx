@@ -158,7 +158,10 @@ export function Site() {
 
   const p = state.projekt.find((x) => x.id === valtProjekt) || state.projekt[0];
   const pid = p?.id;
-  const objekt = useMemo(() => (pid ? siteObjekt(state, pid) : []), [state, pid]);
+  /* Bara siteObjekt som beroende: ett nytt state (t.ex. en loggrad) ger då inte en ny lista,
+     så att ångra-historiken bara får riktiga ändringar. */
+  const siteRader = state.siteObjekt;
+  const objekt = useMemo(() => (pid ? siteObjekt({ siteObjekt: siteRader }, pid) : []), [siteRader, pid]);
   /* Hårdvaruprofilen styr mått, etiketter, komponentdata och standardlayout (data/hardvaruprofiler.js). */
   const profilId = profilIdFor(p);
   const profil = HARDVARUPROFILER[profilId];
@@ -261,7 +264,7 @@ export function Site() {
     setJamforId(null);
     setMatning(false);
     setMatt(null);
-    setFlyttaObjekt(false);
+    setFlyttaObjekt(true);
     setPanel("bygg");
   }, [pid, setValtId]);
 

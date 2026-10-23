@@ -70,3 +70,17 @@ describe("radObjekt, kopia och ångra", () => {
     expect(radLuft([], "container")).toBe(0);
   });
 });
+
+describe("granskningsfynd #107", () => {
+  it("utsträckningen och kopian följer en fri rotation", () => {
+    const o = { ...nyttObjekt("container", "36037", { x: 0, z: 0 }, [], { exakt: true }), bredd: 6.1, djup: 2.5, hojd: 2.9, rotation: 45 };
+    const u = utstrackning(o);
+    expect(u.x).toBeCloseTo((6.1 + 2.5) * Math.SQRT1_2, 2);
+    expect(u.z).toBeCloseTo((6.1 + 2.5) * Math.SQRT1_2, 2);
+    const k = kopia(o, [o], { rutnat: 0 });
+    expect(k).not.toBe(null);
+    // 2,5 m längs kortsidan, som vid 45° ligger diagonalt.
+    expect(Math.hypot(k.x - o.x, k.z - o.z)).toBeCloseTo(2.5, 2);
+    expect(k.rotation).toBe(45);
+  });
+});
