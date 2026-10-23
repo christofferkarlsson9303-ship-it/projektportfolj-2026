@@ -54,6 +54,7 @@ Fyll i datum och beslut i tabellen när det är fattat. Migrationer i `supabase/
 - **Metodkontroller** (`lib/metodkoll.js`, 2026-10-23): interface-listan bor i Projektstart (`rader.interface`) och ändras utanför guiden med `PROJEKTSTART_RAD`; `PROJEKTSTART_SKAPA` skapar en saknad projektstart med projektets fas som golv. Trafikljusen räknas, de sätts inte för hand — beställarrapporten visar inte budgeten. Veckorutinen är data i `data/veckorutin.js`.
 - **Frist och uppföljning är två fält på punkter** (`forfaller`, `uppfoljning`). `punktDatum()` avgör var punkten hamnar: en passerad frist vinner alltid. Uppföljning skriver aldrig om fristen.
 - **Kommentarer på punkter** är en lista med id (`kommentarer`) via `PUNKT_KOMMENTAR`, så att `sammanfoga.js` slår ihop två personers kommentarer. `av` är det inskrivna namnet i sidomenyn, inte en verifierad identitet.
+- **Projektmall** (`lib/projektmall.js`, 2026-10-23): `SKAPA_PROJEKT` startar fortfarande tomt. Arv från ett tidigare projekt är ett eget steg, `PROJEKT_ARV` (risker, long lead, ej aktuella punkter, momentplan, lärdomar som uppgifter), i Bygga batteripark. Ärvda rader får id ur källradens id, så att samma arv inte ger dubbletter. Inga resultat, ekonomivärden eller signaturer ärvs.
 - **"Mina uppgifter" finns inte än.** `agare` är fritext; bygg det först när ansvar tilldelas uttryckligen.
 
 ## Menyn följer rytmen (2026-10-22)
