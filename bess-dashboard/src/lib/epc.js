@@ -181,14 +181,33 @@ export function punktlage(state, pid, g = grindar(state, pid)) {
   const rader = new Map(
     (state.epcPunkter || []).filter((r) => r.projektId === pid && r.status).map((r) => [r.punkt, r])
   );
+  const styrkta = styrktaPunkter(state, pid);
   const ut = new Map();
   for (const kp of ALLA_PUNKTER) {
     const r = rader.get(kp.id);
+    const styrkt = styrkta.get(kp.id);
     if (r) ut.set(kp.id, { status: r.status, kalla: "markerad", datum: r.datum || null, av: r.av || "" });
+    else if (styrkt) ut.set(kp.id, { status: "klar", kalla: "egenkontroll", datum: null, av: "", kontroll: styrkt });
     else if (kp.fas !== null && g[kp.fas].passerad)
       ut.set(kp.id, { status: "oppen", kalla: "ejregistrerad", datum: g[kp.fas].datum, av: "" });
     else ut.set(kp.id, { status: "oppen", kalla: null, datum: null, av: "" });
   }
+  return ut;
+}
+
+/** EPC-punkter som styrks av en verifierad egenkontroll (fältet `epc` i
+ *  momentmallen): punkt-id → egenkontrollens id. En egenkontroll är
+ *  verifierad när varje omfattning har ett komplett resultat och ingen
+ *  avvikelse är öppen — samma krav som kontrollage(). Kontroll kräver alltid
+ *  bevis (beslut 2026-10-17, punkt 1), så det går bara åt det hållet: en bock
+ *  i checklistan verifierar ingen egenkontroll. */
+export function styrktaPunkter(state, pid) {
+  const ut = new Map();
+  const kl = kontrollage(state, pid);
+  kl.forEach((k, i) => {
+    const mall = new Map((PROJEKTMALLAR[i]?.punkter || []).map((p) => [p.id, p]));
+    for (const id of k.verifieradeId) for (const epcId of mall.get(id)?.epc || []) if (!ut.has(epcId)) ut.set(epcId, id);
+  });
   return ut;
 }
 
@@ -250,6 +269,7 @@ export function kontrollage(state, pid) {
     let verifierade = 0;
     let avvikelser = 0;
     const tackning = {};
+    const verifieradeId = [];
     for (const p of punkter) {
       const rader = perPunkt.get(p.id) || [];
       const komplett = new Set(rader.filter((r) => !kontrollBrister(r, PROJEKTKONTROLL_REVISION).length).map((r) => nyckel(omfattningAv(r))));
@@ -259,9 +279,12 @@ export function kontrollage(state, pid) {
         avvikelser++;
         continue;
       }
-      if (omfattningar.length && klara === omfattningar.length) verifierade++;
+      if (omfattningar.length && klara === omfattningar.length) {
+        verifierade++;
+        verifieradeId.push(p.id);
+      }
     }
-    return { totalt: punkter.length, verifierade, avvikelser, kvar: punkter.length - verifierade, omfattningar, planerade: plan, tackning };
+    return { totalt: punkter.length, verifierade, avvikelser, kvar: punkter.length - verifierade, omfattningar, planerade: plan, tackning, verifieradeId };
   });
 }
 

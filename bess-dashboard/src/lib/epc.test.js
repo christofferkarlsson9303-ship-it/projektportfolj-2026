@@ -502,3 +502,17 @@ describe("grindSaknas", () => {
     expect(u.filter((x) => x.typ === "punkt").every((x) => moment(x.punkt.id) >= 10)).toBe(true);
   });
 });
+
+describe("styrktaPunkter", () => {
+  it("en verifierad egenkontroll bockar sin kopplade EPC-punkt, men inte tvärtom", async () => {
+    const { kontrollId } = await import("./projektkontroll.js");
+    const i = PROJEKTMALLAR.findIndex((m) => m.punkter.some((p) => p.epc.length));
+    const mp = PROJEKTMALLAR[i].punkter.find((p) => p.epc.length);
+    const epcId = mp.epc[0];
+    let s = seed();
+    expect(punktlage(s, "goteborg").get(epcId).status).toBe("oppen");
+    s = { ...s, faltkontroller: [...(s.faltkontroller || []), { id: kontrollId("goteborg", "Hela anläggningen", mp.id), projektId: "goteborg", punktId: mp.id, omfattning: "Hela anläggningen", resultat: "ok", datum: "2026-09-20", kontrollant: "C. Karlsson", referens: "Protokoll 1", mallrevision: PROJEKTKONTROLL_REVISION }] };
+    const l = punktlage(s, "goteborg").get(epcId);
+    expect(l).toMatchObject({ status: "klar", kalla: "egenkontroll", kontroll: mp.id });
+  });
+});

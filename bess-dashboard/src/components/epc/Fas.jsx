@@ -36,6 +36,7 @@ function Punktrad({ punkt, ctx }) {
   const lage = pl.get(punkt.id);
   const hp = punkt.badges.includes("HP");
   const ejReg = lage.kalla === "ejregistrerad";
+  const styrkt = lage.kalla === "egenkontroll";
   const nKomm = antal.get(punkt.id) || 0;
   const nTidigare = tidigare.get(punkt.id) || 0;
   const satt = (status) => dispatch({ type: "EPC_PUNKT", pid, punkt: punkt.id, status });
@@ -48,9 +49,15 @@ function Punktrad({ punkt, ctx }) {
         id={idCb}
         type="checkbox"
         checked={lage.status === "klar"}
-        disabled={lage.status === "ejaktuell"}
+        disabled={styrkt || lage.status === "ejaktuell"}
         onChange={(e) => satt(e.target.checked ? "klar" : "")}
-        title={ejReg ? `${grindkod(punkt.id)} är passerad men punkten är inte registrerad` : undefined}
+        title={
+          styrkt
+            ? `Styrkt av egenkontroll ${lage.kontroll}`
+            : ejReg
+              ? `${grindkod(punkt.id)} är passerad men punkten är inte registrerad`
+              : undefined
+        }
       />
       <div className="epc-radkropp">
         <label htmlFor={idCb} className="epc-radtext">
@@ -62,7 +69,9 @@ function Punktrad({ punkt, ctx }) {
           <span className="epc-ansvar">{punkt.ansvar}</span>
           {punkt.nar && punkt.nar !== "—" ? <span className="epc-nar">{punkt.nar}</span> : null}
           {lage.status === "klar" ? (
-            <span className="epc-klarinfo">{`Klar ${lage.datum || ""}${lage.av ? " · " + lage.av : ""}`}</span>
+            <span className="epc-klarinfo">
+              {styrkt ? `Klar · styrkt av egenkontroll ${lage.kontroll}` : `Klar ${lage.datum || ""}${lage.av ? " · " + lage.av : ""}`}
+            </span>
           ) : ejReg ? (
             <span className="epc-ejinfo">Ej registrerad · {grindkod(punkt.id)} passerad</span>
           ) : lage.status === "ejaktuell" ? (
