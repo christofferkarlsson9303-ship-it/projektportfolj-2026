@@ -24,6 +24,7 @@ import { FASBEROENDEN, SLUTFAS } from "../data/fasberoenden.js";
 import { projekt } from "./berakningar.js";
 import { idag } from "./datum.js";
 import { ankardatum, dagarMellan, faslage, mallDatum, planAnkare, plusDagar } from "./epc.js";
+import { leveransbindningar } from "./bestallningar.js";
 
 const giltigt = (iso) => typeof iso === "string" && /^\d{4}-\d{2}-\d{2}$/.test(iso);
 
@@ -100,6 +101,14 @@ export function kritiskLinje(state, pid, nu = idag()) {
   const yttre = new Map();
   if (ank.bessLeverans?.kalla === "leveranslistan" && giltigt(ank.bessLeverans.datum))
     yttre.set(11, { dag: dag(ank.bessLeverans.datum), text: `BESS-leverans ${ank.bessLeverans.datum}` });
+  /* En leverans som uttryckligen kopplats till ett moment i leveranslistan
+     (fältet `moment`) binder också momentets start — senaste leveransen vinner. */
+  for (const [nr, b] of leveransbindningar(state, pid)) {
+    const i = FASER.findIndex((f) => f.nr === nr);
+    if (i < 0) continue;
+    const d = dag(b.datum);
+    if (!yttre.has(i) || d > yttre.get(i).dag) yttre.set(i, { dag: d, text: b.text });
+  }
 
   /* ---------- Framåt ---------- */
   const ES = [];
