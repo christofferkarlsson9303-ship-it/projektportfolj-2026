@@ -134,18 +134,17 @@ test("APD-planen bockas i panelen och räknas i kortet", async ({ page }) => {
   await expect(apd(page)).toContainText("1/27");
 });
 
-test("tavlan bockas, och punkterna i Växjö är klara via den passerade grinden G5", async ({ page }) => {
+test("tavlan bockas, och punkterna i Växjö visas som ej registrerade trots passerad G5", async ({ page }) => {
   const tavla = apd(page).getByRole("list", { name: "Arbetsplatstavlan" });
   await expect(tavla.getByRole("checkbox")).toHaveCount(8);
   for (const box of await tavla.getByRole("checkbox").all()) await box.check();
   await expect(tavla).not.toContainText("Saknas");
   await expect(tavla).toContainText("Uppsatt");
 
-  // Växjö har passerat G5, så 5.19 och 5.20 är klara utan egen bock — ingen knapp att trycka på.
+  // Växjö har passerat G5, men grinden bockar inte av 5.19 och 5.20 — de ska registreras.
   const koppling = apd(page).getByRole("list", { name: "Kopplade punkter i EPC-checklistan" });
   await expect(koppling.getByRole("listitem")).toHaveCount(2);
-  await expect(koppling.getByRole("listitem").first()).toContainText("Klar via G5");
-  await expect(koppling.getByRole("button", { name: "Markera klar" })).toHaveCount(0);
+  await expect(koppling.getByRole("listitem").first()).toContainText("Ej registrerad (G5 passerad)");
   // Att ett anslag blir inaktuellt av en nyare rond, AMP eller APD-revision testas i lib/apd.test.js.
 });
 

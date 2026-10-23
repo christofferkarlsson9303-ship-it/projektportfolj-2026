@@ -59,8 +59,8 @@ function ApdPanel({ lage, onStang, onPunkt }) {
 function EpcKoppling({ punktId, text, redo, pl, onKlar, onVisa }) {
   const lage = pl.get(punktId);
   const st = lage?.status || "oppen";
-  // En passerad grind gör fasens punkter klara — säg det, så att ingen letar efter en bock.
-  const text2 = st === "klar" && lage.kalla === "grind" ? `Klar via G${PUNKT_FOR_ID.get(punktId).fas}` : EPC_TEXT[st];
+  // En passerad grind bockar inte av punkter — säg att den inte är registrerad, så att någon gör det.
+  const text2 = lage?.kalla === "ejregistrerad" ? `Ej registrerad (G${PUNKT_FOR_ID.get(punktId).fas} passerad)` : EPC_TEXT[st];
   return (
     <li className="flex flex-wrap items-center justify-between gap-2 border-0 border-t border-solid border-hairline py-2 first:border-t-0">
       <span className="text-[13px] text-ink">

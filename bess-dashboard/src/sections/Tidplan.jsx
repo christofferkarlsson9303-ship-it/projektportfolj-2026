@@ -11,6 +11,8 @@ import { DatumFalt, Falt, SelStatus } from "../components/ui/Falt.jsx";
 import { BATTERIPARK_MILSTOLPAR } from "../data/batteripark-milstolpar.js";
 import { dagarTill } from "../lib/datum.js";
 import { faslage } from "../lib/epc.js";
+import { BESTALLNING_STATUS, bestallningslage } from "../lib/bestallningar.js";
+import { FASER as MOMENT } from "../data/bessChecklistData.ts";
 import {
   gallerFor,
   projekt,
@@ -287,6 +289,7 @@ export function Tidplan() {
     () => state.leveranser.filter((l) => gallerFor(l, pid)),
     [state.leveranser, pid]
   );
+  const bestallning = useMemo(() => new Map(bestallningslage(state, pid).map((b) => [b.id, b])), [state, pid]);
 
   if (!p) return null;
 
@@ -442,7 +445,11 @@ export function Tidplan() {
           />
         </Card>
 
-        <Card id="tp-leveranser" title={`Leveransspårning — ${projektNamn}`} subtitle="Long lead och kritisk materiel.">
+        <Card
+          id="tp-leveranser"
+          title={`Leveransspårning — ${projektNamn}`}
+          subtitle="Long lead och kritisk materiel. Ange moment och leverantörens ledtid så räknas beställ senast baklänges från momentets start och syns i Idag. Ett uttryckligt moment gör att leveransdatumet styr momentets start i kritisk linje."
+        >
           <DataTable
             etikett="Leveranser"
             exportNamn="Leveranser"
@@ -482,6 +489,85 @@ export function Tidplan() {
                 ),
               },
               kvarKolumn,
+              {
+                nyckel: "moment",
+                rubrik: "Behövs till",
+                bredd: 170,
+                sortVarde: (l) => bestallning.get(l.id)?.moment ?? 99,
+                textVarde: (l) => {
+                  const b = bestallning.get(l.id);
+                  return b?.moment === null || b?.moment === undefined ? "" : `Moment ${b.moment}${b.momentGissat ? " (gissat)" : ""}`;
+                },
+                render: (l) => {
+                  const b = bestallning.get(l.id);
+                  return (
+                    <select
+                      value={Number.isInteger(l.moment) ? String(l.moment) : ""}
+                      aria-label={`Moment som behöver ${l.benamning}`}
+                      onChange={(e) => uppd("leveranser", l.id, "moment", e.target.value === "" ? null : Number(e.target.value))}
+                    >
+                      <option value="">
+                        {b?.momentGissat ? `Gissat: ${b.moment} ${MOMENT[b.moment].kort}` : "Välj moment"}
+                      </option>
+                      {MOMENT.map((m) => (
+                        <option key={m.nr} value={m.nr}>
+                          {m.nr} {m.kort}
+                        </option>
+                      ))}
+                    </select>
+                  );
+                },
+              },
+              {
+                nyckel: "ledtidVeckor",
+                rubrik: "Ledtid (v)",
+                bredd: 100,
+                typ: "num",
+                sortVarde: (l) => Number(l.ledtidVeckor) || 0,
+                render: (l) => (
+                  <Falt
+                    typ="number"
+                    min="0"
+                    varde={l.ledtidVeckor ?? ""}
+                    etikett={`Leverantörens ledtid i veckor för ${l.benamning}`}
+                    onCommit={(v) => uppd("leveranser", l.id, "ledtidVeckor", v === "" ? "" : Number(v))}
+                  />
+                ),
+              },
+              {
+                nyckel: "bestalld",
+                rubrik: "Beställd",
+                bredd: 150,
+                sortVarde: (l) => l.bestalld || "",
+                render: (l) => (
+                  <DatumFalt
+                    varde={l.bestalld || ""}
+                    etikett={`Datum då ${l.benamning} beställdes`}
+                    onCommit={(v) => uppd("leveranser", l.id, "bestalld", v)}
+                  />
+                ),
+              },
+              {
+                nyckel: "senast",
+                rubrik: "Beställ senast",
+                bredd: 190,
+                sortVarde: (l) => bestallning.get(l.id)?.senast || "9999",
+                textVarde: (l) => {
+                  const b = bestallning.get(l.id);
+                  return b ? `${b.senast || ""} ${BESTALLNING_STATUS[b.status][1]}`.trim() : "";
+                },
+                render: (l) => {
+                  const b = bestallning.get(l.id);
+                  if (!b) return null;
+                  const [ton, text] = BESTALLNING_STATUS[b.status];
+                  return (
+                    <span className="flex flex-col items-start gap-1">
+                      {b.senast ? <span className="tabular-nums">{b.senast}</span> : null}
+                      <StatusBadge ton={ton} label={b.status === "forsenar" ? `Försenar moment ${b.moment} ${b.forsenarDagar} d` : text} />
+                    </span>
+                  );
+                },
+              },
               {
                 nyckel: "status",
                 rubrik: "Status",

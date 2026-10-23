@@ -83,12 +83,16 @@ function medInskjutna(lista) {
 
 /** Hela vylistan, med de tillagda vyerna först och de inskjutna på sin plats. */
 const URSPRUNG = Object.fromEntries(medInskjutna([...TILLAGDA, ...VYER_ORIGINAL]).filter(([id]) => id !== "_sek").map((v) => [v[0], v]));
+/* Hela menyn följer projektmetodens rytm (docs/projektmetod.md § 3): det du gör
+   varje dag, varje vecka och månad, sedan projektets moment, pengarna, siten och
+   uppslagsdelen. Beslut 2026-10-22. */
 const GRUPPER = [
-  ["Börja här", ["metod", "start", "idag", "oversikt"]],
-  ["Planera jobbet", ["kontrakt", "epc", "bered", "site", "tidplan", "handlingsplan", "resurser", "kontakter"]],
-  ["Gör och följ upp", ["punkter", "tavla", "moten", "vecka", "dagbok", "hseq", "risker"]],
-  ["Följ pengarna", ["ata", "atakalkyl", "budget", "tid", "ekonomi", "milstolpar", "faktura"]],
-  ["Lämna över och spara", ["slutdok", "rapport", "rutiner", "data"]],
+  ["Dagligen", ["idag", "oversikt", "punkter", "dagbok"]],
+  ["Varje vecka och månad", ["vecka", "moten", "tavla", "risker", "hseq", "rapport"]],
+  ["Projektet", ["start", "epc", "tidplan", "handlingsplan", "resurser", "kontrakt", "slutdok"]],
+  ["Pengar", ["ata", "atakalkyl", "budget", "tid", "ekonomi", "milstolpar", "faktura"]],
+  ["Siten", ["site", "bered"]],
+  ["Bibliotek", ["metod", "rutiner", "kontakter", "data"]],
 ];
 const ENKLA_LEADS = {
   start: "Gå igenom startens steg. När du är klar skapas projektet.",
@@ -126,10 +130,13 @@ const ENKLA_LEADS = {
    Störning nås från ÄTA och Veckokoll och fungerar som förut. */
 const DOLDA_VYER = ["storning"];
 export const VYER = GRUPPER.flatMap(([namn, ids]) => [["_sek", namn], ...ids.map((id) => [id, URSPRUNG[id][1], ENKLA_LEADS[id] || URSPRUNG[id][2]])]);
-/* Den enkla menyn: det som används varje dag. Sju flikar, utan grupprubriker.
+/* Den enkla menyn: sju flikar som svarar på projektledarens fyra frågor —
+   vad gör jag idag och i veckan (Idag, Översikt, Veckokoll), vad blockerar
+   (Bygga batteripark), blir vi klara i tid (Tidplan) och vad kostar det (ÄTA,
+   Budget och utfall). Öppna punkter nås från Idag, HSEQ från Veckokoll.
    Allt annat finns under "Visa alla funktioner" och i Ctrl/Cmd+K. ÄTA-kalkylen
    nås från ÄTA-vyn ("Öppna i kalkyl"), projektmetoden från sidhjälpen. */
-export const ENKEL_MENY = new Set(["idag", "oversikt", "epc", "tidplan", "punkter", "ata", "hseq"]);
+export const ENKEL_MENY = new Set(["idag", "oversikt", "vecka", "epc", "tidplan", "ata", "budget"]);
 
 export const NAVIKONER = { ...NAVIKON, ...IKONER_TILLAGDA, metod: '<path d="M4 5h16v14H4zM8 9h8M8 13h8M8 17h4"/>' };
 

@@ -169,23 +169,51 @@ export function grindar(state, pid) {
 
 const PUNKTER_I_FAS = FASER.map((f) => f.sektioner.flatMap((s) => s.punkter));
 
-/** Status per punkt: "klar", "ejaktuell" eller "oppen", med källa. En
- *  passerad grind gör fasens öppna punkter klara (källa "grind"); det som
- *  satts som ej aktuellt förblir det. Löpande punkter har ingen grind. */
+/** Status per punkt: "klar", "ejaktuell" eller "oppen", med källa.
+ *
+ *  En passerad grind bockar inte av punkter (beslut 2026-10-17, gemensam
+ *  checklista punkt 2). Varje punkt bockas för hand eller verifieras via
+ *  kopplad egenkontroll. En öppen punkt i ett moment vars grind är passerad
+ *  får källan "ejregistrerad": arbetet är troligen gjort men ingen har
+ *  registrerat det. Den räknas som öppen men blir ingen ny uppgift.
+ *  Löpande punkter har ingen grind. */
 export function punktlage(state, pid, g = grindar(state, pid)) {
   const rader = new Map(
     (state.epcPunkter || []).filter((r) => r.projektId === pid && r.status).map((r) => [r.punkt, r])
   );
+  const styrkta = styrktaPunkter(state, pid);
   const ut = new Map();
   for (const kp of ALLA_PUNKTER) {
     const r = rader.get(kp.id);
+    const styrkt = styrkta.get(kp.id);
     if (r) ut.set(kp.id, { status: r.status, kalla: "markerad", datum: r.datum || null, av: r.av || "" });
+    else if (styrkt) ut.set(kp.id, { status: "klar", kalla: "egenkontroll", datum: null, av: "", kontroll: styrkt });
     else if (kp.fas !== null && g[kp.fas].passerad)
-      ut.set(kp.id, { status: "klar", kalla: "grind", datum: g[kp.fas].datum, av: "" });
+      ut.set(kp.id, { status: "oppen", kalla: "ejregistrerad", datum: g[kp.fas].datum, av: "" });
     else ut.set(kp.id, { status: "oppen", kalla: null, datum: null, av: "" });
   }
   return ut;
 }
+
+/** EPC-punkter som styrks av en verifierad egenkontroll (fältet `epc` i
+ *  momentmallen): punkt-id → egenkontrollens id. En egenkontroll är
+ *  verifierad när varje omfattning har ett komplett resultat och ingen
+ *  avvikelse är öppen — samma krav som kontrollage(). Kontroll kräver alltid
+ *  bevis (beslut 2026-10-17, punkt 1), så det går bara åt det hållet: en bock
+ *  i checklistan verifierar ingen egenkontroll. */
+export function styrktaPunkter(state, pid) {
+  const ut = new Map();
+  const kl = kontrollage(state, pid);
+  kl.forEach((k, i) => {
+    const mall = new Map((PROJEKTMALLAR[i]?.punkter || []).map((p) => [p.id, p]));
+    for (const id of k.verifieradeId) for (const epcId of mall.get(id)?.epc || []) if (!ut.has(epcId)) ut.set(epcId, id);
+  });
+  return ut;
+}
+
+/** Sant när punkten är ett arbete att göra — öppen och inte bara
+ *  oregistrerad i ett moment vars grind redan är passerad. */
+export const attGora = (lage) => lage?.status === "oppen" && lage.kalla !== "ejregistrerad";
 
 /** Räknar klara, ej aktuella och öppna punkter och hållpunkter i en lista. */
 function rakna(punkter, pl) {
@@ -241,6 +269,7 @@ export function kontrollage(state, pid) {
     let verifierade = 0;
     let avvikelser = 0;
     const tackning = {};
+    const verifieradeId = [];
     for (const p of punkter) {
       const rader = perPunkt.get(p.id) || [];
       const komplett = new Set(rader.filter((r) => !kontrollBrister(r, PROJEKTKONTROLL_REVISION).length).map((r) => nyckel(omfattningAv(r))));
@@ -250,14 +279,17 @@ export function kontrollage(state, pid) {
         avvikelser++;
         continue;
       }
-      if (omfattningar.length && klara === omfattningar.length) verifierade++;
+      if (omfattningar.length && klara === omfattningar.length) {
+        verifierade++;
+        verifieradeId.push(p.id);
+      }
     }
-    return { totalt: punkter.length, verifierade, avvikelser, kvar: punkter.length - verifierade, omfattningar, planerade: plan, tackning };
+    return { totalt: punkter.length, verifierade, avvikelser, kvar: punkter.length - verifierade, omfattningar, planerade: plan, tackning, verifieradeId };
   });
 }
 
-/** Fasens tre lägen och det som saknas för nästa. `harledda` är punkter som
- *  bara räknas som klara för att grinden passerats — inte avbockade av någon. */
+/** Fasens tre lägen och det som saknas för nästa. `harledda` är punkter i ett
+ *  moment med passerad grind som ingen har registrerat. */
 function verifiering(grind, kontroll, kvarPunkter, harledda) {
   const arbete = grind.passerad || kvarPunkter === 0;
   const verifierad = kontroll.totalt > 0 && kontroll.kvar === 0;
@@ -270,7 +302,7 @@ function verifiering(grind, kontroll, kvarPunkter, harledda) {
       if (kontroll.avvikelser) saknas.push(`${kontroll.avvikelser} avvikelse${kontroll.avvikelser > 1 ? "r" : ""} öppen`);
     }
     if (!godkand) saknas.push("klartecken (grinddatum) saknas");
-    if (harledda) saknas.push(`${harledda} punkter klara endast via grinden`);
+    if (harledda) saknas.push(`${harledda} punkter ej registrerade`);
   }
   return { arbete, verifierad, godkand, lage, saknas, harledda, kontroll };
 }
@@ -298,7 +330,7 @@ export function faslage(state, pid, nu = idag()) {
     else status = "kommande";
 
     const antal = rakna(punkter, pl);
-    const harledda = punkter.filter((p) => pl.get(p.id).kalla === "grind").length;
+    const harledda = punkter.filter((p) => pl.get(p.id).kalla === "ejregistrerad").length;
 
     return {
       fas: f,
@@ -308,9 +340,33 @@ export function faslage(state, pid, nu = idag()) {
       grind: g[i],
       status,
       ...antal,
+      ejRegistrerade: harledda,
       verifiering: verifiering(g[i], kl[i], antal.kvar, harledda),
     };
   });
+}
+
+/** Exakt vad som saknas innan momentets grind kan godkännas: öppna punkter
+ *  (hållpunkter först), egenkontroller som inte är verifierade för alla
+ *  omfattningar, öppna avvikelser och klartecknet (angivet grinddatum).
+ *  `klart` är sant när inget saknas. */
+export function grindSaknas(state, pid, nr, nu = idag()) {
+  const faser = faslage(state, pid, nu);
+  const f = faser[nr];
+  const pl = punktlage(state, pid, faser.map((x) => x.grind));
+  const kl = kontrollage(state, pid)[nr];
+  const punkter = PUNKTER_I_FAS[nr]
+    .map((p, ordning) => ({ p, ordning, l: pl.get(p.id) }))
+    .filter(({ l }) => l.status === "oppen")
+    .map(({ p, ordning, l }) => ({ id: p.id, text: p.text, hp: p.badges.includes("HP"), ejRegistrerad: l.kalla === "ejregistrerad", ordning }))
+    .sort((a, b) => Number(b.hp) - Number(a.hp) || a.ordning - b.ordning);
+  const mall = new Map((PROJEKTMALLAR[nr]?.punkter || []).map((p) => [p.id, p]));
+  const kontroller = Object.entries(kl?.tackning || {})
+    .filter(([, t]) => !t.totalt || t.klara < t.totalt)
+    .map(([id, t]) => ({ id, text: mall.get(id)?.titel || id, klara: t.klara, totalt: t.totalt }));
+  const grinddatum = !(f.grind.passerad && f.grind.kalla === "angiven");
+  const avvikelser = kl?.avvikelser || 0;
+  return { punkter, kontroller, avvikelser, grinddatum, klart: !punkter.length && !kontroller.length && !avvikelser && !grinddatum };
 }
 
 /* ---------- Milstolpar på tidslinjen ---------- */
@@ -377,13 +433,17 @@ export function ledtidslage(state, pid, nu = idag()) {
   );
 
   return LEDTIDER.map((l) => {
-    // Klar när den markerats i förväg, eller när dess punkt är klar (bockad
-    // eller via passerad grind). En punkt som inte är aktuell har ingen ledtid.
+    // Klar när den markerats i förväg eller när dess punkt är bockad. Är
+    // punktens grind passerad utan att punkten registrerats larmar ledtiden
+    // inte längre: den visas som "Momentet passerat". En punkt som inte är
+    // aktuell har ingen ledtid.
     const markerad = markerade.has(l.id);
-    const punkt = pl.get(l.punkt).status;
+    const pll = pl.get(l.punkt);
+    const punkt = pll.status;
     const bas = { ...l, projektId: pid, markerad, klar: markerad || punkt === "klar" };
     if (punkt === "ejaktuell" && !markerad)
       return { ...bas, status: "ejaktuell", senast: null, dagarKvar: null, ank: null };
+    if (!bas.klar && pll.kalla === "ejregistrerad") return { ...bas, status: "passerad", senast: null, dagarKvar: null, ank: null };
     if (!l.ankare) return { ...bas, status: bas.klar ? "klar" : "bevaka", senast: null, dagarKvar: null, ank: null };
 
     const a = ank[l.ankare];
@@ -493,7 +553,7 @@ export function checklistsummering(state, pid, nu = idag()) {
 export function nastaUppgifter(state, pid, nu = idag()) {
   const faser = faslage(state, pid, nu);
   const pl = punktlage(state, pid, faser.map((f) => f.grind));
-  const oppen = (id) => pl.get(id).status === "oppen";
+  const oppen = (id) => attGora(pl.get(id));
   const ut = [];
   const sedda = new Set();
   const lagg = (post) => {

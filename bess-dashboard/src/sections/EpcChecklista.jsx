@@ -11,6 +11,7 @@ import { FAS_STATUS, erfarenheter, faslage, punktlage } from "../lib/epc.js";
 import { Summering } from "../components/epc/Summering.jsx";
 import { Callout, Card, SectionHeading } from "../components/ds/index.js";
 import { Erfarenhetslista } from "../components/epc/Erfarenheter.jsx";
+import { HeroBild } from "../components/oversikt/Hero.jsx";
 
 /* Bygga batteripark — hur en BESS-anläggning byggs som totalentreprenad
    (ABT 06), steg för steg, och var portföljens projekt står.
@@ -246,7 +247,8 @@ export function EpcChecklista() {
 
   return (
     <div className="flex flex-col gap-4 lg:gap-6">
-      <Card aria-labelledby="epc-rubrik">
+      <Card aria-labelledby="epc-rubrik" className="hero-med-bild hero-svag overflow-hidden">
+        <HeroBild fil="bess-lyft.jpg" lage="ljus" position="55% 40%" />
         <div className="flex flex-wrap items-start justify-between gap-6">
           <SectionHeading
             id="epc-rubrik"

@@ -310,6 +310,11 @@ export function Veckokoll() {
                 {rad?.klar ? "Öppna veckan igen" : "Markera veckan som genomgången"}
               </button>
             </div>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" className="btn sec mini" onClick={() => visa("hseq")}>Skyddsrond i HSEQ</button>
+              <button type="button" className="btn sec mini" onClick={() => visa("risker")}>Risker</button>
+              <button type="button" className="btn sec mini" onClick={() => visa("punkter")}>Öppna punkter</button>
+            </div>
           </Card>
 
           <Card id="vk-historik" title="Historik" subtitle={`Senaste genomgångarna för ${p.nr || p.namn}`}>

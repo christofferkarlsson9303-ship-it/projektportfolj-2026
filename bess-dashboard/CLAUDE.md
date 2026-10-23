@@ -7,6 +7,7 @@ En visuell prototyp byggdes 2026-10-04 i ett annat verktyg (Grok). Den ligger **
 ## Vad som redan är sant
 
 - **Tidplanen ”Blir vi klara i tid” finns.** `src/components/tidplan/KritiskLinje.jsx` + `src/lib/kritiskLinje.js` + `src/data/fasberoenden.js`. Kolumnerna fas, standardplan, beräknat, försening, marginal, väntar på, och tabellen M1–M7, är redan där. Prototypens ”0 dagar” och fasta datum 2026-12-02 är seed för 36037, inte en kalkyl. Byt inte ut motorn.
+- **Beställ senast** (`src/lib/bestallningar.js`, 2026-10-23): en leverans kan ha `moment`, `ledtidVeckor` och `bestalld`. Beställ senast = momentets planerade start minus ledtiden; ej lagda order syns i Idag som typ "Beställning". Bara ett uttryckligt `moment` binder momentets start i kritisk linje (`leveransbindningar()`); ett moment gissat ur benämningen gör det aldrig. `LEDTIDER` i checklistdata är processledtider (tillstånd, kran, provresurser) och är något annat.
 - **Ett klick till papper är PR 28**, grenen `snabbutskrift`. `useSnabbUtskrift()` i `src/components/field/SnabbUtskrift.jsx` skriver ut arbetslista och fasblankett utan att öppna panelen. Panelen (`FaltmaterialPanel.jsx`) finns kvar för fler val. Ctrl/Cmd+K har samma dokument. Bygg inte en ny utskriftsväg.
 - **Designsystemet** är `src/components/ds/` (`Card`, `StatTile`, `StatusBadge`, `Callout`). Nya ytor använder det. Inga nya hex-färger, inget parallellt tema.
 - **ÄTA-kalkylen finns på två ställen med samma kod.** Kortet i vy `ata` (”Öppna i kalkyl”) och egen flik `atakalkyl` (`AtaKalkylVy.jsx`). Logiken ligger i `src/sections/Ata/useAtaKalkyl.jsx` och tabellen i `KalkylTabell.jsx`. Ändra där, inte i två kopior.
@@ -20,6 +21,8 @@ En visuell prototyp byggdes 2026-10-04 i ett annat verktyg (Grok). Den ligger **
 Granskningen (commit `0e7f85961c8a`, fynd F01–F15) ligger till grund för GitHub-issues märkta `granskning`. Etapp A finns på grenen `granskning/etapp-a`.
 
 **Regler som gäller nu:**
+
+- **En grind bockar inte av punkter** (beslut 2026-10-17). `punktlage()` ger källan `ejregistrerad` för öppna punkter i ett moment med passerad grind. Använd `attGora()` när du listar uppgifter, så att de inte blir nya att göra. Källan `egenkontroll` betyder att en verifierad egenkontroll styrker punkten (`styrktaPunkter()`). Se `docs/gemensam-checklista.md`.
 
 - **Kontrolltäckning.** `kontrollage()` räknar en punkt som verifierad först när varje omfattning som registrerats i fasen är komplett. Gör inte tillbaka till "minst en rad".
 - **Datum** i kontroller valideras med `arGiltigtDatum()` i `src/lib/datum.js`. Använd den, inte `Date.parse`.
@@ -52,6 +55,12 @@ Fyll i datum och beslut i tabellen när det är fattat. Migrationer i `supabase/
 - **Frist och uppföljning är två fält på punkter** (`forfaller`, `uppfoljning`). `punktDatum()` avgör var punkten hamnar: en passerad frist vinner alltid. Uppföljning skriver aldrig om fristen.
 - **Kommentarer på punkter** är en lista med id (`kommentarer`) via `PUNKT_KOMMENTAR`, så att `sammanfoga.js` slår ihop två personers kommentarer. `av` är det inskrivna namnet i sidomenyn, inte en verifierad identitet.
 - **"Mina uppgifter" finns inte än.** `agare` är fritext; bygg det först när ansvar tilldelas uttryckligen.
+
+## Menyn följer rytmen (2026-10-22)
+
+- **Hela menyn** (`GRUPPER` i `data/vyer.js`) har sex grupper efter projektmetodens rytm: Dagligen, Varje vecka och månad, Projektet, Pengar, Siten, Bibliotek. Nya vyer läggs i den grupp där de används, inte i en ny grupp.
+- **Enkla menyn** (`ENKEL_MENY`, sju flikar) svarar på fyra frågor: vad gör jag idag/i veckan, vad blockerar, blir vi klara i tid, vad kostar det. Idag, Översikt, Veckokoll, Bygga batteripark, Tidplan, ÄTA, Budget och utfall. Öppna punkter nås från Idag; HSEQ, Risker och Öppna punkter från Veckokoll ("Veckans genomgång").
+- **Testet för en ny vy:** svarar den på någon av de fyra frågorna? Annars hör den hemma i en befintlig vy eller i Bibliotek.
 
 ## ÄTA: art, orsak och fyra kolumner (2026-10-21)
 
