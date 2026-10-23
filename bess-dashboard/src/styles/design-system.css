@@ -1144,6 +1144,10 @@ tr.lastrad:hover{opacity:.8}
 /* ---------- Inloggningsgrind ---------- */
 .inlogg{min-height:100dvh;display:grid;place-items:center;padding:24px;background:var(--sunken)}
 .inlogg-kort{width:100%;max-width:420px;text-align:left}
+/* Flygbild över en batteripark bakom inloggningen, tonad i ONE Blågrön så att kortet bär. */
+.inlogg.med-bild{background:linear-gradient(160deg,color-mix(in srgb,var(--one-djup) 55%,transparent),color-mix(in srgb,var(--one-djup) 82%,transparent)),
+  var(--inlogg-bild) center/cover no-repeat,var(--one-djup)}
+.inlogg.med-bild .inlogg-kort{box-shadow:var(--sh-md)}
 .inlogg-marke{display:inline-flex;flex-direction:column;align-items:flex-start;margin-bottom:20px}
 .inlogg-logo{height:44px;width:auto}
 .inlogg-dom{font-size:12px;letter-spacing:.03em;color:var(--one-bla);margin-top:6px}
@@ -1425,6 +1429,10 @@ button.ov-chip:hover{border-color:var(--one-bla);color:var(--ink)}
   --hero-max:.42}
 .hero-ton{inset:0;background:linear-gradient(90deg,var(--one-djup) 0%,color-mix(in srgb,var(--one-djup) 88%,transparent) 32%,
   color-mix(in srgb,var(--one-djup) 35%,transparent) 70%,color-mix(in srgb,var(--one-djup) 55%,transparent) 100%)}
+/* Kort där siffror ligger över bilden: tätare ton (mörkt) eller svagare bild (ljust), så att texten bär. */
+.hero-tat>.hero-ton{background:linear-gradient(90deg,var(--one-djup) 0%,color-mix(in srgb,var(--one-djup) 82%,transparent) 40%,
+  color-mix(in srgb,var(--one-djup) 72%,transparent) 100%)}
+.hero-svag>.hero-bild.ljus{--hero-max:.2}
 .hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 @keyframes heroIn{to{opacity:var(--hero-max,1)}}
 @keyframes heroDrift{from{transform:scale(1.02) translate3d(0,0,0)}to{transform:scale(1.08) translate3d(-2%,-1.5%,0)}}
