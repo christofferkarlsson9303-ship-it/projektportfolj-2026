@@ -28,6 +28,21 @@ describe("interface-listan", () => {
     expect(reducer(s, { type: "PROJEKTSTART_SKAPA", pid: "36037" })).toBe(s);
   });
 
+  it("en skapad projektstart har projektkortets fält, så att en senare sparning inte rensar dem", () => {
+    const s = skapa(seed());
+    const p = s.projekt.find((x) => x.id === "36037");
+    const v = s.projektstart.find((x) => x.projektId === "36037").utkast.v;
+    expect(v).toMatchObject({ namn: p.namn, nr: p.nr || "", plats: p.ort || "", fardigdatum: p.fardigstallande || "" });
+  });
+
+  it("ett datum som inte finns i kalendern räknas inte som avstämt", () => {
+    let s = skapa(seed());
+    const rad = interfacelage(s, "36037", NU).rader[0];
+    const satt = (st, falt, varde) => reducer(st, { type: "PROJEKTSTART_RAD", pid: "36037", tabell: "interface", radId: rad.id, falt, varde });
+    s = satt(satt(s, "status", "Klart"), "avstamd", "2026-09-31");
+    expect(interfacelage(s, "36037", "2026-10-02").rader[0]).toMatchObject({ lage: "gammal", dagarSedan: null });
+  });
+
   it("är avstämd först med status och datum inom sju dagar; Oklart vinner alltid", () => {
     let s = skapa(seed());
     const rad = interfacelage(s, "36037", NU).rader[0];

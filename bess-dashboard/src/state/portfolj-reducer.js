@@ -20,9 +20,9 @@ import { arGuid } from "../lib/bcfHanterare.js";
 import { projektFasFranEpc } from "../lib/projektfasEpc.js";
 import { arDold } from "../lib/arkiv.js";
 import { sattVidSteg } from "../lib/sammanfoga.js";
-import { projektstartFel, projektstartPost, tomtUtkast } from "../lib/projektstart.js";
 import { ARVSDELAR, arv } from "../lib/projektmall.js";
 import { postMedEpc } from "../lib/punktlankar.js";
+import { projektstartFel, projektstartPost, utkastFranProjekt } from "../lib/projektstart.js";
 import { EJ_VUNNET_ORSAKER, FAS_MODELL, arFasNr, faseFranGammal, fasFranStatus, faseInfo, riskFasFranGammal, forstaFasForStatus, normaliseraStatus, statusEtikett } from "../data/projektfaser.ts";
 import { granskaProfil, rensaProfil } from "../lib/kontraktsprofil.js";
 
@@ -1005,8 +1005,10 @@ export function reducer(state, action) {
     case "PROJEKTSTART_SKAPA": {
       const proj = (state.projekt || []).find((p) => p.id === action.pid);
       if (!proj || (state.projektstart || []).some((x) => x.projektId === action.pid)) return state;
-      const u = tomtUtkast();
-      u.fasGolv = arFasNr(proj.fas) ? proj.fas : fasFranStatus(proj.status);
+      /* Samma utkast som guiden öppnar för ett befintligt projekt utan sparad start: projektkortets
+         fält, risker och milstolpar ifyllda. Ett tomt utkast skulle tolkas som att fälten rensats
+         när guiden sparas (kortAndringar). */
+      const u = utkastFranProjekt(proj, state);
       return loggat({ ...state, projektstart: [...(state.projektstart || []), projektstartPost(action.pid, u)] }, action.pid, "Projektstart skapad");
     }
 
