@@ -60,8 +60,8 @@ function Panel({ onStang, pid, visaToast }) {
     const foton = [];
     if (filer.length) {
       setLaddar(true);
+      const arkiv = skapaRitningsArkiv();
       try {
-        const arkiv = skapaRitningsArkiv();
         for (let i = 0; i < filer.length; i++) {
           const blob = await krympFoto(filer[i]);
           const sokvag = fotoSokvag(proj.id, grund.id, i);
@@ -69,6 +69,10 @@ function Panel({ onStang, pid, visaToast }) {
           foton.push({ sokvag, lagring: arkiv.lage, storlek: blob.size, namn: filer[i].name || `foto-${i + 1}.jpg` });
         }
       } catch (err) {
+        /* Punkten sparas inte — ta bort de foton som hann laddas upp, så att inga filer blir
+           kvar utan punkt. Går borttagningen inte (bara administratören får ta bort i delat
+           läge) ligger de kvar under projekt/foto/ i bucketen. */
+        await Promise.allSettled(foton.map((f) => arkiv.taBort(f.sokvag)));
         setLaddar(false);
         setFel(`Fotot kunde inte sparas: ${err?.message || err}. Försök igen, eller spara utan foto.`);
         return;

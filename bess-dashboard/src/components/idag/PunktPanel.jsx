@@ -20,7 +20,7 @@ const KOPPLING_TEXT = { ata: "ÄTA", hinder: "Hinder", risk: "Risk" };
 
 export function PunktPanel({ id, onStang, onOppnaRegister }) {
   const { state, uppd, uppdStatus, kommenteraPunkt } = usePortfolj();
-  const { oppnaPost, visa } = useUi();
+  const { oppnaPost, setValtProjekt, visaISite } = useUi();
   const [utkast, setUtkast] = useState("");
   const pt = state.punkter.find((x) => x.id === id);
 
@@ -49,7 +49,15 @@ export function PunktPanel({ id, onStang, onOppnaRegister }) {
         {pt.plats ? (
           <p className="m-0 flex flex-wrap items-center gap-2 text-[13px] text-ink-soft">
             Plats: <strong className="text-ink">{pt.plats.namn}</strong>
-            <button type="button" className="btn sec mini" onClick={() => visa("site")}>
+            <button
+              type="button"
+              className="btn sec mini"
+              onClick={() => {
+                /* Punktens eget projekt — i portföljläge kan ett annat vara valt — och flyg till platsen. */
+                setValtProjekt(pt.projektId);
+                visaISite(pt.plats.objektId);
+              }}
+            >
               Visa i 3D
             </button>
           </p>

@@ -88,4 +88,18 @@ describe("fullständig säkerhetskopia (F06)", () => {
     expect(las.fel[0]).toMatch(/kontrollsumman stämmer inte/);
     expect(las.filer).toHaveLength(0);
   });
+
+  it("foton på punkter följer med och läggs tillbaka i arkivet", async () => {
+    const lager = ritningsLager();
+    await lager.arkiv().ladda(new Blob([new Uint8Array([255, 216, 255, 1])]), "36037/foto/p1-1.jpg");
+    const state = { ...STATE, siteRitningar: [], ifcModeller: [], punkter: [{ id: "p1", projektId: "36037", titel: "Skadad dörr", foton: [{ sokvag: "36037/foto/p1-1.jpg", lagring: "lokal", namn: "dorr.jpg", storlek: 4 }] }] };
+    const { data, manifest } = await byggSakerhetskopia({ state, kallor: bilagekallor(state, { ritningsArkiv: lager.arkiv }) });
+    expect(manifest.filer.filter((f) => f.typ === "foto").map((f) => f.sokvag)).toEqual(["foton/36037/foto/p1-1.jpg"]);
+    expect(bilagaSammanfattning(manifest)[0]).toContain("1 foton");
+    const las = await lasSakerhetskopia(data);
+    const tom = ritningsLager();
+    const res = await aterstallBilagor(las.filer, { ritningsArkiv: tom.arkiv });
+    expect(res.aterlagda).toBe(1);
+    expect([...tom.filer.get("36037/foto/p1-1.jpg")]).toEqual([255, 216, 255, 1]);
+  });
 });
