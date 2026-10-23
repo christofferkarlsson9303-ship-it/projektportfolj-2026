@@ -22,6 +22,7 @@ import { arDold } from "../lib/arkiv.js";
 import { sattVidSteg } from "../lib/sammanfoga.js";
 import { projektstartFel, projektstartPost, tomtUtkast } from "../lib/projektstart.js";
 import { ARVSDELAR, arv } from "../lib/projektmall.js";
+import { postMedEpc } from "../lib/punktlankar.js";
 import { EJ_VUNNET_ORSAKER, FAS_MODELL, arFasNr, faseFranGammal, fasFranStatus, faseInfo, riskFasFranGammal, forstaFasForStatus, normaliseraStatus, statusEtikett } from "../data/projektfaser.ts";
 import { granskaProfil, rensaProfil } from "../lib/kontraktsprofil.js";
 
@@ -1012,6 +1013,10 @@ export function reducer(state, action) {
           punkt,
         }, { status, datum: status ? idag() : "", av: status ? hamtaNamn() || "" : "" }),
       };
+      /* Samma punkt i Projektstart (data/punktlankar.js): skriv igenom bocken till projektstarten. */
+      const post = (nytt.projektstart || []).find((x) => x.projektId === pid);
+      const nyPost = post ? postMedEpc(post, punkt, status) : post;
+      if (nyPost !== post) nytt.projektstart = nytt.projektstart.map((x) => (x === post ? nyPost : x));
       const hp = PUNKT_FOR_ID.get(punkt)?.badges.includes("HP");
       const vad =
         status === "klar" ? (hp ? "hållpunkt godkänd" : "klar") : status === "ejaktuell" ? "ej aktuell" : "återöppnad";
