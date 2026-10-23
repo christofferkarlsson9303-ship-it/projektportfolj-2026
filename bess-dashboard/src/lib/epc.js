@@ -33,6 +33,7 @@ import { PROJEKTKONTROLL_REVISION, PROJEKTMALLAR } from "../data/projektkontroll
 import { BESS_MATCH, betalRad, projekt } from "./berakningar.js";
 import { datumKort, idag, lokaltDatum } from "./datum.js";
 import { kontrollBrister } from "./projektkontroll.js";
+import { EGENKONTROLL_STYRKER } from "../data/punktlankar.js";
 
 /** Status → [ton, text] för faser och ledtider. Tonen är designsystemets
  *  (ok/info/warn/bad); texten står alltid bredvid färgen. */
@@ -206,7 +207,10 @@ export function styrktaPunkter(state, pid) {
   const kl = kontrollage(state, pid);
   kl.forEach((k, i) => {
     const mall = new Map((PROJEKTMALLAR[i]?.punkter || []).map((p) => [p.id, p]));
-    for (const id of k.verifieradeId) for (const epcId of mall.get(id)?.epc || []) if (!ut.has(epcId)) ut.set(epcId, id);
+    for (const id of k.verifieradeId) {
+      const extra = EGENKONTROLL_STYRKER.filter(([ek]) => ek === id).map(([, epc]) => epc);
+      for (const epcId of [...(mall.get(id)?.epc || []), ...extra]) if (!ut.has(epcId)) ut.set(epcId, id);
+    }
   });
   return ut;
 }
