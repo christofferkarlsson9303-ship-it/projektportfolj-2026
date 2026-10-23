@@ -10,6 +10,7 @@ import { datumKort, idag } from "../lib/datum.js";
 import { useSnabbUtskrift } from "../components/field/SnabbUtskrift.jsx";
 import { PunktPanel } from "../components/idag/PunktPanel.jsx";
 import { arNal, siteObjekt } from "../lib/site.js";
+import { HeroBild } from "../components/oversikt/Hero.jsx";
 
 /* Idag — projektledarens arbetslista.
 
@@ -223,8 +224,9 @@ export function Idag() {
       {/* ---------- 1. Bandet ---------- */}
       <section
         aria-label="Sammanfattning"
-        className="flex flex-col gap-4 rounded-xl bg-one-djup px-5 py-5 text-white shadow-sm print:hidden md:px-6"
+        className="hero-med-bild hero-tat relative flex flex-col gap-4 overflow-hidden rounded-xl bg-one-djup px-5 py-5 text-white shadow-sm print:hidden md:px-6"
       >
+        <HeroBild fil="bess-rader-skymning.jpg" position="60% 45%" />
         <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
           {portfolj ? (
             <div className="flex min-w-0 max-w-[560px] flex-col gap-2">

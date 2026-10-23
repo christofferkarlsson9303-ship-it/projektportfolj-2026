@@ -75,8 +75,9 @@ a{color:var(--one-djup)}
   position:sticky;top:0;align-self:flex-start;height:100vh;z-index:30;transition:transform .28s ease;
   box-shadow:var(--sh-md)}
 .sidebar-top{display:flex;align-items:center;padding:22px 22px 14px}
-.sidebar-top .mark-img{display:block;height:26px;width:auto;filter:brightness(0) invert(1)}
-.sidebar-top .dom{font-size:10.5px;color:rgba(255,255,255,.6);margin-top:5px;letter-spacing:.02em}
+/* Vit logotyp mot mörk yta; one-nordic.se i samma färg som logotypen (grafiska manualen s. 8). */
+.sidebar-top .mark-img{display:block;height:40px;width:auto;filter:brightness(0) invert(1)}
+.sidebar-top .dom{font-size:11px;color:#fff;margin-top:6px;letter-spacing:.03em}
 .sidebar-title{padding:2px 22px 18px}
 .sidebar-title h1{font-size:16.5px;font-weight:600;color:#fff;line-height:1.3}
 .sidebar-title .sub{font-size:10.5px;color:rgba(255,255,255,.55);margin-top:5px;line-height:1.5}
@@ -1143,7 +1144,13 @@ tr.lastrad:hover{opacity:.8}
 /* ---------- Inloggningsgrind ---------- */
 .inlogg{min-height:100dvh;display:grid;place-items:center;padding:24px;background:var(--sunken)}
 .inlogg-kort{width:100%;max-width:420px;text-align:left}
-.inlogg-logo{height:28px;width:auto;margin-bottom:18px}
+/* Flygbild över en batteripark bakom inloggningen, tonad i ONE Blågrön så att kortet bär. */
+.inlogg.med-bild{background:linear-gradient(160deg,color-mix(in srgb,var(--one-djup) 55%,transparent),color-mix(in srgb,var(--one-djup) 82%,transparent)),
+  var(--inlogg-bild) center/cover no-repeat,var(--one-djup)}
+.inlogg.med-bild .inlogg-kort{box-shadow:var(--sh-md)}
+.inlogg-marke{display:inline-flex;flex-direction:column;align-items:flex-start;margin-bottom:20px}
+.inlogg-logo{height:44px;width:auto}
+.inlogg-dom{font-size:12px;letter-spacing:.03em;color:var(--one-bla);margin-top:6px}
 .inlogg-kort h1{font-size:20px;margin:0 0 4px}
 .inlogg-kort label{display:block;font-size:12.5px;font-weight:600;color:var(--ink-svag);margin-bottom:6px}
 .note.err{background:var(--fel-bg,#fdeaea);border-left-color:var(--rod)}
@@ -1422,6 +1429,10 @@ button.ov-chip:hover{border-color:var(--one-bla);color:var(--ink)}
   --hero-max:.42}
 .hero-ton{inset:0;background:linear-gradient(90deg,var(--one-djup) 0%,color-mix(in srgb,var(--one-djup) 88%,transparent) 32%,
   color-mix(in srgb,var(--one-djup) 35%,transparent) 70%,color-mix(in srgb,var(--one-djup) 55%,transparent) 100%)}
+/* Kort där siffror ligger över bilden: tätare ton (mörkt) eller svagare bild (ljust), så att texten bär. */
+.hero-tat>.hero-ton{background:linear-gradient(90deg,var(--one-djup) 0%,color-mix(in srgb,var(--one-djup) 82%,transparent) 40%,
+  color-mix(in srgb,var(--one-djup) 72%,transparent) 100%)}
+.hero-svag>.hero-bild.ljus{--hero-max:.2}
 .hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 @keyframes heroIn{to{opacity:var(--hero-max,1)}}
 @keyframes heroDrift{from{transform:scale(1.02) translate3d(0,0,0)}to{transform:scale(1.08) translate3d(-2%,-1.5%,0)}}
