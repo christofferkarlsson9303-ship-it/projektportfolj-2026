@@ -1,4 +1,5 @@
 import { dagarMellan, erfarenheter, plusDagar } from "./epc.js";
+import { arGiltigtDatum as giltigt } from "./datum.js";
 
 /* Ett tidigare projekt som mall för ett nytt (tips 5, Batch C → Vaggeryd).
 
@@ -26,7 +27,6 @@ export const ARVSDELAR = [
   ["lardomar", "Lärdomar som uppgifter", "avvikelser och lärdomar med Gör så här nästa gång"],
 ];
 
-const giltigt = (iso) => typeof iso === "string" && /^\d{4}-\d{2}-\d{2}$/.test(iso);
 const projektFor = (state, id) => (state.projekt || []).find((p) => p.id === id) || null;
 
 /** Förskjutning i dagar mellan källans och målets startdatum, eller null. */
@@ -46,9 +46,19 @@ export function arvsrader(state, fran, till, { datum = "", namn = "" } = {}) {
   const etikett = kalla ? (kalla.nr || kalla.namn) : fran;
   const finns = (lista, id) => (state[lista] || []).some((r) => r.id === id);
 
+  /* Bara det som går att återanvända: beskrivning, bedömning och åtgärdsidé. Inget som hör
+     till källprojektet — ägare, status, kopplad ÄTA, kostnadsuppskattning eller datum. */
+  const RISKFALT = ["titel", "kategori", "fas", "sannolikhet", "konsekvens", "atgard", "forebygg", "hantera", "agarskap"];
   const risker = (state.risker || [])
     .filter((r) => r.projektId === fran)
-    .map((r) => ({ ...r, id: `r-arv-${till}-${r.id}`, projektId: till, agare: "", status: "oppen", arvdFran: etikett }))
+    .map((r) => ({
+      ...Object.fromEntries(RISKFALT.filter((k) => r[k] !== undefined).map((k) => [k, r[k]])),
+      id: `r-arv-${till}-${r.id}`,
+      projektId: till,
+      agare: "",
+      status: "oppen",
+      arvdFran: etikett,
+    }))
     .filter((r) => !finns("risker", r.id));
 
   const leveranser = (state.leveranser || [])
@@ -63,12 +73,17 @@ export function arvsrader(state, fran, till, { datum = "", namn = "" } = {}) {
 
   const d = forskjutning(state, fran, till);
   const harPlan = new Set((state.epcFaser || []).filter((r) => r.projektId === till && (r.start || r.slut)).map((r) => r.fas));
+  /* Ett moment kan ha bara start eller bara slut; varje angivet datum flyttas för sig. */
   const momentplan =
     d === null
       ? []
       : (state.epcFaser || [])
-          .filter((r) => r.projektId === fran && giltigt(r.start) && giltigt(r.slut) && !harPlan.has(r.fas))
-          .map((r) => ({ fas: r.fas, start: plusDagar(r.start, d), slut: plusDagar(r.slut, d) }));
+          .filter((r) => r.projektId === fran && (giltigt(r.start) || giltigt(r.slut)) && !harPlan.has(r.fas))
+          .map((r) => ({
+            fas: r.fas,
+            ...(giltigt(r.start) ? { start: plusDagar(r.start, d) } : {}),
+            ...(giltigt(r.slut) ? { slut: plusDagar(r.slut, d) } : {}),
+          }));
 
   const lardomar = erfarenheter(state, fran)
     .filter((k) => (k.gorSa || "").trim())
@@ -103,8 +118,9 @@ export function arv(state, fran, till, delar, opts) {
     for (const m of r.momentplan) {
       const id = `ef-${till}-${m.fas}`;
       const i = rader.findIndex((x) => x.projektId === till && x.fas === m.fas);
-      if (i >= 0) rader[i] = { ...rader[i], start: m.start, slut: m.slut };
-      else rader.push({ id, projektId: till, fas: m.fas, start: m.start, slut: m.slut });
+      const datum = Object.fromEntries(["start", "slut"].filter((k) => m[k]).map((k) => [k, m[k]]));
+      if (i >= 0) rader[i] = { ...rader[i], ...datum };
+      else rader.push({ id, projektId: till, fas: m.fas, ...datum });
     }
     s = { ...s, epcFaser: rader };
   }

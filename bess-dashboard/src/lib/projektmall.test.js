@@ -68,3 +68,28 @@ describe("projektmall", () => {
     expect(igen.risker.length).toBe(n);
   });
 });
+
+describe("granskningsfynd #104", () => {
+  it("en ärvd risk tar inte med kopplad ÄTA, kostnad eller annat som hör till källprojektet", () => {
+    let s = medVaggeryd();
+    const r = s.risker.find((x) => x.projektId === "36037");
+    s = { ...s, risker: s.risker.map((x) => (x.id === r.id ? { ...x, arendeId: "u1", estimeradKostnadSEK: 250000, forebygg: "Bekräfta vikt skriftligt" } : x)) };
+    s = reducer(s, { type: "PROJEKT_ARV", fran: "36037", till: "vaggeryd", delar: ["risker"] });
+    const arvd = s.risker.find((x) => x.id === `r-arv-vaggeryd-${r.id}`);
+    expect(arvd).toMatchObject({ titel: r.titel, forebygg: "Bekräfta vikt skriftligt", status: "oppen", agare: "" });
+    expect(arvd.arendeId).toBeUndefined();
+    expect(arvd.estimeradKostnadSEK).toBeUndefined();
+  });
+
+  it("ett moment med bara start eller bara slut ärvs med det datum som finns", () => {
+    let s = medVaggeryd();
+    s = reducer(s, { type: "EPC_FAS", pid: "36037", fas: 9, falt: "start", varde: "2026-05-04" });
+    s = reducer(s, { type: "EPC_FAS", pid: "36037", fas: 10, falt: "slut", varde: "2026-06-12" });
+    s = reducer(s, { type: "PROJEKT_ARV", fran: "36037", till: "vaggeryd", delar: ["momentplan"] });
+    const rad = (fas) => s.epcFaser.find((r) => r.projektId === "vaggeryd" && r.fas === fas);
+    expect(rad(9)).toMatchObject({ start: "2027-05-03" });
+    expect(rad(9).slut).toBeUndefined();
+    expect(rad(10)).toMatchObject({ slut: "2027-06-11" });
+    expect(rad(10).start).toBeUndefined();
+  });
+});
