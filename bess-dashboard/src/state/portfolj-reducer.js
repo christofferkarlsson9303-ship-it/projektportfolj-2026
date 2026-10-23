@@ -719,6 +719,29 @@ export function reducer(state, action) {
       return loggat(ut, projektId, `Site: standardlayout ${profil || ""} inlagd (${rader.length} objekt)`.replace("  ", " "));
     }
 
+    /* Byggläget: flera objekt i ett steg (en rad containrar), en loggrad. Rader som inte går
+       att spara hoppas över; inga objekt alls → state orört. */
+    case "SITE_LAGG_TILL_FLERA": {
+      const { projektId, rader } = action;
+      if (!Array.isArray(rader)) return state;
+      const punkter = punkterForSite(state, projektId);
+      const ok = rader.filter((r) => r?.projektId === projektId && objektFel(r, punkter) === null);
+      if (!ok.length) return state;
+      const ut = { ...state, siteObjekt: [...(state.siteObjekt || []), ...ok] };
+      return loggat(ut, projektId, `Site: ${ok.length} × ${MALLAR[ok[0].typ]?.namn || "objekt"} placerade i rad`);
+    }
+
+    /* Ångra i byggläget: projektets objekt sätts tillbaka till en tidigare lista. Andra
+       projekts objekt rörs inte. Nålar vars punkt inte längre finns hoppas över. */
+    case "SITE_ANGRA": {
+      const { projektId, rader } = action;
+      if (!projektId || !Array.isArray(rader)) return state;
+      const punkter = punkterForSite(state, projektId);
+      const ok = rader.filter((r) => r?.projektId === projektId && objektFel(r, punkter) === null);
+      const ovriga = (state.siteObjekt || []).filter((r) => r.projektId !== projektId);
+      return loggat({ ...state, siteObjekt: [...ovriga, ...ok] }, projektId, "Site: senaste ändringen ångrad");
+    }
+
     case "SITE_ANDRA": {
       const { id, andring } = action;
       const o = (state.siteObjekt || []).find((r) => r.id === id);

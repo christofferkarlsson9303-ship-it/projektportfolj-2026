@@ -30,6 +30,7 @@ import { SiteSakerhet } from "../../components/site/SiteSakerhet.jsx";
 import { anbudsmodellFor } from "../../lib/anbudsmodeller.js";
 import { ritningsText } from "../../lib/ritningar.js";
 import { STANDARDLAGER, kameravinklar, mattFor, profilKpi, ritningslayout, standardlayout } from "../../lib/siteLager.js";
+import { MAX_ANGRA, MAX_RAD, kopia, radLuft, radObjekt, radPositioner } from "../../lib/bygglage.js";
 import {
   BESS_FALT,
   MALLAR,
@@ -213,7 +214,25 @@ export function Site() {
     });
   const [panel, setPanel] = useState("bygg");
   const [panelBredd, setPanelBredd] = useState(374);
-  const [flyttaObjekt, setFlyttaObjekt] = useState(false);
+  /* Byggläget (lib/bygglage.js): objekt dras direkt, utan att ett läge slås på först. */
+  const [flyttaObjekt, setFlyttaObjekt] = useState(true);
+  const [radAntal, setRadAntal] = useState(1);
+  /* Ångra: projektets objektlista före varje ändring, oavsett var ändringen kom ifrån
+     (meny, dragning, tangent). Bara i den här sessionen. */
+  const historik = useRef({ pid, lista: [], forra: objekt, angrar: false });
+  useEffect(() => {
+    const h = historik.current;
+    if (h.pid !== pid) {
+      historik.current = { pid, lista: [], forra: objekt, angrar: false };
+      return;
+    }
+    if (h.forra === objekt) return;
+    if (!h.angrar) h.lista = [...h.lista, h.forra].slice(-MAX_ANGRA);
+    h.angrar = false;
+    h.forra = objekt;
+  }, [objekt, pid]);
+  /* Byggkommandona (ångra, kopiera, ta bort) sätts längre ned och läses av tangenterna. */
+  const byggRef = useRef({ angra: () => {}, kopiera: () => {}, taBortValt: () => false });
   const [bcfJobb, setBcfJobb] = useState("");
   const sceneApi = useRef(null);
   const [fel3d, setFel3d] = useState(null);
@@ -375,8 +394,23 @@ export function Site() {
         setLaddad(null);
         return;
       }
-      if (e.ctrlKey || e.metaKey || e.altKey || lage === "ga") return;
+      if (lage === "ga" || e.altKey) return;
       if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target?.tagName || "") || e.target?.isContentEditable) return;
+      /* Byggläget: Ctrl/Cmd+Z ångrar, Ctrl/Cmd+D kopierar markerat objekt, Delete tar bort det. */
+      if (e.ctrlKey || e.metaKey) {
+        if (e.code === "KeyZ" && !e.shiftKey) {
+          e.preventDefault();
+          byggRef.current.angra();
+        } else if (e.code === "KeyD") {
+          e.preventDefault();
+          byggRef.current.kopiera();
+        }
+        return;
+      }
+      if (e.key === "Delete" || e.key === "Backspace") {
+        if (byggRef.current.taBortValt()) e.preventDefault();
+        return;
+      }
       if (e.code === "KeyR") {
         e.preventDefault();
         roteraRef.current();
@@ -564,6 +598,64 @@ export function Site() {
     if (valtId === o.id) setValtId(null);
   };
 
+  /* ---------- Byggläget: rad, kopia och ångra (lib/bygglage.js) ---------- */
+  const byggVal = (typ) => ({ regler: skyddsregler, rutnat: rutnat ? RUTNAT : 0, luftFor: luftFor(skyddsregler, typ) });
+
+  /** En rad av vald mall: med `antal` från klickpunkten längs kortsidan, med `slut` längs dragningen. */
+  const placeraRad = (start, { slut = null, antal = null } = {}) => {
+    if (!laddad || laddad === "nal") return;
+    const m = mattFor(profilId, laddad) || MALLAR[laddad];
+    const mall = { typ: laddad, bredd: m.bredd, djup: m.djup, hojd: m.hojd, rotation: spokRot };
+    const lagen = radPositioner(mall, start, { slut, antal, luft: radLuft(skyddsregler, laddad) });
+    const { lagda, upptagna } = radObjekt(mall, pid, lagen, objekt, byggVal(laddad));
+    if (!lagda.length) {
+      visaToast("Raden fick inte plats — alla lägen är upptagna eller utanför tomten.", "warn");
+      return;
+    }
+    dispatch({ type: "SITE_LAGG_TILL_FLERA", projektId: pid, rader: lagda });
+    setValtId(lagda.at(-1).id);
+    visaToast(`${lagda.length} × ${MALLAR[laddad].namn} placerade i rad${upptagna ? ` · ${upptagna} lägen var upptagna` : ""}.`);
+  };
+
+  byggRef.current = {
+    angra: () => {
+      const h = historik.current;
+      const forra = h.lista.at(-1);
+      if (!forra) {
+        visaToast("Inget att ångra.");
+        return;
+      }
+      h.lista = h.lista.slice(0, -1);
+      h.angrar = true;
+      dispatch({ type: "SITE_ANGRA", projektId: pid, rader: forra });
+      if (valtId && !forra.some((o) => o.id === valtId)) setValtId(null);
+    },
+    kopiera: () => {
+      if (!valt || arNal(valt) || arIfc) return;
+      const ny = kopia(valt, objekt, byggVal(valt.typ));
+      if (!ny) {
+        visaToast("Det finns ingen ledig plats bredvid för en kopia.", "warn");
+        return;
+      }
+      dispatch({ type: "SITE_LAGG_TILL", rad: ny });
+      setValtId(ny.id);
+    },
+    taBortValt: () => {
+      if (!valt || arIfc) return false;
+      taBort(valt);
+      return true;
+    },
+  };
+
+  /* Välj en mall i Bygg: kameran går till planvyn uppifrån, så att placeringen blir exakt. */
+  const valjMall = (typ) => {
+    setLaddad(typ);
+    if (typ && lage === "orbit") {
+      const vy = vinklar.find((v) => v.id === "plan")?.vy;
+      if (vy) flygTill(vy);
+    }
+  };
+
   /* Profilens standardlayout på en tom tomt. Skriver aldrig över befintliga volymer. */
   const laggStandardlayout = async () => {
     const ja = await bekrafta(
@@ -648,11 +740,11 @@ export function Site() {
   const status = laddad
     ? laddad === "nal" && !nalPunkt
       ? "Välj punkten nålen ska peka på."
-      : `Klicka på marken för att placera ${laddad === "ehouse" ? "E-House" : MALLAR[laddad].namn.toLowerCase()}. R roterar, G rutnät, Esc avbryter.`
+      : `Klicka på marken för att placera ${laddad === "ehouse" ? "E-House" : MALLAR[laddad].namn.toLowerCase()}${radAntal > 1 ? ` — ${radAntal} i rad` : ""}. Skift + dra lägger en rad. R roterar, G rutnät, Esc avbryter.`
     : valt
       ? arIfc
         ? `${namnFor(valt)} (IFC) är markerad.`
-        : `${namnFor(valt)} är markerad. ${flyttaObjekt ? "Dra för att flytta." : "Aktivera Flytta objekt för att ändra läget."}`
+        : `${namnFor(valt)} är markerad. ${flyttaObjekt ? "Dra för att flytta, R roterar, Ctrl+D kopierar, Delete tar bort, Ctrl+Z ångrar." : "Slå på Dra objekt för att ändra läget."}`
       : "Välj en komponent i Bygg för att placera, eller klicka på ett objekt.";
 
   /* Objektets egenskaper visas i samma verktygspanel som planvyn. */
@@ -737,8 +829,19 @@ export function Site() {
             <label className="mb-3 flex flex-col gap-1 text-xs">Utrustning för nya enheter
               <select value={profilId} onChange={e => bytProfil(e.target.value)}>{Object.entries(HARDVARUPROFILER).map(([id, x]) => <option key={id} value={id}>{x.namn}</option>)}</select>
             </label>
-            <SiteMeny className="site-build-menu" laddad={laddad} onVal={setLaddad} lage={lage} kanNal={oppnaPunkter.length > 0} rutnat={rutnat} onRutnat={setRutnat} spokRot={spokRot} onRotera={rotera} profilId={profilId} />
-            <button type="button" className="btn sec mini my-3" aria-pressed={flyttaObjekt} onClick={() => { setFlyttaObjekt(v => !v); setLaddad(null); }}>Flytta objekt</button>
+            <SiteMeny className="site-build-menu" laddad={laddad} onVal={valjMall} lage={lage} kanNal={oppnaPunkter.length > 0} rutnat={rutnat} onRutnat={setRutnat} spokRot={spokRot} onRotera={rotera} profilId={profilId} />
+            <div className="my-3 flex flex-wrap items-center gap-2">
+              <button type="button" className="btn sec mini" aria-pressed={flyttaObjekt} onClick={() => { setFlyttaObjekt(v => !v); setLaddad(null); }}>Dra objekt {flyttaObjekt ? "på" : "av"}</button>
+              <button type="button" className="btn sec mini" onClick={() => byggRef.current.angra()}>Ångra</button>
+              {valt && !arNal(valt) && !arIfc ? <button type="button" className="btn sec mini" onClick={() => byggRef.current.kopiera()}>Kopiera {valt.namn}</button> : null}
+            </div>
+            {laddad && laddad !== "nal" ? (
+              <label className="mb-3 flex items-center gap-2 text-xs">
+                Antal i rad
+                <input type="number" min="1" max={MAX_RAD} value={radAntal} className="!w-20" onChange={(e) => setRadAntal(Math.max(1, Math.min(MAX_RAD, Number(e.target.value) || 1)))} />
+                <span className="text-ink-soft">sida mot sida med skyddsavstånd</span>
+              </label>
+            ) : null}
           {!volymAntal ? (
             <Callout ton="info">
               <b>Inga enheter på tomten.</b> Placera enheter med menyn, eller lägg in en standardlayout för {profil.namn}.{" "}
@@ -839,7 +942,7 @@ export function Site() {
             objekt={objekt}
             valtId={valtId}
             etikett={`Planvy över siten, ${volymAntal} volymer och ${nalAntal} nålar`}
-            onMark={(x, z) => (laddad ? placera(x, z) : setValtId(null))}
+            onMark={(x, z) => (laddad ? (radAntal > 1 && laddad !== "nal" ? placeraRad({ x, z }, { antal: radAntal }) : placera(x, z)) : setValtId(null))}
             onValj={setValtId}
             className="rounded-lg"
           />
@@ -998,8 +1101,9 @@ export function Site() {
                     profil={profilId}
                     spokMatt={laddad ? mattFor(profilId, laddad) : null}
                     ritningar={ritningar}
-                    onPlacera={placera}
-                    onValj={(id) => { setValtId(id); if (id) setPanel("objekt"); }}
+                    onPlacera={(x, z) => (radAntal > 1 && laddad !== "nal" ? placeraRad({ x, z }, { antal: radAntal }) : placera(x, z))}
+                    onPlaceraRad={(start, slut) => placeraRad(start, { slut })}
+                    onValj={(id, val) => { setValtId(id); if (id && !val?.tyst) setPanel("objekt"); }}
                     onMatt={setMatt}
                     onKlar={(api) => { sceneApi.current = api; }}
                     onFlytta={(id, x, z) => dispatch({ type: "SITE_ANDRA", id, andring: { x, z } })}
