@@ -55,6 +55,7 @@ Fyll i datum och beslut i tabellen när det är fattat. Migrationer i `supabase/
 - **Frist och uppföljning är två fält på punkter** (`forfaller`, `uppfoljning`). `punktDatum()` avgör var punkten hamnar: en passerad frist vinner alltid. Uppföljning skriver aldrig om fristen.
 - **Kommentarer på punkter** är en lista med id (`kommentarer`) via `PUNKT_KOMMENTAR`, så att `sammanfoga.js` slår ihop två personers kommentarer. `av` är det inskrivna namnet i sidomenyn, inte en verifierad identitet.
 - **Projektmall** (`lib/projektmall.js`, 2026-10-23): `SKAPA_PROJEKT` startar fortfarande tomt. Arv från ett tidigare projekt är ett eget steg, `PROJEKT_ARV` (risker, long lead, ej aktuella punkter, momentplan, lärdomar som uppgifter), i Bygga batteripark. Ärvda rader får id ur källradens id, så att samma arv inte ger dubbletter. Inga resultat, ekonomivärden eller signaturer ärvs.
+- **Siterunda** (`lib/siterunda.js`, 2026-10-23): Registrera händelse tar foto och plats. Foton krymps till JPEG och laddas till ritningsarkivet (`projekt/foto/…`); på punkten ligger bara `foton` med sökväg. En plats sätter en nål på siteobjektet. Med foto eller plats och utan datum blir uppföljningen idag.
 - **"Mina uppgifter" finns inte än.** `agare` är fritext; bygg det först när ansvar tilldelas uttryckligen.
 
 ## Menyn följer rytmen (2026-10-22)

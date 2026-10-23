@@ -1,13 +1,19 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Camera, MapPin, X } from "lucide-react";
 import { Slideover } from "../ui/Slideover.jsx";
 import { PTag } from "../ui/PTag.jsx";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { KOPPLINGSTYPER, nyHandelse, nyKoppladPost } from "../../lib/handelse.js";
 import { ORSAKER } from "../../data/konstanter.js";
+import { MAX_FOTON, fotoSokvag, krympFoto, medSiterunda, nalPa, platser } from "../../lib/siterunda.js";
+import { skapaRitningsArkiv } from "../../state/ritningsArkiv.js";
 
-/* Registrera händelse — från vilken vy som helst.
+/* Registrera händelse — från vilken vy som helst, också på en siterunda i mobilen.
 
-   Steg 1 är bara fyra saker: vad som hänt, ansvarig, nästa datum och ev. underlag.
+   Steg 1 är vad som hänt, ansvarig, nästa datum och ev. underlag, plus foto och
+   plats på siten (lib/siterunda.js). Foton krymps och laddas upp till arkivet;
+   en plats ger en nål i 3D. Med foto eller plats men utan datum blir nästa
+   datum idag, så att punkten hamnar i Idag.
    Det blir en punkt i valt projekt. Steg 2 erbjuder tillägg (ÄTA, hinder, risk) som
    skapar en separat, länkad post med grunduppgifterna förifyllda. Man kan stanna
    efter steg 1 och komplettera senare från punkten i Idag. */
@@ -21,28 +27,64 @@ export function HandelsePanel() {
 }
 
 function Panel({ onStang, pid, visaToast }) {
-  const { state, laggTill, kopplaHandelse } = usePortfolj();
+  const { state, laggTill, kopplaHandelse, dispatch } = usePortfolj();
   const proj = state.projekt.find((p) => p.id === pid) || state.projekt[0];
   const [v, setV] = useState({ titel: "", agare: "", uppfoljning: "", underlag: "" });
   const [sparad, setSparad] = useState(null);
   const [fel, setFel] = useState("");
   const [orsak, setOrsak] = useState("");
+  const [filer, setFiler] = useState([]);
+  const [platsId, setPlatsId] = useState("");
+  const [laddar, setLaddar] = useState(false);
+  const forhand = useMemo(() => filer.map((f) => URL.createObjectURL(f)), [filer]);
+  useEffect(() => () => forhand.forEach((u) => URL.revokeObjectURL(u)), [forhand]);
+  const platsLista = useMemo(() => (proj ? platser(state, proj.id) : []), [state, proj]);
 
   if (!proj) return null;
   const projektNamn = `${proj.nr ? `${proj.nr} ` : ""}${proj.namn}`;
   const andra = (k) => (e) => setV((x) => ({ ...x, [k]: e.target.value }));
 
-  const spara = (e) => {
+  const valjFoton = (e) => {
+    const nya = [...(e.target.files || [])].filter((f) => /^image\//.test(f.type));
+    setFiler((f) => [...f, ...nya].slice(0, MAX_FOTON));
+    e.target.value = "";
+  };
+
+  const spara = async (e) => {
     e.preventDefault();
     if (!v.titel.trim()) {
       setFel("Beskriv vad som har hänt eller behöver göras.");
       return;
     }
-    const rad = nyHandelse(proj.id, v);
+    const grund = nyHandelse(proj.id, v);
+    const foton = [];
+    if (filer.length) {
+      setLaddar(true);
+      try {
+        const arkiv = skapaRitningsArkiv();
+        for (let i = 0; i < filer.length; i++) {
+          const blob = await krympFoto(filer[i]);
+          const sokvag = fotoSokvag(proj.id, grund.id, i);
+          await arkiv.ladda(blob, sokvag);
+          foton.push({ sokvag, lagring: arkiv.lage, storlek: blob.size, namn: filer[i].name || `foto-${i + 1}.jpg` });
+        }
+      } catch (err) {
+        setLaddar(false);
+        setFel(`Fotot kunde inte sparas: ${err?.message || err}. Försök igen, eller spara utan foto.`);
+        return;
+      }
+      setLaddar(false);
+    }
+    const plats = platsLista.find((x) => x.id === platsId) || null;
+    const rad = medSiterunda(grund, { foton, plats });
     laggTill("punkter", rad);
+    if (plats) {
+      const nal = nalPa(state, proj.id, plats.id, rad.id);
+      if (nal) dispatch({ type: "SITE_LAGG_TILL", rad: nal });
+    }
     setSparad(rad);
     setFel("");
-    visaToast("Händelsen är registrerad");
+    visaToast(foton.length || plats ? "Händelsen är registrerad med foto och plats" : "Händelsen är registrerad");
   };
 
   /* Den sparade punkten, som den ser ut nu — länkarna läggs på via reducern. */
@@ -55,6 +97,8 @@ function Panel({ onStang, pid, visaToast }) {
 
   const ny = () => {
     setV({ titel: "", agare: "", uppfoljning: "", underlag: "" });
+    setFiler([]);
+    setPlatsId("");
     setSparad(null);
   };
 
@@ -81,12 +125,53 @@ function Panel({ onStang, pid, visaToast }) {
               <input className={falt} type="date" value={v.uppfoljning} onChange={andra("uppfoljning")} />
               <span className="mt-1 block text-[12px] text-ink-soft">När du vill följa upp. Arbetsfristen kan sättas senare.</span>
             </label>
+            <div className="flex flex-col gap-2">
+              <span className="font-semibold text-ink">Foto (valfritt)</span>
+              <label className="btn sec inline-flex w-fit cursor-pointer items-center gap-2">
+                <Camera size={16} aria-hidden="true" />
+                {filer.length ? "Ta ett foto till" : "Ta foto"}
+                <input type="file" accept="image/*" capture="environment" multiple className="sr-only" onChange={valjFoton} aria-label="Ta eller välj foto" />
+              </label>
+              {filer.length ? (
+                <ul className="m-0 flex list-none flex-wrap gap-2 p-0" aria-label="Valda foton">
+                  {filer.map((f, i) => (
+                    <li key={forhand[i]} className="relative">
+                      <img src={forhand[i]} alt={`Foto ${i + 1}`} className="block h-20 w-20 rounded-lg object-cover" />
+                      <button
+                        type="button"
+                        className="absolute right-1 top-1 rounded-full border-0 bg-black/60 p-0.5 text-white"
+                        aria-label={`Ta bort foto ${i + 1}`}
+                        onClick={() => setFiler((x) => x.filter((_, j) => j !== i))}
+                      >
+                        <X size={14} aria-hidden="true" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              <span className="text-[12px] text-ink-soft">Högst {MAX_FOTON} foton. De krymps före uppladdning.</span>
+            </div>
+            <label className="block">
+              <span className="font-semibold text-ink">
+                <MapPin size={14} aria-hidden="true" className="mr-1 inline align-[-2px]" />
+                Plats på siten (valfritt)
+              </span>
+              <select className={falt} value={platsId} onChange={(e) => setPlatsId(e.target.value)} disabled={!platsLista.length}>
+                <option value="">{platsLista.length ? "Ingen plats" : "Inget placerat på siten än"}</option>
+                {platsLista.map((pl) => (
+                  <option key={pl.id} value={pl.id}>
+                    {pl.namn}
+                  </option>
+                ))}
+              </select>
+              <span className="mt-1 block text-[12px] text-ink-soft">En nål sätts på platsen i Siten i 3D. Med foto eller plats och utan datum hamnar punkten i Idag i dag.</span>
+            </label>
             <label className="block">
               <span className="font-semibold text-ink">Underlag (valfritt)</span>
               <input className={falt} type="text" value={v.underlag} onChange={andra("underlag")} placeholder="Dokument, ritning, länk eller mejl" />
             </label>
             <div>
-              <button type="submit" className="btn">Spara händelse</button>
+              <button type="submit" className="btn" disabled={laddar}>{laddar ? "Sparar foton …" : "Spara händelse"}</button>
             </div>
           </form>
         ) : (

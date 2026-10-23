@@ -141,6 +141,8 @@ export function agendarader(state, dagar, bakat = 0) {
       agare: p.agare || "",
       forfaller: p.forfaller || "",
       uppfoljning: p.uppfoljning || "",
+      foton: (p.foton || []).length,
+      plats: p.plats?.namn || "",
     });
   });
 

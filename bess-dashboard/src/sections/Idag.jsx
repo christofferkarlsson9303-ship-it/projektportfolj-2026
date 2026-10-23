@@ -193,6 +193,8 @@ export function Idag() {
       r.agare ? `Ansvarig: ${r.agare}` : "Ansvarig saknas",
       r.forfaller ? `frist ${datumKort(r.forfaller)}` : "ingen frist",
       r.uppfoljning ? `uppföljning ${datumKort(r.uppfoljning)}` : null,
+      r.plats ? `plats ${r.plats}` : null,
+      r.foton ? `${r.foton} foto${r.foton > 1 ? "n" : ""}` : null,
       varfor(r),
     ].filter(Boolean).join(" · ");
 
