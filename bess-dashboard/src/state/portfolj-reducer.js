@@ -21,6 +21,7 @@ import { projektFasFranEpc } from "../lib/projektfasEpc.js";
 import { arDold } from "../lib/arkiv.js";
 import { sattVidSteg } from "../lib/sammanfoga.js";
 import { projektstartFel, projektstartPost, tomtUtkast } from "../lib/projektstart.js";
+import { ARVSDELAR, arv } from "../lib/projektmall.js";
 import { EJ_VUNNET_ORSAKER, FAS_MODELL, arFasNr, faseFranGammal, fasFranStatus, faseInfo, riskFasFranGammal, forstaFasForStatus, normaliseraStatus, statusEtikett } from "../data/projektfaser.ts";
 import { granskaProfil, rensaProfil } from "../lib/kontraktsprofil.js";
 
@@ -365,6 +366,19 @@ export function reducer(state, action) {
       const projekt = { ...rad, kontraktsvarde: null };
       const nytt = efterInlasning({ ...state, projekt: [...state.projekt, projekt] });
       return loggat(nytt, projekt.id, `Projekt skapat: ${projekt.nr || "nummer saknas"} ${projekt.namn}. Tomma mallar, inga tidigare resultat kopierade.`);
+    }
+
+    /* Ärv valda delar från ett tidigare projekt (lib/projektmall.js). Uttryckligt
+       steg efter SKAPA_PROJEKT, som fortsatt startar tomt. */
+    case "PROJEKT_ARV": {
+      const { fran, till, delar } = action;
+      if (!fran || !till || fran === till) return state;
+      const kalla = state.projekt.find((p) => p.id === fran);
+      if (!kalla || !state.projekt.some((p) => p.id === till)) return state;
+      const { state: nytt, antal } = arv(state, fran, till, delar || [], { datum: idag(), namn: hamtaNamn() || "" });
+      const delText = ARVSDELAR.filter(([k]) => antal[k]).map(([k, namn]) => `${namn.toLowerCase()} ${antal[k]}`).join(", ");
+      if (!delText) return state;
+      return loggat(nytt, till, `Ärvt från ${kalla.nr || kalla.namn}: ${delText}`);
     }
 
     case "UPPDATERA": {

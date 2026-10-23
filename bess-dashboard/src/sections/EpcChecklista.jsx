@@ -12,6 +12,7 @@ import { Summering } from "../components/epc/Summering.jsx";
 import { Callout, Card, SectionHeading } from "../components/ds/index.js";
 import { Erfarenhetslista } from "../components/epc/Erfarenheter.jsx";
 import { HeroBild } from "../components/oversikt/Hero.jsx";
+import { ProjektArv } from "../components/epc/ProjektArv.jsx";
 
 /* Bygga batteripark — hur en BESS-anläggning byggs som totalentreprenad
    (ABT 06), steg för steg, och var portföljens projekt står.
@@ -275,6 +276,8 @@ export function EpcChecklista() {
           </ul>
         </div>
       </Card>
+
+      <ProjektArv key={pid} pid={pid} />
 
       <Card
         id="epc-lage"
