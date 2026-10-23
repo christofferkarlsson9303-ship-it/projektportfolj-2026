@@ -10,6 +10,7 @@
      ritningar/…     ritningsfilerna under sin sökväg
      ifc/<id>.json   IFC-geometrin per modell
      protokoll/…     protokollfilerna
+     foton/…         foton på punkter (siterundan) under sin sökväg
 
    Återläsningen kontrollerar varje kontrollsumma innan något används. Ren logik:
    källorna och målen skickas in, så att flödet går att prova utan webbläsare. */
@@ -40,7 +41,7 @@ const saker = (s) => String(s || "fil").normalize("NFD").replace(/[^\w./-]+/g, "
 
 /**
  * @typedef {object} Bilagekalla
- * @property {"ritning"|"ifc"|"protokoll"} typ
+ * @property {"ritning"|"foto"|"ifc"|"protokoll"} typ
  * @property {string} id         radens id i state eller arkivet
  * @property {string} namn       läsbart namn
  * @property {string} sokvag     sökväg i ZIP-filen
@@ -113,7 +114,7 @@ export async function lasSakerhetskopia(indata) {
 /** Text till förhandsgranskningen: vad som följer med och vad som saknas. */
 export function bilagaSammanfattning(manifest) {
   const per = (typ) => (manifest.filer || []).filter((f) => f.typ === typ).length;
-  const ut = [`Bilagor: ${per("ritning")} ritningar, ${per("ifc")} IFC-modeller, ${per("protokoll")} protokoll.`];
+  const ut = [`Bilagor: ${per("ritning")} ritningar, ${per("foto")} foton, ${per("ifc")} IFC-modeller, ${per("protokoll")} protokoll.`];
   for (const s of manifest.saknas || []) ut.push(`Saknas i kopian: ${s.namn} (${s.typ}) – ${s.orsak}`);
   return ut;
 }
@@ -128,6 +129,17 @@ export function bilagekallor(state, { ritningsArkiv, ifcCache, protokoll = [], p
       meta: { lagring: r.lagring, sokvag: r.sokvag },
       hamta: () => ritningsArkiv(r.lagring).hamta(r.sokvag),
     });
+  }
+  /* Foton på punkter (lib/siterunda.js) ligger i samma arkiv som ritningarna. */
+  for (const p of state.punkter || []) {
+    for (const f of p.foton || []) {
+      if (!f?.sokvag) continue;
+      ut.push({
+        typ: "foto", id: `${p.id}:${f.sokvag}`, namn: f.namn || f.sokvag, sokvag: `foton/${f.sokvag}`,
+        meta: { lagring: f.lagring, sokvag: f.sokvag, punktId: p.id },
+        hamta: () => ritningsArkiv(f.lagring).hamta(f.sokvag),
+      });
+    }
   }
   for (const m of state.ifcModeller || []) {
     ut.push({ typ: "ifc", id: m.id, namn: m.filnamn || m.namn || m.id, sokvag: `ifc/${m.id}.json`, meta: { modellId: m.id }, hamta: () => ifcCache.hamta(m.id) });
@@ -152,7 +164,7 @@ export async function aterstallBilagor(filer, { ritningsArkiv, ifcCache, protoko
   const fel = [];
   for (const f of filer) {
     try {
-      if (f.typ === "ritning") {
+      if (f.typ === "ritning" || f.typ === "foto") {
         const arkiv = ritningsArkiv(f.meta.lagring);
         if (await arkiv.hamta(f.meta.sokvag).catch(() => null)) {
           hoppade.push(f.namn);
