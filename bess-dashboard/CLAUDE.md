@@ -21,6 +21,8 @@ Granskningen (commit `0e7f85961c8a`, fynd F01–F15) ligger till grund för GitH
 
 **Regler som gäller nu:**
 
+- **En grind bockar inte av punkter** (beslut 2026-10-17). `punktlage()` ger källan `ejregistrerad` för öppna punkter i ett moment med passerad grind. Använd `attGora()` när du listar uppgifter, så att de inte blir nya att göra. Källan `egenkontroll` betyder att en verifierad egenkontroll styrker punkten (`styrktaPunkter()`). Se `docs/gemensam-checklista.md`.
+
 - **Kontrolltäckning.** `kontrollage()` räknar en punkt som verifierad först när varje omfattning som registrerats i fasen är komplett. Gör inte tillbaka till "minst en rad".
 - **Datum** i kontroller valideras med `arGiltigtDatum()` i `src/lib/datum.js`. Använd den, inte `Date.parse`.
 - **Inga ärenden är ingen driftstatus.** `komponentLage()` ger ton `ingen`, aldrig `ok`. Grönt får inte betyda "inget registrerat".
