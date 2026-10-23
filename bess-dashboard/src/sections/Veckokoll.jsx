@@ -4,6 +4,7 @@ import { usePortfolj, useUi } from "../state/hooks.js";
 import { Card, Meter, StatusBadge, TableRegion } from "../components/ds/index.js";
 import { Falt } from "../components/ui/Falt.jsx";
 import { VeckoProjektflikar } from "../components/veckokoll/VeckoProjektflikar.jsx";
+import { InterfaceLista } from "../components/veckokoll/InterfaceLista.jsx";
 import { BessStatusHeader } from "../components/site/BessStatusHeader.jsx";
 import { VECKOFRAGOR } from "../data/veckofragor.js";
 import { nyAtaPost } from "../lib/nyaPoster.js";
@@ -286,6 +287,8 @@ export function Veckokoll() {
             />
           ))}
         </div>
+
+        <InterfaceLista pid={pid} />
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
           <Card

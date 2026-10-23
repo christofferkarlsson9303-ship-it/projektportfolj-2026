@@ -56,7 +56,7 @@ test("nytt projekt har tomma mallar och finns kvar efter omladdning", async ({ p
   await gaTill(page, "Slutdokumentation");
   await expect(page.locator(".slutdok-rad").first()).toContainText("Ej påbörjad");
   await page.getByRole("button", { name: "Projektets egenkontrollrapport", exact: true }).click();
-  await expect(page.getByRole("dialog", { name: /Fältmaterial/ })).toContainText("0 av 115 kompletta kontroller");
+  await expect(page.getByRole("dialog", { name: /Fältmaterial/ })).toContainText("0 av 125 kompletta kontroller");
   utanKonsolfel(fel);
 });
 
@@ -77,8 +77,8 @@ test("byggfasens egenkontroller delar resultat och sparar sista texten vid Escap
   await ref.fill("Kravspecifikation rev D"); await ref.press("Escape");
   await expect(d).not.toBeVisible(); await expect(lage).toContainText("1 av 4 kompletta");
   await page.getByRole("button", { name: "Fältmaterial", exact: true }).click();
-  await expect(d.getByRole("status")).toContainText("115 kontrollpunkter");
-  await expect(d).toContainText("1 av 115 kompletta kontroller");
+  await expect(d.getByRole("status")).toContainText("125 kontrollpunkter");
+  await expect(d).toContainText("1 av 125 kompletta kontroller");
   await d.locator("details").first().locator("summary").click();
   await expect(d.getByLabel("Bevis / protokoll och revision – P0.01", { exact: true })).toHaveValue("Kravspecifikation rev D");
 });

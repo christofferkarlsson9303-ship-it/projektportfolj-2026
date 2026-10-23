@@ -12,6 +12,8 @@ import { FasMatare } from "../projekt/FasMatare.jsx";
 import { FasAvvikelse, useFlyttaFas } from "../projekt/FasAvvikelse.jsx";
 import { fasEtikett } from "../../lib/fasmappning.js";
 import { faslage } from "../../lib/epc.js";
+import { trafikljus } from "../../lib/metodkoll.js";
+import { Trafikljus } from "../projekt/Trafikljus.jsx";
 
 /* ---------- Projektkort ---------- */
 
@@ -97,6 +99,7 @@ export function Projektkort({ p }) {
         <div className="my-3 flex flex-col gap-2">
           <FasMatare fas={nuFas} onVal={bytFas} etikett={`Fas för ${p.namn}`} />
           <FasAvvikelse p={p} faslage={momentlage} kompakt />
+          <Trafikljus ljus={trafikljus(state, p.id)} rubrik={`Trafikljus för ${p.namn}`} />
         </div>
       ) : null}
 

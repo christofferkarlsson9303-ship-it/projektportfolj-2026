@@ -14,8 +14,8 @@ const doc = (kontroller, ids = PROJEKTMALLAR.map((m) => m.id), enhet = "") => by
 describe("Projektets egenkontroll", () => {
   it("täcker hela livscykeln och bevarar alla tekniska kontroll-ID", () => {
     const p = PROJEKTMALLAR.flatMap((m) => m.punkter);
-    expect(PROJEKTMALLAR).toHaveLength(16); expect(p).toHaveLength(115);
-    expect(new Set(p.map((x) => x.id)).size).toBe(115);
+    expect(PROJEKTMALLAR).toHaveLength(16); expect(p).toHaveLength(125);
+    expect(new Set(p.map((x) => x.id)).size).toBe(125);
     for (const old of FALTMALLAR.flatMap((m) => m.punkter)) expect(p.some((x) => x.id === old.id)).toBe(true);
     expect(p.some((x) => x.id === "B.02")).toBe(true);
     expect(PROJEKTMALLAR.at(-1).titel).toContain("garanti");
@@ -27,7 +27,7 @@ describe("Projektets egenkontroll", () => {
   });
   it("skiljer kompletta rapporter från delurval och blandar inte enheter/projekt", () => {
     const records = PROJEKTMALLAR.flatMap((m) => m.punkter.map((p) => row(p.id)));
-    const d = doc(records); expect(d.sammanstallning.klara).toBe(115); expect(rapportStatus(d)).toContain("redo för granskning");
+    const d = doc(records); expect(d.sammanstallning.klara).toBe(125); expect(rapportStatus(d)).toContain("redo för granskning");
     expect(rapportStatus(doc(records, ["projekt-0"]))).toContain("Delurval");
     expect(doc(records, undefined, "Container 2").sammanstallning.klara).toBe(0);
     expect(doc(records.map((r) => ({ ...r, id: kontrollId("36038", r.omfattning, r.punktId), projektId: "36038" }))).sammanstallning.klara).toBe(0);
