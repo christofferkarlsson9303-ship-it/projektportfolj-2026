@@ -1844,6 +1844,12 @@ textarea.hp-led-text::placeholder{color:var(--ink-faint);font-weight:400}
 .epc-framsteg{margin:0;font-size:12.5px;line-height:1.45;color:var(--ink-soft)}
 .epc-framsteg b{color:var(--ink)}
 .epc-grindforslag{margin:0;padding:8px 10px;border-radius:8px;background:var(--ok-bg);color:var(--ok-ink);font-size:12.5px;font-weight:600;line-height:1.45}
+/* Grindrutan: exakt vad som saknas för klartecknet, och oregistrerade punkter efter passerad grind. */
+.epc-saknas{padding:10px 12px;border-radius:8px;background:var(--warn-bg);color:var(--ink);font-size:12.5px;line-height:1.45}
+.epc-saknas>b{display:block;color:var(--warn-ink);margin-bottom:4px}
+.epc-saknas ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px}
+.epc-saknas-hp{font-size:10.5px;font-weight:700;color:var(--warn-ink);border:1px solid currentColor;border-radius:4px;padding:0 4px}
+.epc-ejreg{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:8px;border:1px solid var(--hairline);font-size:12.5px;line-height:1.45}
 .epc-grindlage{margin:0;display:flex;align-items:flex-start;gap:6px;font-size:12.5px;line-height:1.45;color:var(--ink-soft)}
 .epc-grindlage.ok{color:var(--ok-ink);font-weight:600}
 .epc-grindlage svg{flex:0 0 auto;margin-top:1px}
