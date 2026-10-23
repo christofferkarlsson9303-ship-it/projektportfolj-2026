@@ -28,6 +28,8 @@ test("moment 4 visar att godkänd lösning saknas före inköp", async ({ page }
   await expect(grind).toContainText("Inte godkänd — inga större inköp");
   await grind.getByRole("button", { name: "Öppna Godkänd lösning i Projektstart" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Projektstart");
+  // Projektets egen start öppnas, inte en ny projektstart.
+  await expect(page.getByText(/ONE-P · 36037 /)).toBeVisible();
 });
 
 test("projektkorten i Översikt har trafikljus för tid, budget, arbete och milstolpar", async ({ page }) => {

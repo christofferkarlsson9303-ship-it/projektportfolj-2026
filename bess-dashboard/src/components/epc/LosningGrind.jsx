@@ -8,7 +8,7 @@ import { losningslage } from "../../lib/metodkoll.js";
    moment 4 (Inköp & ledtider). */
 export function LosningGrind({ pid }) {
   const { state } = usePortfolj();
-  const { visa } = useUi();
+  const { oppnaProjektstart } = useUi();
   const l = losningslage(state, pid);
   return (
     <div className={`epc-losning ${l.godkand ? "ok" : ""}`.trim()} role="group" aria-label="Godkänd lösning — grind före inköp">
@@ -21,7 +21,7 @@ export function LosningGrind({ pid }) {
           {l.finns ? l.saknas.map((t) => <li key={t}>{t}</li>) : <li>Projektstartens steg Godkänd lösning är inte påbörjat.</li>}
         </ul>
       ) : null}
-      <button type="button" className="lankknapp" onClick={() => visa("start")}>
+      <button type="button" className="lankknapp" onClick={() => oppnaProjektstart(pid)}>
         Öppna Godkänd lösning i Projektstart
       </button>
     </div>

@@ -1,6 +1,6 @@
 import { KATALOG } from "../data/projektstartKatalog.js";
 import { dagarMellan, faslage } from "./epc.js";
-import { idag } from "./datum.js";
+import { arGiltigtDatum, idag } from "./datum.js";
 import { kritiskLinje } from "./kritiskLinje.js";
 import { prognos, prognosLage } from "./prognos.js";
 
@@ -16,7 +16,6 @@ import { prognos, prognosLage } from "./prognos.js";
 
 const AVSTAMNING_DAGAR = 7;
 
-const giltigt = (iso) => typeof iso === "string" && /^\d{4}-\d{2}-\d{2}$/.test(iso);
 export const projektstartFor = (state, pid) => (state.projektstart || []).find((x) => x.projektId === pid) || null;
 
 /* ---------- Interface-lista ---------- */
@@ -29,7 +28,7 @@ export function interfacelage(state, pid, nu = idag()) {
   const rader = (post.utkast?.rader?.interface || [])
     .filter((r) => (r.granssnitt || r.innehall || "").trim())
     .map((r) => {
-      const dagar = giltigt(r.avstamd) ? dagarMellan(r.avstamd, nu) : null;
+      const dagar = arGiltigtDatum(r.avstamd) ? dagarMellan(r.avstamd, nu) : null;
       const status = r.status || "Ej bedömd";
       let lage = "ok";
       if (status === "Oklart") lage = "oklart";

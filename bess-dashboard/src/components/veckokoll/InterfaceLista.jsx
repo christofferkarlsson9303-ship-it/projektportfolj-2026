@@ -20,7 +20,7 @@ const LAGE = {
 
 export function InterfaceLista({ pid }) {
   const { state, dispatch } = usePortfolj();
-  const { visa } = useUi();
+  const { oppnaProjektstart } = useUi();
   const l = interfacelage(state, pid);
   const satt = (rad, falt, varde) => dispatch({ type: "PROJEKTSTART_RAD", pid, tabell: "interface", radId: rad.id, falt, varde });
 
@@ -73,7 +73,7 @@ export function InterfaceLista({ pid }) {
             })}
           </ul>
           <div>
-            <button type="button" className="lankknapp text-[12.5px]" onClick={() => visa("start")}>
+            <button type="button" className="lankknapp text-[12.5px]" onClick={() => oppnaProjektstart(pid)}>
               Lägg till eller ändra gränssnitt i Projektstart
             </button>
           </div>
