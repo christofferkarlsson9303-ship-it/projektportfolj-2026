@@ -103,17 +103,33 @@ function Fragekort({ f, svar, kommentar, utfalld, onSvara, onVaxla, onKommentar,
                   onCommit={(v) => onKommentar(f.n, v)}
                 />
               </div>
-              <div className="flex flex-wrap gap-2">
-                <button type="button" className="btn mini" onClick={() => onPunkt(f)}>
-                  Skapa öppen punkt
-                </button>
-                <button type="button" className="btn sec mini" onClick={() => onAta(f)}>
-                  Skapa ÄTA
-                </button>
-                {[2, 5].includes(f.n) ? (
-                  <button type="button" className="btn sec mini" onClick={() => onStorning(f)}>
-                    Skapa underrättelse om störning
+              {/* Hjälptext under varje val, så att det syns vad valet betyder i ABT 06. */}
+              <div className="veckokort-val">
+                <div className="veckokort-val-rad">
+                  <button type="button" className="btn mini" aria-describedby={`vecka-hjalp-punkt-${f.n}`} onClick={() => onPunkt(f)}>
+                    Skapa öppen punkt
                   </button>
+                  <span id={`vecka-hjalp-punkt-${f.n}`} className="veckokort-hjalp">
+                    Följ upp internt: vem gör vad till när. Ingen formell verkan.
+                  </span>
+                </div>
+                <div className="veckokort-val-rad">
+                  <button type="button" className="btn sec mini" aria-describedby={`vecka-hjalp-ata-${f.n}`} onClick={() => onAta(f)}>
+                    Skapa ÄTA
+                  </button>
+                  <span id={`vecka-hjalp-ata-${f.n}`} className="veckokort-hjalp">
+                    Omfattning eller pris ändras. Anmäl innan arbetet utförs.
+                  </span>
+                </div>
+                {[2, 5].includes(f.n) ? (
+                  <div className="veckokort-val-rad">
+                    <button type="button" className="btn sec mini" aria-describedby={`vecka-hjalp-storning-${f.n}`} onClick={() => onStorning(f)}>
+                      Skapa underrättelse om störning
+                    </button>
+                    <span id={`vecka-hjalp-storning-${f.n}`} className="veckokort-hjalp">
+                      Tiden kan påverkas. Skicka skriftligt utan dröjsmål, annars riskeras rätten till tidsförlängning (ABT 06 kap. 4).
+                    </span>
+                  </div>
                 ) : null}
               </div>
             </div>
