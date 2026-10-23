@@ -52,6 +52,12 @@ Fyll i datum och beslut i tabellen när det är fattat. Migrationer i `supabase/
 - **Kommentarer på punkter** är en lista med id (`kommentarer`) via `PUNKT_KOMMENTAR`, så att `sammanfoga.js` slår ihop två personers kommentarer. `av` är det inskrivna namnet i sidomenyn, inte en verifierad identitet.
 - **"Mina uppgifter" finns inte än.** `agare` är fritext; bygg det först när ansvar tilldelas uttryckligen.
 
+## Menyn följer rytmen (2026-10-22)
+
+- **Hela menyn** (`GRUPPER` i `data/vyer.js`) har sex grupper efter projektmetodens rytm: Dagligen, Varje vecka och månad, Projektet, Pengar, Siten, Bibliotek. Nya vyer läggs i den grupp där de används, inte i en ny grupp.
+- **Enkla menyn** (`ENKEL_MENY`, sju flikar) svarar på fyra frågor: vad gör jag idag/i veckan, vad blockerar, blir vi klara i tid, vad kostar det. Idag, Översikt, Veckokoll, Bygga batteripark, Tidplan, ÄTA, Budget och utfall. Öppna punkter nås från Idag; HSEQ, Risker och Öppna punkter från Veckokoll ("Veckans genomgång").
+- **Testet för en ny vy:** svarar den på någon av de fyra frågorna? Annars hör den hemma i en befintlig vy eller i Bibliotek.
+
 ## ÄTA: art, orsak och fyra kolumner (2026-10-21)
 
 - **Art** (`art`: andring, tillagg, avgaende; `ATA_ART`) är vad ÄTA:n är. **Orsak** (`orsak`, `ORSAKER`) är varför. Hinder och störning är orsaker, inte egna poster. `klass` ("Behandlas som") finns kvar eftersom `prisGrind()` hoppar över hinder; den föreslås ur orsaken bara när posten är oklassificerad.
