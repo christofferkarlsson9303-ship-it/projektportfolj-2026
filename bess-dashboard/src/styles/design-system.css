@@ -2238,7 +2238,7 @@ button.ov-gantt-rad:hover>:first-child,button.ov-gantt-rad:focus-visible>:first-
 .epc-losning ul{margin:0;padding-left:18px}
 
 /* Trafikljus per projekt (projektmetoden § 3.4). */
-.trafikljus{display:grid;grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr));gap:6px}
+.trafikljus{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr));gap:6px}
 .trafikljus-del{display:grid;grid-template-columns:auto 1fr;column-gap:7px;align-items:center;padding:6px 8px;border-radius:8px;background:var(--sunken);font-size:12px;line-height:1.3}
 .trafikljus-del i{grid-row:span 2;width:10px;height:10px;border-radius:50%;background:var(--ink-faint)}
 .trafikljus-del[data-ton="ok"] i{background:var(--ok-ink)}

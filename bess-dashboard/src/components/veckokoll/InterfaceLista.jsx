@@ -52,7 +52,7 @@ export function InterfaceLista({ pid }) {
                     </div>
                     <p className="m-0 mt-0.5 text-[12.5px] text-ink-soft">{r.innehall}</p>
                   </div>
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 md:w-[30rem] md:shrink-0">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 md:w-[36rem] md:shrink-0">
                     <Falt varde={r.agare || ""} etikett={`Ägare för ${r.granssnitt}`} placeholder="Ägare" onCommit={(v) => satt(r, "agare", v)} />
                     <select value={r.status} aria-label={`Veckostatus för ${r.granssnitt}`} onChange={(e) => satt(r, "status", e.target.value)}>
                       {STATUS.map((s) => (
