@@ -900,6 +900,15 @@ Verktyget: `projektportfolj-2026/bess-dashboard` (React/Vite, Supabase, data i `
 9. **Veckorutin måndag–fredag** (3.2) som återkommande uppgifter i `idag`.
 10. **Nivåval A/B/C** (2.1) per projekt som styr vilka dokument som krävs.
 
+**Läge 2026-10-23** (grenen `metod-bess-kritiska`): punkt 3, 4, 6, 7 och 9 är byggda. Logiken ligger i `src/lib/metodkoll.js`.
+- 3: moment 4 visar om Godkänd lösning (Projektstart, Grind före inköp) är klar.
+- 4: interface-listan stäms av i Veckokoll och sparas i Projektstart.
+- 6: trafikljus finns på projektkorten i Översikt och i beställarrapporten (utan budget).
+- 7: tio anläggningsprov finns som egenkontroller i moment 13.
+- 9: Idag visar dagens veckorutin.
+
+Punkt 5 och 10 väntar: de ger lite med en användare. Punkt 1 fanns redan (APD i HSEQ).
+
 ### 11.3 Instruktion till Claude vid vidareutveckling
 - Detta dokument är källan för *arbetssättet*; `bessChecklistData.ts` är källan för *EPC-kontrollpunkterna*. Vid konflikt: fråga användaren.
 - Id:n i checklistdata får aldrig numreras om; nya punkter läggs sist i fasen.

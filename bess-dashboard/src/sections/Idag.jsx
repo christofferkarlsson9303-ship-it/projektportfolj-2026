@@ -10,6 +10,7 @@ import { datumKort, idag } from "../lib/datum.js";
 import { useSnabbUtskrift } from "../components/field/SnabbUtskrift.jsx";
 import { PunktPanel } from "../components/idag/PunktPanel.jsx";
 import { arNal, siteObjekt } from "../lib/site.js";
+import { Veckorutin } from "../components/idag/Veckorutin.jsx";
 import { HeroBild } from "../components/oversikt/Hero.jsx";
 
 /* Idag — projektledarens arbetslista.
@@ -298,6 +299,9 @@ export function Idag() {
           {harSite ? <button type="button" className={lankKlass} onClick={() => visa("site")}>Siten i 3D</button> : null}
         </nav>
       </section>
+
+      {/* ---------- Dagens rutin ur metoden (§ 3.2) ---------- */}
+      <Veckorutin />
 
       {/* ---------- 2. Att göra ---------- */}
       <section

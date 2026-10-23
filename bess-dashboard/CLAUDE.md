@@ -51,6 +51,7 @@ Fyll i datum och beslut i tabellen när det är fattat. Migrationer i `supabase/
 - **Projektval görs på ett ställe**: `Projektrad` i toppraden (`components/layout/Projektrad.jsx`). `Projektvaljare` ritar inget längre; lägg inte tillbaka egna väljare i vyer. "Nytt projekt" ligger också i toppraden.
 - **Portföljläge** (`lage` i `UiProvider`) finns bara i vyer som listas i `PORTFOLJVYER` (nu: Idag). Övriga vyer arbetar alltid i `valtProjekt`.
 - **Idag filtreras med `arbetslage(state, horisont, pid)`**. Utan `pid` är det hela portföljen. Rader för `bada` följer `gallerFor()`.
+- **Metodkontroller** (`lib/metodkoll.js`, 2026-10-23): interface-listan bor i Projektstart (`rader.interface`) och ändras utanför guiden med `PROJEKTSTART_RAD`; `PROJEKTSTART_SKAPA` skapar en saknad projektstart med projektets fas som golv. Trafikljusen räknas, de sätts inte för hand — beställarrapporten visar inte budgeten. Veckorutinen är data i `data/veckorutin.js`.
 - **Frist och uppföljning är två fält på punkter** (`forfaller`, `uppfoljning`). `punktDatum()` avgör var punkten hamnar: en passerad frist vinner alltid. Uppföljning skriver aldrig om fristen.
 - **Kommentarer på punkter** är en lista med id (`kommentarer`) via `PUNKT_KOMMENTAR`, så att `sammanfoga.js` slår ihop två personers kommentarer. `av` är det inskrivna namnet i sidomenyn, inte en verifierad identitet.
 - **"Mina uppgifter" finns inte än.** `agare` är fritext; bygg det först när ansvar tilldelas uttryckligen.

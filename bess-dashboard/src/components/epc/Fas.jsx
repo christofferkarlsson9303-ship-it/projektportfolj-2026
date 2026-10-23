@@ -9,6 +9,7 @@ import { fasRad, grindSaknas, mallDatum, planAnkare } from "../../lib/epc.js";
 import { FasStatus, Markeringar } from "./Delar.jsx";
 import { Kommentarer } from "./Punkt.jsx";
 import { EgenkontrollLage } from "./EgenkontrollLage.jsx";
+import { LosningGrind } from "./LosningGrind.jsx";
 
 /* Ett steg i guiden: vad fasen går ut på, vilken grind som avslutar den och
    vilka kontroll- och hållpunkter som hör till. Varje punkt bockas av för
@@ -246,6 +247,8 @@ function IProjektet({ lage, pid, projektnamn }) {
       <Saknas saknas={saknas} kod={f.grind.kod} />
 
       <EgenkontrollLage key={`${pid}-${f.nr}`} pid={pid} fas={f.nr} />
+
+      {f.nr === 4 ? <LosningGrind pid={pid} /> : null}
 
       <div className="epc-grind">
         {lage.grind.passerad ? (

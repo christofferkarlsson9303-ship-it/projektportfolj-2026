@@ -20,7 +20,7 @@ import { arGuid } from "../lib/bcfHanterare.js";
 import { projektFasFranEpc } from "../lib/projektfasEpc.js";
 import { arDold } from "../lib/arkiv.js";
 import { sattVidSteg } from "../lib/sammanfoga.js";
-import { projektstartFel } from "../lib/projektstart.js";
+import { projektstartFel, projektstartPost, tomtUtkast } from "../lib/projektstart.js";
 import { EJ_VUNNET_ORSAKER, FAS_MODELL, arFasNr, faseFranGammal, fasFranStatus, faseInfo, riskFasFranGammal, forstaFasForStatus, normaliseraStatus, statusEtikett } from "../data/projektfaser.ts";
 import { granskaProfil, rensaProfil } from "../lib/kontraktsprofil.js";
 
@@ -961,6 +961,33 @@ export function reducer(state, action) {
 
     /* EPC-checklistan: en punkt bockad av, satt som ej aktuell eller
        återöppnad. Loggas — en godkänd hållpunkt är ett besked i sig. */
+    /* Skapar projektstarten för ett befintligt projekt, med guidens startrader och
+       projektets fas som golv — så att t.ex. interface-listan kan föras i
+       Veckokoll innan guiden öppnats. Finns den redan händer inget. */
+    case "PROJEKTSTART_SKAPA": {
+      const proj = (state.projekt || []).find((p) => p.id === action.pid);
+      if (!proj || (state.projektstart || []).some((x) => x.projektId === action.pid)) return state;
+      const u = tomtUtkast();
+      u.fasGolv = arFasNr(proj.fas) ? proj.fas : fasFranStatus(proj.status);
+      return loggat({ ...state, projektstart: [...(state.projektstart || []), projektstartPost(action.pid, u)] }, action.pid, "Projektstart skapad");
+    }
+
+    /* En rad i en Projektstart-tabell ändrad utanför guiden, t.ex. interface-listan i Veckokoll. */
+    case "PROJEKTSTART_RAD": {
+      const { pid, tabell, radId, falt, varde } = action;
+      const post = (state.projektstart || []).find((x) => x.projektId === pid);
+      const rader = post?.utkast?.rader?.[tabell] || [];
+      const rad = rader.find((r) => r.id === radId);
+      if (!rad || Object.is(rad[falt], varde)) return state;
+      const nyPost = {
+        ...post,
+        utkast: { ...post.utkast, rader: { ...post.utkast.rader, [tabell]: rader.map((r) => (r.id === radId ? { ...r, [falt]: varde } : r)) } },
+        uppdaterad: new Date().toISOString(),
+      };
+      const nytt = { ...state, projektstart: state.projektstart.map((x) => (x.id === post.id ? nyPost : x)) };
+      return loggat(nytt, pid, `${tabell === "interface" ? "Interface-lista" : tabell}: ${rad.granssnitt || radId} ${falt} → ${String(varde ?? "—").slice(0, 60)}`);
+    }
+
     case "EPC_PUNKT": {
       const { pid, punkt, status } = action;
       const nytt = {
