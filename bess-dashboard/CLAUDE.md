@@ -76,6 +76,23 @@ Fyll i datum och beslut i tabellen när det är fattat. Migrationer i `supabase/
 - **Anbudshjulet** (`Projektstart/AnbudsDonut.jsx`, Recharts) räknar gröna, gula, röda och ej bedömda ur `anbudsBedomning()`. En klickad färg filtrerar matrisen och listan; filtret sparas inte.
 - **Riskmatrisen** (`Projektstart/Riskmatris.jsx`) är 3 × 3 sannolikhet × konsekvens i fälten `af_sann_<id>`/`af_kons_<id>`. Placeringen skriver `af_ljus_<id>` via `matrisLjus()` (produkt 1–2 grön, 3–4 gul, 6–9 röd). Ljuset kan ändras för hand och visas då som avvikelse. Dra-och-släpp har alltid klick (välj fråga, klicka ruta) som alternativ.
 
+## Vad som får byggas (2026-10-23)
+
+Appen är ett metodverktyg för en projektledare (Christoffer), inte en samling moduler. Varje ny funktion ska hjälpa till att svara på någon av de fyra frågorna, helst på under två minuter:
+
+1. **Blir vi klara i tid?** Vad styr tidplanen?
+2. **Vad kostar det?** Prognos mot budget och ofakturerade ÄTA.
+3. **Vad blockerar?** Vilken grind som är stängd och vem som äger hindret.
+4. **Vad måste jag göra idag och den här veckan?**
+
+Regler:
+
+- **Svarar förslaget inte på någon av frågorna** ska det in i en befintlig vy, i Bibliotek eller inte alls. Skapa inte en ny vy eller menygrupp för det.
+- **Siten i 3D och ONE Bered byggs bara ut på uttryckligt uppdrag.** De är bra vid layoutgenomgång och beredning men svarar inte på frågorna. Undantag beställt 2026-10-23: byggläget i 3D (dra direkt, R under drag, Delete/Ctrl+D/Ctrl+Z, dra ut en rad, vy uppifrån).
+- **En funktion ska spara tid varje vecka** för en ensam användare. Annars ska den bort eller vänta.
+- **Data:** foton, ritningar och modeller ligger i arkivet (Storage/IndexedDB), aldrig i `portfolj/state`. Håll koll på storleken i Data → Lagring (varning över 1024 kB).
+- **Före en PR:** säg vilken av de fyra frågorna ändringen hjälper och skriv det i PR-beskrivningen.
+
 ## Gör inte
 
 - Portera inte prototypens filer (`src/routes/*`, zustand-store, `@react-three/fiber`).
