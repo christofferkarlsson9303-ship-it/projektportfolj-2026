@@ -2302,3 +2302,15 @@ button.ov-gantt-rad:hover>:first-child,button.ov-gantt-rad:focus-visible>:first-
 .trafikljus-text{color:var(--ink-soft)}
 .trafikljus-del[data-ton="bad"] .trafikljus-text{color:var(--bad-ink);font-weight:600}
 @media print{.trafikljus-del{background:none;border:1px solid #ccc}}
+
+/* Bygga batteripark — infällda referensdelar. */
+.epc-referensdel{border:1px solid var(--hairline);border-radius:12px;background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.epc-referensdel>summary{cursor:pointer;list-style:none;display:flex;flex-direction:column;gap:3px;padding:14px 16px 14px 40px;position:relative}
+.epc-referensdel>summary::-webkit-details-marker{display:none}
+.epc-referensdel>summary::before{content:"›";position:absolute;left:18px;top:12px;font-size:20px;line-height:1;color:var(--ink-soft);transition:transform .15s}
+.epc-referensdel[open]>summary::before{transform:rotate(90deg)}
+.epc-referensdel>summary b{font-size:15px;color:var(--ink)}
+.epc-referensdel>summary span{font-size:12.5px;color:var(--ink-soft);line-height:1.45}
+.epc-referenskropp{padding:4px 16px 16px}
+@media(min-width:768px){.epc-referenskropp{padding:4px 24px 24px}}
+@media print{.epc-referensdel>summary::before{display:none}}
