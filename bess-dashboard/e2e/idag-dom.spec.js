@@ -26,10 +26,24 @@ test("bandet visar samma dom och slutbesiktning som Tidplan", async ({ page }) =
   const b = band(page);
   await expect(b).toContainText("Blir vi klara i tid");
   if (/sent/.test(tidplanMarke)) await expect(b).toContainText(tidplanMarke.replace(" mot kontraktet", ""));
-  else await expect(b.locator("[data-ton]").first()).toHaveText("I tid");
+  /* En leverans som passerat utan att vara levererad ger Risk i stället för I tid (lib/tidsdom.js). */
+  else await expect(b.locator("[data-ton]").first()).toHaveText(/^(I tid|Risk · \d+ leveranse?r? sen)$/);
   await expect(b).toContainText(slut);
   await expect(b).toContainText(/kräver din åtgärd/);
   utanKonsolfel(fel);
+});
+
+test("en passerad leverans som inte är levererad ger Risk, inte I tid", async ({ page }) => {
+  await medPortfolj(page, (s) => {
+    s.projekt.find((x) => x.id === "36037").fardigstallande = "2030-12-01";
+    s.leveranser = s.leveranser.filter((l) => l.projektId !== "36037");
+    s.leveranser.push({ id: "lt", projektId: "36037", benamning: "Testtrafo", leverantor: "ABB", datum: "2026-01-05", status: "bekraftad" });
+  });
+  await oppna(page);
+  const b = band(page);
+  await expect(b.locator("[data-ton]").first()).toHaveText("Risk · 1 leverans sen");
+  await expect(b).toContainText("Testtrafo (ABB)");
+  await expect(b).toContainText("inte markerad som levererad");
 });
 
 test("projekt utan start eller slut: tankstreck och Uppgifter saknas", async ({ page }) => {

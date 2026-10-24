@@ -253,7 +253,7 @@ export function EpcChecklista() {
         <div className="flex flex-wrap items-start justify-between gap-6">
           <SectionHeading
             id="epc-rubrik"
-            className="min-w-0 max-w-2xl flex-1"
+            className="min-w-[16rem] max-w-2xl flex-1"
             title="Så byggs en batteripark"
             lead="Välj projekt. Öppna rätt moment och följ upp arbetet. Spara verkliga provresultat i momentets egenkontroller. En grind är ett dokumenterat klartecken att gå vidare."
           >

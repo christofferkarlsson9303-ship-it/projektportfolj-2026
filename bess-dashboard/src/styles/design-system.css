@@ -211,7 +211,13 @@ th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;
   font-weight:700;padding:8px 10px;border-bottom:2px solid var(--hairline);white-space:nowrap}
 td{padding:9px 10px;border-bottom:1px solid var(--hairline);vertical-align:top}
 tbody tr:hover{background:var(--sunken)}
-.tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;
+  /* Skuggkant där tabellen fortsätter i sidled, så att en klippt kolumn syns. */
+  background:
+    linear-gradient(to right,var(--surface) 30%,transparent) left center/40px 100% no-repeat local,
+    linear-gradient(to left,var(--surface) 30%,transparent) right center/40px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%,rgba(0,0,0,.16),transparent) left center/14px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%,rgba(0,0,0,.16),transparent) right center/14px 100% no-repeat scroll}
 td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 
 /* ---------- Pills / badges ---------- */
@@ -732,6 +738,37 @@ main{max-width:1320px;padding:32px 38px 80px}
 @media(max-width:640px){
   .topbar{flex-wrap:wrap;gap:10px}
   .tophead{flex-basis:calc(100% - 40px)}
+}
+
+/* Sidhjälpen: ?-knapp bredvid rubriken, panel under toppraden. */
+.titelrad{display:flex;align-items:center;gap:10px;min-width:0}
+.titelrad .pagetitle{min-width:0}
+.sidhjalp{flex:none}
+.sidhjalp>summary{list-style:none;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;
+  border:1px solid rgba(255,255,255,.45);color:#fff;font-weight:700;font-size:14px;cursor:pointer}
+.sidhjalp>summary::-webkit-details-marker{display:none}
+.sidhjalp>summary:hover,.sidhjalp[open]>summary{background:rgba(255,255,255,.2);border-color:#fff}
+.sidhjalp-panel{position:absolute;z-index:30;top:calc(100% - 6px);left:max(16px,calc((100% - 1320px) / 2 + 38px));width:min(460px,calc(100vw - 32px));
+  background:var(--surface);color:var(--ink);border:1px solid var(--hairline);border-radius:12px;padding:16px;box-shadow:0 12px 32px rgba(0,0,0,.18)}
+/* Toppraden: projekt + händelse ligger i .topp-rad. På bred skärm är den
+   genomskinlig för layouten (display:contents), på mobil en egen rad. */
+.topp-rad{display:contents}
+.topp-ikon,.topp-kort{display:none}
+.topbar .kbd,.projektrad .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+@media(max-width:720px){
+  .topbar{flex-wrap:wrap;align-items:center;gap:8px;padding:10px 14px}
+  .topbar .navtoggle{margin-top:0}
+  .tophead{flex:1 1 0;flex-basis:auto;min-width:0}
+  .pagetitle{font-size:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .topbar .kbd{margin-top:0;min-height:40px;min-width:40px;padding:6px 10px}
+  .topp-knapp .topp-lang,.topp-handelse .topp-lang,.topbar .nytt-projekt .topp-lang{display:none}
+  .topbar .topp-ikon{display:block}
+  .topp-kort{display:inline}
+  .topp-rad{display:flex;flex-basis:100%;order:5;gap:8px;min-width:0}
+  .topp-rad .projektrad{flex:1;min-width:0}
+  .topp-handelse{background:#fff!important;color:var(--one-djup)!important;border-color:#fff!important}
+  .projektrad .nytt-projekt{min-height:40px;min-width:40px;padding:6px 10px;background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.3)}
+  .projektrad-val{min-height:40px}
 }
 
 /* ---------- Kort ----------
@@ -1977,7 +2014,7 @@ button.epc-lage-rad[aria-pressed="true"]{border-color:var(--one-bla);box-shadow:
 
 /* Referensdelarna */
 .ds-card h3[id],section>div>h3[id]{scroll-margin-top:96px}
-.epc-punktref{display:block;margin-top:2px;font-size:11.5px;font-weight:400;color:var(--ink-faint)}
+.epc-punktref{display:block;overflow-wrap:anywhere;min-width:0;margin-top:2px;font-size:11.5px;font-weight:400;color:var(--ink-faint)}
 .epc-ledrad.sen td:first-child{box-shadow:inset 3px 0 0 var(--rod)}
 .epc-ledrad.snart td:first-child{box-shadow:inset 3px 0 0 var(--orange)}
 .epc-ledlage{display:inline-flex;flex-wrap:wrap;align-items:center;gap:8px}
