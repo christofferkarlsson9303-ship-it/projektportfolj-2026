@@ -65,6 +65,12 @@ export function Ata() {
       utan24: rader.filter((u) => underrattelseLage(u)?.varning),
       utanPris: rader.filter((u) => prisGrind(u)?.varning),
       ejFakt: rader.filter((u) => u.status === "godkand"),
+      /* Öppna poster som grindarna inte kan bedöma: utan händelse-/underrättelsedatum
+         räknas ingen 24-timmarsfrist, utan art vet vi inte om prisgrinden gäller.
+         Noll larm får inte betyda "inget registrerat". */
+      obedomda: rader.filter(
+        (u) => !["stangd", "utgar", "fakturerad"].includes(u.status) && ((!u.handelseDatum && !u.underrattelseDatum) || !u.art)
+      ),
     };
   }, [state, pid]);
 
@@ -124,9 +130,13 @@ export function Ata() {
           />
           <StatTile
             label="Grindar som larmar"
-            value={larm}
-            hint="24-timmarsfrist och prisgodkännande"
-            ton={larm ? "bad" : ""}
+            value={larm || !n.obedomda.length ? larm : "Okänt"}
+            hint={
+              n.obedomda.length
+                ? `${n.obedomda.length} ÄTA kan inte bedömas — datum eller art saknas`
+                : "24-timmarsfrist och prisgodkännande"
+            }
+            ton={larm ? "bad" : n.obedomda.length ? "warn" : ""}
           />
         </div>
 

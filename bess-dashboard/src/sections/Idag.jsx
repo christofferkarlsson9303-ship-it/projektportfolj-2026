@@ -6,6 +6,7 @@ import { StatusBadge } from "../components/ds/index.js";
 import { Vyvaljare } from "../components/ui/Vyvaljare.jsx";
 import { AGENDATYPER, arbetslage, dagsetikett } from "../lib/agenda.js";
 import { kritiskLinje } from "../lib/kritiskLinje.js";
+import { tidsdom } from "../lib/tidsdom.js";
 import { datumKort, idag } from "../lib/datum.js";
 import { useSnabbUtskrift } from "../components/field/SnabbUtskrift.jsx";
 import { PunktPanel } from "../components/idag/PunktPanel.jsx";
@@ -127,18 +128,14 @@ export function Idag() {
   const k = useMemo(() => (p ? kritiskLinje(state, p.id, nu) : null), [state, p, nu]);
   const kritiska = k ? k.faser.filter((f) => f.kritisk) : [];
   const sent = !!k && k.forsening > 0;
-  const dom = !k || k.forsening === null
-    ? { ton: "warn", text: "Uppgifter saknas" }
-    : sent
-      ? { ton: "bad", text: `${k.forsening} ${k.forsening === 1 ? "dag" : "dagar"} sent` }
-      : { ton: "ok", text: "I tid" };
+  /* Domen — samma text som portföljen och Översikt (lib/tidsdom.js). En sen
+     leverans som inte är markerad levererad ger "Risk", aldrig "I tid". */
+  const dom = p ? tidsdom(state, p.id, nu, k) : { ton: "warn", text: "Uppgifter saknas", mening: null, sena: [] };
   const domMening = !k
     ? "Ange start och slut på projektet under Översikt, så räknas planen fram."
     : sent
       ? `Beräknat ${k.forsening} ${k.forsening === 1 ? "dag" : "dagar"} efter kontraktets färdigdatum. ${kritiska.length === 1 ? "Det kritiska momentet flyttar" : "De kritiska momenten flyttar"} slutbesiktningen.`
-      : k.kontrakt
-        ? `Kontraktet säger ${datumKort(k.kontrakt)}.`
-        : "Kontraktets färdigdatum saknas.";
+      : [k.kontrakt ? `Kontraktet säger ${datumKort(k.kontrakt)}.` : "Kontraktets färdigdatum saknas.", dom.mening].filter(Boolean).join(" ");
 
   const dagar = (n) => (n === 0 ? "0 dagar" : `${n > 0 ? "+" : "−"}${Math.abs(n)} ${Math.abs(n) === 1 ? "dag" : "dagar"}`);
   const motPlan = k?.baslinje && k.motBaslinje !== null ? `${dagar(k.motBaslinje)} mot plan` : "beräknad";
@@ -242,10 +239,7 @@ export function Idag() {
               <span className="text-[12px] font-bold uppercase tracking-wider text-white/80">Alla projekt</span>
               <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
                 {state.projekt.map((pr) => {
-                  const kp = kritiskLinje(state, pr.id, nu);
-                  const sentPr = !!kp && kp.forsening > 0;
-                  const ton = !kp || kp.forsening === null ? "warn" : sentPr ? "bad" : "ok";
-                  const text = !kp || kp.forsening === null ? "Uppgifter saknas" : sentPr ? `${kp.forsening} ${kp.forsening === 1 ? "dag" : "dagar"} sent` : "I tid";
+                  const { ton, text } = tidsdom(state, pr.id, nu);
                   return (
                     <li key={pr.id} className="flex flex-wrap items-center gap-x-3 gap-y-1">
                       <button type="button" className={lankKlass} onClick={() => { setValtProjekt(pr.id); setLage("projekt"); }}>

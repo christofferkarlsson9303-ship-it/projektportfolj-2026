@@ -1,3 +1,4 @@
+import { FolderPlus } from "lucide-react";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { nyttProjekt, projektstartFel } from "../../lib/projektstart.js";
 
@@ -20,5 +21,10 @@ export function NyttProjekt() {
     setValtProjekt(rad.id); visa("metod");
     visaToast("Projektet är skapat. Kontrollera kontrakt, betalplan, priser och kontrollkrav före användning.");
   };
-  return <button type="button" className="btn" onClick={skapa}>Nytt projekt</button>;
+  return (
+    <button type="button" className="btn nytt-projekt" onClick={skapa} aria-label="Nytt projekt" title="Nytt projekt">
+      <FolderPlus size={16} strokeWidth={2.2} aria-hidden="true" className="topp-ikon" />
+      <span className="topp-lang">Nytt projekt</span>
+    </button>
+  );
 }

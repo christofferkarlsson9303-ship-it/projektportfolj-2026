@@ -126,20 +126,20 @@ export function Budget() {
               {
                 nyckel: "namn",
                 rubrik: "Aktivitet",
-                bredd: 230,
+                bredd: 190,
                 render: (a) => (
                   <Falt
                     varde={a.namn}
                     etikett={`Namn på aktiviteten ${a.namn}`}
                     onCommit={(v) => uppd("aktiviteter", a.id, "namn", v)}
-                    className="min-w-[180px]"
+                    className="min-w-[150px]"
                   />
                 ),
               },
               {
                 nyckel: "budgetTim",
                 rubrik: "Bud. h",
-                bredd: 96,
+                bredd: 84,
                 typ: "num",
                 summera: true,
                 render: (a) => (
@@ -154,7 +154,7 @@ export function Budget() {
               {
                 nyckel: "utfallTim",
                 rubrik: "Utfall h",
-                bredd: 112,
+                bredd: 92,
                 typ: "num",
                 summera: true,
                 sortVarde: (a) => a.u.timmar,
@@ -179,7 +179,7 @@ export function Budget() {
               {
                 nyckel: "budgetMtrl",
                 rubrik: "Bud. mtrl",
-                bredd: 116,
+                bredd: 108,
                 typ: "sek",
                 summera: true,
                 render: (a) => (
@@ -194,7 +194,7 @@ export function Budget() {
               {
                 nyckel: "budgetUE",
                 rubrik: "Bud. UE",
-                bredd: 116,
+                bredd: 108,
                 typ: "sek",
                 summera: true,
                 render: (a) => (
@@ -209,7 +209,7 @@ export function Budget() {
               {
                 nyckel: "budgetKr",
                 rubrik: "Budget kr",
-                bredd: 120,
+                bredd: 104,
                 typ: "sek",
                 summera: true,
                 sortVarde: (a) => a.b.kr,
@@ -219,7 +219,7 @@ export function Budget() {
               {
                 nyckel: "utfallKr",
                 rubrik: "Utfall kr",
-                bredd: 120,
+                bredd: 104,
                 typ: "sek",
                 summera: true,
                 sortVarde: (a) => a.u.kr,
@@ -229,7 +229,7 @@ export function Budget() {
               {
                 nyckel: "kvar",
                 rubrik: "Kvar",
-                bredd: 140,
+                bredd: 118,
                 typ: "sek",
                 summera: true,
                 sortVarde: (a) => a.kvar,
@@ -246,7 +246,7 @@ export function Budget() {
               {
                 nyckel: "prognosKvar",
                 rubrik: "Kostnad kvar",
-                bredd: 150,
+                bredd: 128,
                 typ: "sek",
                 summera: true,
                 sortVarde: (a) => a.prognosKvarKr,
@@ -267,7 +267,7 @@ export function Budget() {
               {
                 nyckel: "slut",
                 rubrik: "Kostnad totalt",
-                bredd: 140,
+                bredd: 118,
                 typ: "sek",
                 summera: true,
                 sortVarde: (a) => a.slut,
@@ -286,7 +286,7 @@ export function Budget() {
               {
                 nyckel: "atgard",
                 rubrik: "",
-                bredd: 56,
+                bredd: 48,
                 sorterbar: false,
                 render: (a) => <TaBortKnapp etikett={`Ta bort aktiviteten ${a.namn}`} onClick={() => taBortAktivitet(a)} />,
               },
@@ -422,7 +422,7 @@ export function Budget() {
               {
                 nyckel: "atgard",
                 rubrik: "",
-                bredd: 56,
+                bredd: 48,
                 sorterbar: false,
                 render: (k) =>
                   k.fakturerad ? null : <TaBortKnapp etikett={`Ta bort kostnad ${kostNamn(k)}`} onClick={() => taBortKostnad(k)} />,

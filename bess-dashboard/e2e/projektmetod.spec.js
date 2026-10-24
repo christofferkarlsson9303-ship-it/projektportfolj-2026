@@ -89,7 +89,7 @@ test("alla sidor går att öppna och har enkel vägledning", async ({ page }) =>
   for (const [id, namn] of VYER.filter(([id]) => id !== "_sek")) {
     await page.goto(`/#/${id}/36037`);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(namn);
-    if (id !== "metod" && id !== "site") await expect(page.locator("main details").first().locator(":scope > summary")).toContainText("Gör så här:");
+    if (id !== "metod" && id !== "site") await expect(page.getByRole("banner").locator("details.sidhjalp > summary")).toContainText("Gör så här:");
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), { message: id }).toBe(true);
   }
   utanKonsolfel(fel);
