@@ -55,7 +55,7 @@ export function Projektlage({ i }) {
 
   return (
     <Card id="ov-lage" i={i} title="Läget per projekt" subtitle="Tid, pengar och vad som blockerar. Öppna ett projekt för att se vad du ska göra.">
-      <div aria-hidden="true" className="hidden gap-x-3 px-0 text-[11px] font-bold uppercase tracking-wider text-ink-soft md:grid md:grid-cols-[minmax(160px,1.2fr)_repeat(3,minmax(0,1fr))_80px_16px]">
+      <div aria-hidden="true" className="hidden gap-x-3 px-2 text-[11px] font-bold uppercase tracking-wider text-ink-soft md:grid md:grid-cols-[minmax(160px,1.2fr)_repeat(3,minmax(0,1fr))_80px_16px]">
         <span>Projekt</span><span>Tid</span><span>Pengar</span><span>Blockerar</span><span>Att göra</span><span />
       </div>
       <ul className="m-0 flex list-none flex-col p-0" aria-label="Projekt">
@@ -64,7 +64,7 @@ export function Projektlage({ i }) {
             <button
               type="button"
               onClick={() => oppna(p.id)}
-              className="group -mx-2 grid w-[calc(100%+16px)] cursor-pointer grid-cols-[1fr_auto] items-center gap-x-3 gap-y-2 rounded-lg border-0 bg-transparent px-2 py-3 text-left font-body text-ink transition-colors hover:bg-sunken md:grid-cols-[minmax(160px,1.2fr)_repeat(3,minmax(0,1fr))_80px_16px]"
+              className="group grid w-full cursor-pointer grid-cols-[1fr_auto] items-center gap-x-3 gap-y-2 rounded-lg border-0 bg-transparent px-2 py-3 text-left font-body text-ink transition-colors hover:bg-sunken md:grid-cols-[minmax(160px,1.2fr)_repeat(3,minmax(0,1fr))_80px_16px]"
             >
               <span className="min-w-0">
                 <span className="sr-only">Öppna Idag för </span>
@@ -91,7 +91,8 @@ export function Projektlage({ i }) {
 function Fakta({ etikett, children }) {
   return (
     <span className="flex min-w-0 items-center gap-1.5">
-      <span className="text-[11px] font-bold uppercase tracking-wider text-ink-soft md:sr-only">{etikett}</span>
+      <span className="text-[11px] font-bold uppercase tracking-wider text-ink-soft md:hidden">{etikett}</span>
+      <span className="sr-only hidden md:inline">{etikett}: </span>
       {children}
     </span>
   );
