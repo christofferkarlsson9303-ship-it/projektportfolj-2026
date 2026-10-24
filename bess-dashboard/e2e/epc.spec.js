@@ -18,7 +18,16 @@ async function oppnaFas(page, nr) {
 }
 
 const status = (page) => page.getByRole("region", { name: /^Status — / });
-const erfarenhetslista = (page) => page.getByRole("region", { name: "Erfarenhetsåterföring — topp 10" });
+/** Referensdelarna är infällda — fäll ut innan innehållet läses. */
+async function oppnaRef(page, id) {
+  const del = page.locator(`#${id}`);
+  if ((await del.getAttribute("open")) === null) await del.locator(":scope > summary").click();
+  await expect(del).toHaveAttribute("open", "");
+}
+const erfarenhetslista = async (page) => {
+  await oppnaRef(page, "epc-erfarenheter");
+  return page.getByRole("region", { name: "Erfarenhetsåterföring — topp 10" });
+};
 
 test("guiden har 16 moment, de löpande punkterna och alla 288 kontrollpunkter att bocka av", async ({ page }) => {
   await expect(page.locator("details.epc-fas")).toHaveCount(17);
@@ -73,7 +82,7 @@ test("grindrutan listar exakt vad som saknas, och en bockad punkt försvinner ur
 });
 
 test("en avvikelse på en punkt hamnar i erfarenhetslistan och visas på punkten i nästa projekt", async ({ page }) => {
-  await expect(erfarenhetslista(page)).toContainText("Inga avvikelser eller lärdomar ännu");
+  await expect(await erfarenhetslista(page)).toContainText("Inga avvikelser eller lärdomar ännu");
 
   await oppnaFas(page, 10);
   await rad(page, "10.3").getByRole("button", { name: "Kommentarer på 10.3" }).click();
@@ -86,7 +95,7 @@ test("en avvikelse på en punkt hamnar i erfarenhetslistan och visas på punkten
 
   await expect(panel.locator(".epc-komm")).toContainText("Stationshuset kom med skadad dörr");
   await expect(rad(page, "10.3").getByRole("button", { name: "Kommentarer på 10.3" })).toContainText("1");
-  const lista = erfarenhetslista(page);
+  const lista = await erfarenhetslista(page);
   await expect(lista.locator(".epc-erfrad")).toHaveCount(1);
   await expect(lista).toContainText("Fota vid lossning och reklamera samma dag");
   await expect(lista).toContainText("Påverkan Hög");
@@ -128,6 +137,9 @@ test("version 1.3: källgenomgången, nyckelvärdena och de tolv motsägelserna 
   await expect(page.locator(".epc-rad")).toHaveCount(1);
   await expect(rad(page, "15.17")).toBeVisible();
   await expect(page.locator("#fas-15")).toContainText("Från källgenomgången");
+  await page.getByRole("searchbox", { name: "Sök i guiden" }).fill("");
+  await oppnaRef(page, "epc-nyckelvarden");
+  await oppnaRef(page, "epc-verifiera");
   await expect(page.getByRole("region", { name: "Nyckelvärden — snabbreferens" }).locator("dt")).toHaveCount(14);
   await expect(page.locator(".epc-verifiera dt")).toHaveCount(12);
 });
@@ -170,6 +182,7 @@ test("antaget startdatum är markerat tills någon anger det", async ({ page }) 
 });
 
 test("en ledtid markeras klar i förväg och går att ångra", async ({ page }) => {
+  await oppnaRef(page, "epc-ledtider");
   const tabell = page.getByRole("region", { name: "Ledtider för projektet" });
   const forsta = tabell.locator("tbody tr").filter({ has: page.getByRole("button", { name: /^Klar/ }) }).first();
   const arende = (await forsta.locator("td").first().locator("b").textContent()).trim();

@@ -43,6 +43,26 @@ const LAGEN = ["klar", "pagar", "sen", "kommande", "odaterad"];
 const aktuellaFaser = (faser) =>
   faser.filter((f) => f.status === "pagar" || f.status === "sen").map((f) => f.fas.nr);
 
+/** En infälld referensdel. Fälls ut av användaren eller av en länk (mal) hit. */
+function Referensdel({ id, mal, titel, text, children }) {
+  const [oppen, setOppen] = useState(false);
+  const [sedd, setSedd] = useState(null);
+  if (mal && mal.id === id && mal.tid !== sedd) {
+    setSedd(mal.tid);
+    setOppen(true);
+  }
+  return (
+    <details id={id} className="epc-referensdel" open={oppen} onToggle={(e) => setOppen(e.currentTarget.open)}>
+      <summary>
+        <b>{titel}</b>
+        {text ? <span>{text}</span> : null}
+      </summary>
+      {/* Innehållet ritas först när delen är utfälld — tabellerna är stora. */}
+      {oppen ? <div className="epc-referenskropp" role="region" aria-label={titel}>{children}</div> : null}
+    </details>
+  );
+}
+
 function Guide({ pid, mal }) {
   const { state } = usePortfolj();
   const p = projekt(state, pid);
@@ -310,49 +330,34 @@ export function EpcChecklista() {
 
       <Guide pid={pid} mal={mal} />
 
-      <Card
-        id="epc-erfarenheter"
-        title="Erfarenhetsåterföring — topp 10"
-        subtitle="Lär av tidigare fel. Kommentarer på kontrollpunkter samlas här och visas också i nästa projekt."
-      >
-        <Erfarenhetslista pid={pid} onVisaPunkt={(id) => setMal({ id: `kp-${id}`, tid: Date.now() })} />
-      </Card>
-
-      <Card
-        id="epc-nyckelvarden"
-        title="Nyckelvärden — snabbreferens"
-        subtitle="Gränsvärden och frister ur kontrakt, leverantörsmanualer och EBR som oftast avgör om en hållpunkt passeras. Där källorna säger olika står det under Att verifiera längst ned."
-      >
-        <Nyckelvarden />
-      </Card>
-
-      <Card
-        id="epc-ledtider"
-        title="Ligg steget före – ledtider"
-        subtitle={`Sista startdatum för ${projektnamn}, räknat mot projektets datum. Kända datum ur leveranslistan och tidplanen går före momentplanen. Röd = startdatumet har passerat, orange = inom två veckor. En ledtid är klar när dess punkt är klar, eller när du markerar den.`}
-      >
-        <Ledtidstabell pid={pid} onMarkera={(ledtid, klar) => dispatch({ type: "EPC_LEDTID", pid, ledtid, klar })} />
-      </Card>
-
-      <Card
-        id="epc-milstolpar"
-        title="Betalmilstolpar"
-        subtitle="Sju betalningar kopplade till grindarna. Rutin: avisering (Excel) → beställarens OK → faktura i IFS. Moment med en betalning har orange kant i guiden."
-      >
-        <Milstolpstabell pid={pid} />
-      </Card>
-
-      <Card id="epc-lardomar" title="Lärdomar från Batch C — de 10 som kostat mest">
-        <Lardomar />
-      </Card>
-
-      <Card
-        id="epc-verifiera"
-        title="Att verifiera — källorna säger olika"
-        subtitle={`${SUMMERING.motsagelser} frågor där underlagen skiljer sig. Låt ansvarig projektör eller tillverkare reda ut kravet skriftligt före berört arbete.`}
-      >
-        <AttVerifiera />
-      </Card>
+      {/* Referensdelarna är infällda: de slås upp, de arbetas inte i varje vecka.
+          En länk hit (t.ex. "epc-ledtider" från Översikt) fäller ut rätt del. */}
+      <section className="flex flex-col gap-3" aria-labelledby="epc-referens">
+        <SectionHeading as="h3" id="epc-referens" eyebrow="Slå upp" title="Referens" />
+        <Referensdel id="epc-ledtider" mal={mal} titel="Ligg steget före – ledtider"
+          text={`Sista startdatum för ${projektnamn}, räknat mot projektets datum. Kända datum ur leveranslistan och tidplanen går före momentplanen. Röd = startdatumet har passerat, orange = inom två veckor. En ledtid är klar när dess punkt är klar, eller när du markerar den.`}>
+          <Ledtidstabell pid={pid} onMarkera={(ledtid, klar) => dispatch({ type: "EPC_LEDTID", pid, ledtid, klar })} />
+        </Referensdel>
+        <Referensdel id="epc-milstolpar" mal={mal} titel="Betalmilstolpar"
+          text="Sju betalningar kopplade till grindarna. Rutin: avisering (Excel) → beställarens OK → faktura i IFS. Moment med en betalning har orange kant i guiden.">
+          <Milstolpstabell pid={pid} />
+        </Referensdel>
+        <Referensdel id="epc-erfarenheter" mal={mal} titel="Erfarenhetsåterföring — topp 10"
+          text="Lär av tidigare fel. Kommentarer på kontrollpunkter samlas här och visas också i nästa projekt.">
+          <Erfarenhetslista pid={pid} onVisaPunkt={(id) => setMal({ id: `kp-${id}`, tid: Date.now() })} />
+        </Referensdel>
+        <Referensdel id="epc-nyckelvarden" mal={mal} titel="Nyckelvärden — snabbreferens"
+          text="Gränsvärden och frister ur kontrakt, leverantörsmanualer och EBR som oftast avgör om en hållpunkt passeras. Där källorna säger olika står det under Att verifiera.">
+          <Nyckelvarden />
+        </Referensdel>
+        <Referensdel id="epc-lardomar" mal={mal} titel="Lärdomar från Batch C — de 10 som kostat mest">
+          <Lardomar />
+        </Referensdel>
+        <Referensdel id="epc-verifiera" mal={mal} titel={`Att verifiera — ${SUMMERING.motsagelser} frågor där källorna säger olika`}
+          text="Låt ansvarig projektör eller tillverkare reda ut kravet skriftligt före berört arbete.">
+          <AttVerifiera />
+        </Referensdel>
+      </section>
 
       <Callout ton="info">
         Värden, frister och procentsatser är hämtade från Batch C-kontrakten och leverantörsmanualer.

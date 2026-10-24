@@ -146,7 +146,23 @@ export function NuLage({ pid, onVisaFas }) {
           <DataList
             items={[
               ng
-                ? { label: "Nästa grind", value: ng.fas.grind.kod, detail: ng.fas.grind.text }
+                ? {
+                    label: "Nästa grind",
+                    value: ng.fas.grind.kod,
+                    /* Vad som saknas för att grinden ska kunna passeras — det är
+                       det man ska öppna, inte bara grindens namn. */
+                    detail: (
+                      <>
+                        {ng.fas.grind.text}
+                        <br />
+                        <button type="button" className="epc-textknapp text-left text-xs" onClick={() => onVisaFas(ng.fas.nr)}>
+                          {ng.kvar
+                            ? `Saknas: ${ng.kvar} ${ng.kvar === 1 ? "punkt" : "punkter"}${ng.hpKvar ? `, varav ${ng.hpKvar} ${ng.hpKvar === 1 ? "hållpunkt" : "hållpunkter"}` : ""} i moment ${ng.fas.nr}`
+                            : `Alla punkter i moment ${ng.fas.nr} klara — grinden kan passeras`}
+                        </button>
+                      </>
+                    ),
+                  }
                 : { label: "Nästa grind", value: "Alla passerade" },
               nb
                 ? {
