@@ -11,8 +11,9 @@ test("enkel meny, synlig sökknapp och ordlista hjälper utan att dölja funktio
   const sok = page.getByRole("combobox", { name: "Sök och hoppa" });
   await expect(sok).toBeFocused(); await sok.fill("HSEQ"); await sok.press("Enter");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("HSEQ / BAS-U");
-  await page.locator("main details").first().locator("summary").click();
-  await expect(page.locator("main")).toContainText("Gör skyddsrond");
+  /* Sidhjälpen är en ?-knapp vid rubriken i toppraden. */
+  await page.getByRole("banner").locator("details.sidhjalp > summary").click();
+  await expect(page.getByRole("banner").locator(".sidhjalp-panel")).toContainText("Gör skyddsrond");
   await gaTill(page, "Min projektmetod");
   const ham = page.getByRole("button", { name: /Öppna menyn|Stäng menyn/ });
   if (await ham.isVisible() && await ham.getAttribute("aria-expanded") === "false") await ham.click();
