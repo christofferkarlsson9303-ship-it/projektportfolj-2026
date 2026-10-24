@@ -10,6 +10,18 @@ const projektsektion = (page) => page.getByRole("region", { name: "Projekt", exa
 const uppmarksamhet = (page) => page.getByRole("region", { name: "Kräver uppmärksamhet" });
 const snabbval = (page) => page.getByRole("group", { name: "Snabbåtgärder" });
 
+test("läget per projekt: tid, pengar och vad som blockerar, och raden leder till Idag", async ({ page }) => {
+  const lage = page.getByRole("region", { name: "Läget per projekt" });
+  const rader = lage.getByRole("list", { name: "Projekt" }).getByRole("listitem");
+  await expect(rader).toHaveCount(4);
+  const vaxjo = rader.filter({ hasText: "Växjö Batteripark" });
+  await expect(vaxjo).toContainText(/Risk · \d+ leveranse?r? sen|I tid|sent/);
+  await expect(vaxjo).toContainText(/G\d+/);
+  await vaxjo.getByRole("button").click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Idag");
+  await expect(page.getByRole("region", { name: "Sammanfattning" })).toContainText("Växjö Batteripark");
+});
+
 test("fyra nyckeltalskort: ÄTA, hållpunkter, skyddsronder och budget", async ({ page }) => {
   const kort = nyckeltal(page).locator(".ov-kpi");
   await expect(kort).toHaveCount(4);
@@ -18,27 +30,6 @@ test("fyra nyckeltalskort: ÄTA, hållpunkter, skyddsronder och budget", async (
   await expect(kort.nth(1)).toContainText(/\d+ av \d+ klara/);
   await expect(kort.nth(2)).toContainText("Skyddsronder");
   await expect(kort.nth(3)).toContainText(/\d+\s*% fakturerat/);
-});
-
-test("nästa uppgift bockas av, nästa vaskas fram och det går att ångra", async ({ page }) => {
-  const ruta = page.getByRole("region", { name: "Nästa uppgift" });
-  const id = ruta.locator(".ov-nasta-kort .ov-nasta-id");
-  const forsta = (await id.textContent()).trim();
-
-  await ruta.getByRole("button", { name: /^Klar/ }).click();
-  await expect(id).not.toHaveText(forsta);
-  await expect(ruta.locator(".ov-nasta-senast")).toContainText(`${forsta} klar — nästa:`);
-
-  await ruta.getByRole("button", { name: "Ångra" }).click();
-  await expect(id).toHaveText(forsta);
-});
-
-test("nästa uppgift tar en kommentar direkt på punkten", async ({ page }) => {
-  const ruta = page.getByRole("region", { name: "Nästa uppgift" });
-  await ruta.getByRole("button", { name: /^Kommentera/ }).click();
-  await ruta.getByLabel("Kommentar", { exact: true }).fill("Ringt leverantören, svar på fredag");
-  await ruta.getByRole("button", { name: "Spara notering" }).click();
-  await expect(ruta.getByRole("button", { name: /^Kommentera \(1\)/ })).toBeVisible();
 });
 
 test("Gantt-schemat visar 16 moment, grindar och M1–M7 för valt projekt", async ({ page }) => {
@@ -109,19 +100,6 @@ test("ett projekt utan datum får fälten direkt i Gantt-schemat", async ({ page
   await gantt.getByRole("group", { name: "Projekt i Gantt-schemat" }).getByRole("button", { name: "Göteborg" }).click();
   await expect(gantt.locator("button.ov-gantt-fas")).toHaveCount(0);
   await expect(gantt.getByLabel("Startdatum för Göteborg Skogome")).toBeVisible();
-});
-
-test("ledtidstrackern bockar av en ÄTA med Klar", async ({ page }) => {
-  const ruta = page.getByRole("region", { name: "Ligg steget före – ledtider" });
-  const lista = ruta.getByRole("list", { name: "Ledtider att starta" });
-  test.skip((await lista.count()) === 0, "inga aktuella ledtider mot dagens datum");
-  const rader = lista.getByRole("listitem");
-
-  const forsta = rader.first();
-  const text = await forsta.locator('[data-roll="titel"]').innerText();
-  const projekt = await forsta.locator(".tag").innerText();
-  await forsta.getByRole("button", { name: /^Klar/ }).click();
-  await expect(rader.filter({ hasText: text }).filter({ hasText: projekt })).toHaveCount(0);
 });
 
 test("snabbåtgärden registrerar en ÄTA och öppnar den i ÄTA-vyn", async ({ page }) => {
