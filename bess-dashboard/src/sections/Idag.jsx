@@ -12,6 +12,7 @@ import { useSnabbUtskrift } from "../components/field/SnabbUtskrift.jsx";
 import { PunktPanel } from "../components/idag/PunktPanel.jsx";
 import { arNal, siteObjekt } from "../lib/site.js";
 import { Veckorutin } from "../components/idag/Veckorutin.jsx";
+import { Ekonomirad } from "../components/idag/Ekonomirad.jsx";
 import { HeroBild } from "../components/oversikt/Hero.jsx";
 
 /* Idag — projektledarens arbetslista.
@@ -295,6 +296,9 @@ export function Idag() {
           {harSite ? <button type="button" className={lankKlass} onClick={() => visa("site")}>Siten i 3D</button> : null}
         </nav>
       </section>
+
+      {/* ---------- Vad kostar det — samma prognos som Ekonomi ---------- */}
+      {!portfolj && p ? <Ekonomirad pid={p.id} /> : null}
 
       {/* ---------- Dagens rutin ur metoden (§ 3.2) ---------- */}
       <Veckorutin />
