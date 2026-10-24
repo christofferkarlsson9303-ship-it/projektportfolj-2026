@@ -24,6 +24,7 @@ import {
 import { FASER, faseInfo } from "../data/projektfaser.ts";
 import { projektfasForMilstolpe } from "../lib/fasmappning.js";
 import { nyttId } from "../lib/id.js";
+import { useMedia } from "../lib/useMedia.js";
 
 /* Tidplanen på designsystemet: Gantt-schemat, milstolparna och leveranserna
    som kort, och byggfaserna som utfällbara rader i ett kort — varje fas med
@@ -225,6 +226,9 @@ export function Tidplan() {
   const { state, uppd, uppdStatus, laggTill } = usePortfolj();
   const { valtProjekt: pid, fraga } = useUi();
   const [omfang, setOmfang] = useState("alla");
+  const bred = useMedia("(min-width: 768px)");
+  /* null = följ skärmbredden; true/false = användaren har valt. */
+  const [visaGantt, setVisaGantt] = useState(null);
 
   const p = projekt(state, pid);
 
@@ -351,8 +355,24 @@ export function Tidplan() {
 
   const projektNamn = (p.nr ? p.nr + " " : "") + p.namn;
 
+  /* På smal skärm ryms inte Gantt-schemat: radnamnen klipps och sidan blir
+     femton skärmar lång. Där leder "Blir vi klara i tid" (kritisk linje, en
+     lista per moment) och Gantt fälls ut på begäran. */
+  const ganttSynlig = visaGantt ?? bred;
+
   return (
     <>
+      <div className="mb-4 lg:mb-6">
+        <KritiskLinje pid={pid} projektNamn={projektNamn} />
+      </div>
+
+      {!ganttSynlig ? (
+        <Card id="tp-tidslinje" className="mb-4" title="Tidplan — Gantt" subtitle="Schemat är byggt för bred skärm. Kritisk linje ovan visar samma moment som lista.">
+          <button type="button" className="btn sec mini self-start" onClick={() => setVisaGantt(true)}>
+            Visa Gantt-schema
+          </button>
+        </Card>
+      ) : (
       <Card
         id="tp-tidslinje"
         className="mb-4 lg:mb-6"
@@ -375,12 +395,17 @@ export function Tidplan() {
           etikett="Gantt över byggmoment, milstolpar och leveranser"
           redigera={(post, rad) => <Redigering post={post} rad={rad} />}
         />
+        {!bred ? (
+          <button type="button" className="btn sec mini self-start" onClick={() => setVisaGantt(false)}>
+            Dölj Gantt-schema
+          </button>
+        ) : null}
       </Card>
+      )}
 
       <Projektvaljare />
 
       <div className="flex flex-col gap-4 lg:gap-6">
-        <KritiskLinje pid={pid} projektNamn={projektNamn} />
 
         <Card
           id="tp-milstolpar"
