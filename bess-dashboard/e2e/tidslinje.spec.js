@@ -8,6 +8,9 @@ const staplar = (gantt) => gantt.getByRole("button", { name: /\d{4}-\d{2}-\d{2}/
 
 test.beforeEach(async ({ page }) => {
   await oppna(page, "Tidplan");
+  /* På smal skärm är Gantt-schemat infällt — kritisk linje leder där. */
+  const visa = page.getByRole("button", { name: "Visa Gantt-schema" });
+  if (await visa.isVisible()) await visa.click();
 });
 
 test("gantt ritar staplar och visar i dag-linjen i bild", async ({ page }) => {
