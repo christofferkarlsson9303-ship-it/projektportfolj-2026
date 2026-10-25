@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { Callout, Card, StatTile, StatusBadge } from "../ds/index.js";
+import { tidsdom } from "../../lib/tidsdom.js";
 import { datumKort, idag } from "../../lib/datum.js";
 import { hamtaNamn } from "../../state/portfolj-reducer.js";
 import { baslinjerad, drivtext, kritiskLinje } from "../../lib/kritiskLinje.js";
@@ -36,12 +37,17 @@ export function KritiskLinje({ pid, projektNamn }) {
     visaToast("Dagens plan är sparad som ursprunglig plan");
   };
 
+  /* Samma dom som Idag och Översikt (lib/tidsdom.js): en leverans som
+     passerat utan att vara levererad ger Risk, aldrig I tid. */
+  const dom = useMemo(() => tidsdom(state, pid, nu, k), [state, pid, nu, k]);
   const lage =
     !k || k.forsening === null
       ? { ton: "neutral", text: "Uppgifter saknas" }
       : k.forsening > 0
         ? { ton: "bad", text: `${k.forsening} dagar sent mot kontraktet` }
-        : { ton: "ok", text: k.forsening < 0 ? `${-k.forsening} dagar före kontraktet` : "I tid" };
+        : dom.sena.length
+          ? { ton: dom.ton, text: dom.text }
+          : { ton: "ok", text: k.forsening < 0 ? `${-k.forsening} dagar före kontraktet` : "I tid" };
 
   const kedja = k ? k.faser.filter((f) => f.kritisk) : [];
 
@@ -89,6 +95,13 @@ export function KritiskLinje({ pid, projektNamn }) {
             <Callout ton="info">
               <b>Spara dagens plan som ursprunglig plan.</b> Annars jämförs med standardplanen, som flyttar med när
               leveranser ändras. Då syns inte en sen leverans som försening.
+            </Callout>
+          ) : null}
+
+          {k.forsening <= 0 && dom.sena.length ? (
+            <Callout ton="warn">
+              <b>{dom.mening}</b> Markera leveransen som levererad under Leveransspårning, eller ange nytt datum och
+              moment — då räknas den in i kritisk linje.
             </Callout>
           ) : null}
 

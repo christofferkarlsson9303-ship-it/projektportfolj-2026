@@ -3,6 +3,11 @@ import { gaTill, oppna, utanKonsolfel } from "./hjalpare.js";
 
 test.beforeEach(async ({ page }) => {
   await oppna(page, "Översikt");
+  /* På smal skärm är fasplanen och projektkorten infällda. */
+  for (const namn of ["Visa fasplanen", /^Visa projektkort/]) {
+    const knapp = page.getByRole("button", { name: namn });
+    if (await knapp.isVisible()) await knapp.click();
+  }
 });
 
 const nyckeltal = (page) => page.getByRole("region", { name: "Nyckeltal" });

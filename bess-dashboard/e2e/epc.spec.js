@@ -17,7 +17,12 @@ async function oppnaFas(page, nr) {
   await expect(fas).toHaveAttribute("open", "");
 }
 
+/** Statuskortet är infällt på mobil — fäll ut det innan det läses. */
 const status = (page) => page.getByRole("region", { name: /^Status — / });
+async function oppnaStatus(page) {
+  const del = page.locator("#epc-summering");
+  if ((await del.getAttribute("open")) === null) await del.locator(":scope > summary").click();
+}
 /** Referensdelarna är infällda — fäll ut innan innehållet läses. */
 async function oppnaRef(page, id) {
   const del = page.locator(`#${id}`);
@@ -40,6 +45,7 @@ test("guiden har 16 moment, de löpande punkterna och alla 288 kontrollpunkter a
 
 test("summeringen visar exakt status per fas och följer avbockningen", async ({ page }) => {
   // Moment 0–9 är passerade i Växjö, men en grind bockar inte av punkter: inget är registrerat.
+  await oppnaStatus(page);
   await expect(status(page)).toContainText("0/288");
   await expect(status(page).getByRole("row", { name: /^10 · Stationshus/ })).toContainText("0/15");
 
@@ -115,6 +121,7 @@ test("lägesbilden har en rad per projekt och visar läget för valt projekt", a
   await expect(projektrad(page, /^36037 Växjö/)).toHaveAttribute("aria-pressed", "true");
   await expect(projektrad(page, /^36037 Växjö/)).toContainText(/av 16 grindar passerade/);
   await expect(projektrad(page, /^Göteborg/)).toContainText("Datum saknas");
+  await oppnaStatus(page);
   const framdrift = status(page).getByRole("list", { name: "Framdrift i checklistan" });
   await expect(framdrift).toContainText(/Grindar passerade\s*\d+\/16/);
   await expect(framdrift).toContainText(/Hållpunkter klara\s*\d+\/48/);
