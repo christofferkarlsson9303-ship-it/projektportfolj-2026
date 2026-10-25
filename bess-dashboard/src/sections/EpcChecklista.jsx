@@ -12,6 +12,7 @@ import { Summering } from "../components/epc/Summering.jsx";
 import { Callout, Card, SectionHeading } from "../components/ds/index.js";
 import { Erfarenhetslista } from "../components/epc/Erfarenheter.jsx";
 import { HeroBild } from "../components/oversikt/Hero.jsx";
+import { useMedia } from "../lib/useMedia.js";
 import { ProjektArv } from "../components/epc/ProjektArv.jsx";
 
 /* Bygga batteripark — hur en BESS-anläggning byggs som totalentreprenad
@@ -44,8 +45,8 @@ const aktuellaFaser = (faser) =>
   faser.filter((f) => f.status === "pagar" || f.status === "sen").map((f) => f.fas.nr);
 
 /** En infälld referensdel. Fälls ut av användaren eller av en länk (mal) hit. */
-function Referensdel({ id, mal, titel, text, children }) {
-  const [oppen, setOppen] = useState(false);
+function Referensdel({ id, mal, titel, text, start = false, children }) {
+  const [oppen, setOppen] = useState(start);
   const [sedd, setSedd] = useState(null);
   if (mal && mal.id === id && mal.tid !== sedd) {
     setSedd(mal.tid);
@@ -249,6 +250,7 @@ export function EpcChecklista() {
   const { valtProjekt, setValtProjekt, postFokus } = useUi();
   const pid = projekt(state, valtProjekt) ? valtProjekt : state.projekt[0]?.id;
   const p = projekt(state, pid);
+  const bred = useMedia("(min-width: 768px)");
 
   /* Översikten och paletten pekar ut en fas eller punkt via postFokus,
      lägesbilden via visaFas. */
@@ -320,13 +322,18 @@ export function EpcChecklista() {
         <NuLage pid={pid} onVisaFas={visaFas} />
       </section>
 
-      <Card
+      {/* Status per moment är en lång tabell. På bred skärm är den utfälld,
+          på mobil infälld — Läget nu ovanför säger det viktigaste. */}
+      <Referensdel
+        key={bred ? "bred" : "smal"}
         id="epc-summering"
-        title={`Status — ${projektnamn}`}
-        subtitle="Exakt vad som är gjort och vad som återstår, per moment. En punkt är klar när den bockats av eller när momentets grind är passerad; det som inte gäller projektet räknas inte."
+        mal={mal}
+        start={bred}
+        titel={`Status — ${projektnamn}`}
+        text="Exakt vad som är gjort och vad som återstår, per moment. En punkt är klar när den bockats av eller när momentets grind är passerad; det som inte gäller projektet räknas inte."
       >
         <Summering pid={pid} onVisaFas={visaFas} />
-      </Card>
+      </Referensdel>
 
       <Guide pid={pid} mal={mal} />
 

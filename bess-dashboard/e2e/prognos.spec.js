@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { gaTill, oppna, utanKonsolfel } from "./hjalpare.js";
+import { gaTill, oppna, redigeraBudget, utanKonsolfel } from "./hjalpare.js";
 
 test("Ekonomi visar prognosen och en sparad veckoprognos hamnar i trenden", async ({ page }) => {
   const { fel } = await oppna(page, "Ekonomi");
@@ -16,6 +16,7 @@ test("Ekonomi visar prognosen och en sparad veckoprognos hamnar i trenden", asyn
 
 test("prognos kvar per aktivitet styr slutkostnaden i Ekonomi", async ({ page }) => {
   await oppna(page, "Budget och utfall");
+  await redigeraBudget(page);
   const falt = page.getByLabel(/Din bedömning av kvarvarande kostnad för/).first();
   test.skip((await falt.count()) === 0, "inga aktiviteter i grunddatan");
   await falt.fill("250000");

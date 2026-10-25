@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { PortfolioProvider } from "./state/PortfolioProvider.jsx";
 import { UiProvider } from "./state/UiProvider.jsx";
 import { AuthProvider } from "./state/AuthProvider.jsx";
@@ -17,7 +18,9 @@ function AktivSektion() {
     // key gör att felgränsen nollställs när man byter vy — annars fastnar
     // hela arbetsytan i felläge efter ett fel i en enskild sektion.
     <Felgrans key={aktivVy} vy={aktivVy}>
-      <Komponent />
+      <Suspense fallback={<p className="lead" role="status">Laddar…</p>}>
+        <Komponent />
+      </Suspense>
     </Felgrans>
   );
 }

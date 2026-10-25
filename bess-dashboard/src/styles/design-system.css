@@ -2010,6 +2010,16 @@ button.epc-lage-rad[aria-pressed="true"]{border-color:var(--one-bla);box-shadow:
   .epc-lage-etikett{position:static;width:auto;height:auto;overflow:visible;clip:auto;display:block;margin-bottom:2px;
     font:700 10px/1.3 var(--font-b);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint)}
 }
+/* Mobil: en kompakt rad per projekt — namn och läget nu, spåret under.
+   Nästa betalning och slutbesiktning står i Läget nu för valt projekt. */
+@media(max-width:640px){
+  .epc-lage-rad{grid-template-columns:minmax(0,auto) minmax(0,1fr);grid-template-areas:"namn nu" "spar spar";gap:6px 12px}
+  button.epc-lage-rad{padding:8px 10px}
+  .epc-lage-ms,.epc-lage-sb{display:none}
+  .epc-lage-nu .epc-lage-etikett{display:none}
+  .epc-lage-nu{text-align:right;font-size:12.5px}
+  .epc-lage-rad .epc-spar16 i{height:12px}
+}
 
 
 /* Referensdelarna */

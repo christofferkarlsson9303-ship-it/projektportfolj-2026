@@ -91,3 +91,9 @@ export async function oppnaViaAdress(page, vyId, rubrik, projektId = "36037") {
   await page.evaluate(([v, p]) => { window.location.hash = `#/${v}/${p}`; }, [vyId, projektId]);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(rubrik);
 }
+
+/** Budgettabellen är en sammanfattning på smal skärm — öppna redigeringen. */
+export async function redigeraBudget(page) {
+  const knapp = page.getByRole("button", { name: "Redigera budget" });
+  if (await knapp.isVisible()) await knapp.click();
+}

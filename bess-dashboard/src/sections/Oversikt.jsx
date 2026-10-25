@@ -11,7 +11,8 @@ import { ForloradeAnbud } from "../components/oversikt/ForloradeAnbud.jsx";
 import { Projektkort, Projektredigering } from "../components/oversikt/Projekt.jsx";
 import { uppmarksamhet } from "../lib/oversikt.js";
 import { projektUnderlag } from "../lib/berakningar.js";
-import { Callout } from "../components/ds/index.js";
+import { Callout, Card } from "../components/ds/index.js";
+import { useMedia } from "../lib/useMedia.js";
 
 /* Översikten (DashboardView) — portföljen, inte dagens arbetslista.
 
@@ -31,6 +32,11 @@ export function DashboardView() {
   const { fokus } = useUi();
   const [visaRedigering, setVisaRedigering] = useState(false);
   const [flik, setFlik] = useState("alla");
+  /* På smal skärm är Gantt-schemat och projektkorten infällda — Läget per
+     projekt säger det viktigaste. null = följ skärmbredden. */
+  const bred = useMedia("(min-width: 768px)");
+  const [visaGantt, setVisaGantt] = useState(null);
+  const [visaKort, setVisaKort] = useState(null);
 
   const lista = useMemo(() => uppmarksamhet(state), [state]);
   const akuta = lista.filter((f) => f.niva === "hog").length;
@@ -66,7 +72,15 @@ export function DashboardView() {
           Det som ska göras i ett projekt står i Idag; det upprepas inte här. */}
       <Projektlage i={1} />
 
-      <Gantt i={2} />
+      {visaGantt ?? bred ? (
+        <Gantt i={2} />
+      ) : (
+        <Card i={2} title="Fasplan, grindar och betalningar" subtitle="Schemat är byggt för bred skärm.">
+          <button type="button" className="btn sec mini self-start" onClick={() => setVisaGantt(true)}>
+            Visa fasplanen
+          </button>
+        </Card>
+      )}
 
       <Nyckeltal />
 
@@ -99,11 +113,17 @@ export function DashboardView() {
 
         <div id="projektuppgifter">{visaRedigering ? <Projektredigering /> : null}</div>
 
-        <div className="projkort-rutnat">
-          {state.projekt.map((p) => (
-            <Projektkort key={p.id} p={p} />
-          ))}
-        </div>
+        {visaKort ?? bred ? (
+          <div className="projkort-rutnat">
+            {state.projekt.map((p) => (
+              <Projektkort key={p.id} p={p} />
+            ))}
+          </div>
+        ) : (
+          <button type="button" className="btn sec mini self-start" onClick={() => setVisaKort(true)}>
+            Visa projektkort ({state.projekt.length})
+          </button>
+        )}
       </section>
 
       <ForloradeAnbud />
