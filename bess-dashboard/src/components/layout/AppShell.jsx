@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { FaltmaterialPanel } from "../field/FaltmaterialPanel.jsx";
 import { Sidebar } from "./Sidebar.jsx";
 import { Topbar } from "./Topbar.jsx";
+import { Flikrad } from "./Flikrad.jsx";
 import { Dialog } from "../ui/Dialog.jsx";
 import { Toast } from "../ui/Toast.jsx";
 import { Kommandopalett } from "../ui/Kommandopalett.jsx";
@@ -54,6 +55,7 @@ export function AppShell({ children }) {
 
       <div className="appmain">
         <Topbar />
+        <Flikrad />
         {/* tabIndex=-1 gör att hopplänken kan flytta fokus hit. */}
         <main id="innehall" ref={mainRef} tabIndex={-1}>
           <KonfliktVy />

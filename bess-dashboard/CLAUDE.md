@@ -4,6 +4,12 @@ Du är i **bess-dashboard**: Vite, React, Tailwind, `localStorage` eller Supabas
 
 En visuell prototyp byggdes 2026-10-04 i ett annat verktyg (Grok). Den ligger **inte** i det här repot och ska inte klistras in. Beteendet som är värt att behålla står i [`docs/prototyp-36037.md`](docs/prototyp-36037.md). Läs den filen helt innan du rör Idag, tidplan, ÄTA eller site.
 
+## Röd tråd (2026-10-22)
+
+Läs [`docs/rod-trad.md`](docs/rod-trad.md) innan du lägger till eller ändrar en vy. Varje vy ska följa reglerna i §4 där. Ny vy kräver att en befintlig tas bort eller slås ihop. B2 och B3 är beslutade 2026-10-26; B1 (4 eller 8 faser) är öppen.
+
+**Menyn har tre ingångar (2026-10-26).** `INGANGAR` och `VERKTYG` i `src/data/vyer.js` styr den. Huvudmenyn (`Sidebar.jsx`) visar Idag, Projektet, Pengar och en Verktyg-knapp som öppnar Ctrl/Cmd+K. Vyerna i en ingång visas som flikar i `Flikrad.jsx`. Vy-för-vy-besluten står i [`docs/strykningslista.md`](docs/strykningslista.md). Lägg aldrig till en fjärde ingång eller en ny menyrad; en ny vy blir en flik eller ett verktyg. Flikar som ska slås ihop (t.ex. Översikt, Tavla, Tidrapport) ligger kvar tills sammanslagningen är byggd. Siten är fryst och dold ur menyn.
+
 ## Vad som redan är sant
 
 - **Tidplanen ”Blir vi klara i tid” finns.** `src/components/tidplan/KritiskLinje.jsx` + `src/lib/kritiskLinje.js` + `src/data/fasberoenden.js`. Kolumnerna fas, standardplan, beräknat, försening, marginal, väntar på, och tabellen M1–M7, är redan där. Prototypens ”0 dagar” och fasta datum 2026-12-02 är seed för 36037, inte en kalkyl. Byt inte ut motorn.

@@ -3,7 +3,7 @@ import { SEED } from "../data/seed.js";
 import { arLangText, textstycken, historikRad, medHistorik, milstolparUtanDatum, nyaRaderForProjekt, utkastFranProjekt, kortAndringar, lasUtkast, projektstartPost, utkastAndrat, utkastFranPost, luckor, riskFordelning, riskNivaForVarde, riskvardeForRad, stegPunkter, stegTillstand, nyttProjekt, projektFranUtkast, projektstartDokument, projektstartFel, tomtUtkast } from "./projektstart.js";
 import { STEG } from "../data/projektstartSteg.js";
 import { efterInlasning, reducer } from "../state/portfolj-reducer.js";
-import { GILTIGA_VYER, VYER, ENKEL_MENY } from "../data/vyer.js";
+import { GILTIGA_VYER, VYER, INGANGAR, VERKTYG, ingangFor } from "../data/vyer.js";
 import { METODSTEG, SIDHJALP } from "../data/projektmetod.js";
 
 describe("Återanvändbar projektmetod", () => {
@@ -11,9 +11,17 @@ describe("Återanvändbar projektmetod", () => {
     for (const [id] of VYER.filter(([id]) => id !== "_sek")) expect(SIDHJALP[id]?.length).toBe(4);
     for (const s of METODSTEG) for (const id of s.vyer) expect(GILTIGA_VYER.has(id)).toBe(true);
     expect(METODSTEG.flatMap((s) => s.faser)).toEqual(Array.from({ length: 16 }, (_, i) => i));
-    for (const id of ENKEL_MENY) expect(GILTIGA_VYER.has(id)).toBe(true);
     expect(GILTIGA_VYER.size).toBe(31);
-    expect(ENKEL_MENY.size).toBe(7);
+  });
+  it("lägger varje menyvy i exakt en ingång eller bland verktygen", () => {
+    const placerade = [...INGANGAR.flatMap((g) => g.vyer), ...VERKTYG];
+    const menyvyer = VYER.filter(([id]) => id !== "_sek").map(([id]) => id);
+    expect(new Set(placerade).size).toBe(placerade.length);
+    expect([...placerade].sort()).toEqual([...menyvyer].sort());
+    expect(INGANGAR.map((g) => g.namn)).toEqual(["Idag", "Projektet", "Pengar"]);
+    expect(ingangFor("ata")?.id).toBe("pengar");
+    expect(ingangFor("site")).toBeNull();
+    expect(ingangFor("storning")).toBeNull();
   });
   it("startar tomma projekt utan gamla resultat, antagna datum eller ekonomivärden", () => {
     const state = efterInlasning(structuredClone(SEED));
