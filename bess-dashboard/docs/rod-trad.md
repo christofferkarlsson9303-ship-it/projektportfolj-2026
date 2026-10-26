@@ -71,4 +71,6 @@ Befintlig kod raderas inte; gåläget kan ligga kvar bakom en knapp.
 4. **Idag** – lägg till "nästa grind och vad som blockerar".
 5. **Site som lägesbild** – ny vy ovanpå befintlig scen.
 
+Vy-för-vy-beslut för steg 3: [strykningslista.md](strykningslista.md).
+
 Varje steg: `npm run lint`, `typecheck`, `test`, berörd `e2e`.
