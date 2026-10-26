@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { Callout, Card, StatTile, StatusBadge } from "../ds/index.js";
 import { tidsdom } from "../../lib/tidsdom.js";
-import { datumKort, idag } from "../../lib/datum.js";
+import { datumKort, dagarText, idag } from "../../lib/datum.js";
 import { hamtaNamn } from "../../state/portfolj-reducer.js";
 import { baslinjerad, drivtext, kritiskLinje } from "../../lib/kritiskLinje.js";
 import { FASSTATUS, fasStatus, grupperaMoment, projektfasForMilstolpe } from "../../lib/fasmappning.js";
@@ -50,6 +50,13 @@ export function KritiskLinje({ pid, projektNamn }) {
           : { ton: "ok", text: k.forsening < 0 ? `${-k.forsening} dagar före kontraktet` : "I tid" };
 
   const kedja = k ? k.faser.filter((f) => f.kritisk) : [];
+  const saknas = k
+    ? {
+        hallpunkter: k.faser.filter((f) => !f.klar).length,
+        punkter: k.faser.filter((f) => !f.klar && f.slack !== null).length,
+        klartecken: k.milstolpar.filter((m) => !m.klar).length,
+      }
+    : null;
 
   return (
     <Card
@@ -90,6 +97,11 @@ export function KritiskLinje({ pid, projektNamn }) {
               hint={kedja.length ? kedja.map((f) => f.nr).join(" → ") : "inga återstående moment"}
             />
           </div>
+          {saknas ? (
+            <div className="rounded-md border border-solid border-hairline bg-sunken px-3 py-2 text-xs text-ink-soft" aria-label="Sammanfattning av saknade underlag">
+              <strong className="text-ink">Saknas:</strong> {saknas.hallpunkter} hållpunkter · {saknas.punkter} punkter · {saknas.klartecken} klartecken
+            </div>
+          ) : null}
 
           {!k.baslinje ? (
             <Callout ton="info">
@@ -133,11 +145,19 @@ export function KritiskLinje({ pid, projektNamn }) {
                       <StatusBadge ton={FASSTATUS[fasStatus(fas.nr, aktivFas)].ton} label={FASSTATUS[fasStatus(fas.nr, aktivFas)].text} className="ml-2 normal-case tracking-normal" />
                     </th>
                   </tr>,
-                  ...rader.map((f) => (
+                  ...rader.map((f) => {
+                    const leveranser = state.leveranser.filter((l) => l.projektId === pid && l.moment === f.nr);
+                    const start = f.prognosStart || f.planStart;
+                    const slut = f.prognosSlut || f.planSlut;
+                    const datumrad = start && slut ? `${datumKort(start)}–${datumKort(slut)}` : "Datum saknas";
+                    const nedrakning = slut ? dagarText(Math.round((new Date(`${slut}T00:00:00`) - new Date(`${nu}T00:00:00`)) / 86400000)) : "datum saknas";
+                    return (
                   <tr key={f.nr} className={f.klar ? "klar" : f.kritisk ? "kritisk" : undefined}>
                     <th scope="row">
                       <button type="button" className="kl-fas" onClick={() => oppnaPost("epc", `fas-${f.nr}`)}>
                         <span className="kl-nr">{f.nr}</span> {f.kort}
+                        <span className="block text-xs font-normal text-ink-soft">{datumrad} · {nedrakning} · {k.referens === "baslinje" ? "baslinje" : "standardplan"}</span>
+                        {leveranser.length ? <span className="block text-xs font-normal text-ink-soft">{leveranser.map((l) => `${l.benamning}${l.datum ? ` ${datumKort(l.datum)}` : ""}`).join(" · ")}</span> : null}
                       </button>
                       {f.kritisk ? <StatusBadge ton="bad" label="Styr slutdatum" className="ml-2" /> : null}
                       {f.klar ? <StatusBadge ton="ok" label="Klar" className="ml-2" /> : null}
@@ -148,7 +168,8 @@ export function KritiskLinje({ pid, projektNamn }) {
                     <td className="num">{f.slack === null ? "—" : `${f.slack} ${f.slack === 1 ? "dag" : "dagar"}`}</td>
                     <td className="kl-driv">{drivtext(f, k.faser)}</td>
                   </tr>
-                  )),
+                    );
+                  }),
                 ])}
               </tbody>
             </table>

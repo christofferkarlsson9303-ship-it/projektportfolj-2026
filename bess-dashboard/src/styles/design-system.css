@@ -218,6 +218,8 @@ tbody tr:hover{background:var(--sunken)}
     linear-gradient(to left,var(--surface) 30%,transparent) right center/40px 100% no-repeat local,
     radial-gradient(farthest-side at 0 50%,rgba(0,0,0,.16),transparent) left center/14px 100% no-repeat scroll,
     radial-gradient(farthest-side at 100% 50%,rgba(0,0,0,.16),transparent) right center/14px 100% no-repeat scroll}
+.tscroll table{min-width:760px}
+.tscroll th,.tscroll td{white-space:nowrap}
 td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 
 /* ---------- Pills / badges ---------- */
