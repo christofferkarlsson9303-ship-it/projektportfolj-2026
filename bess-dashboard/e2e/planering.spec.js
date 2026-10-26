@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { gaTill, oppna, utanKonsolfel } from "./hjalpare.js";
+import { gaTill, oppna, redigeraBudget, utanKonsolfel } from "./hjalpare.js";
 
 /* Planering och tid: Resurser, Tidrapport, Budget och utfall och
    Fakturaunderlag — flyttade från standalone-filen till React. */
@@ -12,6 +12,7 @@ test("vyerna renderar utan konsolfel", async ({ page }) => {
   await gaTill(page, "Tidrapport");
   await expect(page.getByRole("list", { name: "Veckans dagar" })).toBeVisible();
   await gaTill(page, "Budget och utfall");
+  await redigeraBudget(page);
   await expect(page.getByRole("region", { name: "Budget per aktivitet", exact: true })).toBeVisible();
   await gaTill(page, "Fakturaunderlag");
   await expect(page.getByRole("region", { name: "Fakturaunderlag", exact: true })).toBeVisible();
@@ -73,6 +74,7 @@ test("budgeten jämför budget mot utfall per aktivitet", async ({ page }) => {
   await oppna(page, "Budget och utfall");
   await expect(statTal(page, "Budget")).toHaveText("—");
 
+  await redigeraBudget(page);
   const tabell = page.getByRole("region", { name: "Budget per aktivitet", exact: true });
   const falt = tabell.getByLabel("Budgeterade timmar för Projektering och handlingar");
   await falt.fill("40");

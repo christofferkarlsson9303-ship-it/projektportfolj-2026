@@ -2,7 +2,15 @@
 
 Beslut 2026-10-17 (Christoffer Karlsson): hela appen ska använda **en** checklista. En punkt som bockas av eller uppdateras på ett ställe ska slå igenom i alla vyer.
 
-Den här filen är planen. Inget i koden är ändrat än. Utkastet till sammanslagningslista ligger i [`gemensam-checklista-mappning.csv`](gemensam-checklista-mappning.csv).
+Den här filen är planen. Utkastet till sammanslagningslista ligger i [`gemensam-checklista-mappning.csv`](gemensam-checklista-mappning.csv).
+
+**Genomfört 2026-10-23** (grenen `gemensam-checklista-grind`):
+
+- Beslut 2 är infört: en passerad grind bockar inte av punkter. `punktlage()` ger källan `ejregistrerad`; sådana punkter räknas som öppna men blir inga uppgifter (`attGora()`), och deras ledtider visas som "Momentet passerat". De kan registreras en och en eller i ett svep i momentets grindruta.
+- Grindrutan visar exakt vad som saknas för klartecknet (`grindSaknas()`): öppna punkter med hållpunkter först, egenkontroller som inte är verifierade, avvikelser och grinddatum.
+- De 41 kopplingarna egenkontroll → EPC (fältet `epc` i momentmallarna) gäller nu: en verifierad egenkontroll bockar sin EPC-punkt (`styrktaPunkter()`, källa `egenkontroll`). Inte tvärtom (beslut 1).
+
+**Kvar:** kopplingar mellan Projektstart och Bygga batteripark väntar på etapp 0 (beslut 3). Katalogen och den gemensamma statusen (etapp 1–4) görs efter det.
 
 ## 1. Läget idag (main 0e7f859)
 

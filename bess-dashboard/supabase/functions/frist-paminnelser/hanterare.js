@@ -150,3 +150,14 @@ export function kanalerFranMiljo(env, hamta = fetch) {
 export function portfoljUrDokument(v = {}) {
   return { ur: v.ur ?? [], hseqIncidenter: v.hseqIncidenter ?? [], projekt: v.projekt ?? [], kontrakt: v.kontrakt ?? [] };
 }
+
+/** Jämför två hemligheter utan att svarstiden avslöjar hur många tecken som
+ *  stämmer. Längden får läcka (nyckeln är lång och slumpad), innehållet inte. */
+export function likaNycklar(given, vantad) {
+  if (typeof given !== "string" || typeof vantad !== "string" || !vantad) return false;
+  const a = new TextEncoder().encode(given);
+  const b = new TextEncoder().encode(vantad);
+  let skillnad = a.length ^ b.length;
+  for (let i = 0; i < b.length; i++) skillnad |= (a[i] ?? 0) ^ b[i];
+  return skillnad === 0;
+}

@@ -24,18 +24,18 @@ test("projektchecklista sparar spårbara resultat utan att blanda enheter eller 
   const { fel } = await oppna(page);
   const d = await panel(page);
   await expect(d.getByRole("combobox", { name: "Mallpaket", exact: true })).toHaveValue("projekt");
-  await expect(d.getByRole("status")).toContainText("115 kontrollpunkter");
+  await expect(d.getByRole("status")).toContainText("125 kontrollpunkter");
   await registrera(d);
-  await expect(d).toContainText("1 av 115 kompletta kontroller");
+  await expect(d).toContainText("1 av 125 kompletta kontroller");
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("batchc-portfolj-v1") || "{}").faltkontroller?.[0]?.referens)).toBe("Kravspecifikation rev C");
   await page.reload(); const igen = await panel(page);
-  await expect(igen).toContainText("1 av 115 kompletta kontroller");
+  await expect(igen).toContainText("1 av 125 kompletta kontroller");
   await igen.getByLabel("Enhet / serienummer", { exact: true }).fill("Container 2");
-  await expect(igen).toContainText("0 av 115 kompletta kontroller");
+  await expect(igen).toContainText("0 av 125 kompletta kontroller");
   await igen.getByLabel("Enhet / serienummer", { exact: true }).fill("");
-  await expect(igen).toContainText("1 av 115 kompletta kontroller");
+  await expect(igen).toContainText("1 av 125 kompletta kontroller");
   await igen.getByRole("combobox", { name: "Projekt", exact: true }).selectOption("36038");
-  await expect(igen).toContainText("0 av 115 kompletta kontroller");
+  await expect(igen).toContainText("0 av 125 kompletta kontroller");
   utanKonsolfel(fel);
 });
 
@@ -77,7 +77,7 @@ test("komplett egenkontroll har fasindex och slutdokumentationens genväg", asyn
   await page.getByRole("button", { name: "Projektets egenkontrollrapport", exact: true }).click();
   const d = page.getByRole("dialog", { name: /Fältmaterial/ });
   await d.getByLabel("Kontrollplan / dokumentnummer och revision", { exact: true }).fill("KP-001 rev B");
-  await expect(d).toContainText("115 av 115 kompletta kontroller");
+  await expect(d).toContainText("125 av 125 kompletta kontroller");
   await expect(d).toContainText("Redo för granskning");
   const promise = page.waitForEvent("download"); await d.getByRole("button", { name: "Ladda ned PDF", exact: true }).click();
   const file = await promise; const path = info.outputPath("komplett-rapport.pdf"); await file.saveAs(path);
@@ -86,7 +86,7 @@ test("komplett egenkontroll har fasindex och slutdokumentationens genväg", asyn
   await d.getByRole("button", { name: "Skriv ut", exact: true }).click();
   const report = page.locator("#utskrift");
   await expect(report).toContainText("Egenkontroll – redo för granskning");
-  await expect(report.locator(".field-check")).toHaveCount(115);
+  await expect(report.locator(".field-check")).toHaveCount(125);
   await expect(report.locator(".field-index tbody tr")).toHaveCount(16);
   await expect(report).toContainText("P15.04");
   if (info.project.name === "desktop") await page.pdf({ path: info.outputPath("komplett-print.pdf"), printBackground: true, preferCSSPageSize: true });

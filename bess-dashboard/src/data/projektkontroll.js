@@ -83,6 +83,18 @@ const steg = [
   ["Provning och idrifttagning", [
     ["Bekräfta provansvar och gränser", "Bekräfta utsedda tekniker, provplan, kopplingsplan, bevittnade prov och acceptanskrav. Separera vårt förarbete från leverantörens programmering/idrifttagning.", "Provledare / OEM / projektledare"],
     ["Granska samlade provresultat", "Samla cold/hot-, skydds-, nät-, signal-, kapacitets- och RTE-protokoll enligt avtalad omfattning. Registrera avvikelser och godkänd omprovning.", "Provledare / OEM / beställare"],
+    /* Anläggningsprov före drifttagning (projektmetoden § 5.6, protokoll Anläggningsprov.docx).
+       Varje prov: kontrollerad, datum, signatur eller Ej tillämplig med motivering. */
+    ["Anläggningsprov: kretsprovning", "Prova kretsarna mot kretsschemat. Markera godkända kretsar i schemat och ange schemats revision som bevis.", "Provledare / elinstallatör"],
+    ["Anläggningsprov: isolationsmätning", "Mät isolationen på ställverk, transformatorer och matande kablar före spänningssättning. Ange mätvärden och instrument i protokollet.", "Provledare / elinstallatör"],
+    ["Anläggningsprov: strömmätkretsar", "Kontrollera börda, riktning och funktion i strömmätkretsarna.", "Provledare / reläprovare"],
+    ["Anläggningsprov: spänningsmätkretsar", "Kontrollera spänningsfall, riktning och funktion i spänningsmätkretsarna.", "Provledare / reläprovare"],
+    ["Anläggningsprov: ledningsimpedans", "Mät ledningsimpedansen där utlösningsvillkoret är osäkert. Ej tillämplig kräver motivering.", "Provledare / elinstallatör"],
+    ["Anläggningsprov: spänningssättning av matningskretsar", "Spänningssätt matningskretsarna enligt kopplingsplan, med behörig personal och skriftliga arbetsbevis.", "Elsäkerhetsledare / provledare"],
+    ["Anläggningsprov: funktionsprov delsystem", "Funktionsprova varje delsystem med utrustningens ägare närvarande. Registrera deltagare.", "Provledare / utrustningsägare"],
+    ["Anläggningsprov: övriga prov", "Registrera övriga prov som kontraktet eller nätägaren kräver, eller Ej tillämplig med motivering.", "Provledare"],
+    ["Nätanslutningstest med nätägaren", "Genomför överensstämmelseprovning enligt nätägarens krav (projektmetoden § 5.2.1). Ange nätägarens protokoll som bevis.", "Provledare / nätägare"],
+    ["Inkopplingstransient och skyddsutlösning", "Verifiera att inrusningsström vid inkoppling (5–10 × märkström) inte ger felutlösning. Ange reläinställningar och protokoll.", "Reläprovare / provledare"],
   ]],
   ["Besiktning och överlämning", [
     ["Kontrollera att anläggningen är färdig", "Kontrollera markytor, vägar, stängsel, grindar, skyltning, åtkomst och städning. Kontrollera att inga tillfälliga skydd döljer öppna arbeten.", "Arbetsledare"],
@@ -103,7 +115,7 @@ export const PROJEKTMALLAR = steg.map(([titel, rader], fas) => {
   const punkter = fas === 8 ? [...egna.slice(0, 2), ...lag("C", ["C.03", "C.04", "C.05"]), ...egna.slice(2)]
     : fas === 11 ? [egna[0], ...lag("A", ["A.03", "A.04"]), egna[1], ...FALTMALLAR[0].punkter]
       : fas === 12 ? [egna[0], ...lag("B", ["B.02", "B.03"]), ...FALTMALLAR[1].punkter, ...FALTMALLAR[2].punkter, egna[1]]
-        : fas === 13 ? [egna[0], ...FALTMALLAR[3].punkter, egna[1]] : egna;
+        : fas === 13 ? [egna[0], ...FALTMALLAR[3].punkter, ...egna.slice(2), egna[1]] : egna;
   return ({
   id: `projekt-${fas}`, nr: fas + 1, titel, kort: titel, utrustning: "Projektets avtalade kontrollomfattning",
   flode: `Moment ${fas}: ${FASER[fas].titel}. ${FASER[fas].grind.kod}: ${FASER[fas].grind.text} Dokumentera klartecken enligt godkänd kontrollplan.`,

@@ -20,7 +20,9 @@ import { arGuid } from "../lib/bcfHanterare.js";
 import { projektFasFranEpc } from "../lib/projektfasEpc.js";
 import { arDold } from "../lib/arkiv.js";
 import { sattVidSteg } from "../lib/sammanfoga.js";
-import { projektstartFel } from "../lib/projektstart.js";
+import { ARVSDELAR, arv } from "../lib/projektmall.js";
+import { postMedEpc } from "../lib/punktlankar.js";
+import { projektstartFel, projektstartPost, utkastFranProjekt } from "../lib/projektstart.js";
 import { EJ_VUNNET_ORSAKER, FAS_MODELL, arFasNr, faseFranGammal, fasFranStatus, faseInfo, riskFasFranGammal, forstaFasForStatus, normaliseraStatus, statusEtikett } from "../data/projektfaser.ts";
 import { granskaProfil, rensaProfil } from "../lib/kontraktsprofil.js";
 
@@ -367,6 +369,19 @@ export function reducer(state, action) {
       return loggat(nytt, projekt.id, `Projekt skapat: ${projekt.nr || "nummer saknas"} ${projekt.namn}. Tomma mallar, inga tidigare resultat kopierade.`);
     }
 
+    /* Ärv valda delar från ett tidigare projekt (lib/projektmall.js). Uttryckligt
+       steg efter SKAPA_PROJEKT, som fortsatt startar tomt. */
+    case "PROJEKT_ARV": {
+      const { fran, till, delar } = action;
+      if (!fran || !till || fran === till) return state;
+      const kalla = state.projekt.find((p) => p.id === fran);
+      if (!kalla || !state.projekt.some((p) => p.id === till)) return state;
+      const { state: nytt, antal } = arv(state, fran, till, delar || [], { datum: idag(), namn: hamtaNamn() || "" });
+      const delText = ARVSDELAR.filter(([k]) => antal[k]).map(([k, namn]) => `${namn.toLowerCase()} ${antal[k]}`).join(", ");
+      if (!delText) return state;
+      return loggat(nytt, till, `Ärvt från ${kalla.nr || kalla.namn}: ${delText}`);
+    }
+
     case "UPPDATERA": {
       const { lista, id, falt, varde } = action;
       if (!state[lista]) return state;
@@ -705,6 +720,29 @@ export function reducer(state, action) {
       return loggat(ut, projektId, `Site: standardlayout ${profil || ""} inlagd (${rader.length} objekt)`.replace("  ", " "));
     }
 
+    /* Byggläget: flera objekt i ett steg (en rad containrar), en loggrad. Rader som inte går
+       att spara hoppas över; inga objekt alls → state orört. */
+    case "SITE_LAGG_TILL_FLERA": {
+      const { projektId, rader } = action;
+      if (!Array.isArray(rader)) return state;
+      const punkter = punkterForSite(state, projektId);
+      const ok = rader.filter((r) => r?.projektId === projektId && objektFel(r, punkter) === null);
+      if (!ok.length) return state;
+      const ut = { ...state, siteObjekt: [...(state.siteObjekt || []), ...ok] };
+      return loggat(ut, projektId, `Site: ${ok.length} × ${MALLAR[ok[0].typ]?.namn || "objekt"} placerade i rad`);
+    }
+
+    /* Ångra i byggläget: projektets objekt sätts tillbaka till en tidigare lista. Andra
+       projekts objekt rörs inte. Nålar vars punkt inte längre finns hoppas över. */
+    case "SITE_ANGRA": {
+      const { projektId, rader } = action;
+      if (!projektId || !Array.isArray(rader)) return state;
+      const punkter = punkterForSite(state, projektId);
+      const ok = rader.filter((r) => r?.projektId === projektId && objektFel(r, punkter) === null);
+      const ovriga = (state.siteObjekt || []).filter((r) => r.projektId !== projektId);
+      return loggat({ ...state, siteObjekt: [...ovriga, ...ok] }, projektId, "Site: senaste ändringen ångrad");
+    }
+
     case "SITE_ANDRA": {
       const { id, andring } = action;
       const o = (state.siteObjekt || []).find((r) => r.id === id);
@@ -961,6 +999,35 @@ export function reducer(state, action) {
 
     /* EPC-checklistan: en punkt bockad av, satt som ej aktuell eller
        återöppnad. Loggas — en godkänd hållpunkt är ett besked i sig. */
+    /* Skapar projektstarten för ett befintligt projekt, med guidens startrader och
+       projektets fas som golv — så att t.ex. interface-listan kan föras i
+       Veckokoll innan guiden öppnats. Finns den redan händer inget. */
+    case "PROJEKTSTART_SKAPA": {
+      const proj = (state.projekt || []).find((p) => p.id === action.pid);
+      if (!proj || (state.projektstart || []).some((x) => x.projektId === action.pid)) return state;
+      /* Samma utkast som guiden öppnar för ett befintligt projekt utan sparad start: projektkortets
+         fält, risker och milstolpar ifyllda. Ett tomt utkast skulle tolkas som att fälten rensats
+         när guiden sparas (kortAndringar). */
+      const u = utkastFranProjekt(proj, state);
+      return loggat({ ...state, projektstart: [...(state.projektstart || []), projektstartPost(action.pid, u)] }, action.pid, "Projektstart skapad");
+    }
+
+    /* En rad i en Projektstart-tabell ändrad utanför guiden, t.ex. interface-listan i Veckokoll. */
+    case "PROJEKTSTART_RAD": {
+      const { pid, tabell, radId, falt, varde } = action;
+      const post = (state.projektstart || []).find((x) => x.projektId === pid);
+      const rader = post?.utkast?.rader?.[tabell] || [];
+      const rad = rader.find((r) => r.id === radId);
+      if (!rad || Object.is(rad[falt], varde)) return state;
+      const nyPost = {
+        ...post,
+        utkast: { ...post.utkast, rader: { ...post.utkast.rader, [tabell]: rader.map((r) => (r.id === radId ? { ...r, [falt]: varde } : r)) } },
+        uppdaterad: new Date().toISOString(),
+      };
+      const nytt = { ...state, projektstart: state.projektstart.map((x) => (x.id === post.id ? nyPost : x)) };
+      return loggat(nytt, pid, `${tabell === "interface" ? "Interface-lista" : tabell}: ${rad.granssnitt || radId} ${falt} → ${String(varde ?? "—").slice(0, 60)}`);
+    }
+
     case "EPC_PUNKT": {
       const { pid, punkt, status } = action;
       const nytt = {
@@ -971,6 +1038,10 @@ export function reducer(state, action) {
           punkt,
         }, { status, datum: status ? idag() : "", av: status ? hamtaNamn() || "" : "" }),
       };
+      /* Samma punkt i Projektstart (data/punktlankar.js): skriv igenom bocken till projektstarten. */
+      const post = (nytt.projektstart || []).find((x) => x.projektId === pid);
+      const nyPost = post ? postMedEpc(post, punkt, status) : post;
+      if (nyPost !== post) nytt.projektstart = nytt.projektstart.map((x) => (x === post ? nyPost : x));
       const hp = PUNKT_FOR_ID.get(punkt)?.badges.includes("HP");
       const vad =
         status === "klar" ? (hp ? "hållpunkt godkänd" : "klar") : status === "ejaktuell" ? "ej aktuell" : "återöppnad";

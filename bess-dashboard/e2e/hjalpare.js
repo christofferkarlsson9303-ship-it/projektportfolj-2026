@@ -15,6 +15,7 @@ export async function oppna(page, vy) {
      workers igång hinner den inte parsas på standardens fem sekunder. Övriga assertions behåller den korta gränsen, så riktiga fel
      faller fortfarande snabbt. */
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 20_000 });
+  await vantaPaVy(page);
 
   if (vy) await gaTill(page, vy);
 
@@ -67,6 +68,22 @@ export async function gaTill(page, namn) {
   }
 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(namn);
+  await vantaPaVy(page);
+}
+
+/** Vyerna laddas vid behov (React.lazy). Rubriken står i toppraden direkt,
+ *  men innehållet kommer när vyns del är hämtad — vänta in det innan ett test
+ *  räknar rader med count(). */
+export async function vantaPaVy(page) {
+  await expect(page.locator("main").getByRole("status").filter({ hasText: "Laddar…" })).toHaveCount(0, { timeout: 20_000 });
+  /* På smal skärm är Översiktens fasplan och projektkort infällda. Testerna
+     gäller innehållet, så fäll ut dem. */
+  if ((await page.getByRole("heading", { level: 1 }).textContent())?.trim() === "Översikt") {
+    for (const namn of ["Visa fasplanen", /^Visa projektkort/]) {
+      const knapp = page.getByRole("button", { name: namn });
+      if (await knapp.isVisible()) await knapp.click();
+    }
+  }
 }
 
 /** Kolumnvärden i ordning, från en tabell med angiven tillgänglig etikett. */
@@ -120,4 +137,10 @@ export async function sitePanel(page, namn) {
 export async function oppnaViaAdress(page, vyId, rubrik, projektId = "36037") {
   await page.evaluate(([v, p]) => { window.location.hash = `#/${v}/${p}`; }, [vyId, projektId]);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(rubrik);
+}
+
+/** Budgettabellen är en sammanfattning på smal skärm — öppna redigeringen. */
+export async function redigeraBudget(page) {
+  const knapp = page.getByRole("button", { name: "Redigera budget" });
+  if (await knapp.isVisible()) await knapp.click();
 }

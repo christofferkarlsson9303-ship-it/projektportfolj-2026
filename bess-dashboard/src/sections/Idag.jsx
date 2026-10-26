@@ -6,10 +6,14 @@ import { StatusBadge } from "../components/ds/index.js";
 import { Vyvaljare } from "../components/ui/Vyvaljare.jsx";
 import { AGENDATYPER, arbetslage, dagsetikett } from "../lib/agenda.js";
 import { kritiskLinje } from "../lib/kritiskLinje.js";
+import { tidsdom } from "../lib/tidsdom.js";
 import { datumKort, idag } from "../lib/datum.js";
 import { useSnabbUtskrift } from "../components/field/SnabbUtskrift.jsx";
 import { PunktPanel } from "../components/idag/PunktPanel.jsx";
 import { arNal, siteObjekt } from "../lib/site.js";
+import { Veckorutin } from "../components/idag/Veckorutin.jsx";
+import { Ekonomirad } from "../components/idag/Ekonomirad.jsx";
+import { HeroBild } from "../components/oversikt/Hero.jsx";
 
 /* Idag — projektledarens arbetslista.
 
@@ -125,18 +129,14 @@ export function Idag() {
   const k = useMemo(() => (p ? kritiskLinje(state, p.id, nu) : null), [state, p, nu]);
   const kritiska = k ? k.faser.filter((f) => f.kritisk) : [];
   const sent = !!k && k.forsening > 0;
-  const dom = !k || k.forsening === null
-    ? { ton: "warn", text: "Uppgifter saknas" }
-    : sent
-      ? { ton: "bad", text: `${k.forsening} ${k.forsening === 1 ? "dag" : "dagar"} sent` }
-      : { ton: "ok", text: "I tid" };
+  /* Domen — samma text som portföljen och Översikt (lib/tidsdom.js). En sen
+     leverans som inte är markerad levererad ger "Risk", aldrig "I tid". */
+  const dom = p ? tidsdom(state, p.id, nu, k) : { ton: "warn", text: "Uppgifter saknas", mening: null, sena: [] };
   const domMening = !k
     ? "Ange start och slut på projektet under Översikt, så räknas planen fram."
     : sent
       ? `Beräknat ${k.forsening} ${k.forsening === 1 ? "dag" : "dagar"} efter kontraktets färdigdatum. ${kritiska.length === 1 ? "Det kritiska momentet flyttar" : "De kritiska momenten flyttar"} slutbesiktningen.`
-      : k.kontrakt
-        ? `Kontraktet säger ${datumKort(k.kontrakt)}.`
-        : "Kontraktets färdigdatum saknas.";
+      : [k.kontrakt ? `Kontraktet säger ${datumKort(k.kontrakt)}.` : "Kontraktets färdigdatum saknas.", dom.mening].filter(Boolean).join(" ");
 
   const dagar = (n) => (n === 0 ? "0 dagar" : `${n > 0 ? "+" : "−"}${Math.abs(n)} ${Math.abs(n) === 1 ? "dag" : "dagar"}`);
   const motPlan = k?.baslinje && k.motBaslinje !== null ? `${dagar(k.motBaslinje)} mot plan` : "beräknad";
@@ -191,6 +191,8 @@ export function Idag() {
       r.agare ? `Ansvarig: ${r.agare}` : "Ansvarig saknas",
       r.forfaller ? `frist ${datumKort(r.forfaller)}` : "ingen frist",
       r.uppfoljning ? `uppföljning ${datumKort(r.uppfoljning)}` : null,
+      r.plats ? `plats ${r.plats}` : null,
+      r.foton ? `${r.foton} foto${r.foton > 1 ? "n" : ""}` : null,
       varfor(r),
     ].filter(Boolean).join(" · ");
 
@@ -212,7 +214,13 @@ export function Idag() {
           {r.extra === "avvikelse" ? <StatusBadge status="forsenad" label="Avvikelse" className="ml-2" /> : null}
         </>
       }
-      undertext={r.typ === "Punkt" ? punktText(r) : `${r.typ} · ${r.datum}`}
+      undertext={
+        r.typ === "Punkt"
+          ? punktText(r)
+          : r.typ === "Beställning"
+            ? `Beställ senast ${r.datum} · ledtid ${r.ledtidVeckor} v till moment ${r.moment}`
+            : `${r.typ} · ${r.datum}`
+      }
       pid={r.pid}
       onOppna={() => oppnaAgenda(r)}
     />
@@ -223,18 +231,16 @@ export function Idag() {
       {/* ---------- 1. Bandet ---------- */}
       <section
         aria-label="Sammanfattning"
-        className="flex flex-col gap-4 rounded-xl bg-one-djup px-5 py-5 text-white shadow-sm print:hidden md:px-6"
+        className="hero-med-bild hero-tat relative flex flex-col gap-4 overflow-hidden rounded-xl bg-one-djup px-5 py-5 text-white shadow-sm print:hidden md:px-6"
       >
+        <HeroBild fil="bess-rader-skymning.jpg" position="60% 45%" />
         <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
           {portfolj ? (
             <div className="flex min-w-0 max-w-[560px] flex-col gap-2">
               <span className="text-[12px] font-bold uppercase tracking-wider text-white/80">Alla projekt</span>
               <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
                 {state.projekt.map((pr) => {
-                  const kp = kritiskLinje(state, pr.id, nu);
-                  const sentPr = !!kp && kp.forsening > 0;
-                  const ton = !kp || kp.forsening === null ? "warn" : sentPr ? "bad" : "ok";
-                  const text = !kp || kp.forsening === null ? "Uppgifter saknas" : sentPr ? `${kp.forsening} ${kp.forsening === 1 ? "dag" : "dagar"} sent` : "I tid";
+                  const { ton, text } = tidsdom(state, pr.id, nu);
                   return (
                     <li key={pr.id} className="flex flex-wrap items-center gap-x-3 gap-y-1">
                       <button type="button" className={lankKlass} onClick={() => { setValtProjekt(pr.id); setLage("projekt"); }}>
@@ -290,6 +296,12 @@ export function Idag() {
           {harSite ? <button type="button" className={lankKlass} onClick={() => visa("site")}>Siten i 3D</button> : null}
         </nav>
       </section>
+
+      {/* ---------- Vad kostar det — samma prognos som Ekonomi ---------- */}
+      {!portfolj && p ? <Ekonomirad pid={p.id} /> : null}
+
+      {/* ---------- Dagens rutin ur metoden (§ 3.2) ---------- */}
+      <Veckorutin />
 
       {/* ---------- 2. Att göra ---------- */}
       <section

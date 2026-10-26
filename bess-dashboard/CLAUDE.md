@@ -13,10 +13,12 @@ Läs [`docs/rod-trad.md`](docs/rod-trad.md) innan du lägger till eller ändrar 
 ## Vad som redan är sant
 
 - **Tidplanen ”Blir vi klara i tid” finns.** `src/components/tidplan/KritiskLinje.jsx` + `src/lib/kritiskLinje.js` + `src/data/fasberoenden.js`. Kolumnerna fas, standardplan, beräknat, försening, marginal, väntar på, och tabellen M1–M7, är redan där. Prototypens ”0 dagar” och fasta datum 2026-12-02 är seed för 36037, inte en kalkyl. Byt inte ut motorn.
+- **Beställ senast** (`src/lib/bestallningar.js`, 2026-10-23): en leverans kan ha `moment`, `ledtidVeckor` och `bestalld`. Beställ senast = momentets planerade start minus ledtiden; ej lagda order syns i Idag som typ "Beställning". Bara ett uttryckligt `moment` binder momentets start i kritisk linje (`leveransbindningar()`); ett moment gissat ur benämningen gör det aldrig. `LEDTIDER` i checklistdata är processledtider (tillstånd, kran, provresurser) och är något annat.
 - **Ett klick till papper är PR 28**, grenen `snabbutskrift`. `useSnabbUtskrift()` i `src/components/field/SnabbUtskrift.jsx` skriver ut arbetslista och fasblankett utan att öppna panelen. Panelen (`FaltmaterialPanel.jsx`) finns kvar för fler val. Ctrl/Cmd+K har samma dokument. Bygg inte en ny utskriftsväg.
 - **Designsystemet** är `src/components/ds/` (`Card`, `StatTile`, `StatusBadge`, `Callout`). Nya ytor använder det. Inga nya hex-färger, inget parallellt tema.
 - **ÄTA-kalkylen finns på två ställen med samma kod.** Kortet i vy `ata` (”Öppna i kalkyl”) och egen flik `atakalkyl` (`AtaKalkylVy.jsx`). Logiken ligger i `src/sections/Ata/useAtaKalkyl.jsx` och tabellen i `KalkylTabell.jsx`. Ändra där, inte i två kopior.
 - **Ärenden på siten.** UR/ÄTA-poster kan kopplas till ett `siteObjekt` (`objectGuid`, `viewpoint`, `boundingBox`, `modelVersionId`) och 3D-vyn kan jämföra modellversioner. Läs [`docs/modellarenden.md`](docs/modellarenden.md) innan du ändrar det. IFC-import (web-ifc, metadata i state, geometri i IndexedDB) och BCF-export finns; läs avsnitten där. Ingen egen backend.
+- **Byggläget i 3D** (`lib/bygglage.js`, 2026-10-23): objekt dras direkt (tryck på objekt = markera och dra, tryck på marken = kameran). R roterar, Delete tar bort, Ctrl/Cmd+D kopierar, Ctrl/Cmd+Z ångrar (projektets objektlista per ändring, bara i sessionen, `SITE_ANGRA`). En rad läggs med "Antal i rad" och klick, eller Skift + dra (`SITE_LAGG_TILL_FLERA`), med skyddsavståndet som mellanrum. Att välja en mall i Bygg flyger kameran till planvyn. I `SiteScen` finns en modulfunktion `rad()` för grader — skugga den inte med en lokal variabel.
 - **Anbudsmodeller på siten.** Fristående 3D-filer från anbudsskedet ligger orörda i `src/sections/Site/anbud/` och registreras i `src/lib/anbudsmodeller.js`. `SiteAnbudsmodell.jsx` visar dem i en iframe med `sandbox="allow-scripts"` för det projekt som matchar (Vaggeryd: namn/ort/plats). Redigera inte filerna — ersätt med en ny daterad fil. De skrivs aldrig till `portfolj/state`.
 - **Ritningar på siten** tar PDF, bild och DXF (`lib/dxfRitning.js`, dxf-parser, MIT). En DXF läses i webbläsaren, sparas som PNG i bucketen och får måtten ur `$INSUNITS` (`kalla: "dxf"`, `skala` = enhetsbyte). DWG läses inte: enda webbläsarläsaren (libredwg-web) är GPL-3.0 och kräver ett licensbeslut först. IFC är fortsatt 3D-modellen.
 - **Data** är två JSONB-rader: `portfolj/state` och `portfolj/ekonomi`. RLS skyddar. Ändra inte schemat för en kalkylator eller en bild. Undantag och beslut om schema står under *Teknisk granskning 2026-10-16* nedan.
@@ -26,6 +28,8 @@ Läs [`docs/rod-trad.md`](docs/rod-trad.md) innan du lägger till eller ändrar 
 Granskningen (commit `0e7f85961c8a`, fynd F01–F15) ligger till grund för GitHub-issues märkta `granskning`. Etapp A finns på grenen `granskning/etapp-a`.
 
 **Regler som gäller nu:**
+
+- **En grind bockar inte av punkter** (beslut 2026-10-17). `punktlage()` ger källan `ejregistrerad` för öppna punkter i ett moment med passerad grind. Använd `attGora()` när du listar uppgifter, så att de inte blir nya att göra. Källan `egenkontroll` betyder att en verifierad egenkontroll styrker punkten (`styrktaPunkter()`). Se `docs/gemensam-checklista.md`.
 
 - **Kontrolltäckning.** `kontrollage()` räknar en punkt som verifierad först när varje omfattning som registrerats i fasen är komplett. Gör inte tillbaka till "minst en rad".
 - **Datum** i kontroller valideras med `arGiltigtDatum()` i `src/lib/datum.js`. Använd den, inte `Date.parse`.
@@ -54,9 +58,18 @@ Fyll i datum och beslut i tabellen när det är fattat. Migrationer i `supabase/
 - **Projektval görs på ett ställe**: `Projektrad` i toppraden (`components/layout/Projektrad.jsx`). `Projektvaljare` ritar inget längre; lägg inte tillbaka egna väljare i vyer. "Nytt projekt" ligger också i toppraden.
 - **Portföljläge** (`lage` i `UiProvider`) finns bara i vyer som listas i `PORTFOLJVYER` (nu: Idag). Övriga vyer arbetar alltid i `valtProjekt`.
 - **Idag filtreras med `arbetslage(state, horisont, pid)`**. Utan `pid` är det hela portföljen. Rader för `bada` följer `gallerFor()`.
+- **Metodkontroller** (`lib/metodkoll.js`, 2026-10-23): interface-listan bor i Projektstart (`rader.interface`) och ändras utanför guiden med `PROJEKTSTART_RAD`; `PROJEKTSTART_SKAPA` skapar en saknad projektstart med projektets fas som golv. Trafikljusen räknas, de sätts inte för hand — beställarrapporten visar inte budgeten. Veckorutinen är data i `data/veckorutin.js`.
 - **Frist och uppföljning är två fält på punkter** (`forfaller`, `uppfoljning`). `punktDatum()` avgör var punkten hamnar: en passerad frist vinner alltid. Uppföljning skriver aldrig om fristen.
 - **Kommentarer på punkter** är en lista med id (`kommentarer`) via `PUNKT_KOMMENTAR`, så att `sammanfoga.js` slår ihop två personers kommentarer. `av` är det inskrivna namnet i sidomenyn, inte en verifierad identitet.
+- **Projektmall** (`lib/projektmall.js`, 2026-10-23): `SKAPA_PROJEKT` startar fortfarande tomt. Arv från ett tidigare projekt är ett eget steg, `PROJEKT_ARV` (risker, long lead, ej aktuella punkter, momentplan, lärdomar som uppgifter), i Bygga batteripark. Ärvda rader får id ur källradens id, så att samma arv inte ger dubbletter. Inga resultat, ekonomivärden eller signaturer ärvs.
+- **Siterunda** (`lib/siterunda.js`, 2026-10-23): Registrera händelse tar foto och plats. Foton krymps till JPEG och laddas till ritningsarkivet (`projekt/foto/…`); på punkten ligger bara `foton` med sökväg. En plats sätter en nål på siteobjektet. Med foto eller plats och utan datum blir uppföljningen idag.
 - **"Mina uppgifter" finns inte än.** `agare` är fritext; bygg det först när ansvar tilldelas uttryckligen.
+
+## Menyn följer rytmen (2026-10-22)
+
+- **Hela menyn** (`GRUPPER` i `data/vyer.js`) har sex grupper efter projektmetodens rytm: Dagligen, Varje vecka och månad, Projektet, Pengar, Siten, Bibliotek. Nya vyer läggs i den grupp där de används, inte i en ny grupp.
+- **Enkla menyn** (`ENKEL_MENY`, sju flikar) svarar på fyra frågor: vad gör jag idag/i veckan, vad blockerar, blir vi klara i tid, vad kostar det. Idag, Översikt, Veckokoll, Bygga batteripark, Tidplan, ÄTA, Budget och utfall. Öppna punkter nås från Idag; HSEQ, Risker och Öppna punkter från Veckokoll ("Veckans genomgång").
+- **Testet för en ny vy:** svarar den på någon av de fyra frågorna? Annars hör den hemma i en befintlig vy eller i Bibliotek.
 
 ## ÄTA: art, orsak och fyra kolumner (2026-10-21)
 
@@ -70,6 +83,34 @@ Fyll i datum och beslut i tabellen när det är fattat. Migrationer i `supabase/
 
 - **Anbudshjulet** (`Projektstart/AnbudsDonut.jsx`, Recharts) räknar gröna, gula, röda och ej bedömda ur `anbudsBedomning()`. En klickad färg filtrerar matrisen och listan; filtret sparas inte.
 - **Riskmatrisen** (`Projektstart/Riskmatris.jsx`) är 3 × 3 sannolikhet × konsekvens i fälten `af_sann_<id>`/`af_kons_<id>`. Placeringen skriver `af_ljus_<id>` via `matrisLjus()` (produkt 1–2 grön, 3–4 gul, 6–9 röd). Ljuset kan ändras för hand och visas då som avvikelse. Dra-och-släpp har alltid klick (välj fråga, klicka ruta) som alternativ.
+
+## Vad som får byggas (2026-10-23)
+
+Appen är ett metodverktyg för en projektledare (Christoffer), inte en samling moduler. Varje ny funktion ska hjälpa till att svara på någon av de fyra frågorna, helst på under två minuter:
+
+1. **Blir vi klara i tid?** Vad styr tidplanen?
+2. **Vad kostar det?** Prognos mot budget och ofakturerade ÄTA.
+3. **Vad blockerar?** Vilken grind som är stängd och vem som äger hindret.
+4. **Vad måste jag göra idag och den här veckan?**
+
+Regler:
+
+- **Svarar förslaget inte på någon av frågorna** ska det in i en befintlig vy, i Bibliotek eller inte alls. Skapa inte en ny vy eller menygrupp för det.
+- **Siten i 3D och ONE Bered byggs bara ut på uttryckligt uppdrag.** De är bra vid layoutgenomgång och beredning men svarar inte på frågorna. Undantag beställt 2026-10-23: byggläget i 3D (dra direkt, R under drag, Delete/Ctrl+D/Ctrl+Z, dra ut en rad, vy uppifrån).
+- **En funktion ska spara tid varje vecka** för en ensam användare. Annars ska den bort eller vänta.
+- **Data:** foton, ritningar och modeller ligger i arkivet (Storage/IndexedDB), aldrig i `portfolj/state`. Håll koll på storleken i Data → Lagring (varning över 1024 kB).
+- **Före en PR:** säg vilken av de fyra frågorna ändringen hjälper och skriv det i PR-beskrivningen.
+
+## Teknisk grund (2026-10-26)
+
+- **Säkerhetsheaders och CSP** står i `vercel.json`. `vite preview` läser samma fil (`vite.config.js`), så e2e-testerna kör under samma CSP som produktionen. Ny extern källa (CDN, API) = lägg till den i `vercel.json`, annars blockeras den. Skript från CDN är tillåtna bara med full URL, för anbudsmodellen.
+- **Typsnitt** ligger i appen via Fontsource (`main.jsx`, IBM Plex i `SiteWorkspace.jsx`). Lägg inte tillbaka Google Fonts.
+- **Hero-bilder** är WebP i 640 och 1280 px (`public/assets/<namn>-640.webp`). `HeroBild` väljer med `srcset`; JPG:en är reserv. En ny bild behöver båda storlekarna.
+- **`--lank`** är textfärgen för länkar och nummer på ytor som följer temat (ONE Blågrön ljust, info-ton mörkt). Använd den i stället för `var(--one-djup)` som textfärg på ytor — inte på vita knappar i sidhuvudet.
+- **Felgränser:** `Felgrans` runt varje vy, `AppFelgrans` runt hela appen (omladdning och lokal kopia).
+- **Rendering:** `usePortfoljAtgarder()` ger dispatch och de enkla åtgärderna utan portföljdatan. Använd den i memorerade rader och knappar — en komponent som läser `usePortfolj()` ritas om vid varje ändring, oavsett `React.memo`. Guidens rader (`Punktrad`) är memorerade och får bara enkla värden.
+- **Guiden ritar bara utfällda moment** (`Fasruta`). Ett test som räknar alla 288 rader fäller ut alla först.
+- **CI** delar e2e på tre jobb (`--shard`). Kontrollen "E2E (desktop + mobil)" är grön bara om alla tre delarna är det.
 
 ## Gör inte
 

@@ -3,30 +3,27 @@ import { Pencil } from "lucide-react";
 import { usePortfolj, useUi } from "../state/hooks.js";
 import { Hero } from "../components/oversikt/Hero.jsx";
 import { Nyckeltal } from "../components/oversikt/Nyckeltal.jsx";
-import { Leveranser, Risker, Uppmarksamhet } from "../components/oversikt/Rutor.jsx";
+import { Risker, Uppmarksamhet } from "../components/oversikt/Rutor.jsx";
 import { Aktivitet } from "../components/oversikt/Aktivitet.jsx";
-import { Tidslinje } from "../components/oversikt/Tidslinje.jsx";
 import { Gantt } from "../components/oversikt/Gantt.jsx";
-import { Ledtider } from "../components/oversikt/Ledtider.jsx";
-import { NastaUppgift } from "../components/oversikt/NastaUppgift.jsx";
+import { Projektlage } from "../components/oversikt/Projektlage.jsx";
 import { ForloradeAnbud } from "../components/oversikt/ForloradeAnbud.jsx";
 import { Projektkort, Projektredigering } from "../components/oversikt/Projekt.jsx";
 import { uppmarksamhet } from "../lib/oversikt.js";
 import { projektUnderlag } from "../lib/berakningar.js";
-import { Callout } from "../components/ds/index.js";
+import { Callout, Card } from "../components/ds/index.js";
+import { useMedia } from "../lib/useMedia.js";
 
-/* Översikten (DashboardView) — läget i portföljen just nu.
+/* Översikten (DashboardView) — portföljen, inte dagens arbetslista.
 
-   Byggd av designsystemets komponenter (components/ds): varje ruta är ett
-   Card, status är StatusBadge, åtgärdsrader är LeadTimeList. Avstånden
-   följer 8 px-skalan: gap-4 (16 px), gap-6 (24 px) från lg.
+   Byggd av designsystemets komponenter (components/ds). Ordning efter vikt:
+   hälsning och snabbåtgärder, läget per projekt (tid, pengar, vad som
+   blockerar), portföljens fasplan som Gantt-schema, fyra nyckeltal, flaggor,
+   risker och ändringsloggen, och sist projektkorten och underlaget.
 
-   Uppbyggd som ett bento-rutnät i fallande vikt: hälsning och snabbåtgärder,
-   nästa uppgift i valt projekt, batteriparkens fasplan som Gantt-schema, ledtiderna som ska startas nu
-   bredvid nästa BESS-leverans, fyra nyckeltal, och sedan det som kräver
-   åtgärd, aktiviteten, tidslinjen och riskerna. Projektkorten och underlaget
-   ligger sist — de är till för att läsas i lugn och ro. Varje ruta är en egen
-   namngiven region, så sidan går att skumma och navigera med skärmläsare. */
+   Nästa uppgift, ledtider, nästa BESS-leverans och kommande 90 dagar låg här
+   förut men upprepade Idag och Bygga batteripark (granskning 2026-10-23).
+   Varje ruta är en egen namngiven region. */
 
 const kortNamn = (p) => p.nr || p.ort || p.namn;
 
@@ -35,6 +32,11 @@ export function DashboardView() {
   const { fokus } = useUi();
   const [visaRedigering, setVisaRedigering] = useState(false);
   const [flik, setFlik] = useState("alla");
+  /* På smal skärm är Gantt-schemat och projektkorten infällda — Läget per
+     projekt säger det viktigaste. null = följ skärmbredden. */
+  const bred = useMedia("(min-width: 768px)");
+  const [visaGantt, setVisaGantt] = useState(null);
+  const [visaKort, setVisaKort] = useState(null);
 
   const lista = useMemo(() => uppmarksamhet(state), [state]);
   const akuta = lista.filter((f) => f.niva === "hog").length;
@@ -66,30 +68,30 @@ export function DashboardView() {
     <div className="flex flex-col gap-4 lg:gap-6">
       <Hero akuta={akuta} bevaka={lista.length - akuta} onVisaFlaggor={visaAkuta} />
 
-      <NastaUppgift i={1} />
+      {/* Portföljens svar på tid, pengar och vad som blockerar — en rad per projekt.
+          Det som ska göras i ett projekt står i Idag; det upprepas inte här. */}
+      <Projektlage i={1} />
 
-      <section aria-labelledby="ov-planen">
-        <h2 id="ov-planen" className="sr-only">
-          Fasplan och ledtider
-        </h2>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:gap-6 xl:grid-cols-3">
-          <Gantt i={1} />
-          <Ledtider i={2} />
-          <Leveranser i={3} />
-        </div>
-      </section>
+      {visaGantt ?? bred ? (
+        <Gantt i={2} />
+      ) : (
+        <Card i={2} title="Fasplan, grindar och betalningar" subtitle="Schemat är byggt för bred skärm.">
+          <button type="button" className="btn sec mini self-start" onClick={() => setVisaGantt(true)}>
+            Visa fasplanen
+          </button>
+        </Card>
+      )}
 
       <Nyckeltal />
 
       <section aria-labelledby="ov-laget">
         <h2 id="ov-laget" className="sr-only">
-          Läget i portföljen
+          Flaggor och risker i portföljen
         </h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:gap-6 xl:grid-cols-3">
-          <Uppmarksamhet lista={lista} flik={flik} setFlik={setFlik} i={4} />
+          <Uppmarksamhet lista={lista} flik={flik} setFlik={setFlik} i={3} />
+          <Risker i={4} />
           <Aktivitet i={5} />
-          <Tidslinje i={6} />
-          <Risker i={7} />
         </div>
       </section>
 
@@ -111,11 +113,17 @@ export function DashboardView() {
 
         <div id="projektuppgifter">{visaRedigering ? <Projektredigering /> : null}</div>
 
-        <div className="projkort-rutnat">
-          {state.projekt.map((p) => (
-            <Projektkort key={p.id} p={p} />
-          ))}
-        </div>
+        {visaKort ?? bred ? (
+          <div className="projkort-rutnat">
+            {state.projekt.map((p) => (
+              <Projektkort key={p.id} p={p} />
+            ))}
+          </div>
+        ) : (
+          <button type="button" className="btn sec mini self-start" onClick={() => setVisaKort(true)}>
+            Visa projektkort ({state.projekt.length})
+          </button>
+        )}
       </section>
 
       <ForloradeAnbud />

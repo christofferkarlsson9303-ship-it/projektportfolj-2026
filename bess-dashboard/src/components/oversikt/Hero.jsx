@@ -66,9 +66,20 @@ export function HeroBild({ fil, video = null, lage = "mork", position = "70% 55%
   const bas = import.meta.env.BASE_URL;
   const [rorelse] = useState(() => typeof window === "undefined" || !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
   const visaVideo = video && VIDEOR.has(video) && rorelse;
+  const stam = fil.replace(/\.jpg$/, "");
   return (
     <>
-      <div className={`hero-bild ${lage}`} aria-hidden="true" style={{ backgroundImage: `url(${bas}assets/${fil})`, backgroundPosition: position }}>
+      <div className={`hero-bild ${lage}`} aria-hidden="true">
+        {/* WebP i två bredder (640/1280) — bilden ligger nästan genomskinlig bakom text,
+            så en mindre fil räcker. JPG:en finns kvar som reserv och affisch för video. */}
+        <picture>
+          <source
+            type="image/webp"
+            srcSet={`${bas}assets/${stam}-640.webp 640w, ${bas}assets/${stam}-1280.webp 1280w`}
+            sizes="(max-width: 767px) 100vw, 1280px"
+          />
+          <img src={`${bas}assets/${fil}`} alt="" decoding="async" style={{ objectPosition: position }} />
+        </picture>
         {visaVideo ? (
           <video className="hero-video" src={`${bas}assets/${video}`} poster={`${bas}assets/${fil}`} autoPlay muted loop playsInline preload="metadata" style={{ objectPosition: position }} />
         ) : null}

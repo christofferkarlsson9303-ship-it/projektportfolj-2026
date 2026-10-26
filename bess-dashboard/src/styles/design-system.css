@@ -75,8 +75,9 @@ a{color:var(--one-djup)}
   position:sticky;top:0;align-self:flex-start;height:100vh;z-index:30;transition:transform .28s ease;
   box-shadow:var(--sh-md)}
 .sidebar-top{display:flex;align-items:center;padding:22px 22px 14px}
-.sidebar-top .mark-img{display:block;height:26px;width:auto;filter:brightness(0) invert(1)}
-.sidebar-top .dom{font-size:10.5px;color:rgba(255,255,255,.6);margin-top:5px;letter-spacing:.02em}
+/* Vit logotyp mot mörk yta; one-nordic.se i samma färg som logotypen (grafiska manualen s. 8). */
+.sidebar-top .mark-img{display:block;height:40px;width:auto;filter:brightness(0) invert(1)}
+.sidebar-top .dom{font-size:11px;color:#fff;margin-top:6px;letter-spacing:.03em}
 .sidebar-title{padding:2px 22px 18px}
 .sidebar-title h1{font-size:16.5px;font-weight:600;color:#fff;line-height:1.3}
 .sidebar-title .sub{font-size:10.5px;color:rgba(255,255,255,.55);margin-top:5px;line-height:1.5}
@@ -210,7 +211,13 @@ th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;
   font-weight:700;padding:8px 10px;border-bottom:2px solid var(--hairline);white-space:nowrap}
 td{padding:9px 10px;border-bottom:1px solid var(--hairline);vertical-align:top}
 tbody tr:hover{background:var(--sunken)}
-.tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;
+  /* Skuggkant där tabellen fortsätter i sidled, så att en klippt kolumn syns. */
+  background:
+    linear-gradient(to right,var(--surface) 30%,transparent) left center/40px 100% no-repeat local,
+    linear-gradient(to left,var(--surface) 30%,transparent) right center/40px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%,rgba(0,0,0,.16),transparent) left center/14px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%,rgba(0,0,0,.16),transparent) right center/14px 100% no-repeat scroll}
 td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 
 /* ---------- Pills / badges ---------- */
@@ -665,15 +672,21 @@ tbody tr{transition:background .12s ease}
   --sh-md:0 4px 16px rgba(16,45,58,.07);
   --sh-lift:0 12px 34px rgba(16,45,58,.12);
 }
+/* --lank: textfärg för länkar och nummer på ytor som följer temat. ONE
+   Blågrön i ljust läge; i mörkt läge blir den för mörk (under 2:1), så där
+   används info-tonen. Inte för text på vita knappar i sidhuvudet. */
+:root{--lank:var(--one-djup)}
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
     --ground:#0e1e25; --surface:#15272f; --sunken:#0e1e25;
     --hairline:#23404a; --hairline-stark:#2d4d58;
+    --lank:var(--info-ink);
   }
 }
 :root[data-theme="dark"]{
   --ground:#0e1e25; --surface:#15272f; --sunken:#0e1e25;
   --hairline:#23404a; --hairline-stark:#2d4d58;
+  --lank:var(--info-ink);
 }
 
 body{background:var(--ground);font-size:14.5px;line-height:1.55}
@@ -731,6 +744,37 @@ main{max-width:1320px;padding:32px 38px 80px}
 @media(max-width:640px){
   .topbar{flex-wrap:wrap;gap:10px}
   .tophead{flex-basis:calc(100% - 40px)}
+}
+
+/* Sidhjälpen: ?-knapp bredvid rubriken, panel under toppraden. */
+.titelrad{display:flex;align-items:center;gap:10px;min-width:0}
+.titelrad .pagetitle{min-width:0}
+.sidhjalp{flex:none}
+.sidhjalp>summary{list-style:none;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;
+  border:1px solid rgba(255,255,255,.45);color:#fff;font-weight:700;font-size:14px;cursor:pointer}
+.sidhjalp>summary::-webkit-details-marker{display:none}
+.sidhjalp>summary:hover,.sidhjalp[open]>summary{background:rgba(255,255,255,.2);border-color:#fff}
+.sidhjalp-panel{position:absolute;z-index:30;top:calc(100% - 6px);left:max(16px,calc((100% - 1320px) / 2 + 38px));width:min(460px,calc(100vw - 32px));
+  background:var(--surface);color:var(--ink);border:1px solid var(--hairline);border-radius:12px;padding:16px;box-shadow:0 12px 32px rgba(0,0,0,.18)}
+/* Toppraden: projekt + händelse ligger i .topp-rad. På bred skärm är den
+   genomskinlig för layouten (display:contents), på mobil en egen rad. */
+.topp-rad{display:contents}
+.topp-ikon,.topp-kort{display:none}
+.topbar .kbd,.projektrad .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+@media(max-width:720px){
+  .topbar{flex-wrap:wrap;align-items:center;gap:8px;padding:10px 14px}
+  .topbar .navtoggle{margin-top:0}
+  .tophead{flex:1 1 0;flex-basis:auto;min-width:0}
+  .pagetitle{font-size:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .topbar .kbd{margin-top:0;min-height:40px;min-width:40px;padding:6px 10px}
+  .topp-knapp .topp-lang,.topp-handelse .topp-lang,.topbar .nytt-projekt .topp-lang{display:none}
+  .topbar .topp-ikon{display:block}
+  .topp-kort{display:inline}
+  .topp-rad{display:flex;flex-basis:100%;order:5;gap:8px;min-width:0}
+  .topp-rad .projektrad{flex:1;min-width:0}
+  .topp-handelse{background:#fff!important;color:var(--one-djup)!important;border-color:#fff!important}
+  .projektrad .nytt-projekt{min-height:40px;min-width:40px;padding:6px 10px;background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.3)}
+  .projektrad-val{min-height:40px}
 }
 
 /* ---------- Kort ----------
@@ -1143,7 +1187,20 @@ tr.lastrad:hover{opacity:.8}
 /* ---------- Inloggningsgrind ---------- */
 .inlogg{min-height:100dvh;display:grid;place-items:center;padding:24px;background:var(--sunken)}
 .inlogg-kort{width:100%;max-width:420px;text-align:left}
-.inlogg-logo{height:28px;width:auto;margin-bottom:18px}
+/* Flygbild över en batteripark bakom inloggningen, tonad i ONE Blågrön så att kortet bär. */
+.inlogg.med-bild{background:linear-gradient(160deg,color-mix(in srgb,var(--one-djup) 55%,transparent),color-mix(in srgb,var(--one-djup) 82%,transparent)),
+  var(--inlogg-bild) center/cover no-repeat,var(--one-djup)}
+@supports (background-image:image-set(url("a.webp") type("image/webp"))){
+  .inlogg.med-bild{background:linear-gradient(160deg,color-mix(in srgb,var(--one-djup) 55%,transparent),color-mix(in srgb,var(--one-djup) 82%,transparent)),
+    var(--inlogg-bild-webp) center/cover no-repeat,var(--one-djup)}
+}
+.inlogg.med-bild .inlogg-kort{box-shadow:var(--sh-md)}
+.inlogg-marke{display:inline-flex;flex-direction:column;align-items:flex-start;margin-bottom:20px}
+.inlogg-logo{height:44px;width:auto}
+.inlogg-dom{font-size:12px;letter-spacing:.03em;color:var(--one-bla);margin-top:6px}
+.inlogg-google{display:inline-flex;align-items:center;justify-content:center;gap:10px}
+.inlogg-eller{display:flex;align-items:center;gap:10px;margin:16px 0 12px;font-size:12px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.08em}
+.inlogg-eller::before,.inlogg-eller::after{content:"";flex:1;border-top:1px solid var(--hairline)}
 .inlogg-kort h1{font-size:20px;margin:0 0 4px}
 .inlogg-kort label{display:block;font-size:12.5px;font-weight:600;color:var(--ink-svag);margin-bottom:6px}
 .note.err{background:var(--fel-bg,#fdeaea);border-left-color:var(--rod)}
@@ -1199,7 +1256,7 @@ tr.lastrad:hover{opacity:.8}
   background:none;border:0;text-align:left;font:inherit;color:inherit;cursor:inherit}
 .atakort-yta:focus-visible{outline:2px solid var(--one-bla);outline-offset:-2px;border-radius:var(--r-sm)}
 .atakort-topp{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.atakort-nr{font-size:11.5px;font-weight:700;color:var(--one-djup);letter-spacing:.03em}
+.atakort-nr{font-size:11.5px;font-weight:700;color:var(--lank);letter-spacing:.03em}
 .atakort-titel{font-size:13px;line-height:1.4;color:var(--ink)}
 .atakort-fot{display:flex;align-items:center;justify-content:space-between;gap:8px;
   font-size:11.5px;color:var(--ink-faint)}
@@ -1212,7 +1269,7 @@ tr.lastrad:hover{opacity:.8}
 .atabadge.rod{background:var(--bad-bg);color:var(--bad-ink)}
 
 .atatavla-fot{margin:0;font-size:12px}
-.lankknapp{background:none;border:0;padding:0;font:inherit;color:var(--one-djup);
+.lankknapp{background:none;border:0;padding:0;font:inherit;color:var(--lank);
   text-decoration:underline;text-decoration-style:dotted;cursor:pointer}
 
 /* Slide-over. Medvetet utan overlay — tavlan bakom ska gå att läsa. */
@@ -1280,7 +1337,7 @@ tr.lastrad:hover{opacity:.8}
 .veckokort-svar button[aria-pressed="true"].ok{background:var(--ok-bg);border-color:var(--turkos);color:var(--ok-ink)}
 .veckokort-svar button[aria-pressed="true"].varning{background:var(--warn-bg);border-color:var(--orange);color:var(--warn-ink)}
 .veckokort-svar button[aria-pressed="true"].avvikelse{background:var(--bad-bg);border-color:var(--rod);color:var(--bad-ink)}
-.veckokort-svar button[aria-pressed="true"] .ord{color:inherit;opacity:.8}
+.veckokort-svar button[aria-pressed="true"] .ord{color:inherit}
 .veckokort-rad{font-size:12.5px;line-height:1.5;color:var(--ink-soft)}
 .veckokort-fot{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .veckokort-kommentar{font-size:12px;color:var(--ink-soft)}
@@ -1288,6 +1345,9 @@ tr.lastrad:hover{opacity:.8}
 .veckokort-snabb{display:flex;flex-direction:column;gap:10px;padding-top:12px;border-top:1px solid var(--hairline);
   animation:veckoSnabbIn .22s var(--ease)}
 .veckokort-snabb textarea{min-height:64px}
+.veckokort-val{display:flex;flex-direction:column;gap:12px}
+.veckokort-val-rad{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.veckokort-hjalp{font-size:12px;line-height:1.4;color:var(--ink-soft)}
 @keyframes veckoSnabbIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.veckokort,.veckokort-snabb{transition:none;animation:none}.veckokort:hover{transform:none}}
 
@@ -1422,7 +1482,11 @@ button.ov-chip:hover{border-color:var(--one-bla);color:var(--ink)}
   --hero-max:.42}
 .hero-ton{inset:0;background:linear-gradient(90deg,var(--one-djup) 0%,color-mix(in srgb,var(--one-djup) 88%,transparent) 32%,
   color-mix(in srgb,var(--one-djup) 35%,transparent) 70%,color-mix(in srgb,var(--one-djup) 55%,transparent) 100%)}
-.hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+/* Kort där siffror ligger över bilden: tätare ton (mörkt) eller svagare bild (ljust), så att texten bär. */
+.hero-tat>.hero-ton{background:linear-gradient(90deg,var(--one-djup) 0%,color-mix(in srgb,var(--one-djup) 82%,transparent) 40%,
+  color-mix(in srgb,var(--one-djup) 72%,transparent) 100%)}
+.hero-svag>.hero-bild.ljus{--hero-max:.2}
+.hero-video,.hero-bild img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 @keyframes heroIn{to{opacity:var(--hero-max,1)}}
 @keyframes heroDrift{from{transform:scale(1.02) translate3d(0,0,0)}to{transform:scale(1.08) translate3d(-2%,-1.5%,0)}}
 @media(max-width:767px){.hero-ton{background:color-mix(in srgb,var(--one-djup) 78%,transparent)}.hero-bild.ljus{left:0;--hero-max:.22}}
@@ -1844,6 +1908,12 @@ textarea.hp-led-text::placeholder{color:var(--ink-faint);font-weight:400}
 .epc-framsteg{margin:0;font-size:12.5px;line-height:1.45;color:var(--ink-soft)}
 .epc-framsteg b{color:var(--ink)}
 .epc-grindforslag{margin:0;padding:8px 10px;border-radius:8px;background:var(--ok-bg);color:var(--ok-ink);font-size:12.5px;font-weight:600;line-height:1.45}
+/* Grindrutan: exakt vad som saknas för klartecknet, och oregistrerade punkter efter passerad grind. */
+.epc-saknas{padding:10px 12px;border-radius:8px;background:var(--warn-bg);color:var(--ink);font-size:12.5px;line-height:1.45}
+.epc-saknas>b{display:block;color:var(--warn-ink);margin-bottom:4px}
+.epc-saknas ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px}
+.epc-saknas-hp{font-size:10.5px;font-weight:700;color:var(--warn-ink);border:1px solid currentColor;border-radius:4px;padding:0 4px}
+.epc-ejreg{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:8px;border:1px solid var(--hairline);font-size:12.5px;line-height:1.45}
 .epc-grindlage{margin:0;display:flex;align-items:flex-start;gap:6px;font-size:12.5px;line-height:1.45;color:var(--ink-soft)}
 .epc-grindlage.ok{color:var(--ok-ink);font-weight:600}
 .epc-grindlage svg{flex:0 0 auto;margin-top:1px}
@@ -1953,11 +2023,21 @@ button.epc-lage-rad[aria-pressed="true"]{border-color:var(--one-bla);box-shadow:
   .epc-lage-etikett{position:static;width:auto;height:auto;overflow:visible;clip:auto;display:block;margin-bottom:2px;
     font:700 10px/1.3 var(--font-b);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint)}
 }
+/* Mobil: en kompakt rad per projekt — namn och läget nu, spåret under.
+   Nästa betalning och slutbesiktning står i Läget nu för valt projekt. */
+@media(max-width:640px){
+  .epc-lage-rad{grid-template-columns:minmax(0,auto) minmax(0,1fr);grid-template-areas:"namn nu" "spar spar";gap:6px 12px}
+  button.epc-lage-rad{padding:8px 10px}
+  .epc-lage-ms,.epc-lage-sb{display:none}
+  .epc-lage-nu .epc-lage-etikett{display:none}
+  .epc-lage-nu{text-align:right;font-size:12.5px}
+  .epc-lage-rad .epc-spar16 i{height:12px}
+}
 
 
 /* Referensdelarna */
 .ds-card h3[id],section>div>h3[id]{scroll-margin-top:96px}
-.epc-punktref{display:block;margin-top:2px;font-size:11.5px;font-weight:400;color:var(--ink-faint)}
+.epc-punktref{display:block;overflow-wrap:anywhere;min-width:0;margin-top:2px;font-size:11.5px;font-weight:400;color:var(--ink-faint)}
 .epc-ledrad.sen td:first-child{box-shadow:inset 3px 0 0 var(--rod)}
 .epc-ledrad.snart td:first-child{box-shadow:inset 3px 0 0 var(--orange)}
 .epc-ledlage{display:inline-flex;flex-wrap:wrap;align-items:center;gap:8px}
@@ -2231,6 +2311,38 @@ button.ov-gantt-rad:hover>:first-child,button.ov-gantt-rad:focus-visible>:first-
 .atakort-prick{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--hairline-stark);background:transparent}
 .atakort-prick.klar{background:var(--ok-ink,#1e7b3a);border-color:var(--ok-ink,#1e7b3a)}
 .metod-arbetssatt{grid-column:1/-1;display:flex;flex-direction:column;gap:6px;max-width:520px}
+
+/* Godkänd lösning — grind före inköp i moment 4 (projektmetoden § 6.8). */
+.epc-losning{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:10px 12px;border-radius:8px;background:var(--bad-bg);font-size:12.5px;line-height:1.45}
+.epc-losning.ok{background:var(--ok-bg)}
+.epc-losning ul{margin:0;padding-left:18px}
+
+/* Trafikljus per projekt (projektmetoden § 3.4). */
+.trafikljus{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr));gap:6px}
+.trafikljus-del{display:grid;grid-template-columns:auto 1fr;column-gap:7px;align-items:center;padding:6px 8px;border-radius:8px;background:var(--sunken);font-size:12px;line-height:1.3}
+.trafikljus-del i{grid-row:span 2;width:10px;height:10px;border-radius:50%;background:var(--ink-faint)}
+.trafikljus-del[data-ton="ok"] i{background:var(--ok-ink)}
+.trafikljus-del[data-ton="warn"] i{background:var(--warn-ink)}
+.trafikljus-del[data-ton="bad"] i{background:var(--bad-ink)}
+.trafikljus-namn{font-weight:700;color:var(--ink)}
+.trafikljus-text{color:var(--ink-soft)}
+.trafikljus-del[data-ton="bad"] .trafikljus-text{color:var(--bad-ink);font-weight:600}
+@media print{.trafikljus-del{background:none;border:1px solid #ccc}}
+
+/* Bygga batteripark — infällda referensdelar. */
+.epc-referensdel{border:1px solid var(--hairline);border-radius:12px;background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.epc-referensdel>summary{cursor:pointer;list-style:none;display:flex;flex-direction:column;gap:3px;padding:14px 16px 14px 40px;position:relative}
+.epc-referensdel>summary::-webkit-details-marker{display:none}
+.epc-referensdel>summary::before{content:"›";position:absolute;left:18px;top:12px;font-size:20px;line-height:1;color:var(--ink-soft);transition:transform .15s}
+.epc-referensdel[open]>summary::before{transform:rotate(90deg)}
+.epc-referensdel>summary b{font-size:15px;color:var(--ink)}
+.epc-referensdel>summary span{font-size:12.5px;color:var(--ink-soft);line-height:1.45}
+.epc-referenskropp{padding:4px 16px 16px}
+@media(min-width:768px){.epc-referenskropp{padding:4px 24px 24px}}
+@media print{.epc-referensdel>summary::before{display:none}}
+
+/* Felgränserna: felmeddelandet i en dämpad ruta. */
+.felgrans-text{background:var(--sunken);border-radius:10px;padding:12px;font-size:12px;overflow-x:auto;color:var(--ink-soft);white-space:pre-wrap}
 
 /* ---------- Flikrad: vyerna i aktiv ingång (Idag / Projektet / Pengar) ----------
    Fortsättning av sidhuvudet i ONE Blågrön. Rullar i sidled på smal skärm

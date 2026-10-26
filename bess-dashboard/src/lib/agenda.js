@@ -13,6 +13,7 @@
 import { dagarTill, timmarSedan } from "./datum.js";
 import { gallerFor, incidentLage, underrattelseLage } from "./berakningar.js";
 import { INCIDENTTYP } from "../data/konstanter.js";
+import { bestallningslage } from "./bestallningar.js";
 
 /** Löpande frister. Nivåerna: forfallen > akut (≥12 h kvar av dygnet) > snart > oklar. */
 export function fristrader(state) {
@@ -67,6 +68,7 @@ export function fristUtanDatum(state, pid = null) {
 export const AGENDATYPER = {
   Milstolpe: { ikon: "◆", vy: "tidplan" },
   Leverans: { ikon: "▣", vy: "tidplan" },
+  Beställning: { ikon: "▢", vy: "tidplan" },
   Fakturering: { ikon: "◈", vy: "milstolpar" },
   Punkt: { ikon: "●", vy: "punkter" },
   Möte: { ikon: "▤", vy: "moten" },
@@ -115,6 +117,19 @@ export function agendarader(state, dagar, bakat = 0) {
     )
   );
 
+  /* Beställ senast: leveranser vars order inte är lagd, på datumet då den
+     senast måste läggas för att hinna till momentet (lib/bestallningar.js). */
+  state.projekt.forEach((p) =>
+    bestallningslage(state, p.id).forEach((b) => {
+      if (!["sen", "snart", "i-tid"].includes(b.status)) return;
+      const lev = b.rad.leverantor && b.rad.leverantor !== "—" ? " — " + b.rad.leverantor : "";
+      lagg(b.senast, `Beställ senast: ${b.rad.benamning}${lev}`, "Beställning", p.id, b.id, "", {
+        moment: b.moment,
+        ledtidVeckor: b.ledtidVeckor,
+      });
+    })
+  );
+
   state.betalplan.forEach((b) => {
     if (b.status !== "fakturerad") lagg(b.datum, `${b.kod} ${b.benamning}`, "Fakturering", b.projektId, b.id);
   });
@@ -126,6 +141,8 @@ export function agendarader(state, dagar, bakat = 0) {
       agare: p.agare || "",
       forfaller: p.forfaller || "",
       uppfoljning: p.uppfoljning || "",
+      foton: (p.foton || []).length,
+      plats: p.plats?.namn || "",
     });
   });
 

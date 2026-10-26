@@ -6,6 +6,7 @@ import { usePortfolj, useUi } from "../../state/hooks.js";
 import { hamtaNamn } from "../../state/portfolj-reducer.js";
 import { datumKort } from "../../lib/datum.js";
 import { nyttId } from "../../lib/id.js";
+import { PunktFoton } from "./PunktFoton.jsx";
 
 /* Detaljpanel för en punkt i Idag. Ändrar samma rad som Öppna punkter —
    ansvarig, status, uppföljning och kommentar — utan att lämna arbetslistan.
@@ -19,7 +20,7 @@ const KOPPLING_TEXT = { ata: "ÄTA", hinder: "Hinder", risk: "Risk" };
 
 export function PunktPanel({ id, onStang, onOppnaRegister }) {
   const { state, uppd, uppdStatus, kommenteraPunkt } = usePortfolj();
-  const { oppnaPost } = useUi();
+  const { oppnaPost, setValtProjekt, visaISite } = useUi();
   const [utkast, setUtkast] = useState("");
   const pt = state.punkter.find((x) => x.id === id);
 
@@ -44,6 +45,23 @@ export function PunktPanel({ id, onStang, onOppnaRegister }) {
         {pt.kalla ? <p className="m-0 text-[13px] text-ink-soft">Källa: {pt.kalla}</p> : null}
 
         {pt.underlag ? <p className="m-0 text-[13px] text-ink-soft">Underlag: {pt.underlag}</p> : null}
+        {pt.foton?.length ? <PunktFoton foton={pt.foton} /> : null}
+        {pt.plats ? (
+          <p className="m-0 flex flex-wrap items-center gap-2 text-[13px] text-ink-soft">
+            Plats: <strong className="text-ink">{pt.plats.namn}</strong>
+            <button
+              type="button"
+              className="btn sec mini"
+              onClick={() => {
+                /* Punktens eget projekt — i portföljläge kan ett annat vara valt — och flyg till platsen. */
+                setValtProjekt(pt.projektId);
+                visaISite(pt.plats.objektId);
+              }}
+            >
+              Visa i 3D
+            </button>
+          </p>
+        ) : null}
         {(pt.lankar || []).length ? (
           <p className="m-0 flex flex-wrap items-center gap-2 text-[13px] text-ink-soft">
             Kopplat till:

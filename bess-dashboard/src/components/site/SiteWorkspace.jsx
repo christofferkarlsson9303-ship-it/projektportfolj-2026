@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Maximize2, Minimize2, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+/* IBM Plex för sitens arbetsyta, lokalt (Fontsource, OFL) — följer med vyns del. */
+import "@fontsource/ibm-plex-sans/latin-400.css";
+import "@fontsource/ibm-plex-sans/latin-500.css";
+import "@fontsource/ibm-plex-sans/latin-600.css";
+import "@fontsource/ibm-plex-mono/latin-400.css";
+import "@fontsource/ibm-plex-mono/latin-500.css";
 import "./site-workspace.css";
 
 /** Samma projektscen under alla verktyg. Paneler överlappar, de krymper aldrig canvasen. */

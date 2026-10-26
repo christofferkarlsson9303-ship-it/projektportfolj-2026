@@ -11,8 +11,9 @@ test("enkel meny, synlig sökknapp och ordlista hjälper utan att dölja funktio
   const sok = page.getByRole("combobox", { name: "Sök och hoppa" });
   await expect(sok).toBeFocused(); await sok.fill("HSEQ"); await sok.press("Enter");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("HSEQ / BAS-U");
-  await page.locator("main details").first().locator("summary").click();
-  await expect(page.locator("main")).toContainText("Gör skyddsrond");
+  /* Sidhjälpen är en ?-knapp vid rubriken i toppraden. */
+  await page.getByRole("banner").locator("details.sidhjalp > summary").click();
+  await expect(page.getByRole("banner").locator(".sidhjalp-panel")).toContainText("Gör skyddsrond");
   await gaTill(page, "Min projektmetod");
   const ham = page.getByRole("button", { name: /Öppna menyn|Stäng menyn/ });
   const nav = await oppnaMeny(page);
@@ -49,7 +50,7 @@ test("nytt projekt har tomma mallar och finns kvar efter omladdning", async ({ p
   await gaTill(page, "Slutdokumentation");
   await expect(page.locator(".slutdok-rad").first()).toContainText("Ej påbörjad");
   await page.getByRole("button", { name: "Projektets egenkontrollrapport", exact: true }).click();
-  await expect(page.getByRole("dialog", { name: /Fältmaterial/ })).toContainText("0 av 115 kompletta kontroller");
+  await expect(page.getByRole("dialog", { name: /Fältmaterial/ })).toContainText("0 av 125 kompletta kontroller");
   utanKonsolfel(fel);
 });
 
@@ -70,8 +71,8 @@ test("byggfasens egenkontroller delar resultat och sparar sista texten vid Escap
   await ref.fill("Kravspecifikation rev D"); await ref.press("Escape");
   await expect(d).not.toBeVisible(); await expect(lage).toContainText("1 av 4 kompletta");
   await page.getByRole("button", { name: "Fältmaterial", exact: true }).click();
-  await expect(d.getByRole("status")).toContainText("115 kontrollpunkter");
-  await expect(d).toContainText("1 av 115 kompletta kontroller");
+  await expect(d.getByRole("status")).toContainText("125 kontrollpunkter");
+  await expect(d).toContainText("1 av 125 kompletta kontroller");
   await d.locator("details").first().locator("summary").click();
   await expect(d.getByLabel("Bevis / protokoll och revision – P0.01", { exact: true })).toHaveValue("Kravspecifikation rev D");
 });
@@ -82,7 +83,7 @@ test("alla sidor går att öppna och har enkel vägledning", async ({ page }) =>
   for (const [id, namn] of VYER.filter(([id]) => id !== "_sek")) {
     await page.goto(`/#/${id}/36037`);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(namn);
-    if (id !== "metod" && id !== "site") await expect(page.locator("main details").first().locator(":scope > summary")).toContainText("Gör så här:");
+    if (id !== "metod" && id !== "site") await expect(page.getByRole("banner").locator("details.sidhjalp > summary")).toContainText("Gör så här:");
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), { message: id }).toBe(true);
   }
   utanKonsolfel(fel);

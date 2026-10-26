@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { gaTill, oppna, valjProjekt } from "./hjalpare.js";
+import { gaTill, oppna, utanKonsolfel, valjProjekt } from "./hjalpare.js";
 
 /* Fliken Projektstart: åtta faser. Projektet startar i fas 1 och nästa fas låses
    upp först när allt obligatoriskt i den förra är godkänt. Guidens sidor är
@@ -120,7 +120,7 @@ test("projektet startar i fas 1 och senare faser är låsta", async ({ page }) =
   // Från sista sidan i fas 1 går man inte vidare till fas 2.
   await gaTillSteg(page, 6, "Intressenter");
   await expect(page.getByRole("button", { name: "Nästa" })).toBeDisabled();
-  expect(fel).toEqual([]);
+  utanKonsolfel(fel);
 });
 
 test("fas 2 låses upp först när allt obligatoriskt i fas 1 är godkänt", async ({ page }) => {
@@ -150,7 +150,7 @@ test("fas 2 låses upp först när allt obligatoriskt i fas 1 är godkänt", asy
   await page.getByRole("button", { name: /^Rensa / }).first().click();
   await expect(page.getByText(/ONE-P · Fas 1 av 8/)).toBeVisible();
   await forvantaLast(page, 8, "Riskregister");
-  expect(fel).toEqual([]);
+  utanKonsolfel(fel);
 });
 
 test("projektet skapas utan att alla faser är genomgångna och startar i sin fas", async ({ page }) => {
@@ -172,7 +172,7 @@ test("projektet skapas utan att alla faser är genomgångna och startar i sin fa
   await expect(projekt).toBeVisible();
   await projekt.click();
   await expect(page.getByText(/ONE-P · 90077 Kalmar testpark · Fas 1 av 8/)).toBeVisible();
-  expect(fel).toEqual([]);
+  utanKonsolfel(fel);
 });
 
 test("PDF:en går att ladda ned som utkast under anbudet och växer med de upplåsta faserna", async ({ page }) => {
@@ -214,7 +214,7 @@ test("PDF:en går att ladda ned som utkast under anbudet och växer med de uppl�
   const nedladdning = page.waitForEvent("download");
   await pdf.click();
   expect((await nedladdning).suggestedFilename()).toMatch(/^projektstart_.*\.pdf$/);
-  expect(fel).toEqual([]);
+  utanKonsolfel(fel);
 });
 
 test("den sparade projektstarten kan öppnas, ändras och laddas ned igen", async ({ page }) => {
@@ -240,7 +240,7 @@ test("den sparade projektstarten kan öppnas, ändras och laddas ned igen", asyn
   await oppnaProjektstart(page);
   await page.getByRole("group", { name: "Befintliga projekt" }).getByRole("button", { name: /^90088 Sparad start 2\s*(· ej ifylld)?$/ }).click();
   await expect(page.getByLabel(/^Projektnamn/)).toHaveValue("Sparad start 2");
-  expect(fel).toEqual([]);
+  utanKonsolfel(fel);
 });
 
 test("ett befintligt projekt utan sparad start öppnas i sin fas, fylls på och sparas", async ({ page }) => {
@@ -265,7 +265,7 @@ test("ett befintligt projekt utan sparad start öppnas i sin fas, fylls på och 
   await page.getByRole("group", { name: "Befintliga projekt" }).getByRole("button", { name: /^36037 Växjö Batteripark\s*(· ej ifylld)?$/ }).click();
   await expect(page.getByLabel(/^Beställare/)).toHaveValue("Ingrid Capacity");
   await expect(page.getByText(/Fas 5 av 8/)).toBeVisible();
-  expect(fel).toEqual([]);
+  utanKonsolfel(fel);
 });
 
 test("ett befintligt projekt öppnas direkt med sin knapp och man kan gå tillbaka till ny projektstart", async ({ page }) => {
@@ -279,7 +279,7 @@ test("ett befintligt projekt öppnas direkt med sin knapp och man kan gå tillba
   await befintliga.getByRole("button", { name: "Ny projektstart" }).click();
   await expect(page.getByText("Ändra ett befintligt projekt")).toBeVisible();
   await expect(page.getByText(/ONE-P · Fas 1 av 8/)).toBeVisible();
-  expect(fel).toEqual([]);
+  utanKonsolfel(fel);
 });
 
 test("lägesrapport till ledningen: nuläge och ny risk med fas och kategori sparas och följer med till projektet", async ({ page }) => {
@@ -317,7 +317,7 @@ test("lägesrapport till ledningen: nuläge och ny risk med fas och kategori spa
   await valjProjekt(page, "36038 Alvesta Batteripark");
   const nyRisk = page.getByText("Ny risk från lägesrapporten").or(page.locator('input[value="Ny risk från lägesrapporten"]'));
   await expect(nyRisk.first()).toBeVisible();
-  expect(fel).toEqual([]);
+  utanKonsolfel(fel);
 });
 
 test("interaktiv guide: bocka alla, filter och stegstatus uppdateras direkt", async ({ page }) => {
@@ -335,7 +335,7 @@ test("interaktiv guide: bocka alla, filter och stegstatus uppdateras direkt", as
 
   // Framdrift och fasstatus finns i huvudet och i navigeringen.
   await expect(page.getByRole("list", { name: "Faser i projektet" })).toBeVisible();
-  expect(fel).toEqual([]);
+  utanKonsolfel(fel);
 });
 
 test("riskregistret: nivåer, donut och ny rad följer varandra", async ({ page }) => {
@@ -375,7 +375,7 @@ test("riskregistret: nivåer, donut och ny rad följer varandra", async ({ page 
   await page.getByRole("button", { name: "Nästa" }).click();
   await expect(page.getByText(/ONE-P · Fas 2 av 8 · Steg 9 av 19/)).toBeVisible();
   await expect(page.getByRole("progressbar", { name: "Steg i guiden" })).toHaveAttribute("aria-valuenow", "47");
-  expect(fel).toEqual([]);
+  utanKonsolfel(fel);
 });
 
 test("sista sidan visar alla åtta faser med status, och Öppna är låst för låsta faser", async ({ page }) => {
@@ -399,14 +399,14 @@ test("sista sidan visar alla åtta faser med status, och Öppna är låst för l
   await faser.getByRole("listitem").nth(1).getByRole("button", { name: "Öppna" }).click();
   // Fas 2 öppnas på dess första sida, Organisation och uppstart.
   await expect(page.getByRole("heading", { name: "7. Organisation och uppstart" })).toBeVisible();
-  expect(fel).toEqual([]);
+  utanKonsolfel(fel);
 });
 
 test("projektkorten i översikten visar projektets fas", async ({ page }) => {
   const { fel } = await oppna(page, "Översikt");
   // Växjö och Alvesta är i produktion; fasen räknas ur EPC-checklistan (antagande), nu fas 5.
   await expect(page.getByText("Fas 5 av 8 · Montage").first()).toBeVisible();
-  expect(fel).toEqual([]);
+  utanKonsolfel(fel);
 });
 
 test("projektkortet öppnar projektstarten för sitt projekt", async ({ page }) => {
@@ -420,7 +420,7 @@ test("projektkortet öppnar projektstarten för sitt projekt", async ({ page }) 
   await gaTill(page, "Översikt");
   await oppnaProjektstart(page);
   await expect(page.getByText(/ONE-P · Fas 1 av 8/)).toBeVisible();
-  expect(fel).toEqual([]);
+  utanKonsolfel(fel);
 });
 
 test("projektledarens trafikljus per fas sparas i utkastet och finns bara för upplåsta faser", async ({ page }) => {
@@ -444,7 +444,7 @@ test("projektledarens trafikljus per fas sparas i utkastet och finns bara för u
   // Samma val igen rensar trafikljuset.
   await faser.getByRole("group", { name: "Trafikljus för fas 1" }).getByRole("button", { name: "Röd" }).click();
   await expect(faser.getByLabel("Kommentar till trafikljuset för fas 1")).toHaveCount(0);
-  expect(fel).toEqual([]);
+  utanKonsolfel(fel);
 });
 
 test("direktivet måste signeras, och uppstartsavstämning och interface-lista (båda fas 2) finns", async ({ page }) => {
@@ -466,7 +466,7 @@ test("direktivet måste signeras, och uppstartsavstämning och interface-lista (
   await gaTillSteg(page, 10, "Godkänd lösning");
   await expect(page.getByRole("region", { name: "Interface-lista" })).toBeVisible();
   await expect(page.getByLabel(/^Interface-lista, rad \d+: Gränssnitt$/)).toHaveCount(5);
-  expect(fel).toEqual([]);
+  utanKonsolfel(fel);
 });
 
 
@@ -492,7 +492,7 @@ test("anbudsgenomgång stannar i fas 1 tills anbudet är vunnet", async ({ page 
   await expect(page.getByText(/ONE-P · Fas 2 av 8/)).toBeVisible();
   await gaTillSteg(page, 8, "Riskregister");
   await expect(page.getByLabel("Risker, rad 1: Risk", { exact: true })).toHaveValue("Gemensam risk från anbudet");
-  expect(fel).toEqual([]);
+  utanKonsolfel(fel);
 });
 
 test("styrparametertriangeln visar summan och fas 1 kräver 100 %", async ({ page }) => {
@@ -513,7 +513,7 @@ test("styrparametertriangeln visar summan och fas 1 kräver 100 %", async ({ pag
     await page.getByRole("button", { name: "Ladda ned PDF" }).click();
     await (await d).saveAs(process.env.PDF_UT);
   }
-  expect(fel).toEqual([]);
+  utanKonsolfel(fel);
 });
 
 test("anbudsfrågorna har trafikljus och anbudshjulet ger domen", async ({ page }) => {
@@ -532,7 +532,7 @@ test("anbudsfrågorna har trafikljus och anbudshjulet ger domen", async ({ page 
   // Svaret är fortfarande det obligatoriska fältet, med frågan som etikett.
   await page.getByLabel(/^Vad ingår i uppdraget/).fill("Allt utom nätanslutningen.");
   await expect(page.locator("#ps-af_omfattning")).toHaveValue("Allt utom nätanslutningen.");
-  expect(fel).toEqual([]);
+  utanKonsolfel(fel);
 });
 
 test("riskmatrisen sätter ljuset, hjulet filtrerar och kortets val följer med", async ({ page }) => {
@@ -569,5 +569,5 @@ test("riskmatrisen sätter ljuset, hjulet filtrerar och kortets val följer med"
   // Ändrat ljus för hand visas som avvikelse från matrisen.
   await andra.getByRole("button", { name: "Gul" }).click();
   await expect(page.locator("#af-kort-villkor")).toContainText("Avviker från matrisen (Röd)");
-  expect(fel).toEqual([]);
+  utanKonsolfel(fel);
 });

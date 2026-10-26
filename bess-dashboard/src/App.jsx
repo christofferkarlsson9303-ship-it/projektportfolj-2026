@@ -1,8 +1,9 @@
+import { Suspense } from "react";
 import { PortfolioProvider } from "./state/PortfolioProvider.jsx";
 import { UiProvider } from "./state/UiProvider.jsx";
 import { AuthProvider } from "./state/AuthProvider.jsx";
 import { AppShell } from "./components/layout/AppShell.jsx";
-import { Felgrans } from "./components/Felgrans.jsx";
+import { AppFelgrans, Felgrans } from "./components/Felgrans.jsx";
 import { Inloggning } from "./components/Inloggning.jsx";
 import { SEKTIONER } from "./sections/index.js";
 import { useAuth, useUi } from "./state/hooks.js";
@@ -17,7 +18,9 @@ function AktivSektion() {
     // key gör att felgränsen nollställs när man byter vy — annars fastnar
     // hela arbetsytan i felläge efter ett fel i en enskild sektion.
     <Felgrans key={aktivVy} vy={aktivVy}>
-      <Komponent />
+      <Suspense fallback={<p className="lead" role="status">Laddar…</p>}>
+        <Komponent />
+      </Suspense>
     </Felgrans>
   );
 }
@@ -75,10 +78,12 @@ export default function App() {
     /* UiProvider ligger ytterst så att portföljlagret kan nå toasten — en
        statusändring ska kvittera "uppdaterad och loggad" som i originalet.
        Ui-lagret håller bara vy, tema och dialoger och behöver ingen portföljdata. */
-    <UiProvider>
-      <AuthProvider>
-        <Grind />
-      </AuthProvider>
-    </UiProvider>
+    <AppFelgrans>
+      <UiProvider>
+        <AuthProvider>
+          <Grind />
+        </AuthProvider>
+      </UiProvider>
+    </AppFelgrans>
   );
 }

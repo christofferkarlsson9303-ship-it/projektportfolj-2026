@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { useMedia } from "../lib/useMedia.js";
 import { usePortfolj, useUi } from "../state/hooks.js";
 import { Projektvaljare } from "../components/ui/Projektvaljare.jsx";
 import { DataTable } from "../components/ui/DataTable.jsx";
@@ -34,6 +35,10 @@ export function Budget() {
   const p = projekt(state, pid);
 
   const lage = useMemo(() => budgetlage(state, pid), [state, pid]);
+  /* På smal skärm blir tabellen en lista på många skärmar. Där visas en
+     sammanfattning per aktivitet, och tabellen öppnas för redigering. */
+  const bred = useMedia("(min-width: 768px)");
+  const [redigera, setRedigera] = useState(false);
   const kostrader = useMemo(() => state.kostnader.filter((k) => k.projektId === pid), [state.kostnader, pid]);
 
   if (!p) return null;
@@ -116,6 +121,32 @@ export function Budget() {
             </button>
           }
         >
+          {!bred && !redigera ? (
+            <>
+              <ul className="m-0 flex list-none flex-col p-0" aria-label="Budget per aktivitet">
+                {rader.map((a) => {
+                  const pr = a.b.kr ? Math.min(100, procent(a.u.kr, a.b.kr)) : 0;
+                  return (
+                    <li key={a.id} className="flex flex-col gap-1.5 border-0 border-t border-solid border-hairline py-3 first:border-t-0">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <b className="min-w-0 text-[14px] text-ink">{a.namn}</b>
+                        <b className={`shrink-0 text-[13px] tabular-nums ${a.kvar < 0 ? "text-bad-ink" : "text-ink"}`}>
+                          {a.b.kr ? `${medTecken(a.kvar)} kvar` : "budget ej satt"}
+                        </b>
+                      </div>
+                      {a.b.kr ? <Meter value={pr} size="sm" /> : null}
+                      <span className="text-xs tabular-nums text-ink-soft">
+                        Budget {fmtSEK(Math.round(a.b.kr))} · utfall {fmtSEK(Math.round(a.u.kr))}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+              <button type="button" className="btn sec mini self-start" onClick={() => setRedigera(true)}>
+                Redigera budget
+              </button>
+            </>
+          ) : (
           <DataTable
             etikett="Budget per aktivitet"
             exportNamn="Budget_och_utfall"
@@ -126,20 +157,20 @@ export function Budget() {
               {
                 nyckel: "namn",
                 rubrik: "Aktivitet",
-                bredd: 230,
+                bredd: 190,
                 render: (a) => (
                   <Falt
                     varde={a.namn}
                     etikett={`Namn på aktiviteten ${a.namn}`}
                     onCommit={(v) => uppd("aktiviteter", a.id, "namn", v)}
-                    className="min-w-[180px]"
+                    className="min-w-[150px]"
                   />
                 ),
               },
               {
                 nyckel: "budgetTim",
                 rubrik: "Bud. h",
-                bredd: 96,
+                bredd: 84,
                 typ: "num",
                 summera: true,
                 render: (a) => (
@@ -154,7 +185,7 @@ export function Budget() {
               {
                 nyckel: "utfallTim",
                 rubrik: "Utfall h",
-                bredd: 112,
+                bredd: 92,
                 typ: "num",
                 summera: true,
                 sortVarde: (a) => a.u.timmar,
@@ -179,7 +210,7 @@ export function Budget() {
               {
                 nyckel: "budgetMtrl",
                 rubrik: "Bud. mtrl",
-                bredd: 116,
+                bredd: 108,
                 typ: "sek",
                 summera: true,
                 render: (a) => (
@@ -194,7 +225,7 @@ export function Budget() {
               {
                 nyckel: "budgetUE",
                 rubrik: "Bud. UE",
-                bredd: 116,
+                bredd: 108,
                 typ: "sek",
                 summera: true,
                 render: (a) => (
@@ -209,7 +240,7 @@ export function Budget() {
               {
                 nyckel: "budgetKr",
                 rubrik: "Budget kr",
-                bredd: 120,
+                bredd: 104,
                 typ: "sek",
                 summera: true,
                 sortVarde: (a) => a.b.kr,
@@ -219,7 +250,7 @@ export function Budget() {
               {
                 nyckel: "utfallKr",
                 rubrik: "Utfall kr",
-                bredd: 120,
+                bredd: 104,
                 typ: "sek",
                 summera: true,
                 sortVarde: (a) => a.u.kr,
@@ -229,7 +260,7 @@ export function Budget() {
               {
                 nyckel: "kvar",
                 rubrik: "Kvar",
-                bredd: 140,
+                bredd: 118,
                 typ: "sek",
                 summera: true,
                 sortVarde: (a) => a.kvar,
@@ -246,7 +277,7 @@ export function Budget() {
               {
                 nyckel: "prognosKvar",
                 rubrik: "Kostnad kvar",
-                bredd: 150,
+                bredd: 128,
                 typ: "sek",
                 summera: true,
                 sortVarde: (a) => a.prognosKvarKr,
@@ -267,7 +298,7 @@ export function Budget() {
               {
                 nyckel: "slut",
                 rubrik: "Kostnad totalt",
-                bredd: 140,
+                bredd: 118,
                 typ: "sek",
                 summera: true,
                 sortVarde: (a) => a.slut,
@@ -286,12 +317,13 @@ export function Budget() {
               {
                 nyckel: "atgard",
                 rubrik: "",
-                bredd: 56,
+                bredd: 48,
                 sorterbar: false,
                 render: (a) => <TaBortKnapp etikett={`Ta bort aktiviteten ${a.namn}`} onClick={() => taBortAktivitet(a)} />,
               },
             ]}
           />
+          )}
           <Callout ton="info">
             <b>Antagande:</b> arbetsbudgeten räknas om till kronor med ett snittpris på{" "}
             {fmtSEK(Math.round(snittpris(state)))} per timme (genomsnitt av á-priserna i Resurser). Utfallet
@@ -422,7 +454,7 @@ export function Budget() {
               {
                 nyckel: "atgard",
                 rubrik: "",
-                bredd: 56,
+                bredd: 48,
                 sorterbar: false,
                 render: (k) =>
                   k.fakturerad ? null : <TaBortKnapp etikett={`Ta bort kostnad ${kostNamn(k)}`} onClick={() => taBortKostnad(k)} />,

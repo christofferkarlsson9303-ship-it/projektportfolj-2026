@@ -229,5 +229,5 @@ test("fullständig säkerhetskopia laddas ner som ZIP och läses tillbaka (F06)"
   const { readFileSync } = await import("node:fs");
   await valjFiler(page, { name: "kopia.zip", mimeType: "application/zip", buffer: readFileSync(fil) });
   await expect(page.getByText("Fullständig säkerhetskopia → portföljen och bilagorna", { exact: true })).toBeVisible();
-  await expect(page.getByText(/Bilagor: \d+ ritningar, \d+ IFC-modeller, \d+ protokoll\./)).toBeVisible();
+  await expect(page.getByText(/Bilagor: \d+ ritningar, \d+ foton, \d+ IFC-modeller, \d+ protokoll\./)).toBeVisible();
 });

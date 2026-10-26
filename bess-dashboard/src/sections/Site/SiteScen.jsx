@@ -186,6 +186,7 @@ export default function SiteScen({
   onPlacera,
   onValj,
   onFlytta,
+  onPlaceraRad,
   onMatt,
   onFel,
 }) {
@@ -200,7 +201,7 @@ export default function SiteScen({
 
   // Senaste props för händelser som registreras en gång.
   useEffect(() => {
-    senaste.current = { objekt, skyddsregler, valtId, laddad, lage, rutnat, spokRot, spokMatt, matning, onPlacera, onValj, onFlytta, onMatt, onKlar, onFel, flyttaObjekt, panelBredd };
+    senaste.current = { objekt, skyddsregler, valtId, laddad, lage, rutnat, spokRot, spokMatt, matning, onPlacera, onValj, onFlytta, onPlaceraRad, onMatt, onKlar, onFel, flyttaObjekt, panelBredd };
   });
 
   /* ---------- Bygg scenen en gång ---------- */
@@ -499,6 +500,7 @@ export default function SiteScen({
 
     let start = null;
     let drag = null;
+    let radDrag = null;
     let titt = null;
 
     const ned = (e) => {
@@ -521,10 +523,24 @@ export default function SiteScen({
       start = { x: e.clientX, y: e.clientY };
       straale(e);
       const id = traffadId();
-      if (p.flyttaObjekt && id && id === p.valtId && !p.matning) {
+      /* Byggläget: Skift + dra med en vald mall lägger en rad från tryckpunkten. */
+      if (p.laddad && p.laddad !== "nal" && e.shiftKey && !p.matning) {
+        const q = markpunkt();
+        if (q) {
+          radDrag = { start: { x: q.x, z: q.z } };
+          controls.enabled = false;
+          renderer.domElement.setPointerCapture?.(e.pointerId);
+        }
+        return;
+      }
+      /* Ta tag direkt: ett tryck på ett objekt markerar det och börjar dra, utan att
+         objektet måste vara markerat först. Tryck på marken roterar kameran som förut. */
+      const ob = id ? (p.objekt || []).find((x) => x.id === id) : null;
+      if (p.flyttaObjekt && ob && !p.laddad && !p.matning) {
         const m = s.current.meshar.get(id);
         const q = markpunkt();
         if (m && q) {
+          if (id !== p.valtId) p.onValj?.(id, { tyst: true });
           drag = { id, dx: q.x - m.position.x, dz: q.z - m.position.z, pos: null };
           controls.enabled = false;
           renderer.domElement.setPointerCapture?.(e.pointerId);
@@ -540,6 +556,13 @@ export default function SiteScen({
         smutsig = true;
         titt.x = e.clientX;
         titt.y = e.clientY;
+        return;
+      }
+      if (radDrag) {
+        straale(e);
+        const q = markpunkt();
+        s.current.spokPunkt = q ? { x: q.x, z: q.z } : null;
+        uppdateraSpok();
         return;
       }
       if (!drag) {
@@ -581,8 +604,20 @@ export default function SiteScen({
         return;
       }
       const p = senaste.current;
+      if (radDrag) {
+        straale(e);
+        const q = markpunkt();
+        const r = radDrag;
+        radDrag = null;
+        start = null;
+        controls.enabled = p.lage !== "ga";
+        if (q) p.onPlaceraRad?.(r.start, { x: q.x, z: q.z });
+        return;
+      }
       if (drag) {
+        // Ett tryck utan rörelse är ett klick: öppna objektet som förut.
         if (drag.pos) p.onFlytta?.(drag.id, drag.pos.x, drag.pos.z);
+        else p.onValj?.(drag.id);
         drag = null;
         controls.enabled = p.lage !== "ga";
         start = null;
@@ -1206,7 +1241,7 @@ export default function SiteScen({
         : "Klicka i bilden för att titta med musen. W och S går, A och D åt sidan, Shift springer, Q och E upp och ner. Esc släpper musen."
       : laddad
         ? "Klicka på marken för att placera. Esc avbryter."
-        : flyttaObjekt ? "Flytta: dra det markerade objektet. Stäng Flytta objekt för att rotera kameran över objektet." : "Dra för att rotera · högerdra för att panorera · scrolla för zoom · klicka för att välja";
+        : flyttaObjekt ? "Dra ett objekt för att flytta det · dra på marken för att rotera · R roterar · Ctrl+D kopierar · Delete tar bort · Ctrl+Z ångrar" : "Dra för att rotera · högerdra för att panorera · scrolla för zoom · klicka för att välja";
 
   return (
     <div

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { KONFIGURERAD, supabase } from "../lib/supabase.js";
 import { AuthContext } from "./kontexter.js";
+import { exaktIlike } from "../lib/ilike.js";
 
-/* Inloggning med magisk länk. Behörigheten läses ur allowed_users i stället för
+/* Inloggning med magisk länk eller Google (Supabase OAuth). Behörigheten läses ur allowed_users i stället för
    via rpc is_allowed() — select på den tabellen är ändå gated av samma regel,
    och då kan EXECUTE på hjälpfunktionerna dras in utan att appen slutar
    fungera.
@@ -46,7 +47,8 @@ export function AuthProvider({ children }) {
       const { data, error } = await supabase
         .from("allowed_users")
         .select("email, role")
-        .ilike("email", epost)
+        /* Skiftlägesokänslig men exakt: _ och % i en adress får inte bli jokertecken. */
+        .ilike("email", exaktIlike(epost))
         .maybeSingle();
 
       if (avbruten) return;
@@ -71,6 +73,18 @@ export function AuthProvider({ children }) {
     if (error) throw error;
   }, []);
 
+  /* Google via Supabase. Providern (Client ID och secret) ställs in i Supabase
+     under Authentication → Providers → Google, inte i appen. allowed_users
+     gäller som vanligt: Google-kontots adress måste finnas på listan. */
+  const loggaInMedGoogle = useCallback(async () => {
+    if (!supabase) throw new Error("Supabase är inte konfigurerat");
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin, queryParams: { prompt: "select_account" } },
+    });
+    if (error) throw error;
+  }, []);
+
   const loggaUt = useCallback(async () => {
     if (supabase) await supabase.auth.signOut();
   }, []);
@@ -89,9 +103,10 @@ export function AuthProvider({ children }) {
       tillaten: !!aktuell && slagning.tillaten,
       admin: !!aktuell && slagning.admin,
       skickaLank,
+      loggaInMedGoogle,
       loggaUt,
     }),
-    [status, epost, aktuell, slagning, skickaLank, loggaUt]
+    [status, epost, aktuell, slagning, skickaLank, loggaInMedGoogle, loggaUt]
   );
 
   return <AuthContext.Provider value={api}>{children}</AuthContext.Provider>;

@@ -4,6 +4,7 @@ import { usePortfolj, useUi } from "../state/hooks.js";
 import { Card, Meter, StatusBadge, TableRegion } from "../components/ds/index.js";
 import { Falt } from "../components/ui/Falt.jsx";
 import { VeckoProjektflikar } from "../components/veckokoll/VeckoProjektflikar.jsx";
+import { InterfaceLista } from "../components/veckokoll/InterfaceLista.jsx";
 import { BessStatusHeader } from "../components/site/BessStatusHeader.jsx";
 import { VECKOFRAGOR } from "../data/veckofragor.js";
 import { nyAtaPost } from "../lib/nyaPoster.js";
@@ -102,17 +103,33 @@ function Fragekort({ f, svar, kommentar, utfalld, onSvara, onVaxla, onKommentar,
                   onCommit={(v) => onKommentar(f.n, v)}
                 />
               </div>
-              <div className="flex flex-wrap gap-2">
-                <button type="button" className="btn mini" onClick={() => onPunkt(f)}>
-                  Skapa öppen punkt
-                </button>
-                <button type="button" className="btn sec mini" onClick={() => onAta(f)}>
-                  Skapa ÄTA
-                </button>
-                {[2, 5].includes(f.n) ? (
-                  <button type="button" className="btn sec mini" onClick={() => onStorning(f)}>
-                    Skapa underrättelse om störning
+              {/* Hjälptext under varje val, så att det syns vad valet betyder i ABT 06. */}
+              <div className="veckokort-val">
+                <div className="veckokort-val-rad">
+                  <button type="button" className="btn mini" aria-describedby={`vecka-hjalp-punkt-${f.n}`} onClick={() => onPunkt(f)}>
+                    Skapa öppen punkt
                   </button>
+                  <span id={`vecka-hjalp-punkt-${f.n}`} className="veckokort-hjalp">
+                    Följ upp internt: vem gör vad till när. Ingen formell verkan.
+                  </span>
+                </div>
+                <div className="veckokort-val-rad">
+                  <button type="button" className="btn sec mini" aria-describedby={`vecka-hjalp-ata-${f.n}`} onClick={() => onAta(f)}>
+                    Skapa ÄTA
+                  </button>
+                  <span id={`vecka-hjalp-ata-${f.n}`} className="veckokort-hjalp">
+                    Omfattning eller pris ändras. Anmäl innan arbetet utförs.
+                  </span>
+                </div>
+                {[2, 5].includes(f.n) ? (
+                  <div className="veckokort-val-rad">
+                    <button type="button" className="btn sec mini" aria-describedby={`vecka-hjalp-storning-${f.n}`} onClick={() => onStorning(f)}>
+                      Skapa underrättelse om störning
+                    </button>
+                    <span id={`vecka-hjalp-storning-${f.n}`} className="veckokort-hjalp">
+                      Tiden kan påverkas. Skicka skriftligt utan dröjsmål, annars riskeras rätten till tidsförlängning (ABT 06 kap. 4).
+                    </span>
+                  </div>
                 ) : null}
               </div>
             </div>
@@ -287,6 +304,8 @@ export function Veckokoll() {
           ))}
         </div>
 
+        <InterfaceLista pid={pid} />
+
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
           <Card
             id="vk-genomgang"
@@ -306,6 +325,11 @@ export function Veckokoll() {
               <button type="button" className="btn" onClick={() => satt("klar", !rad?.klar)}>
                 {rad?.klar ? "Öppna veckan igen" : "Markera veckan som genomgången"}
               </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" className="btn sec mini" onClick={() => visa("hseq")}>Skyddsrond i HSEQ</button>
+              <button type="button" className="btn sec mini" onClick={() => visa("risker")}>Risker</button>
+              <button type="button" className="btn sec mini" onClick={() => visa("punkter")}>Öppna punkter</button>
             </div>
           </Card>
 

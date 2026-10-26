@@ -1,20 +1,23 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import { Check, ChevronDown, Lightbulb, MessageSquare, RotateCcw } from "lucide-react";
-import { usePortfolj, useUi } from "../../state/hooks.js";
+import { usePortfolj, usePortfoljAtgarder, useUi } from "../../state/hooks.js";
 import { MILSTOLPAR } from "../../data/bessChecklistData.ts";
 import { PUNKT_UNDERLAG } from "../../data/punktUnderlag.js";
 import { DatumFalt, Falt } from "../ui/Falt.jsx";
 import { datumKort, idag } from "../../lib/datum.js";
-import { fasRad, mallDatum, planAnkare } from "../../lib/epc.js";
+import { fasRad, grindSaknas, mallDatum, planAnkare } from "../../lib/epc.js";
 import { FasStatus, Markeringar } from "./Delar.jsx";
 import { Kommentarer } from "./Punkt.jsx";
 import { EgenkontrollLage } from "./EgenkontrollLage.jsx";
+import { LosningGrind } from "./LosningGrind.jsx";
 
 /* Ett steg i guiden: vad fasen går ut på, vilken grind som avslutar den och
    vilka kontroll- och hållpunkter som hör till. Varje punkt bockas av för
    valt projekt, kan sättas som ej aktuell och får kommentarer — avvikelser
-   och lärdomar blir erfarenhetslistan. En passerad grind gör fasens punkter
-   klara. Fasen är ett <details> så att den går att fälla med tangentbord
+   och lärdomar blir erfarenhetslistan. En passerad grind bockar inte av
+   punkter: det som ingen registrerat visas som "ej registrerad" och kan
+   registreras i ett svep. Grindrutan listar exakt vad som saknas för
+   klartecknet. Fasen är ett <details> så att den går att fälla med tangentbord
    utan eget skript. */
 
 const GRIND_KALLA = {
@@ -25,17 +28,19 @@ const GRIND_KALLA = {
 
 /* ---------- Kontrollpunkterna ---------- */
 
-function Punktrad({ punkt, ctx }) {
-  const { dispatch } = usePortfolj();
+/* En rad tar bara enkla värden och är memorerad: att bocka en punkt ritar om
+   den raden, inte guidens 288. Den läser åtgärderna (usePortfoljAtgarder),
+   inte portföljen — usePortfolj() skulle rita om varje rad vid varje ändring. */
+const Punktrad = memo(function Punktrad({ punkt, pid, status, kalla, kontroll, datum, av, nKomm, nTidigare, grind }) {
+  const { dispatch } = usePortfoljAtgarder();
   const { oppnaPost } = useUi();
   const [oppen, setOppen] = useState(false);
-  const { pid, pl, antal, tidigare, grindkod } = ctx;
   const underlag = PUNKT_UNDERLAG[punkt.id];
-  const lage = pl.get(punkt.id);
+  const lage = { status, kalla, kontroll, datum, av };
   const hp = punkt.badges.includes("HP");
-  const viaGrind = lage.kalla === "grind";
-  const nKomm = antal.get(punkt.id) || 0;
-  const nTidigare = tidigare.get(punkt.id) || 0;
+  const ejReg = lage.kalla === "ejregistrerad";
+  const styrkt = lage.kalla === "egenkontroll";
+  const grindkod = () => grind;
   const satt = (status) => dispatch({ type: "EPC_PUNKT", pid, punkt: punkt.id, status });
   const nr = punkt.id.replace("lop.", "∞.");
   const idCb = `cb-${pid}-${punkt.id}`;
@@ -46,9 +51,15 @@ function Punktrad({ punkt, ctx }) {
         id={idCb}
         type="checkbox"
         checked={lage.status === "klar"}
-        disabled={viaGrind || lage.status === "ejaktuell"}
+        disabled={styrkt || lage.status === "ejaktuell"}
         onChange={(e) => satt(e.target.checked ? "klar" : "")}
-        title={viaGrind ? `Klar via passerad ${grindkod(punkt.id)}` : undefined}
+        title={
+          styrkt
+            ? `Styrkt av egenkontroll ${lage.kontroll}`
+            : ejReg
+              ? `${grindkod(punkt.id)} är passerad men punkten är inte registrerad`
+              : undefined
+        }
       />
       <div className="epc-radkropp">
         <label htmlFor={idCb} className="epc-radtext">
@@ -61,8 +72,10 @@ function Punktrad({ punkt, ctx }) {
           {punkt.nar && punkt.nar !== "—" ? <span className="epc-nar">{punkt.nar}</span> : null}
           {lage.status === "klar" ? (
             <span className="epc-klarinfo">
-              {viaGrind ? `Klar via ${grindkod(punkt.id)}` : `Klar ${lage.datum || ""}${lage.av ? " · " + lage.av : ""}`}
+              {styrkt ? `Klar · styrkt av egenkontroll ${lage.kontroll}` : `Klar ${lage.datum || ""}${lage.av ? " · " + lage.av : ""}`}
             </span>
+          ) : ejReg ? (
+            <span className="epc-ejinfo">Ej registrerad · {grindkod(punkt.id)} passerad</span>
           ) : lage.status === "ejaktuell" ? (
             <span className="epc-ejinfo">Ej aktuell</span>
           ) : null}
@@ -92,7 +105,7 @@ function Punktrad({ punkt, ctx }) {
           {nKomm || ""}
           <span className="sr-only">Kommentarer på {nr}</span>
         </button>
-        {!viaGrind && lage.status !== "klar" ? (
+        {lage.status !== "klar" ? (
           <button
             type="button"
             className="epc-textknapp epc-ejknapp"
@@ -111,7 +124,7 @@ function Punktrad({ punkt, ctx }) {
       ) : null}
     </li>
   );
-}
+});
 
 /** ctx: { pid, pl (punktlage), antal (kommentarer per punkt), tidigare
  *  (andra projekts erfarenheter per punkt), grindkod(punktId) }. */
@@ -123,13 +136,83 @@ export function Sektioner({ sektioner, filter, ctx }) {
       <div className="epc-sektion" key={s.namn || "lista"}>
         {s.namn ? <h4>{s.namn}</h4> : null}
         <ul className="epc-lista">
-          {punkter.map((p) => (
-            <Punktrad key={p.id} punkt={p} ctx={ctx} />
-          ))}
+          {punkter.map((p) => {
+            const l = ctx.pl.get(p.id);
+            return (
+              <Punktrad
+                key={p.id}
+                punkt={p}
+                pid={ctx.pid}
+                status={l.status}
+                kalla={l.kalla}
+                kontroll={l.kontroll}
+                datum={l.datum}
+                av={l.av}
+                nKomm={ctx.antal.get(p.id) || 0}
+                nTidigare={ctx.tidigare.get(p.id) || 0}
+                grind={ctx.grindkod(p.id)}
+              />
+            );
+          })}
         </ul>
       </div>
     );
   });
+}
+
+/* ---------- Det som saknas för klartecknet ---------- */
+
+const VISA_PUNKTER = 6;
+
+/** Flyttar fokus till en punkt i listan ovanför. Appen routar på #hash, så
+ *  en vanlig ankarlänk skulle byta vy. */
+function visaPunkt(id) {
+  const rad = document.getElementById(`kp-${id}`);
+  if (!rad) return;
+  rad.scrollIntoView({ behavior: "smooth", block: "center" });
+  rad.querySelector("input")?.focus({ preventScroll: true });
+}
+
+function Saknas({ saknas, kod }) {
+  const [alla, setAlla] = useState(false);
+  if (saknas.klart) return null;
+  const punkter = alla ? saknas.punkter : saknas.punkter.slice(0, VISA_PUNKTER);
+  const fler = saknas.punkter.length - punkter.length;
+  return (
+    <div className="epc-saknas" role="group" aria-label={`Det här saknas för ${kod}`}>
+      <b>Det här saknas för {kod}</b>
+      <ul>
+        {punkter.map((p) => (
+          <li key={p.id}>
+            <button type="button" className="lankknapp" onClick={() => visaPunkt(p.id)}>
+              {p.id.replace("lop.", "∞.")}
+            </button>{" "}
+            {p.hp ? <span className="epc-saknas-hp">HP</span> : null} {p.text}
+            {p.ejRegistrerad ? <span className="text-ink-faint"> · ej registrerad</span> : null}
+          </li>
+        ))}
+        {fler > 0 ? (
+          <li>
+            <button type="button" className="lankknapp" onClick={() => setAlla(true)}>
+              … och {fler} punkter till
+            </button>
+          </li>
+        ) : null}
+        {saknas.kontroller.length ? (
+          <li>
+            {saknas.kontroller.length} egenkontroll{saknas.kontroller.length > 1 ? "er" : ""} ej verifierade:{" "}
+            {saknas.kontroller
+              .slice(0, 4)
+              .map((k) => (k.totalt ? `${k.text} (${k.klara}/${k.totalt})` : k.text))
+              .join(", ")}
+            {saknas.kontroller.length > 4 ? ` med flera` : ""}
+          </li>
+        ) : null}
+        {saknas.avvikelser ? <li>{saknas.avvikelser} öppen avvikelse{saknas.avvikelser > 1 ? "r" : ""} i egenkontrollerna</li> : null}
+        {saknas.grinddatum ? <li>Klartecken: datum då {kod} passerades</li> : null}
+      </ul>
+    </div>
+  );
 }
 
 /* ---------- Läget i projektet ---------- */
@@ -140,6 +223,11 @@ function IProjektet({ lage, pid, projektnamn }) {
   const rad = fasRad(state, pid, f.nr);
   const a = planAnkare(state, pid);
   const satt = (falt, varde) => dispatch({ type: "EPC_FAS", pid, fas: f.nr, falt, varde });
+  const saknas = grindSaknas(state, pid, f.nr);
+  const ejReg = saknas.punkter.filter((p) => p.ejRegistrerad);
+  const registreraAlla = () => {
+    for (const p of ejReg) dispatch({ type: "EPC_PUNKT", pid, punkt: p.id, status: "klar" });
+  };
 
   return (
     <aside className="epc-iprojekt" aria-label={`Moment ${f.nr} i ${projektnamn}`}>
@@ -160,7 +248,23 @@ function IProjektet({ lage, pid, projektnamn }) {
         <p className="epc-grindforslag">Alla punkter är klara — {f.grind.kod} kan passeras.</p>
       ) : null}
 
+      {ejReg.length ? (
+        <div className="epc-ejreg">
+          <p className="m-0">
+            {f.grind.kod} är passerad men <b>{ejReg.length} punkter</b> är inte registrerade. Bocka dem en och en, eller
+            registrera alla som klara om arbetet är gjort.
+          </p>
+          <button type="button" className="btn sec mini" onClick={registreraAlla}>
+            Registrera {ejReg.length} som klara
+          </button>
+        </div>
+      ) : null}
+
+      <Saknas saknas={saknas} kod={f.grind.kod} />
+
       <EgenkontrollLage key={`${pid}-${f.nr}`} pid={pid} fas={f.nr} />
+
+      {f.nr === 4 ? <LosningGrind pid={pid} /> : null}
 
       <div className="epc-grind">
         {lage.grind.passerad ? (
@@ -288,6 +392,10 @@ export function Fasruta({ lage, pid, projektnamn, oppen, onVaxla, filter, tvinga
         <ChevronDown className="epc-pil" size={18} aria-hidden="true" />
       </summary>
 
+      {/* Innehållet ritas bara i utfällda moment. Infällda moment höll förut
+          alla 288 rader i DOM:en (över 8 000 noder), och varje bockning fick
+          webbläsaren att räkna om layouten för hela guiden. */}
+      {oppen || tvingaOppen ? (
       <div className="epc-faskropp">
         <div className="epc-guide">
           <p className="epc-grindtext">
@@ -303,6 +411,7 @@ export function Fasruta({ lage, pid, projektnamn, oppen, onVaxla, filter, tvinga
         </div>
         <IProjektet lage={lage} pid={pid} projektnamn={projektnamn} />
       </div>
+      ) : null}
     </details>
   );
 }

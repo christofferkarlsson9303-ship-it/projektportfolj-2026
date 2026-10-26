@@ -6,6 +6,7 @@ import { PdfExporter } from "../../components/print/PdfExporter.jsx";
 import { laddaNerPdf } from "../../components/print/laddaNerPdf.jsx";
 import { hamtaNamn } from "../../state/portfolj-reducer.js";
 import { idag } from "../../lib/datum.js";
+import { epcForProjektstart, medLankadeKryss } from "../../lib/punktlankar.js";
 import { HeroBild, Kraftkurva } from "../../components/oversikt/Hero.jsx";
 import { TON_KLASS } from "../../lib/status.js";
 import { RiskDonut } from "./RiskDonut.jsx";
@@ -476,7 +477,12 @@ export function Projektstart() {
       else nu[nr] = { ljus, kommentar: kommentar ?? nu[nr]?.kommentar ?? "" };
       return { ...u, trafikljus: nu };
     });
-  const kryssa = (bucket, pid, v) => setUtkast((u) => ({ ...u, kryss: { ...u.kryss, [bucket]: { ...u.kryss[bucket], [pid]: v } } }));
+  const kryssa = (bucket, pid, v) => {
+    setUtkast((u) => ({ ...u, kryss: { ...u.kryss, [bucket]: { ...u.kryss[bucket], [pid]: v } } }));
+    /* Samma punkt i Bygga batteripark (data/punktlankar.js): bocken slår igenom där direkt. */
+    const epc = redigerar ? epcForProjektstart(bucket, pid) : null;
+    if (epc) dispatch({ type: "EPC_PUNKT", pid: lage, punkt: epc, status: v ? "klar" : "" });
+  };
   /* Sidor i en låst fas går inte att öppna. */
   const gaTill = (id) =>
     setUtkast((u) => {
@@ -488,7 +494,8 @@ export function Projektstart() {
   /** Öppnar guiden för ett projekt (eller en ny projektstart när `valt` är null). */
   const oppnaLage = (valt) => {
     const sparad = valt ? sparadeFor(valt.id) : null;
-    const oppnat = !valt ? laddaUtkast() : sparad ? utkastFranPost(sparad, valt) : utkastFranProjekt(valt, state);
+    const grundUtkast = !valt ? laddaUtkast() : sparad ? utkastFranPost(sparad, valt) : utkastFranProjekt(valt, state);
+    const oppnat = valt ? medLankadeKryss(grundUtkast, state, valt.id) : grundUtkast;
     setLage(valt ? valt.id : "ny");
     setUtkast(oppnat);
     setGrund(valt ? oppnat : null);

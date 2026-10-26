@@ -11,6 +11,9 @@ import { FAS_STATUS, erfarenheter, faslage, punktlage } from "../lib/epc.js";
 import { Summering } from "../components/epc/Summering.jsx";
 import { Callout, Card, SectionHeading } from "../components/ds/index.js";
 import { Erfarenhetslista } from "../components/epc/Erfarenheter.jsx";
+import { HeroBild } from "../components/oversikt/Hero.jsx";
+import { useMedia } from "../lib/useMedia.js";
+import { ProjektArv } from "../components/epc/ProjektArv.jsx";
 
 /* Bygga batteripark — hur en BESS-anläggning byggs som totalentreprenad
    (ABT 06), steg för steg, och var portföljens projekt står.
@@ -40,6 +43,26 @@ const LAGEN = ["klar", "pagar", "sen", "kommande", "odaterad"];
 /** Faser som pågår eller är sena för projektet — de fälls ut från början. */
 const aktuellaFaser = (faser) =>
   faser.filter((f) => f.status === "pagar" || f.status === "sen").map((f) => f.fas.nr);
+
+/** En infälld referensdel. Fälls ut av användaren eller av en länk (mal) hit. */
+function Referensdel({ id, mal, titel, text, start = false, children }) {
+  const [oppen, setOppen] = useState(start);
+  const [sedd, setSedd] = useState(null);
+  if (mal && mal.id === id && mal.tid !== sedd) {
+    setSedd(mal.tid);
+    setOppen(true);
+  }
+  return (
+    <details id={id} className="epc-referensdel" open={oppen} onToggle={(e) => setOppen(e.currentTarget.open)}>
+      <summary>
+        <b>{titel}</b>
+        {text ? <span>{text}</span> : null}
+      </summary>
+      {/* Innehållet ritas först när delen är utfälld — tabellerna är stora. */}
+      {oppen ? <div className="epc-referenskropp" role="region" aria-label={titel}>{children}</div> : null}
+    </details>
+  );
+}
 
 function Guide({ pid, mal }) {
   const { state } = usePortfolj();
@@ -227,6 +250,7 @@ export function EpcChecklista() {
   const { valtProjekt, setValtProjekt, postFokus } = useUi();
   const pid = projekt(state, valtProjekt) ? valtProjekt : state.projekt[0]?.id;
   const p = projekt(state, pid);
+  const bred = useMedia("(min-width: 768px)");
 
   /* Översikten och paletten pekar ut en fas eller punkt via postFokus,
      lägesbilden via visaFas. */
@@ -246,11 +270,12 @@ export function EpcChecklista() {
 
   return (
     <div className="flex flex-col gap-4 lg:gap-6">
-      <Card aria-labelledby="epc-rubrik">
+      <Card aria-labelledby="epc-rubrik" className="hero-med-bild hero-svag overflow-hidden">
+        <HeroBild fil="bess-lyft.jpg" lage="ljus" position="55% 40%" />
         <div className="flex flex-wrap items-start justify-between gap-6">
           <SectionHeading
             id="epc-rubrik"
-            className="min-w-0 max-w-2xl flex-1"
+            className="min-w-[16rem] max-w-2xl flex-1"
             title="Så byggs en batteripark"
             lead="Välj projekt. Öppna rätt moment och följ upp arbetet. Spara verkliga provresultat i momentets egenkontroller. En grind är ett dokumenterat klartecken att gå vidare."
           >
@@ -274,6 +299,8 @@ export function EpcChecklista() {
         </div>
       </Card>
 
+      <ProjektArv key={pid} pid={pid} />
+
       <Card
         id="epc-lage"
         title="Lägesbild — var projekten står"
@@ -295,59 +322,49 @@ export function EpcChecklista() {
         <NuLage pid={pid} onVisaFas={visaFas} />
       </section>
 
-      <Card
+      {/* Status per moment är en lång tabell. På bred skärm är den utfälld,
+          på mobil infälld — Läget nu ovanför säger det viktigaste. */}
+      <Referensdel
+        key={bred ? "bred" : "smal"}
         id="epc-summering"
-        title={`Status — ${projektnamn}`}
-        subtitle="Exakt vad som är gjort och vad som återstår, per moment. En punkt är klar när den bockats av eller när momentets grind är passerad; det som inte gäller projektet räknas inte."
+        mal={mal}
+        start={bred}
+        titel={`Status — ${projektnamn}`}
+        text="Exakt vad som är gjort och vad som återstår, per moment. En punkt är klar när den bockats av eller när momentets grind är passerad; det som inte gäller projektet räknas inte."
       >
         <Summering pid={pid} onVisaFas={visaFas} />
-      </Card>
+      </Referensdel>
 
       <Guide pid={pid} mal={mal} />
 
-      <Card
-        id="epc-erfarenheter"
-        title="Erfarenhetsåterföring — topp 10"
-        subtitle="Lär av tidigare fel. Kommentarer på kontrollpunkter samlas här och visas också i nästa projekt."
-      >
-        <Erfarenhetslista pid={pid} onVisaPunkt={(id) => setMal({ id: `kp-${id}`, tid: Date.now() })} />
-      </Card>
-
-      <Card
-        id="epc-nyckelvarden"
-        title="Nyckelvärden — snabbreferens"
-        subtitle="Gränsvärden och frister ur kontrakt, leverantörsmanualer och EBR som oftast avgör om en hållpunkt passeras. Där källorna säger olika står det under Att verifiera längst ned."
-      >
-        <Nyckelvarden />
-      </Card>
-
-      <Card
-        id="epc-ledtider"
-        title="Ligg steget före – ledtider"
-        subtitle={`Sista startdatum för ${projektnamn}, räknat mot projektets datum. Kända datum ur leveranslistan och tidplanen går före momentplanen. Röd = startdatumet har passerat, orange = inom två veckor. En ledtid är klar när dess punkt är klar, eller när du markerar den.`}
-      >
-        <Ledtidstabell pid={pid} onMarkera={(ledtid, klar) => dispatch({ type: "EPC_LEDTID", pid, ledtid, klar })} />
-      </Card>
-
-      <Card
-        id="epc-milstolpar"
-        title="Betalmilstolpar"
-        subtitle="Sju betalningar kopplade till grindarna. Rutin: avisering (Excel) → beställarens OK → faktura i IFS. Moment med en betalning har orange kant i guiden."
-      >
-        <Milstolpstabell pid={pid} />
-      </Card>
-
-      <Card id="epc-lardomar" title="Lärdomar från Batch C — de 10 som kostat mest">
-        <Lardomar />
-      </Card>
-
-      <Card
-        id="epc-verifiera"
-        title="Att verifiera — källorna säger olika"
-        subtitle={`${SUMMERING.motsagelser} frågor där underlagen skiljer sig. Låt ansvarig projektör eller tillverkare reda ut kravet skriftligt före berört arbete.`}
-      >
-        <AttVerifiera />
-      </Card>
+      {/* Referensdelarna är infällda: de slås upp, de arbetas inte i varje vecka.
+          En länk hit (t.ex. "epc-ledtider" från Översikt) fäller ut rätt del. */}
+      <section className="flex flex-col gap-3" aria-labelledby="epc-referens">
+        <SectionHeading as="h3" id="epc-referens" eyebrow="Slå upp" title="Referens" />
+        <Referensdel id="epc-ledtider" mal={mal} titel="Ligg steget före – ledtider"
+          text={`Sista startdatum för ${projektnamn}, räknat mot projektets datum. Kända datum ur leveranslistan och tidplanen går före momentplanen. Röd = startdatumet har passerat, orange = inom två veckor. En ledtid är klar när dess punkt är klar, eller när du markerar den.`}>
+          <Ledtidstabell pid={pid} onMarkera={(ledtid, klar) => dispatch({ type: "EPC_LEDTID", pid, ledtid, klar })} />
+        </Referensdel>
+        <Referensdel id="epc-milstolpar" mal={mal} titel="Betalmilstolpar"
+          text="Sju betalningar kopplade till grindarna. Rutin: avisering (Excel) → beställarens OK → faktura i IFS. Moment med en betalning har orange kant i guiden.">
+          <Milstolpstabell pid={pid} />
+        </Referensdel>
+        <Referensdel id="epc-erfarenheter" mal={mal} titel="Erfarenhetsåterföring — topp 10"
+          text="Lär av tidigare fel. Kommentarer på kontrollpunkter samlas här och visas också i nästa projekt.">
+          <Erfarenhetslista pid={pid} onVisaPunkt={(id) => setMal({ id: `kp-${id}`, tid: Date.now() })} />
+        </Referensdel>
+        <Referensdel id="epc-nyckelvarden" mal={mal} titel="Nyckelvärden — snabbreferens"
+          text="Gränsvärden och frister ur kontrakt, leverantörsmanualer och EBR som oftast avgör om en hållpunkt passeras. Där källorna säger olika står det under Att verifiera.">
+          <Nyckelvarden />
+        </Referensdel>
+        <Referensdel id="epc-lardomar" mal={mal} titel="Lärdomar från Batch C — de 10 som kostat mest">
+          <Lardomar />
+        </Referensdel>
+        <Referensdel id="epc-verifiera" mal={mal} titel={`Att verifiera — ${SUMMERING.motsagelser} frågor där källorna säger olika`}
+          text="Låt ansvarig projektör eller tillverkare reda ut kravet skriftligt före berört arbete.">
+          <AttVerifiera />
+        </Referensdel>
+      </section>
 
       <Callout ton="info">
         Värden, frister och procentsatser är hämtade från Batch C-kontrakten och leverantörsmanualer.

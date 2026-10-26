@@ -1,4 +1,6 @@
 import logotyp from "../../assets/one-nordic-logo.png";
+import { trafikljus } from "../../lib/metodkoll.js";
+import { Trafikljus } from "../projekt/Trafikljus.jsx";
 import { ataSummering, slutdokIndex } from "../../lib/berakningar.js";
 import { berakFlaggor } from "../../lib/flaggor.js";
 import { dagarTill, idag } from "../../lib/datum.js";
@@ -35,6 +37,18 @@ function Huvud({ projekt }) {
           {av ? ` av ${av}` : ""} · ONE Nordic AB
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Trafikljusen till beställaren: tid, planerat arbete och milstolpar.
+ *  Budgeten är intern och tas inte med. */
+function Lage({ state, pid }) {
+  return (
+    <div className="rap-sektion">
+      <div className="delrubrik">Läge enligt trafikljusmetoden</div>
+      <Trafikljus ljus={trafikljus(state, pid)} delar={["tid", "arbete", "milstolpar"]} rubrik="Läge enligt trafikljusmetoden" />
+      <p className="note">Grön: enligt plan. Gul: avvikelse som hanteras i projektet. Röd: allvarlig avvikelse som kräver beslut.</p>
     </div>
   );
 }
@@ -223,6 +237,7 @@ export function Bestallarrapport({ state, pid }) {
         ]}
       />
 
+      {pid ? <Lage state={state} pid={pid} /> : null}
       {d ? <Faser d={d} /> : null}
       {d ? <Anlaggning a={d.anlaggning} /> : null}
 

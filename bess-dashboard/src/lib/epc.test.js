@@ -9,6 +9,7 @@ import {
   erfarenheter,
   faslage,
   fasplan,
+  grindSaknas,
   grindar,
   kommandeHallpunkter,
   kontrollage,
@@ -150,11 +151,13 @@ describe("ledtidslage", () => {
     expect(ledtid(s, "36037", "kranyta").ank).toMatchObject({ datum: "2026-10-12", kalla: "leveranslistan" });
   });
 
-  it("räknar ledtider vars fas har passerat sin grind som klara", () => {
-    const s = seed();
-    // Transportvägen är punkt 2.7 och kranen 4.6 — fas 2 och 4 är passerade.
-    expect(ledtid(s, "36037", "transportvag")).toMatchObject({ status: "klar", markerad: false });
-    expect(ledtid(s, "36037", "kranMv").status).toBe("klar");
+  it("larmar inte för ledtider vars moment passerat sin grind, men kallar dem inte klara", () => {
+    let s = seed();
+    // Transportvägen är punkt 2.7 och kranen 4.6 — moment 2 och 4 är passerade men ej registrerade.
+    expect(ledtid(s, "36037", "transportvag")).toMatchObject({ status: "passerad", klar: false, markerad: false });
+    expect(ledtid(s, "36037", "kranMv").status).toBe("passerad");
+    s = punkt(s, "36037", "2.7", "klar");
+    expect(ledtid(s, "36037", "transportvag")).toMatchObject({ status: "klar", klar: true });
   });
 
   it("blir klar när ledtiden markeras, per projekt, och loggas", () => {
@@ -216,8 +219,8 @@ describe("lagesbild", () => {
     expect(l.nastaBetalning).toMatchObject({ kod: "M5", status: "pagaende" });
     expect(l.grindarPasserade).toBe(10);
     expect(l.hp).toBe(48);
-    // Hållpunkterna i fas 0–9: 0+1+2+1+1+3+4+8+3+2.
-    expect(l.hpKlara).toBe(25);
+    // En passerad grind bockar inte av hållpunkterna (beslut 2026-10-17).
+    expect(l.hpKlara).toBe(0);
     expect(l.dagarTillSlutbesiktning).toBe(67);
   });
 
@@ -234,9 +237,9 @@ describe("lagesbild", () => {
 const punkt = (s, pid, id, status) => reducer(s, { type: "EPC_PUNKT", pid, punkt: id, status });
 
 describe("punktlage", () => {
-  it("räknar punkter i passerade faser som klara via grinden", () => {
+  it("bockar inte av punkter i passerade moment — de är öppna och ej registrerade", () => {
     const pl = punktlage(seed(), "36037");
-    expect(pl.get("1.1")).toMatchObject({ status: "klar", kalla: "grind" });
+    expect(pl.get("1.1")).toMatchObject({ status: "oppen", kalla: "ejregistrerad" });
     expect(pl.get("10.1")).toMatchObject({ status: "oppen", kalla: null });
     expect(pl.get("lop.1").status).toBe("oppen");
   });
@@ -262,9 +265,9 @@ describe("punktlage", () => {
 describe("checklistsummering", () => {
   it("summerar klara, kvar, hållpunkter och grindar över alla 288 punkter", () => {
     const { totalt, faser, lopande } = checklistsummering(seed(), "36037", NU);
-    // Fas 0–9 är passerade: 22+21+17+20+15+20+13+16+9+13 punkter.
-    expect(totalt).toMatchObject({ punkter: 288, klara: 166, ejAktuella: 0, kvar: 122, hp: 48, hpKlara: 25, grindar: 10 });
-    expect(totalt.andel).toBe(58);
+    // Moment 0–9 är passerade men inga punkter är registrerade: grinden bockar inte av.
+    expect(totalt).toMatchObject({ punkter: 288, klara: 0, ejAktuella: 0, kvar: 288, hp: 48, hpKlara: 0, grindar: 10 });
+    expect(totalt.andel).toBe(0);
     expect(faser[10]).toMatchObject({ punkter: 15, klara: 0, kvar: 15, hp: 5, hpKvar: 5 });
     expect(lopande).toMatchObject({ punkter: 24, klara: 0 });
   });
@@ -275,7 +278,7 @@ describe("checklistsummering", () => {
     s = punkt(s, "36037", "10.3", "ejaktuell");
     const { totalt, faser } = checklistsummering(s, "36037", NU);
     expect(faser[10]).toMatchObject({ klara: 2, ejAktuella: 1, kvar: 12 });
-    expect(totalt.andel).toBe(Math.round((168 / 287) * 100));
+    expect(totalt.andel).toBe(Math.round((2 / 287) * 100));
   });
 });
 
@@ -466,5 +469,50 @@ describe("verifiering", () => {
     expect(faslage(s, "36037", NU).map((f) => [f.status, f.grind.passerad])).toEqual(
       faslage(seed(), "36037", NU).map((f) => [f.status, f.grind.passerad])
     );
+  });
+});
+
+/* ---------- Det som saknas för grinden ---------- */
+
+describe("grindSaknas", () => {
+  it("listar öppna punkter med hållpunkter först, egenkontroller och klartecknet", () => {
+    const g = grindSaknas(seed(), "36037", 10, NU);
+    expect(g.klart).toBe(false);
+    expect(g.grinddatum).toBe(true);
+    expect(g.punkter).toHaveLength(15);
+    const hp = g.punkter.filter((p) => p.hp).length;
+    expect(hp).toBe(5);
+    expect(g.punkter.slice(0, hp).every((p) => p.hp)).toBe(true);
+    expect(g.punkter.every((p) => !p.ejRegistrerad)).toBe(true);
+  });
+
+  it("markerar oregistrerade punkter i ett passerat moment och tar bort det som bockats", () => {
+    let s = seed();
+    let g = grindSaknas(s, "36037", 1, NU);
+    expect(g.punkter.length).toBeGreaterThan(0);
+    expect(g.punkter.every((p) => p.ejRegistrerad)).toBe(true);
+    s = punkt(s, "36037", "1.1", "klar");
+    g = grindSaknas(s, "36037", 1, NU);
+    expect(g.punkter.some((p) => p.id === "1.1")).toBe(false);
+  });
+
+  it("gör inga nya uppgifter av oregistrerade punkter i passerade moment", () => {
+    const u = nastaUppgifter(seed(), "36037", NU);
+    const moment = (id) => Number(String(id).split(".")[0]);
+    expect(u.filter((x) => x.typ === "punkt").every((x) => moment(x.punkt.id) >= 10)).toBe(true);
+  });
+});
+
+describe("styrktaPunkter", () => {
+  it("en verifierad egenkontroll bockar sin kopplade EPC-punkt, men inte tvärtom", async () => {
+    const { kontrollId } = await import("./projektkontroll.js");
+    const i = PROJEKTMALLAR.findIndex((m) => m.punkter.some((p) => p.epc.length));
+    const mp = PROJEKTMALLAR[i].punkter.find((p) => p.epc.length);
+    const epcId = mp.epc[0];
+    let s = seed();
+    expect(punktlage(s, "goteborg").get(epcId).status).toBe("oppen");
+    s = { ...s, faltkontroller: [...(s.faltkontroller || []), { id: kontrollId("goteborg", "Hela anläggningen", mp.id), projektId: "goteborg", punktId: mp.id, omfattning: "Hela anläggningen", resultat: "ok", datum: "2026-09-20", kontrollant: "C. Karlsson", referens: "Protokoll 1", mallrevision: PROJEKTKONTROLL_REVISION }] };
+    const l = punktlage(s, "goteborg").get(epcId);
+    expect(l).toMatchObject({ status: "klar", kalla: "egenkontroll", kontroll: mp.id });
   });
 });
