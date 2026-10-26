@@ -66,7 +66,7 @@ test("byggfasens egenkontroller delar resultat och sparar sista texten vid Escap
   const fas = page.locator("#fas-0");
   await fas.locator("summary").first().click();
   const lage = fas.getByRole("region", { name: "Egenkontroller i moment 0" });
-  await expect(lage).toContainText("0 av 4 kompletta");
+  await expect(lage).toContainText("4 av 4 egenkontroller inte gjorda");
   await lage.getByRole("button", { name: "Registrera egenkontroller – moment 0", exact: true }).click();
   const d = page.getByRole("dialog", { name: /Fältmaterial/ });
   await expect(d.getByRole("status")).toContainText("4 kontrollpunkter");
@@ -76,7 +76,7 @@ test("byggfasens egenkontroller delar resultat och sparar sista texten vid Escap
   await d.getByLabel("Kontrollant (namn) – P0.01", { exact: true }).fill("Kontrollant A");
   const ref = d.getByLabel("Bevis / protokoll och revision – P0.01", { exact: true });
   await ref.fill("Kravspecifikation rev D"); await ref.press("Escape");
-  await expect(d).not.toBeVisible(); await expect(lage).toContainText("1 av 4 kompletta");
+  await expect(d).not.toBeVisible(); await expect(lage).toContainText("3 av 4 egenkontroller inte gjorda");
   await page.getByRole("button", { name: "Fältmaterial", exact: true }).click();
   await expect(d.getByRole("status")).toContainText("125 kontrollpunkter");
   await expect(d).toContainText("1 av 125 kompletta kontroller");

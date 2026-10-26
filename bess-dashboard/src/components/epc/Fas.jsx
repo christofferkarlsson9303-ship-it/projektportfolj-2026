@@ -34,7 +34,7 @@ const GRIND_KALLA = {
 /* En rad tar bara enkla värden och är memorerad: att bocka en punkt ritar om
    den raden, inte guidens 288. Den läser åtgärderna (usePortfoljAtgarder),
    inte portföljen — usePortfolj() skulle rita om varje rad vid varje ändring. */
-const Punktrad = memo(function Punktrad({ punkt, pid, status, kalla, kontroll, datum, av, nKomm, nTidigare, grind }) {
+const Punktrad = memo(function Punktrad({ punkt, pid, status, kalla, kontroll, datum, av, nKomm, nTidigare, grind, senast, senastGrund, sen }) {
   const { dispatch } = usePortfoljAtgarder();
   const { oppnaPost } = useUi();
   const [oppen, setOppen] = useState(false);
@@ -89,6 +89,13 @@ const Punktrad = memo(function Punktrad({ punkt, pid, status, kalla, kontroll, d
           ) : null}
           <span className="epc-ansvar">{punkt.ansvar}</span>
           {punkt.nar && punkt.nar !== "—" ? <span className="epc-nar">{punkt.nar}</span> : null}
+          {/* UX-09: När-texten räknad till ett datum där den är entydig. */}
+          {senast ? (
+            <span className={`epc-senast${sen ? " sen" : ""}`} title={senastGrund}>
+              {senast}
+              {sen ? " · passerat" : ""}
+            </span>
+          ) : null}
           {lage.status === "klar" ? (
             <span className="epc-klarinfo">
               {styrkt ? `Klar · styrkt av egenkontroll ${lage.kontroll}` : `Klar ${lage.datum || ""}${lage.av ? " · " + lage.av : ""}`}
@@ -225,6 +232,7 @@ export function Sektioner({ sektioner, filter, ctx }) {
         <ul className="epc-lista">
           {punkter.map((p) => {
             const l = ctx.pl.get(p.id);
+            const s = l.status === "oppen" && l.kalla !== "ejregistrerad" ? ctx.senast?.get(p.id) : null;
             return (
               <Punktrad
                 key={p.id}
@@ -238,6 +246,9 @@ export function Sektioner({ sektioner, filter, ctx }) {
                 nKomm={ctx.antal.get(p.id) || 0}
                 nTidigare={ctx.tidigare.get(p.id) || 0}
                 grind={ctx.grindkod(p.id)}
+                senast={s?.text}
+                senastGrund={s?.grund}
+                sen={!!s && s.datum < ctx.nu}
               />
             );
           })}

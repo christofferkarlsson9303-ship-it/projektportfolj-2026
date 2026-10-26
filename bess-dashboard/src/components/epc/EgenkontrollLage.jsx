@@ -41,15 +41,37 @@ export function EgenkontrollLage({ pid, fas }) {
   const ofullstandiga = mall.punkter.filter((p) => lage.tackning[p.id] && lage.tackning[p.id].klara < lage.tackning[p.id].totalt);
 
   return <section className="my-3 rounded-sm border border-solid border-hairline bg-surface p-3" aria-label={`Egenkontroller i moment ${fas}`}>
-    <b className="text-sm">Verkliga egenkontroller</b>
-    <label className="mt-2 flex flex-col gap-1 text-xs">Kontrollomfattning för moment {fas}<select value={omfattning} onChange={(e) => setOmfattning(e.target.value)}>{scopes.map((s) => <option key={s}>{s}</option>)}</select></label>
-    <p className="my-2 text-sm">{sum.klara} av {sum.totalt} kompletta · {sum.oppna} öppna · {sum.avvikelser} Ej OK</p>
+    <b className="text-sm">Egenkontroller</b>
+    {/* UX-10: läget i klartext – vad som krävs för grinden, inte bara räknare. */}
+    <p className="my-2 text-sm" data-testid="egenkontroll-lage">
+      {sum.totalt && sum.klara === sum.totalt ? (
+        <span className="font-bold text-ok-ink">Alla {sum.totalt} egenkontroller är gjorda.</span>
+      ) : (
+        <>
+          <b className="text-warn-ink">
+            {sum.totalt - sum.klara} av {sum.totalt} egenkontroll{sum.totalt === 1 ? "" : "er"} inte gjorda
+          </b>{" "}
+          – krävs för G{fas}.
+        </>
+      )}
+      {sum.avvikelser ? (
+        <>
+          {" "}
+          <b className="text-bad-ink">
+            {sum.avvikelser} med avvikelse (Ej OK)
+          </b>{" "}
+          måste åtgärdas.
+        </>
+      ) : null}
+    </p>
+    <label className="mt-1 flex flex-col gap-1 text-xs">Visa för enhet<select value={omfattning} onChange={(e) => setOmfattning(e.target.value)}>{scopes.map((s) => <option key={s}>{s}</option>)}</select></label>
     {kvitterade ? (() => {
       const egna = mall.punkter.map((p) => ({ p, k: kvitterade.get(kontrollId(pid, omfattning, p.id)), r: index.get(kontrollId(pid, omfattning, p.id)) })).filter((x) => x.r?.resultat);
       const ok = egna.filter((x) => x.k && x.k.varde?.resultat === x.r.resultat && x.k.varde?.datum === x.r.datum).length;
       const senaste = egna.map((x) => x.k).filter(Boolean).sort((a, b) => (a.kvitterad_tid < b.kvitterad_tid ? 1 : -1))[0];
+      if (!egna.length) return null;
       return <p className="my-1 text-xs text-ink-soft">
-        Serverkvitterade: <b className={ok === egna.length ? "text-ok-ink" : "text-warn-ink"}>{ok} av {egna.length}</b> registrerade resultat
+        Kvitterade i databasen: <b className={ok === egna.length ? "text-ok-ink" : "text-warn-ink"}>{ok} av {egna.length}</b> registrerade resultat
         {senaste ? ` · senast kvitterad av ${senaste.kvitterad_epost} ${senaste.kvitterad_tid.slice(0, 16).replace("T", " ")} (utförd av ${senaste.utford_av || "–"})` : ""}
         {kvittens?.koade ? ` · ${kvittens.koade} väntar på kvittens` : ""}
       </p>;
@@ -58,7 +80,7 @@ export function EgenkontrollLage({ pid, fas }) {
     <div className="my-2">
       <button type="button" className="cursor-pointer border-0 bg-transparent p-0 text-left text-xs font-bold text-ink" aria-expanded={visaPlan} onClick={() => setVisaPlan((v) => !v)}>
         {visaPlan ? "▾ " : "▸ "}
-        Kontrollplan: {lage.planerade.length ? `${lage.planerade.length} enheter` : "inga enheter angivna"}{lage.omfattningar.length ? ` · momentet kräver ${lage.omfattningar.length} omfattning${lage.omfattningar.length === 1 ? "" : "ar"}` : " · ingen omfattning registrerad"}
+        {lage.planerade.length ? `Kontrollplan: ${lage.planerade.length} enheter att kontrollera` : "Ange vilka enheter som ska kontrolleras"}{lage.omfattningar.length > 1 ? ` · ${lage.omfattningar.length} enheter har kontroller` : ""}
       </button>
       {visaPlan ? <>
       <label className="mt-2 flex flex-col gap-1 text-xs">
@@ -79,7 +101,7 @@ export function EgenkontrollLage({ pid, fas }) {
       </> : null}
     </div>
 
-    <p className="my-2 text-xs text-ink-soft">Samma sparade resultat som i fältmaterialet. Momentets bockar och grind är separat uppföljning.</p>
+    <p className="my-2 text-xs text-ink-soft">Resultaten är desamma som i fältmaterialet. Bockarna i listan och grinden följs upp för sig.</p>
     <div className="flex flex-wrap gap-2">
       <button type="button" className="btn sec mini" onClick={() => snabb.fasblankett(pid, fas, { enhet: omfattning === HELA ? "" : omfattning })}>Skriv ut momentets blankett</button>
       <button type="button" className="btn sec mini" onClick={() => oppnaFaltmaterial({ mallpaket: "projekt", mallIds: [mall.id], enhet: omfattning === HELA ? "" : omfattning })}>Registrera egenkontroller – moment {fas}</button>

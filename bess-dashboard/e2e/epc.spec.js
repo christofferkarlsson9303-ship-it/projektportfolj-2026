@@ -216,6 +216,22 @@ test("moment 10–13 grupperas efter när arbetet görs (UX-08)", async ({ page 
   await expect(m11.locator(".epc-sektion").nth(2).locator('[id="kp-11.15"]')).toBeVisible();
 });
 
+test("När-texten räknas till ett senast-datum och passerade datum markeras (UX-09)", async ({ page }) => {
+  await oppnaFas(page, 11);
+  const senast = rad(page, "11.2").locator(".epc-senast");
+  await expect(senast).toContainText(/^senast \d{1,2} [a-zåäö]{3}/);
+  await expect(senast).toHaveAttribute("title", /28 dagar före start av moment 11/);
+  // 11.1 ("Löpande") får inget datum.
+  await expect(rad(page, "11.1").locator(".epc-senast")).toHaveCount(0);
+});
+
+test("egenkontrollerna står i klartext med vad som krävs för grinden (UX-10)", async ({ page }) => {
+  await oppnaFas(page, 10);
+  const lage = page.locator("#fas-10").getByTestId("egenkontroll-lage");
+  await expect(lage).toContainText(/\d+ av \d+ egenkontroller inte gjorda – krävs för G10/);
+  await expect(page.locator("#fas-10")).not.toContainText("Serverkvitterade");
+});
+
 test("lägesbilden har en rad per projekt och visar läget för valt projekt", async ({ page }) => {
   const rader = lage(page).getByRole("group", { name: "Välj projekt" }).getByRole("button");
   await expect(rader).toHaveCount(4);
