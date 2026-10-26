@@ -1,5 +1,5 @@
-import { memo, useState } from "react";
-import { Check, ChevronDown, Lightbulb, MessageSquare, RotateCcw } from "lucide-react";
+import { memo, useEffect, useRef, useState } from "react";
+import { Check, ChevronDown, Lightbulb, MessageSquare, MoreHorizontal, RotateCcw } from "lucide-react";
 import { usePortfolj, usePortfoljAtgarder, useUi } from "../../state/hooks.js";
 import { MILSTOLPAR } from "../../data/bessChecklistData.ts";
 import { PUNKT_UNDERLAG } from "../../data/punktUnderlag.js";
@@ -93,31 +93,35 @@ const Punktrad = memo(function Punktrad({ punkt, pid, status, kalla, kontroll, d
         {nTidigare ? (
           <button type="button" className="epc-erfchip" onClick={() => setOppen(true)} title="Andra projekt har avvikelser eller lärdomar på den här punkten">
             <Lightbulb size={13} aria-hidden="true" />
-            {nTidigare}
-            <span className="sr-only"> erfarenheter från tidigare projekt på {nr}</span>
+            {nTidigare} {nTidigare === 1 ? "erfarenhet" : "erfarenheter"}
+            <span className="sr-only"> från tidigare projekt på {nr}</span>
           </button>
         ) : null}
-        <button
-          type="button"
-          className={`epc-kommknapp${nKomm ? " har" : ""}`}
-          aria-expanded={oppen}
-          onClick={() => setOppen((v) => !v)}
-        >
-          <MessageSquare size={14} aria-hidden="true" />
-          {nKomm || ""}
-          <span className="sr-only">Kommentarer på {nr}</span>
-        </button>
-        {lage.status !== "klar" ? (
+        {/* UX-03: kommentarsknappen syns bara när det finns kommentarer eller
+            panelen är öppen. Kommentera och Ej aktuell ligger i ⋯-menyn. */}
+        {nKomm || oppen ? (
           <button
             type="button"
-            className="epc-textknapp epc-ejknapp"
-            aria-pressed={lage.status === "ejaktuell"}
-            onClick={() => satt(lage.status === "ejaktuell" ? "" : "ejaktuell")}
+            className={`epc-kommknapp${nKomm ? " har" : ""}`}
+            aria-expanded={oppen}
+            onClick={() => setOppen((v) => !v)}
           >
-            {lage.status === "ejaktuell" ? "Aktuell igen" : "Ej aktuell"}
-            <span className="sr-only">: {nr}</span>
+            <MessageSquare size={14} aria-hidden="true" />
+            {nKomm || ""}
+            <span className="sr-only">Kommentarer på {nr}</span>
           </button>
         ) : null}
+        {lage.status === "ejaktuell" ? (
+          <button type="button" className="epc-textknapp epc-ejknapp" onClick={() => satt("")}>
+            Aktuell igen<span className="sr-only">: {nr}</span>
+          </button>
+        ) : null}
+        <Radmeny
+          nr={nr}
+          kommentarOppen={oppen}
+          onKommentera={() => setOppen(true)}
+          ejAktuell={lage.status !== "klar" && lage.status !== "ejaktuell" ? () => satt("ejaktuell") : null}
+        />
       </div>
       {oppen ? (
         <div className="epc-radpanel">
@@ -127,6 +131,70 @@ const Punktrad = memo(function Punktrad({ punkt, pid, status, kalla, kontroll, d
     </li>
   );
 });
+
+/** ⋯-menyn på en punktrad: Kommentera och Ej aktuell, ett klick bort så att
+ *  raden bara har kryssrutan som synlig åtgärd. Stängs med Escape, ett val
+ *  eller när fokus lämnar menyn. */
+function Radmeny({ nr, kommentarOppen, onKommentera, ejAktuell }) {
+  const [oppen, setOppen] = useState(false);
+  const ref = useRef(null);
+  const knapp = useRef(null);
+  useEffect(() => {
+    if (!oppen) return undefined;
+    const utanfor = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOppen(false);
+    };
+    document.addEventListener("pointerdown", utanfor);
+    return () => document.removeEventListener("pointerdown", utanfor);
+  }, [oppen]);
+  const val = (gor) => () => {
+    setOppen(false);
+    gor();
+    knapp.current?.focus();
+  };
+  return (
+    <div
+      className="epc-radmeny"
+      ref={ref}
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && oppen) {
+          e.stopPropagation();
+          setOppen(false);
+          knapp.current?.focus();
+        }
+      }}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) setOppen(false);
+      }}
+    >
+      <button
+        ref={knapp}
+        type="button"
+        className="epc-menyknapp"
+        aria-haspopup="true"
+        aria-expanded={oppen}
+        aria-label={`Fler val för ${nr}`}
+        onClick={() => setOppen((v) => !v)}
+      >
+        <MoreHorizontal size={16} aria-hidden="true" />
+      </button>
+      {oppen ? (
+        <div className="epc-radmeny-lista" role="group" aria-label={`Val för ${nr}`}>
+          {!kommentarOppen ? (
+            <button type="button" onClick={val(onKommentera)}>
+              Kommentera<span className="sr-only"> {nr}</span>
+            </button>
+          ) : null}
+          {ejAktuell ? (
+            <button type="button" onClick={val(ejAktuell)}>
+              Ej aktuell<span className="sr-only">: {nr}</span>
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 /** ctx: { pid, pl (punktlage), antal (kommentarer per punkt), tidigare
  *  (andra projekts erfarenheter per punkt), grindkod(punktId) }. */

@@ -10,6 +10,11 @@ test.beforeEach(async ({ page }) => {
 const lage = (page) => page.getByRole("region", { name: "Lägesbild — var projekten står" });
 const projektrad = (page, namn) => lage(page).getByRole("group", { name: "Välj projekt" }).getByRole("button", { name: namn });
 const rad = (page, id) => page.locator(`[id="kp-${id}"]`);
+/** Väljer i punktens ⋯-meny ("Kommentera" eller "Ej aktuell"). */
+async function radval(page, id, val) {
+  await rad(page, id).getByRole("button", { name: `Fler val för ${id}` }).click();
+  await rad(page, id).getByRole("group", { name: `Val för ${id}` }).getByRole("button", { name: new RegExp(`^${val}`) }).click();
+}
 /** Fäller ut en fas om den inte redan är utfälld — pågående faser är öppna från början. */
 async function oppnaFas(page, nr) {
   const fas = page.locator(`#fas-${nr}`);
@@ -58,7 +63,7 @@ test("summeringen visar exakt status per fas och följer avbockningen", async ({
   await expect(rad(page, "10.7")).toContainText(/Klar \d{4}-\d{2}-\d{2}/);
 
   // Ej aktuell räknas bort ur det som återstår.
-  await rad(page, "10.3").getByRole("button", { name: /^Ej aktuell/ }).click();
+  await radval(page, "10.3", "Ej aktuell");
   await expect(status(page).getByRole("row", { name: /^10 · Stationshus/ })).toContainText("1/14");
   await expect(rad(page, "10.3")).toHaveClass(/ejaktuell/);
 
@@ -117,7 +122,7 @@ test("en avvikelse på en punkt hamnar i erfarenhetslistan och visas på punkten
   await expect(await erfarenhetslista(page)).toContainText("Inga avvikelser eller lärdomar ännu");
 
   await oppnaFas(page, 10);
-  await rad(page, "10.3").getByRole("button", { name: "Kommentarer på 10.3" }).click();
+  await radval(page, "10.3", "Kommentera");
   const panel = rad(page, "10.3").locator(".epc-radpanel");
   await panel.getByRole("button", { name: "Avvikelse" }).click();
   await panel.getByLabel("Vad hände").fill("Stationshuset kom med skadad dörr");
@@ -137,8 +142,46 @@ test("en avvikelse på en punkt hamnar i erfarenhetslistan och visas på punkten
   await expect(lista).toContainText("Inga avvikelser eller lärdomar ännu");
   await lista.getByRole("button", { name: "Alla projekt" }).click();
   await expect(lista.locator(".epc-erfrad")).toHaveCount(1);
-  await rad(page, "10.3").getByRole("button", { name: /erfarenheter från tidigare projekt på 10.3/ }).click();
+  await rad(page, "10.3").getByRole("button", { name: /1 erfarenhet från tidigare projekt på 10.3/ }).click();
   await expect(rad(page, "10.3").locator(".epc-tidigare")).toContainText("Fota vid lossning");
+});
+
+test("en punktrad har bara kryssrutan och ⋯-menyn som synliga åtgärder (UX-03)", async ({ page }) => {
+  await oppnaFas(page, 10);
+  const r = rad(page, "10.3");
+  await expect(r.getByRole("button", { name: /^Ej aktuell/ })).toHaveCount(0);
+  await expect(r.getByRole("button", { name: "Kommentarer på 10.3" })).toHaveCount(0);
+
+  // Escape stänger menyn och lämnar fokus på knappen.
+  await r.getByRole("button", { name: "Fler val för 10.3" }).click();
+  await expect(r.getByRole("group", { name: "Val för 10.3" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(r.getByRole("group", { name: "Val för 10.3" })).toHaveCount(0);
+  await expect(r.getByRole("button", { name: "Fler val för 10.3" })).toBeFocused();
+
+  // Ej aktuell via menyn, och tillbaka med den synliga knappen.
+  await radval(page, "10.3", "Ej aktuell");
+  await expect(r).toHaveClass(/ejaktuell/);
+  await r.getByRole("button", { name: /^Aktuell igen/ }).click();
+  await expect(r).not.toHaveClass(/ejaktuell/);
+});
+
+test("märkena står i klartext och förklaras i legenden (UX-04)", async ({ page }) => {
+  await oppnaFas(page, 10);
+  await expect(rad(page, "10.7").locator(".epc-markering.hp")).toHaveText("Hållpunkt");
+  await expect(rad(page, "10.7").locator(".epc-markering.l")).toHaveText("Lärdom");
+  const legend = page.getByRole("list", { name: "Markeringar" });
+  await expect(legend).toContainText("röd kant på raden");
+  await expect(legend).toContainText("Kontraktskrav");
+  await expect(legend).toContainText("Erfarenheter från andra projekt");
+});
+
+test("ett moment med passerad grind är en kompakt rad med grinddatum (UX-11)", async ({ page }) => {
+  // Moment 0–9 är passerade i Växjö.
+  const fas = page.locator("#fas-7");
+  await expect(fas).not.toHaveAttribute("open", "");
+  await expect(fas.locator("summary .epc-tidslage")).toContainText("G7 passerad");
+  await expect(fas.locator("summary .epc-fasdatum")).toBeHidden();
 });
 
 test("lägesbilden har en rad per projekt och visar läget för valt projekt", async ({ page }) => {

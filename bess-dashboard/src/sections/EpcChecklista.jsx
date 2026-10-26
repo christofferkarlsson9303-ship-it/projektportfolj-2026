@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Lightbulb, MoreHorizontal, Search } from "lucide-react";
 import { usePortfolj, useUi } from "../state/hooks.js";
 import { Fasruta, Sektioner } from "../components/epc/Fas.jsx";
 import { Markering } from "../components/epc/Delar.jsx";
@@ -41,9 +41,15 @@ const STATUSFILTER = [
 
 const LAGEN = ["klar", "pagar", "sen", "kommande", "odaterad"];
 
-/** Faser som pågår eller är sena för projektet — de fälls ut från början. */
-const aktuellaFaser = (faser) =>
-  faser.filter((f) => f.status === "pagar" || f.status === "sen").map((f) => f.fas.nr);
+/** Faser som pågår eller är sena för projektet — de fälls ut från början.
+ *  Pågår inget fälls nästa kommande moment ut (UX-11), så att det alltid finns
+ *  ett aktuellt moment att arbeta i. */
+const aktuellaFaser = (faser) => {
+  const nu = faser.filter((f) => f.status === "pagar" || f.status === "sen").map((f) => f.fas.nr);
+  if (nu.length) return nu;
+  const nasta = faser.find((f) => f.status === "kommande");
+  return nasta ? [nasta.fas.nr] : [];
+};
 
 /** En infälld referensdel. Fälls ut av användaren eller av en länk (mal) hit. */
 function Referensdel({ id, mal, titel, text, start = false, children }) {
@@ -156,8 +162,21 @@ function Guide({ pid, mal }) {
           {Object.entries(MARKERINGAR).map(([k, m]) => (
             <li key={k}>
               <Markering typ={k} /> {m.beskrivning}
+              {k === "HP" ? " · röd kant på raden" : ""}
             </li>
           ))}
+          <li>
+            <span className="epc-legend-ikon" aria-hidden="true">
+              <Lightbulb size={13} />
+            </span>{" "}
+            Erfarenheter från andra projekt på samma punkt
+          </li>
+          <li>
+            <span className="epc-legend-ikon" aria-hidden="true">
+              <MoreHorizontal size={14} />
+            </span>{" "}
+            Kommentera eller sätt ej aktuell
+          </li>
         </ul>
       </SectionHeading>
 
