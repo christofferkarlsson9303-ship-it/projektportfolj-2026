@@ -1,28 +1,13 @@
 import { useEffect, useId, useRef, useState } from "react";
 import logotyp from "../../assets/one-nordic-logo.png";
-import { ENKEL_MENY, NAVIKONER, VYER } from "../../data/vyer.js";
+import { INGANGAR, NAVIKONER, VYMETA, ingangFor } from "../../data/vyer.js";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { hamtaNamn, sparaNamn } from "../../state/portfolj-reducer.js";
 import { useMedia } from "../../lib/useMedia.js";
 
-/** Grupperar VYER på sektionsrubrikerna (_sek) så att navigationen blir
- *  semantiska grupper i stället för en platt lista med lösa rubrik-divar. */
-function grupper() {
-  const ut = [];
-  let nuvarande = { rubrik: null, poster: [] };
-  for (const [id, namn, lead] of VYER) {
-    if (id === "_sek") {
-      if (nuvarande.poster.length) ut.push(nuvarande);
-      nuvarande = { rubrik: namn, poster: [] };
-    } else {
-      nuvarande.poster.push({ id, namn, lead });
-    }
-  }
-  if (nuvarande.poster.length) ut.push(nuvarande);
-  return ut;
-}
-
-const GRUPPER = grupper();
+/* Ikon per ingång: lånad från den vy ingången öppnar först. */
+const INGANG_IKON = { idag: "idag", projektet: "epc", pengar: "ekonomi" };
+const SOK_IKON = '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>';
 
 /** "14:02" i dag, annars "2026-10-20 14:02". */
 function bekraftadText(iso) {
@@ -35,10 +20,15 @@ function bekraftadText(iso) {
 
 export function Sidebar() {
   const { conn, synk } = usePortfolj();
-  const { aktivVy, visa, navOppen, setNavOppen } = useUi();
+  const { aktivVy, visa, navOppen, setNavOppen, setSokOppen } = useUi();
   const [namn, setNamn] = useState(hamtaNamn);
-  const [hela, setHela] = useState(() => { try { return localStorage.getItem("bess-meny-v1") === "alla"; } catch { return false; } });
-  const vaxlaMeny = () => setHela((v) => { try { localStorage.setItem("bess-meny-v1", v ? "enkel" : "alla"); } catch { /* sessionens val gäller */ } return !v; });
+  const aktivIngang = ingangFor(aktivVy);
+  /* Senast öppnade flik per ingång, så att ett klick på ingången tar dig
+     tillbaka dit du var. Lever bara i sessionen. */
+  const senaste = useRef({});
+  useEffect(() => {
+    if (aktivIngang) senaste.current[aktivIngang.id] = aktivVy;
+  }, [aktivIngang, aktivVy]);
   const sidebarRef = useRef(null);
   const namnId = useId();
 
@@ -91,30 +81,36 @@ export function Sidebar() {
         </div>
 
         <nav className="sidenav" id="nav" aria-label="Huvudmeny">
-          {GRUPPER.map((g) => ({ ...g, poster: g.poster.filter((v) => hela || ENKEL_MENY.has(v.id) || v.id === aktivVy) })).filter((g) => g.poster.length).map((g, gi) => (
-            <div key={g.rubrik || `grupp-${gi}`} className="nav-grupp" role="group" aria-label={g.rubrik || "Portfölj"}>
-              {/* Grupprubriker bara i hela menyn — sju flikar behöver inga. */}
-              {g.rubrik && hela ? <div className="navsek">{g.rubrik}</div> : null}
-              {g.poster.map((v) => {
-                const aktiv = v.id === aktivVy;
-                return (
-                  <button
-                    key={v.id}
-                    type="button"
-                    className={aktiv ? "on" : ""}
-                    onClick={() => visa(v.id)}
-                    title={v.lead}
-                    // aria-current ersätter den rent visuella .on-klassen
-                    aria-current={aktiv ? "page" : undefined}
-                  >
-                    <svg viewBox="0 0 24 24" aria-hidden="true" dangerouslySetInnerHTML={{ __html: NAVIKONER[v.id] || "" }} />
-                    <span>{v.namn}</span>
-                  </button>
-                );
-              })}
+          {INGANGAR.map((g) => {
+            const aktiv = g.id === aktivIngang?.id;
+            return (
+              <button
+                key={g.id}
+                type="button"
+                className={aktiv ? "on" : ""}
+                onClick={() => visa(senaste.current[g.id] || g.vyer[0])}
+                title={g.fraga}
+                aria-current={aktiv ? "page" : undefined}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true" dangerouslySetInnerHTML={{ __html: NAVIKONER[INGANG_IKON[g.id]] || "" }} />
+                <span>{g.namn}</span>
+              </button>
+            );
+          })}
+          {/* Ett öppet verktyg visas som aktuell plats, så att man ser var man är. */}
+          {!aktivIngang && VYMETA[aktivVy] ? (
+            <div className="nav-grupp" role="group" aria-label="Öppet verktyg">
+              <div className="navsek">Verktyg</div>
+              <button type="button" className="on" aria-current="page" onClick={() => visa(aktivVy)}>
+                <svg viewBox="0 0 24 24" aria-hidden="true" dangerouslySetInnerHTML={{ __html: NAVIKONER[aktivVy] || "" }} />
+                <span>{VYMETA[aktivVy].namn}</span>
+              </button>
             </div>
-          ))}
-          <button type="button" onClick={vaxlaMeny} aria-expanded={hela}>{hela ? "Visa enkel meny" : "Visa alla funktioner"}</button>
+          ) : null}
+          <button type="button" className="nav-verktyg" onClick={() => setSokOppen(true)} aria-haspopup="dialog" title="Kontrakt, kontakter, dagbok, möten, rutiner och andra verktyg (Ctrl/Cmd+K)">
+            <svg viewBox="0 0 24 24" aria-hidden="true" dangerouslySetInnerHTML={{ __html: SOK_IKON }} />
+            <span>Verktyg</span>
+          </button>
         </nav>
 
         <div className="sidebar-foot">

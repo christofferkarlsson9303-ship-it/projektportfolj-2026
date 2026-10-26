@@ -6,7 +6,9 @@ En visuell prototyp byggdes 2026-10-04 i ett annat verktyg (Grok). Den ligger **
 
 ## Röd tråd (2026-10-22)
 
-Läs [`docs/rod-trad.md`](docs/rod-trad.md) innan du lägger till eller ändrar en vy. Varje vy ska följa reglerna i §4 där. Ny vy kräver att en befintlig tas bort eller slås ihop. Specen är ett förslag tills besluten i §6 är ifyllda.
+Läs [`docs/rod-trad.md`](docs/rod-trad.md) innan du lägger till eller ändrar en vy. Varje vy ska följa reglerna i §4 där. Ny vy kräver att en befintlig tas bort eller slås ihop. B2 och B3 är beslutade 2026-10-26; B1 (4 eller 8 faser) är öppen.
+
+**Menyn har tre ingångar (2026-10-26).** `INGANGAR` och `VERKTYG` i `src/data/vyer.js` styr den. Huvudmenyn (`Sidebar.jsx`) visar Idag, Projektet, Pengar och en Verktyg-knapp som öppnar Ctrl/Cmd+K. Vyerna i en ingång visas som flikar i `Flikrad.jsx`. Vy-för-vy-besluten står i [`docs/strykningslista.md`](docs/strykningslista.md). Lägg aldrig till en fjärde ingång eller en ny menyrad; en ny vy blir en flik eller ett verktyg. Flikar som ska slås ihop (t.ex. Översikt, Tavla, Tidrapport) ligger kvar tills sammanslagningen är byggd. Siten är fryst och dold ur menyn.
 
 ## Vad som redan är sant
 

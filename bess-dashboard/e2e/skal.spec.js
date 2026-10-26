@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { gaTill, oppna, oppnaViaAdress, utanKonsolfel } from "./hjalpare.js";
+import { gaTill, oppna, oppnaMeny, oppnaViaAdress, utanKonsolfel } from "./hjalpare.js";
 
 /* Alla vyer i menyn — ingen får fortfarande vara en platshållare. */
 const VYER = [
@@ -48,7 +48,7 @@ test("alla vyer renderar utan konsolfel", async ({ page }) => {
 
 test("Störning ligger inte i menyn men går att nå, och hinder och störning är orsaker på ÄTA", async ({ page }) => {
   await oppna(page);
-  await gaTill(page, "Risker"); // öppnar mobilmenyn och fäller ut alla funktioner
+  await gaTill(page, "Risker");
   await expect(page.getByRole("navigation", { name: "Huvudmeny" }).getByRole("button", { name: "Störning", exact: true })).toHaveCount(0);
   await oppnaViaAdress(page, "storning", "Störning");
 });
@@ -64,14 +64,32 @@ test("aktiv vy markeras med aria-current", async ({ page }) => {
   );
 
   await gaTill(page, "Risker");
-  await expect(meny.getByRole("button", { name: "Risker", exact: true })).toHaveAttribute(
-    "aria-current",
-    "page"
-  );
+  // Ingången och fliken markeras båda.
+  await expect(meny.getByRole("button", { name: "Projektet", exact: true })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("navigation", { name: "Flikar i Projektet" }).getByRole("button", { name: "Risker", exact: true })).toHaveAttribute("aria-current", "page");
   await expect(meny.getByRole("button", { name: "Idag", exact: true })).not.toHaveAttribute(
     "aria-current",
     "page"
   );
+});
+
+test("huvudmenyn har tre ingångar och verktyg; siten och gamla adresser nås ändå", async ({ page }) => {
+  await oppna(page);
+  const meny = await oppnaMeny(page);
+  const knappar = meny.getByRole("button");
+  await expect(knappar).toHaveText(["Idag", "Projektet", "Pengar", "Verktyg"]);
+  await expect(meny.getByRole("button", { name: "Siten i 3D", exact: true })).toHaveCount(0);
+
+  // Ingången minns senast öppnade flik.
+  await gaTill(page, "Budget och utfall");
+  await gaTill(page, "Risker");
+  await (await oppnaMeny(page)).getByRole("button", { name: "Pengar", exact: true }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Budget och utfall");
+
+  // Verktyg ligger inte i menyn, men adressen fungerar och verktyget syns som aktuell plats.
+  await oppnaViaAdress(page, "kontakter", "Kontakter");
+  await expect((await oppnaMeny(page)).getByRole("button", { name: "Kontakter", exact: true })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("navigation", { name: /^Flikar i / })).toHaveCount(0);
 });
 
 test("hopplänken är första tabbstoppet och flyttar fokus till innehållet", async ({ page }) => {

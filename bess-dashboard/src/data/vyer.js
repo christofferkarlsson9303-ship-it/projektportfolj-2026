@@ -126,10 +126,22 @@ const ENKLA_LEADS = {
    Störning nås från ÄTA och Veckokoll och fungerar som förut. */
 const DOLDA_VYER = ["storning"];
 export const VYER = GRUPPER.flatMap(([namn, ids]) => [["_sek", namn], ...ids.map((id) => [id, URSPRUNG[id][1], ENKLA_LEADS[id] || URSPRUNG[id][2]])]);
-/* Den enkla menyn: det som används varje dag. Sju flikar, utan grupprubriker.
-   Allt annat finns under "Visa alla funktioner" och i Ctrl/Cmd+K. ÄTA-kalkylen
-   nås från ÄTA-vyn ("Öppna i kalkyl"), projektmetoden från sidhjälpen. */
-export const ENKEL_MENY = new Set(["idag", "oversikt", "epc", "tidplan", "punkter", "ata", "hseq"]);
+/* Tre ingångar (docs/rod-trad.md §3, beslut 2026-10-26 i docs/strykningslista.md).
+   Huvudmenyn visar bara ingångarna. Vyerna i en ingång är flikar ovanför vyn.
+   Vyer som enligt strykningslistan ska slås ihop ligger kvar som flikar tills
+   sammanslagningen är byggd. Allt i VERKTYG nås via Ctrl/Cmd+K och länkar. */
+export const INGANGAR = [
+  { id: "idag", namn: "Idag", fraga: "Vad gör jag nu?", vyer: ["idag", "punkter", "oversikt", "vecka", "tavla", "handlingsplan"] },
+  { id: "projektet", namn: "Projektet", fraga: "Var är vi och vad krävs för nästa grind?", vyer: ["epc", "start", "tidplan", "risker", "hseq", "slutdok"] },
+  { id: "pengar", namn: "Pengar", fraga: "Får vi betalt för det vi gör?", vyer: ["ekonomi", "ata", "budget", "milstolpar", "faktura", "atakalkyl", "tid"] },
+];
+/* Site är fryst och dold ur menyn (beslut B3 2026-10-26). */
+export const VERKTYG = ["dagbok", "moten", "kontrakt", "metod", "rutiner", "kontakter", "resurser", "rapport", "data", "bered", "site"];
+
+/** Ingången som en vy hör till, eller null för verktyg och dolda vyer. */
+export function ingangFor(vyId) {
+  return INGANGAR.find((g) => g.vyer.includes(vyId)) || null;
+}
 
 export const NAVIKONER = { ...NAVIKON, ...IKONER_TILLAGDA, metod: '<path d="M4 5h16v14H4zM8 9h8M8 13h8M8 17h4"/>' };
 

@@ -20,21 +20,51 @@ export async function oppna(page, vy) {
   return { fel };
 }
 
-/** Klickar i huvudmenyn. Öppnar först mobilmenyn om den är infälld.
- *  Vi frågar hamburgaren om aria-expanded i stället för att titta på menyns
- *  synlighet — den är utfälld ur bild med transform och räknas då fortfarande
- *  som "visible" av webbläsaren. */
-export async function gaTill(page, namn) {
+/** Öppnar mobilmenyn om den är infälld. Vi frågar hamburgaren om aria-expanded
+ *  i stället för att titta på menyns synlighet — den är utfälld ur bild med
+ *  transform och räknas då fortfarande som "visible" av webbläsaren. */
+export async function oppnaMeny(page) {
   const hamburgare = page.getByRole("button", { name: /Öppna menyn|Stäng menyn/ });
+  if ((await hamburgare.isVisible()) && (await hamburgare.getAttribute("aria-expanded")) === "false") await hamburgare.click();
+  return page.getByRole("navigation", { name: "Huvudmeny" });
+}
 
-  if (await hamburgare.isVisible()) {
-    if ((await hamburgare.getAttribute("aria-expanded")) === "false") await hamburgare.click();
+/** Stänger mobilmenyn om den är öppen. */
+async function stangMeny(page) {
+  const hamburgare = page.getByRole("button", { name: /Öppna menyn|Stäng menyn/ });
+  if ((await hamburgare.isVisible()) && (await hamburgare.getAttribute("aria-expanded")) === "true") await hamburgare.click();
+}
+
+const INGANGAR = ["Idag", "Projektet", "Pengar"];
+const flikrad = (page) => page.getByRole("navigation", { name: /^Flikar i / });
+
+/** Går till en vy med dess namn. Huvudmenyn har tre ingångar med flikar
+ *  (docs/strykningslista.md); verktyg nås via Sök (Ctrl/Cmd+K). */
+export async function gaTill(page, namn) {
+  const flik = () => flikrad(page).getByRole("button", { name: namn, exact: true });
+
+  if (!(await flik().count())) {
+    for (const ingang of INGANGAR) {
+      const meny = await oppnaMeny(page);
+      await meny.getByRole("button", { name: ingang, exact: true }).click();
+      await stangMeny(page);
+      if (await flik().count()) break;
+    }
   }
 
-  const meny = page.getByRole("navigation", { name: "Huvudmeny" });
-  const knapp = meny.getByRole("button", { name: namn, exact: true });
-  if (!(await knapp.count())) await meny.getByRole("button", { name: "Visa alla funktioner", exact: true }).click();
-  await knapp.click();
+  if (await flik().count()) {
+    await flik().click();
+  } else {
+    // Verktyg: inte i någon ingång.
+    await page.getByRole("button", { name: "Sök", exact: true }).click();
+    await page.getByRole("combobox", { name: "Sök och hoppa" }).fill(namn);
+    await page
+      .getByRole("option")
+      .filter({ has: page.locator(".ct").getByText("Vy", { exact: true }) })
+      .filter({ has: page.locator(".cl").getByText(namn, { exact: true }) })
+      .first()
+      .click();
+  }
 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(namn);
 }

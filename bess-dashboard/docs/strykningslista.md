@@ -1,6 +1,6 @@
 # Strykningslista – från 30 vyer till 3 ingångar
 
-Datum: 2026-10-26 · Status: **förslag, ej beslutat** · Bygger på [rod-trad.md](rod-trad.md) §3.
+Datum: 2026-10-26 · Status: **beslutat 2026-10-26** · Bygger på [rod-trad.md](rod-trad.md) §3.
 
 Mål: en ny projektledare ska förstå appen på 15 minuter utan utbildning. Det är kravet för att någon ska betala för den.
 
@@ -165,8 +165,8 @@ Klarar hen 4 av 5 på 15 minuter är strukturen godkänd.
 
 | # | Beslut | Förslag |
 |---|---|---|
-| S1 | Godkänn tabellerna i §2 | Ja |
-| S2 | Bryt ut ONE Bered som egen app | Ja, efter S1 |
-| S3 | Tidrapport: slå ihop nu eller vänta på fler användare | Slå ihop nu |
+| S1 | Godkänn tabellerna i §2 | **2026-10-26: Godkänd**, alla 30 vyer. Site: frys och dölj ur menyn. |
+| S2 | Bryt ut ONE Bered som egen app | **2026-10-26: Ja.** |
+| S3 | Tidrapport: slå ihop nu eller vänta på fler användare | **2026-10-26: Slå ihop nu.** |
 
 Genomförande följer [rod-trad.md](rod-trad.md) §7. Steg 3 (meny till 3 ingångar) genomför den här listan. Gamla hash-adresser ska fortsätta fungera och peka till rätt ingång och flik.
