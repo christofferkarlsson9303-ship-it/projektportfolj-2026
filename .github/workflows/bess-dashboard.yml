@@ -40,11 +40,16 @@ jobs:
       - run: npm test
       - run: npm run build
 
-  e2e:
-    name: E2E (desktop + mobil)
+  e2e-del:
+    name: E2E del ${{ matrix.del }}/3
     runs-on: ubuntu-latest
-    # Sviten är drygt 440 körningar (desktop + mobil) och tog över 20 minuter på en tvåkärnig runner.
-    timeout-minutes: 45
+    # Sviten (cirka 570 körningar, desktop + mobil) delas på tre parallella
+    # jobb. Hel svit på en runner tog 16–29 minuter mot gränsen 45.
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        del: [1, 2, 3]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -53,17 +58,38 @@ jobs:
           cache: npm
           cache-dependency-path: bess-dashboard/package-lock.json
       - run: npm ci
+      - name: Cacha Playwrights Chromium
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('bess-dashboard/package-lock.json') }}
       - run: npx playwright install --with-deps chromium
       # Utan Supabase-variabler kör appen i lokalt läge, vilket e2e förutsätter.
-      - run: npm run e2e
+      - run: npx playwright test --shard=${{ matrix.del }}/3
         env:
           CI: "true"
       - name: Spara rapport och spår vid fel
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-rapport
+          name: playwright-rapport-del-${{ matrix.del }}
           path: |
             bess-dashboard/playwright-report/
             bess-dashboard/e2e/.resultat/
           retention-days: 7
+
+  e2e:
+    # Samma namn som förut, så att en regel som kräver kontrollen fortsätter
+    # att fungera. Går bara igenom om alla tre delarna lyckades — en hoppad
+    # del räknas som fel, inte som godkänd.
+    name: E2E (desktop + mobil)
+    runs-on: ubuntu-latest
+    needs: e2e-del
+    if: always()
+    steps:
+      - name: Alla delar gröna
+        run: |
+          if [ "${{ needs.e2e-del.result }}" != "success" ]; then
+            echo "E2E-delarna: ${{ needs.e2e-del.result }}"
+            exit 1
+          fi
