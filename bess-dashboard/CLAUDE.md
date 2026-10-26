@@ -95,6 +95,14 @@ Regler:
 - **Data:** foton, ritningar och modeller ligger i arkivet (Storage/IndexedDB), aldrig i `portfolj/state`. Håll koll på storleken i Data → Lagring (varning över 1024 kB).
 - **Före en PR:** säg vilken av de fyra frågorna ändringen hjälper och skriv det i PR-beskrivningen.
 
+## Teknisk grund (2026-10-26)
+
+- **Säkerhetsheaders och CSP** står i `vercel.json`. `vite preview` läser samma fil (`vite.config.js`), så e2e-testerna kör under samma CSP som produktionen. Ny extern källa (CDN, API) = lägg till den i `vercel.json`, annars blockeras den. Skript från CDN är tillåtna bara med full URL, för anbudsmodellen.
+- **Typsnitt** ligger i appen via Fontsource (`main.jsx`, IBM Plex i `SiteWorkspace.jsx`). Lägg inte tillbaka Google Fonts.
+- **Hero-bilder** är WebP i 640 och 1280 px (`public/assets/<namn>-640.webp`). `HeroBild` väljer med `srcset`; JPG:en är reserv. En ny bild behöver båda storlekarna.
+- **`--lank`** är textfärgen för länkar och nummer på ytor som följer temat (ONE Blågrön ljust, info-ton mörkt). Använd den i stället för `var(--one-djup)` som textfärg på ytor — inte på vita knappar i sidhuvudet.
+- **Felgränser:** `Felgrans` runt varje vy, `AppFelgrans` runt hela appen (omladdning och lokal kopia).
+
 ## Gör inte
 
 - Portera inte prototypens filer (`src/routes/*`, zustand-store, `@react-three/fiber`).

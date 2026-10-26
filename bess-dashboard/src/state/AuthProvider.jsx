@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { KONFIGURERAD, supabase } from "../lib/supabase.js";
 import { AuthContext } from "./kontexter.js";
+import { exaktIlike } from "../lib/ilike.js";
 
 /* Inloggning med magisk länk. Behörigheten läses ur allowed_users i stället för
    via rpc is_allowed() — select på den tabellen är ändå gated av samma regel,
@@ -46,7 +47,8 @@ export function AuthProvider({ children }) {
       const { data, error } = await supabase
         .from("allowed_users")
         .select("email, role")
-        .ilike("email", epost)
+        /* Skiftlägesokänslig men exakt: _ och % i en adress får inte bli jokertecken. */
+        .ilike("email", exaktIlike(epost))
         .maybeSingle();
 
       if (avbruten) return;

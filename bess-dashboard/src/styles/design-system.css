@@ -672,15 +672,21 @@ tbody tr{transition:background .12s ease}
   --sh-md:0 4px 16px rgba(16,45,58,.07);
   --sh-lift:0 12px 34px rgba(16,45,58,.12);
 }
+/* --lank: textfärg för länkar och nummer på ytor som följer temat. ONE
+   Blågrön i ljust läge; i mörkt läge blir den för mörk (under 2:1), så där
+   används info-tonen. Inte för text på vita knappar i sidhuvudet. */
+:root{--lank:var(--one-djup)}
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
     --ground:#0e1e25; --surface:#15272f; --sunken:#0e1e25;
     --hairline:#23404a; --hairline-stark:#2d4d58;
+    --lank:var(--info-ink);
   }
 }
 :root[data-theme="dark"]{
   --ground:#0e1e25; --surface:#15272f; --sunken:#0e1e25;
   --hairline:#23404a; --hairline-stark:#2d4d58;
+  --lank:var(--info-ink);
 }
 
 body{background:var(--ground);font-size:14.5px;line-height:1.55}
@@ -1184,6 +1190,10 @@ tr.lastrad:hover{opacity:.8}
 /* Flygbild över en batteripark bakom inloggningen, tonad i ONE Blågrön så att kortet bär. */
 .inlogg.med-bild{background:linear-gradient(160deg,color-mix(in srgb,var(--one-djup) 55%,transparent),color-mix(in srgb,var(--one-djup) 82%,transparent)),
   var(--inlogg-bild) center/cover no-repeat,var(--one-djup)}
+@supports (background-image:image-set(url("a.webp") type("image/webp"))){
+  .inlogg.med-bild{background:linear-gradient(160deg,color-mix(in srgb,var(--one-djup) 55%,transparent),color-mix(in srgb,var(--one-djup) 82%,transparent)),
+    var(--inlogg-bild-webp) center/cover no-repeat,var(--one-djup)}
+}
 .inlogg.med-bild .inlogg-kort{box-shadow:var(--sh-md)}
 .inlogg-marke{display:inline-flex;flex-direction:column;align-items:flex-start;margin-bottom:20px}
 .inlogg-logo{height:44px;width:auto}
@@ -1243,7 +1253,7 @@ tr.lastrad:hover{opacity:.8}
   background:none;border:0;text-align:left;font:inherit;color:inherit;cursor:inherit}
 .atakort-yta:focus-visible{outline:2px solid var(--one-bla);outline-offset:-2px;border-radius:var(--r-sm)}
 .atakort-topp{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.atakort-nr{font-size:11.5px;font-weight:700;color:var(--one-djup);letter-spacing:.03em}
+.atakort-nr{font-size:11.5px;font-weight:700;color:var(--lank);letter-spacing:.03em}
 .atakort-titel{font-size:13px;line-height:1.4;color:var(--ink)}
 .atakort-fot{display:flex;align-items:center;justify-content:space-between;gap:8px;
   font-size:11.5px;color:var(--ink-faint)}
@@ -1256,7 +1266,7 @@ tr.lastrad:hover{opacity:.8}
 .atabadge.rod{background:var(--bad-bg);color:var(--bad-ink)}
 
 .atatavla-fot{margin:0;font-size:12px}
-.lankknapp{background:none;border:0;padding:0;font:inherit;color:var(--one-djup);
+.lankknapp{background:none;border:0;padding:0;font:inherit;color:var(--lank);
   text-decoration:underline;text-decoration-style:dotted;cursor:pointer}
 
 /* Slide-over. Medvetet utan overlay — tavlan bakom ska gå att läsa. */
@@ -1324,7 +1334,7 @@ tr.lastrad:hover{opacity:.8}
 .veckokort-svar button[aria-pressed="true"].ok{background:var(--ok-bg);border-color:var(--turkos);color:var(--ok-ink)}
 .veckokort-svar button[aria-pressed="true"].varning{background:var(--warn-bg);border-color:var(--orange);color:var(--warn-ink)}
 .veckokort-svar button[aria-pressed="true"].avvikelse{background:var(--bad-bg);border-color:var(--rod);color:var(--bad-ink)}
-.veckokort-svar button[aria-pressed="true"] .ord{color:inherit;opacity:.8}
+.veckokort-svar button[aria-pressed="true"] .ord{color:inherit}
 .veckokort-rad{font-size:12.5px;line-height:1.5;color:var(--ink-soft)}
 .veckokort-fot{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .veckokort-kommentar{font-size:12px;color:var(--ink-soft)}
@@ -1473,7 +1483,7 @@ button.ov-chip:hover{border-color:var(--one-bla);color:var(--ink)}
 .hero-tat>.hero-ton{background:linear-gradient(90deg,var(--one-djup) 0%,color-mix(in srgb,var(--one-djup) 82%,transparent) 40%,
   color-mix(in srgb,var(--one-djup) 72%,transparent) 100%)}
 .hero-svag>.hero-bild.ljus{--hero-max:.2}
-.hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hero-video,.hero-bild img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 @keyframes heroIn{to{opacity:var(--hero-max,1)}}
 @keyframes heroDrift{from{transform:scale(1.02) translate3d(0,0,0)}to{transform:scale(1.08) translate3d(-2%,-1.5%,0)}}
 @media(max-width:767px){.hero-ton{background:color-mix(in srgb,var(--one-djup) 78%,transparent)}.hero-bild.ljus{left:0;--hero-max:.22}}
@@ -2327,3 +2337,6 @@ button.ov-gantt-rad:hover>:first-child,button.ov-gantt-rad:focus-visible>:first-
 .epc-referenskropp{padding:4px 16px 16px}
 @media(min-width:768px){.epc-referenskropp{padding:4px 24px 24px}}
 @media print{.epc-referensdel>summary::before{display:none}}
+
+/* Felgränserna: felmeddelandet i en dämpad ruta. */
+.felgrans-text{background:var(--sunken);border-radius:10px;padding:12px;font-size:12px;overflow-x:auto;color:var(--ink-soft);white-space:pre-wrap}

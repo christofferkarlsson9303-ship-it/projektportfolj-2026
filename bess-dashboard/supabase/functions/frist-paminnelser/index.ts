@@ -14,11 +14,11 @@
 // SUPABASE_URL och SUPABASE_SERVICE_ROLE_KEY sätts av plattformen.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { kanalerFranMiljo, korPaminnelser, portfoljUrDokument } from "./hanterare.js";
+import { kanalerFranMiljo, korPaminnelser, likaNycklar, portfoljUrDokument } from "./hanterare.js";
 
 Deno.serve(async (req) => {
   const env = Deno.env.toObject();
-  if (!env.PAMINNELSE_NYCKEL || req.headers.get("x-paminnelse-nyckel") !== env.PAMINNELSE_NYCKEL) {
+  if (!likaNycklar(req.headers.get("x-paminnelse-nyckel") ?? "", env.PAMINNELSE_NYCKEL ?? "")) {
     return new Response(JSON.stringify({ fel: "obehörig" }), { status: 401 });
   }
 
