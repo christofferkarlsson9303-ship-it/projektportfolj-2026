@@ -29,7 +29,10 @@ export function Inloggning() {
   const avvisad = status === "inloggad" && !tillaten;
 
   return (
-    <div className="inlogg med-bild" style={{ "--inlogg-bild": `url(${import.meta.env.BASE_URL}assets/bess-park-flyg.jpg)` }}>
+    <div className="inlogg med-bild" style={{
+        "--inlogg-bild": `url(${import.meta.env.BASE_URL}assets/bess-park-flyg.jpg)`,
+        "--inlogg-bild-webp": `image-set(url(${import.meta.env.BASE_URL}assets/bess-park-flyg-1280.webp) type("image/webp"), url(${import.meta.env.BASE_URL}assets/bess-park-flyg.jpg) type("image/jpeg"))`,
+      }}>
       <div className="card inlogg-kort">
         {/* Logotypen med one-nordic.se under, i samma blå (grafiska manualen 2025). */}
         <div className="inlogg-marke">

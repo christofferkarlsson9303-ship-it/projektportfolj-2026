@@ -1,6 +1,15 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.jsx";
+/* Typsnitten ligger i appen (Fontsource, OFL) i stället för hos Google Fonts:
+   inga externa anrop, ingen tredjepart, och appen fungerar på nät som
+   blockerar Google. Bara latin — å, ä och ö ingår. */
+import "@fontsource/open-sans/latin-400.css";
+import "@fontsource/open-sans/latin-600.css";
+import "@fontsource/open-sans/latin-700.css";
+import "@fontsource/roboto-slab/latin-400.css";
+import "@fontsource/roboto-slab/latin-600.css";
+import "@fontsource/roboto-slab/latin-700.css";
 import "./index.css";
 
 /* Vyerna laddas när de öppnas. Efter en ny publicering kan en öppen flik

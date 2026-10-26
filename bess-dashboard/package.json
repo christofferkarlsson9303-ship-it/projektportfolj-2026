@@ -19,6 +19,10 @@
     "build:lokal": "VITE_TILLAT_LOKALT=1 vite build"
   },
   "dependencies": {
+    "@fontsource/ibm-plex-mono": "5.3.0",
+    "@fontsource/ibm-plex-sans": "5.3.0",
+    "@fontsource/open-sans": "5.3.0",
+    "@fontsource/roboto-slab": "5.3.0",
     "@react-pdf/renderer": "4.9.0",
     "@supabase/supabase-js": "^2.116.0",
     "dxf-parser": "1.1.2",
@@ -46,5 +50,10 @@
     "vite": "^8.3.0",
     "vite-plugin-singlefile": "^2.3.3",
     "vitest": "^4.1.11"
+  },
+  "overrides": {
+    "exceljs": {
+      "uuid": "11.1.1"
+    }
   }
 }

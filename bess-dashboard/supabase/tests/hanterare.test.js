@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { LAS_SEKUNDER, MAX_FORSOK, kanalerFranMiljo, korPaminnelser, portfoljUrDokument } from "../functions/frist-paminnelser/hanterare.js";
+import { LAS_SEKUNDER, MAX_FORSOK, kanalerFranMiljo, korPaminnelser, likaNycklar, portfoljUrDokument } from "../functions/frist-paminnelser/hanterare.js";
 
 const NU = new Date("2026-09-29T20:00:00+02:00").getTime();
 const iso = (h) => new Date(NU - h * 3600000).toISOString();
@@ -170,5 +170,15 @@ describe("portfoljUrDokument", () => {
       kontrakt: [{ projektId: "3" }],
     });
     expect(portfoljUrDokument()).toEqual({ ur: [], hseqIncidenter: [], projekt: [], kontrakt: [] });
+  });
+});
+
+describe("likaNycklar", () => {
+  it("släpper bara igenom exakt samma nyckel", () => {
+    expect(likaNycklar("hemlig-nyckel-123", "hemlig-nyckel-123")).toBe(true);
+    expect(likaNycklar("hemlig-nyckel-124", "hemlig-nyckel-123")).toBe(false);
+    expect(likaNycklar("hemlig", "hemlig-nyckel-123")).toBe(false);
+    expect(likaNycklar("", "")).toBe(false);
+    expect(likaNycklar("x", undefined)).toBe(false);
   });
 });
