@@ -1,4 +1,5 @@
 import { expect } from "@playwright/test";
+import { INGANGAR, VYMETA } from "../src/data/vyer.js";
 
 /** Går till appen och väntar tills skalet är uppritat. */
 export async function oppna(page, vy) {
@@ -35,7 +36,8 @@ async function stangMeny(page) {
   if ((await hamburgare.isVisible()) && (await hamburgare.getAttribute("aria-expanded")) === "true") await hamburgare.click();
 }
 
-const INGANGAR = ["Idag", "Projektet", "Pengar"];
+/* Vynamn → ingång, ur samma data som menyn. */
+const INGANG_FOR_NAMN = Object.fromEntries(INGANGAR.flatMap((g) => g.vyer.map((id) => [VYMETA[id]?.namn, g.namn])));
 const flikrad = (page) => page.getByRole("navigation", { name: /^Flikar i / });
 
 /** Går till en vy med dess namn. Huvudmenyn har tre ingångar med flikar
@@ -43,13 +45,11 @@ const flikrad = (page) => page.getByRole("navigation", { name: /^Flikar i / });
 export async function gaTill(page, namn) {
   const flik = () => flikrad(page).getByRole("button", { name: namn, exact: true });
 
-  if (!(await flik().count())) {
-    for (const ingang of INGANGAR) {
-      const meny = await oppnaMeny(page);
-      await meny.getByRole("button", { name: ingang, exact: true }).click();
-      await stangMeny(page);
-      if (await flik().count()) break;
-    }
+  const ingang = INGANG_FOR_NAMN[namn];
+  if (ingang && !(await flik().count())) {
+    const meny = await oppnaMeny(page);
+    await meny.getByRole("button", { name: ingang, exact: true }).click();
+    await stangMeny(page);
   }
 
   if (await flik().count()) {
