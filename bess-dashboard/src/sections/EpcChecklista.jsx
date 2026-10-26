@@ -8,6 +8,7 @@ import { AttVerifiera, Lardomar, Ledtidstabell, Milstolpstabell, Nyckelvarden } 
 import { LOPANDE, MARKERINGAR, SUMMERING, VERSION } from "../data/bessChecklistData.ts";
 import { projekt } from "../lib/berakningar.js";
 import { FAS_STATUS, erfarenheter, faslage, punktlage } from "../lib/epc.js";
+import { styrandeLeveranser } from "../lib/momentkort.js";
 import { Summering } from "../components/epc/Summering.jsx";
 import { Callout, Card, SectionHeading } from "../components/ds/index.js";
 import { Erfarenhetslista } from "../components/epc/Erfarenheter.jsx";
@@ -84,7 +85,8 @@ function Guide({ pid, mal }) {
     for (const k of erfarenheter(state))
       if (k.projektId !== pid) tidigare.set(k.punkt, (tidigare.get(k.punkt) || 0) + 1);
     const grindkod = (id) => "G" + id.split(".")[0];
-    return { pid, pl, antal, tidigare, grindkod };
+    const leveranser = styrandeLeveranser(state, pid);
+    return { pid, pl, antal, tidigare, grindkod, leveranser };
   }, [state, pid, faser]);
 
   /* Byter man projekt i lägesbilden fälls det projektets pågående faser ut. */

@@ -1909,6 +1909,14 @@ textarea.hp-led-text::placeholder{color:var(--ink-faint);font-weight:400}
 .epc-saknas{padding:10px 12px;border-radius:8px;background:var(--warn-bg);color:var(--ink);font-size:12.5px;line-height:1.45}
 .epc-saknas>b{display:block;color:var(--warn-ink);margin-bottom:4px}
 .epc-saknas ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px}
+.epc-saknas-lista{list-style:none;padding-left:0!important}
+.epc-saknas-antal{display:inline-block;min-width:1.6em;font-weight:700;font-variant-numeric:tabular-nums;color:var(--warn-ink)}
+.epc-saknas-not{margin:6px 0 0;font-size:12px;color:var(--ink-soft)}
+.epc-tidslage{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin:4px 0 2px;font-size:12.5px}
+.epc-tidslage-datum{font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.epc-tidslage-plan{color:var(--ink-faint);font-size:12px}
+.epc-styrsav{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;margin:2px 0}
+.epc-styrsav-rubrik{font-size:12px;font-weight:600;color:var(--ink-soft)}
 .epc-saknas-hp{font-size:10.5px;font-weight:700;color:var(--warn-ink);border:1px solid currentColor;border-radius:4px;padding:0 4px}
 .epc-ejreg{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:8px;border:1px solid var(--hairline);font-size:12.5px;line-height:1.45}
 .epc-grindlage{margin:0;display:flex;align-items:flex-start;gap:6px;font-size:12.5px;line-height:1.45;color:var(--ink-soft)}

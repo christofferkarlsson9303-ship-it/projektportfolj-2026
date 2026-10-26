@@ -7,6 +7,8 @@ import { DatumFalt, Falt } from "../ui/Falt.jsx";
 import { datumKort, idag } from "../../lib/datum.js";
 import { fasRad, grindSaknas, mallDatum, planAnkare } from "../../lib/epc.js";
 import { FasStatus, Markeringar } from "./Delar.jsx";
+import { StatusBadge } from "../ds/StatusBadge.jsx";
+import { saknasSammanfattning, tidslage } from "../../lib/momentkort.js";
 import { Kommentarer } from "./Punkt.jsx";
 import { EgenkontrollLage } from "./EgenkontrollLage.jsx";
 import { LosningGrind } from "./LosningGrind.jsx";
@@ -162,55 +164,45 @@ export function Sektioner({ sektioner, filter, ctx }) {
 
 /* ---------- Det som saknas för klartecknet ---------- */
 
-const VISA_PUNKTER = 6;
-
-/** Flyttar fokus till en punkt i listan ovanför. Appen routar på #hash, så
- *  en vanlig ankarlänk skulle byta vy. */
+/** Flyttar fokus till en punkt i listan ovanför och markerar den kort. Appen
+ *  routar på #hash, så en vanlig ankarlänk skulle byta vy. */
 function visaPunkt(id) {
   const rad = document.getElementById(`kp-${id}`);
   if (!rad) return;
   rad.scrollIntoView({ behavior: "smooth", block: "center" });
   rad.querySelector("input")?.focus({ preventScroll: true });
+  rad.classList.remove("epc-markerad");
+  void rad.offsetWidth; // starta om animationen vid upprepat klick
+  rad.classList.add("epc-markerad");
+  setTimeout(() => rad.classList.remove("epc-markerad"), 2400);
 }
 
+/* UX-05: det som saknas räknas per typ. Radtexterna står redan i listan och
+   upprepas inte här; ett klick hoppar till första öppna raden av typen. */
 function Saknas({ saknas, kod }) {
-  const [alla, setAlla] = useState(false);
-  if (saknas.klart) return null;
-  const punkter = alla ? saknas.punkter : saknas.punkter.slice(0, VISA_PUNKTER);
-  const fler = saknas.punkter.length - punkter.length;
+  const { delar, ejRegistrerade } = saknasSammanfattning(saknas);
+  if (!delar.length) return null;
   return (
     <div className="epc-saknas" role="group" aria-label={`Det här saknas för ${kod}`}>
       <b>Det här saknas för {kod}</b>
-      <ul>
-        {punkter.map((p) => (
-          <li key={p.id}>
-            <button type="button" className="lankknapp" onClick={() => visaPunkt(p.id)}>
-              {p.id.replace("lop.", "∞.")}
-            </button>{" "}
-            {p.hp ? <span className="epc-saknas-hp">HP</span> : null} {p.text}
-            {p.ejRegistrerad ? <span className="text-ink-faint"> · ej registrerad</span> : null}
+      <ul className="epc-saknas-lista">
+        {delar.map((d) => (
+          <li key={d.typ}>
+            {d.forsta ? (
+              <button type="button" className="lankknapp" onClick={() => visaPunkt(d.forsta)}>
+                <span className="epc-saknas-antal">{d.antal}</span> {d.etikett}
+              </button>
+            ) : (
+              <span>
+                <span className="epc-saknas-antal">{d.antal}</span> {d.etikett}
+              </span>
+            )}
           </li>
         ))}
-        {fler > 0 ? (
-          <li>
-            <button type="button" className="lankknapp" onClick={() => setAlla(true)}>
-              … och {fler} punkter till
-            </button>
-          </li>
-        ) : null}
-        {saknas.kontroller.length ? (
-          <li>
-            {saknas.kontroller.length} egenkontroll{saknas.kontroller.length > 1 ? "er" : ""} ej verifierade:{" "}
-            {saknas.kontroller
-              .slice(0, 4)
-              .map((k) => (k.totalt ? `${k.text} (${k.klara}/${k.totalt})` : k.text))
-              .join(", ")}
-            {saknas.kontroller.length > 4 ? ` med flera` : ""}
-          </li>
-        ) : null}
-        {saknas.avvikelser ? <li>{saknas.avvikelser} öppen avvikelse{saknas.avvikelser > 1 ? "r" : ""} i egenkontrollerna</li> : null}
-        {saknas.grinddatum ? <li>Klartecken: datum då {kod} passerades</li> : null}
       </ul>
+      {ejRegistrerade ? (
+        <p className="epc-saknas-not">varav {ejRegistrerade} gjorda men inte registrerade</p>
+      ) : null}
     </div>
   );
 }
@@ -347,6 +339,38 @@ function IProjektet({ lage, pid, projektnamn }) {
   );
 }
 
+/* ---------- Rubrikraden: när och vad som styr (UX-01, UX-02) ---------- */
+
+function Tidslage({ lage }) {
+  const t = tidslage(lage);
+  return (
+    <span className="epc-tidslage">
+      {t.datum ? <span className="epc-tidslage-datum">{t.datum}</span> : null}
+      <StatusBadge ton={t.ton} label={t.lage} />
+      {t.plan ? <span className="epc-tidslage-plan">{t.plan}</span> : null}
+    </span>
+  );
+}
+
+function StyrsAv({ rader }) {
+  if (!rader?.length) return null;
+  return (
+    <span className="epc-styrsav">
+      <span className="epc-styrsav-rubrik">Styrs av:</span>
+      {rader.map((r) => (
+        <StatusBadge
+          key={r.id}
+          ton={r.ton}
+          wrap
+          label={`${r.benamning} ${r.datum ? datumKort(r.datum) : "datum saknas"} · ${
+            r.forsenarDagar ? `försenar ${r.forsenarDagar} d` : r.statusText
+          }`}
+        />
+      ))}
+    </span>
+  );
+}
+
 /* ---------- Steget ---------- */
 
 export function Fasruta({ lage, pid, projektnamn, oppen, onVaxla, filter, tvingaOppen, ctx }) {
@@ -371,6 +395,8 @@ export function Fasruta({ lage, pid, projektnamn, oppen, onVaxla, filter, tvinga
         <span className="epc-fastitel">
           <span className="sr-only">Moment {f.nr}: </span>
           <b>{f.titel}</b>
+          <Tidslage lage={lage} />
+          <StyrsAv rader={ctx?.leveranser?.get(f.nr)} />
           <span className="epc-fasdatum">{f.syfte}</span>
         </span>
         <span className="epc-fasinfo">

@@ -80,13 +80,37 @@ test("en passerad grind bockar inte av punkter — de registreras en och en elle
   await expect(registrera).toHaveCount(0);
 });
 
-test("grindrutan listar exakt vad som saknas, och en bockad punkt försvinner ur listan", async ({ page }) => {
+test("grindrutan räknar det som saknas per typ och hoppar till första raden", async ({ page }) => {
   await oppnaFas(page, 10);
   const saknas = page.locator("#fas-10").getByRole("group", { name: "Det här saknas för G10" });
-  await expect(saknas).toContainText("Klartecken: datum då G10 passerades");
-  await expect(saknas.getByRole("button", { name: "10.7" })).toBeVisible();
+  await expect(saknas).toContainText("klartecken (grinddatum)");
+  // Radtexterna upprepas inte i panelen (UX-05).
+  await expect(saknas).not.toContainText("Skärmåterföring");
+  const hp = saknas.getByRole("button", { name: /^5 hållpunkter$/ });
+  await expect(hp).toBeVisible();
+
   await rad(page, "10.7").getByRole("checkbox").check();
-  await expect(saknas.getByRole("button", { name: "10.7" })).toHaveCount(0);
+  await expect(saknas.getByRole("button", { name: /^4 hållpunkter$/ })).toBeVisible();
+
+  await saknas.getByRole("button", { name: /^4 hållpunkter$/ }).click();
+  await expect(rad(page, "10.8")).toHaveClass(/epc-markerad/);
+  await expect(rad(page, "10.8").getByRole("checkbox")).toBeFocused();
+});
+
+test("momentets rubrik visar datum, tidsläge och styrande leverans", async ({ page }) => {
+  const summary = page.locator("#fas-10 > summary");
+  // Standardplanen ger datum; ett passerat moment visar grinden i stället.
+  await expect(summary.locator(".epc-tidslage")).toContainText(/\d{1,2}[–\s]/);
+  await expect(summary.locator(".epc-tidslage")).toContainText(/standardplan|egna datum|passerad|start om|pågår|d sen/);
+
+  // En leverans som uttryckligen kopplas till moment 10 syns i rubriken (UX-02).
+  await expect(summary).not.toContainText("Styrs av:");
+  await gaTill(page, "Tidplan");
+  const kort = page.getByRole("region", { name: /^Leveransspårning/ });
+  await kort.getByLabel("Moment som behöver MV-station").selectOption("10");
+  await gaTill(page, KAPITEL);
+  await expect(page.locator("#fas-10 > summary")).toContainText("Styrs av:");
+  await expect(page.locator("#fas-10 > summary .epc-styrsav")).toContainText("MV-station");
 });
 
 test("en avvikelse på en punkt hamnar i erfarenhetslistan och visas på punkten i nästa projekt", async ({ page }) => {
