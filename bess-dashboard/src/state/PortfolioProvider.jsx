@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { SEED } from "../data/seed.js";
 import { nu } from "../lib/datum.js";
-import { PortfolioContext } from "./kontexter.js";
+import { PortfolioAtgardContext, PortfolioContext } from "./kontexter.js";
 import { skapaDb } from "./db-supabase.js";
 import { useUi } from "./hooks.js";
 import { arEkonomiAtgard, efterInlasning, hamtaNamn, normalisera, reducer } from "./portfolj-reducer.js";
@@ -810,6 +810,26 @@ export function PortfolioProvider({ children }) {
   const vy = useMemo(() => aktivVy(state), [state]);
   const ejVunna = useMemo(() => forlorade(state), [state]);
 
+  /* Åtgärder som inte läser portföljen — stabila så länge dispatch är det. */
+  const atgarder = useMemo(
+    () => ({
+      dispatch,
+      uppd: (lista, id, falt, varde) => dispatch({ type: "UPPDATERA", lista, id, falt, varde }),
+      uppdNum: (lista, id, falt, varde) =>
+        dispatch({ type: "UPPDATERA", lista, id, falt, varde: varde === "" ? null : Number(varde) }),
+      uppdBool: (lista, id, falt, varde) =>
+        dispatch({ type: "UPPDATERA", lista, id, falt, varde: !!varde }),
+      kopplaHandelse: (punktId, post) => dispatch({ type: "HANDELSE_KOPPLA", punktId, ...post }),
+      kommenteraPunkt: (id, kommentar) => dispatch({ type: "PUNKT_KOMMENTAR", id, kommentar }),
+      laggTill: (lista, rad) => dispatch({ type: "LAGG_TILL", lista, rad }),
+      taBort: (lista, id) => dispatch({ type: "TA_BORT", lista, id }),
+      sattLista: (lista, rader) => dispatch({ type: "SATT_LISTA", lista, rader }),
+      ateraktiveraAnbud: (id) => dispatch({ type: "ATERAKTIVERA_ANBUD", id }),
+      markeraEjVunnet: (id, orsak, text) => dispatch({ type: "MARKERA_EJ_VUNNET", id, orsak, text }),
+    }),
+    [dispatch]
+  );
+
   const api = useMemo(
     () => ({
       state: vy,
@@ -827,11 +847,7 @@ export function PortfolioProvider({ children }) {
         setKonflikter((nu) => nu.filter((x) => x.vag !== k.vag));
       },
       ekonomiFel,
-      uppd: (lista, id, falt, varde) => dispatch({ type: "UPPDATERA", lista, id, falt, varde }),
-      uppdNum: (lista, id, falt, varde) =>
-        dispatch({ type: "UPPDATERA", lista, id, falt, varde: varde === "" ? null : Number(varde) }),
-      uppdBool: (lista, id, falt, varde) =>
-        dispatch({ type: "UPPDATERA", lista, id, falt, varde: !!varde }),
+      ...atgarder,
       uppdStatus: (lista, id, falt, varde) => {
         const rad = (state[lista] || []).find((r) => r.id === id);
         dispatch({ type: "UPPDATERA_STATUS", lista, id, falt, varde });
@@ -839,16 +855,13 @@ export function PortfolioProvider({ children }) {
         // varje gång någon öppnar en <select> och väljer samma sak igen.
         if (rad && rad[falt] !== varde) visaToast("Status uppdaterad och loggad");
       },
-      kopplaHandelse: (punktId, post) => dispatch({ type: "HANDELSE_KOPPLA", punktId, ...post }),
-      kommenteraPunkt: (id, kommentar) => dispatch({ type: "PUNKT_KOMMENTAR", id, kommentar }),
-      laggTill: (lista, rad) => dispatch({ type: "LAGG_TILL", lista, rad }),
-      taBort: (lista, id) => dispatch({ type: "TA_BORT", lista, id }),
-      sattLista: (lista, rader) => dispatch({ type: "SATT_LISTA", lista, rader }),
-      ateraktiveraAnbud: (id) => dispatch({ type: "ATERAKTIVERA_ANBUD", id }),
-      markeraEjVunnet: (id, orsak, text) => dispatch({ type: "MARKERA_EJ_VUNNET", id, orsak, text }),
     }),
-    [state, vy, ejVunna, dispatch, conn, synk, konflikter, kvittens, lagring, ekonomiFel, visaToast]
+    [state, vy, ejVunna, dispatch, atgarder, conn, synk, konflikter, kvittens, lagring, ekonomiFel, visaToast]
   );
 
-  return <PortfolioContext.Provider value={api}>{children}</PortfolioContext.Provider>;
+  return (
+    <PortfolioAtgardContext.Provider value={atgarder}>
+      <PortfolioContext.Provider value={api}>{children}</PortfolioContext.Provider>
+    </PortfolioAtgardContext.Provider>
+  );
 }

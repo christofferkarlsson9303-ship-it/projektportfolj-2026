@@ -36,6 +36,8 @@ const erfarenhetslista = async (page) => {
 
 test("guiden har 16 moment, de löpande punkterna och alla 288 kontrollpunkter att bocka av", async ({ page }) => {
   await expect(page.locator("details.epc-fas")).toHaveCount(17);
+  // Infällda moment ritar inte sina rader — fäll ut alla innan de räknas.
+  await page.getByRole("button", { name: "Fäll ut alla" }).click();
   await expect(page.locator(".epc-rad")).toHaveCount(288);
   await expect(page.locator(".epc-rad.hp")).toHaveCount(48);
   await expect(page.locator(".epc-rad input[type=checkbox]")).toHaveCount(288);
@@ -134,8 +136,9 @@ test("ett annat projekt väljs i lägesbilden och guiden följer med", async ({ 
   await projektrad(page, /^36038 Alvesta/).click();
   await expect(projektrad(page, /^36038 Alvesta/)).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByLabel("Startdatum för Alvesta Batteripark")).toBeVisible();
-  // Momenten är stängda <details>, så rutan söks på attributet.
-  await expect(page.locator('aside[aria-label="Moment 0 i 36038 Alvesta"]')).toBeAttached();
+  // Infällda moment ritar inte sitt innehåll — fäll ut moment 0 och se att rutan gäller Alvesta.
+  await oppnaFas(page, 0);
+  await expect(page.locator('aside[aria-label="Moment 0 i 36038 Alvesta"]')).toBeVisible();
 });
 
 test("version 1.3: källgenomgången, nyckelvärdena och de tolv motsägelserna finns med", async ({ page }) => {

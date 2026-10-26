@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import { Check, ChevronDown, Lightbulb, MessageSquare, RotateCcw } from "lucide-react";
-import { usePortfolj, useUi } from "../../state/hooks.js";
+import { usePortfolj, usePortfoljAtgarder, useUi } from "../../state/hooks.js";
 import { MILSTOLPAR } from "../../data/bessChecklistData.ts";
 import { PUNKT_UNDERLAG } from "../../data/punktUnderlag.js";
 import { DatumFalt, Falt } from "../ui/Falt.jsx";
@@ -28,18 +28,19 @@ const GRIND_KALLA = {
 
 /* ---------- Kontrollpunkterna ---------- */
 
-function Punktrad({ punkt, ctx }) {
-  const { dispatch } = usePortfolj();
+/* En rad tar bara enkla värden och är memorerad: att bocka en punkt ritar om
+   den raden, inte guidens 288. Den läser åtgärderna (usePortfoljAtgarder),
+   inte portföljen — usePortfolj() skulle rita om varje rad vid varje ändring. */
+const Punktrad = memo(function Punktrad({ punkt, pid, status, kalla, kontroll, datum, av, nKomm, nTidigare, grind }) {
+  const { dispatch } = usePortfoljAtgarder();
   const { oppnaPost } = useUi();
   const [oppen, setOppen] = useState(false);
-  const { pid, pl, antal, tidigare, grindkod } = ctx;
   const underlag = PUNKT_UNDERLAG[punkt.id];
-  const lage = pl.get(punkt.id);
+  const lage = { status, kalla, kontroll, datum, av };
   const hp = punkt.badges.includes("HP");
   const ejReg = lage.kalla === "ejregistrerad";
   const styrkt = lage.kalla === "egenkontroll";
-  const nKomm = antal.get(punkt.id) || 0;
-  const nTidigare = tidigare.get(punkt.id) || 0;
+  const grindkod = () => grind;
   const satt = (status) => dispatch({ type: "EPC_PUNKT", pid, punkt: punkt.id, status });
   const nr = punkt.id.replace("lop.", "∞.");
   const idCb = `cb-${pid}-${punkt.id}`;
@@ -123,7 +124,7 @@ function Punktrad({ punkt, ctx }) {
       ) : null}
     </li>
   );
-}
+});
 
 /** ctx: { pid, pl (punktlage), antal (kommentarer per punkt), tidigare
  *  (andra projekts erfarenheter per punkt), grindkod(punktId) }. */
@@ -135,9 +136,24 @@ export function Sektioner({ sektioner, filter, ctx }) {
       <div className="epc-sektion" key={s.namn || "lista"}>
         {s.namn ? <h4>{s.namn}</h4> : null}
         <ul className="epc-lista">
-          {punkter.map((p) => (
-            <Punktrad key={p.id} punkt={p} ctx={ctx} />
-          ))}
+          {punkter.map((p) => {
+            const l = ctx.pl.get(p.id);
+            return (
+              <Punktrad
+                key={p.id}
+                punkt={p}
+                pid={ctx.pid}
+                status={l.status}
+                kalla={l.kalla}
+                kontroll={l.kontroll}
+                datum={l.datum}
+                av={l.av}
+                nKomm={ctx.antal.get(p.id) || 0}
+                nTidigare={ctx.tidigare.get(p.id) || 0}
+                grind={ctx.grindkod(p.id)}
+              />
+            );
+          })}
         </ul>
       </div>
     );
@@ -376,6 +392,10 @@ export function Fasruta({ lage, pid, projektnamn, oppen, onVaxla, filter, tvinga
         <ChevronDown className="epc-pil" size={18} aria-hidden="true" />
       </summary>
 
+      {/* Innehållet ritas bara i utfällda moment. Infällda moment höll förut
+          alla 288 rader i DOM:en (över 8 000 noder), och varje bockning fick
+          webbläsaren att räkna om layouten för hela guiden. */}
+      {oppen || tvingaOppen ? (
       <div className="epc-faskropp">
         <div className="epc-guide">
           <p className="epc-grindtext">
@@ -391,6 +411,7 @@ export function Fasruta({ lage, pid, projektnamn, oppen, onVaxla, filter, tvinga
         </div>
         <IProjektet lage={lage} pid={pid} projektnamn={projektnamn} />
       </div>
+      ) : null}
     </details>
   );
 }
