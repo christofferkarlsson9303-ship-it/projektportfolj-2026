@@ -9,6 +9,7 @@ import { fasRad, grindSaknas, mallDatum, planAnkare } from "../../lib/epc.js";
 import { FasStatus, Markeringar } from "./Delar.jsx";
 import { StatusBadge } from "../ds/StatusBadge.jsx";
 import { saknasSammanfattning, tidslage } from "../../lib/momentkort.js";
+import { RUBRIKER, visadeSektioner } from "../../data/momentvisning.js";
 import { Kommentarer } from "./Punkt.jsx";
 import { EgenkontrollLage } from "./EgenkontrollLage.jsx";
 import { LosningGrind } from "./LosningGrind.jsx";
@@ -37,6 +38,8 @@ const Punktrad = memo(function Punktrad({ punkt, pid, status, kalla, kontroll, d
   const { dispatch } = usePortfoljAtgarder();
   const { oppnaPost } = useUi();
   const [oppen, setOppen] = useState(false);
+  const [detaljer, setDetaljer] = useState(false);
+  const rubrik = RUBRIKER[punkt.id];
   const underlag = PUNKT_UNDERLAG[punkt.id];
   const lage = { status, kalla, kontroll, datum, av };
   const hp = punkt.badges.includes("HP");
@@ -66,10 +69,24 @@ const Punktrad = memo(function Punktrad({ punkt, pid, status, kalla, kontroll, d
       <div className="epc-radkropp">
         <label htmlFor={idCb} className="epc-radtext">
           <span className="epc-id">{nr}</span>
-          <span>{punkt.text}</span>
+          <span>{rubrik || punkt.text}</span>
         </label>
+        {/* UX-07: kort rubrik, hela texten med mått och OEM-krav ett klick bort. */}
+        {rubrik && detaljer ? <p className="epc-detaljtext" id={`det-${pid}-${punkt.id}`}>{punkt.text}</p> : null}
         <span className="epc-radmeta">
           <Markeringar badges={punkt.badges} />
+          {rubrik ? (
+            <button
+              type="button"
+              className="epc-detaljknapp"
+              aria-expanded={detaljer}
+              aria-controls={detaljer ? `det-${pid}-${punkt.id}` : undefined}
+              onClick={() => setDetaljer((v) => !v)}
+            >
+              {detaljer ? "Dölj detaljer" : "Detaljer"}
+              <span className="sr-only"> för {nr}</span>
+            </button>
+          ) : null}
           <span className="epc-ansvar">{punkt.ansvar}</span>
           {punkt.nar && punkt.nar !== "—" ? <span className="epc-nar">{punkt.nar}</span> : null}
           {lage.status === "klar" ? (
@@ -444,7 +461,8 @@ function StyrsAv({ rader }) {
 export function Fasruta({ lage, pid, projektnamn, oppen, onVaxla, filter, tvingaOppen, ctx }) {
   const f = lage.fas;
   const ms = f.milstolpe ? MILSTOLPAR.find((m) => m.kod === f.milstolpe) : null;
-  const synliga = f.sektioner.reduce((n, s) => n + s.punkter.filter(filter).length, 0);
+  const sektioner = visadeSektioner(f);
+  const synliga = sektioner.reduce((n, s) => n + s.punkter.filter(filter).length, 0);
   if (tvingaOppen && !synliga) return null;
 
   return (
@@ -501,7 +519,15 @@ export function Fasruta({ lage, pid, projektnamn, oppen, onVaxla, filter, tvinga
               </>
             ) : null}
           </p>
-          <Sektioner sektioner={f.sektioner} filter={filter} ctx={ctx} />
+          <Sektioner sektioner={sektioner} filter={filter} ctx={ctx} />
+          {!synliga && ctx?.visaAlla ? (
+            <p className="epc-tomtmoment">
+              Inget kvar att göra i momentet.{" "}
+              <button type="button" className="lankknapp" onClick={ctx.visaAlla}>
+                Visa alla punkter
+              </button>
+            </p>
+          ) : null}
         </div>
         <IProjektet lage={lage} pid={pid} projektnamn={projektnamn} />
       </div>

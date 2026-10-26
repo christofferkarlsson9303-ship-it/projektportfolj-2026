@@ -1945,6 +1945,9 @@ textarea.hp-led-text::placeholder{color:var(--ink-faint);font-weight:400}
 .epc-rad.klar .epc-radtext>span:last-child{color:var(--ink-soft)}
 .epc-rad.ejaktuell .epc-radtext>span:last-child{color:var(--ink-faint);text-decoration:line-through;text-decoration-color:var(--hairline-stark)}
 .epc-radmeta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-size:12px;color:var(--ink-soft)}
+.epc-detaljknapp{background:none;border:0;padding:0;cursor:pointer;font:600 12px/1.4 var(--font-b);color:var(--lank);text-decoration:underline;text-underline-offset:2px}
+.epc-detaljtext{margin:0 0 0 42px;font-size:12.5px;line-height:1.5;color:var(--ink-soft);overflow-wrap:anywhere}
+.epc-tomtmoment{margin:8px 0 0;font-size:13px;color:var(--ink-soft)}
 .epc-klarinfo{color:var(--ok-ink);font-weight:600}
 .epc-ejinfo{color:var(--ink-faint);font-weight:600}
 .epc-radatgard{grid-area:atgard;display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px}

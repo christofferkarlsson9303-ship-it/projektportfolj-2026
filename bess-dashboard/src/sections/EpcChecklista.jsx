@@ -9,6 +9,7 @@ import { LOPANDE, MARKERINGAR, SUMMERING, VERSION } from "../data/bessChecklistD
 import { projekt } from "../lib/berakningar.js";
 import { FAS_STATUS, erfarenheter, faslage, punktlage } from "../lib/epc.js";
 import { styrandeLeveranser } from "../lib/momentkort.js";
+import { RUBRIKER } from "../data/momentvisning.js";
 import { Summering } from "../components/epc/Summering.jsx";
 import { Callout, Card, SectionHeading } from "../components/ds/index.js";
 import { Erfarenhetslista } from "../components/epc/Erfarenheter.jsx";
@@ -33,8 +34,8 @@ const MARKFILTER = [
 ];
 
 const STATUSFILTER = [
-  ["alla", "Alla"],
   ["kvar", "Kvar"],
+  ["alla", "Alla"],
   ["klara", "Klara"],
   ["kommenterade", "Kommenterade"],
 ];
@@ -79,7 +80,8 @@ function Guide({ pid, mal }) {
   const [oppna, setOppna] = useState(() => new Set(aktuellaFaser(faser)));
   const [sok, setSok] = useState("");
   const [mark, setMark] = useState("alla");
-  const [statusfilter, setStatusfilter] = useState("alla");
+  /* UX-06: "Kvar" är förvalt. Valet sparas inte, så en omladdning börjar om. */
+  const [statusfilter, setStatusfilter] = useState("kvar");
 
   /* Det raderna behöver, räknat en gång per render i stället för per rad. */
   const ctx = useMemo(() => {
@@ -92,8 +94,9 @@ function Guide({ pid, mal }) {
       if (k.projektId !== pid) tidigare.set(k.punkt, (tidigare.get(k.punkt) || 0) + 1);
     const grindkod = (id) => "G" + id.split(".")[0];
     const leveranser = styrandeLeveranser(state, pid);
-    return { pid, pl, antal, tidigare, grindkod, leveranser };
-  }, [state, pid, faser]);
+    const visaAlla = statusfilter === "kvar" ? () => setStatusfilter("alla") : null;
+    return { pid, pl, antal, tidigare, grindkod, leveranser, visaAlla };
+  }, [state, pid, faser, statusfilter]);
 
   /* Byter man projekt i lägesbilden fälls det projektets pågående faser ut. */
   const [forraPid, setForraPid] = useState(pid);
@@ -125,10 +128,26 @@ function Guide({ pid, mal }) {
   }, [mal]);
 
   const sokord = sok.trim().toLowerCase();
-  const filterAktivt = !!sokord || mark !== "alla" || statusfilter !== "alla";
+  /* "Kvar" är standardläget och fäller inte ut alla moment; övriga filter gör det. */
+  const filterAktivt = !!sokord || mark !== "alla" || (statusfilter !== "alla" && statusfilter !== "kvar");
+
+  /* En punkt som bockas av försvinner inte direkt ur "Kvar" — den stryks och
+     ligger kvar tills filtret väljs igen eller projektet byts. Ögonblicksbilden
+     är de punkter som var kvar när "Kvar" valdes. */
+  const [kvarBild, setKvarBild] = useState(null);
+  if (statusfilter === "kvar" && (!kvarBild || kvarBild.pid !== pid)) {
+    const ids = new Set();
+    for (const [id, l] of ctx.pl) if (l.status === "oppen") ids.add(id);
+    setKvarBild({ pid, ids });
+  }
+  const valjStatus = (id) => {
+    if (id === "kvar") setKvarBild(null);
+    setStatusfilter(id);
+  };
+
   const statusOk = (punkt) => {
     const st = ctx.pl.get(punkt.id).status;
-    if (statusfilter === "kvar") return st === "oppen";
+    if (statusfilter === "kvar") return st === "oppen" || !!kvarBild?.ids.has(punkt.id);
     if (statusfilter === "klara") return st === "klar";
     if (statusfilter === "kommenterade") return ctx.antal.has(punkt.id) || ctx.tidigare.has(punkt.id);
     return true;
@@ -136,7 +155,7 @@ function Guide({ pid, mal }) {
   const filter = (punkt) =>
     (mark === "alla" || punkt.badges.includes(mark)) &&
     statusOk(punkt) &&
-    (!sokord || `${punkt.id} ${punkt.text} ${punkt.ansvar} ${punkt.nar}`.toLowerCase().includes(sokord));
+    (!sokord || `${punkt.id} ${RUBRIKER[punkt.id] || ""} ${punkt.text} ${punkt.ansvar} ${punkt.nar}`.toLowerCase().includes(sokord));
 
   const vaxla = (nr, oppen) =>
     setOppna((o) => {
@@ -193,7 +212,7 @@ function Guide({ pid, mal }) {
         </label>
         <div className="ov-flikar" role="group" aria-label="Visa status">
           {STATUSFILTER.map(([id, namn]) => (
-            <button key={id} type="button" aria-pressed={statusfilter === id} onClick={() => setStatusfilter(id)}>
+            <button key={id} type="button" aria-pressed={statusfilter === id} onClick={() => valjStatus(id)}>
               {namn}
             </button>
           ))}

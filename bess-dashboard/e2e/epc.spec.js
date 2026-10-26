@@ -184,6 +184,38 @@ test("ett moment med passerad grind är en kompakt rad med grinddatum (UX-11)", 
   await expect(fas.locator("summary .epc-fasdatum")).toBeHidden();
 });
 
+test("filtret Kvar är förvalt; en bockad punkt stryks men ligger kvar tills Kvar väljs igen (UX-06)", async ({ page }) => {
+  const filter = page.getByRole("group", { name: "Visa status" });
+  await expect(filter.getByRole("button", { name: "Kvar" })).toHaveAttribute("aria-pressed", "true");
+  await oppnaFas(page, 10);
+  await rad(page, "10.6").getByRole("checkbox").check();
+  await expect(rad(page, "10.6")).toHaveClass(/klar/);
+  await filter.getByRole("button", { name: "Kvar" }).click();
+  await expect(rad(page, "10.6")).toHaveCount(0);
+  await filter.getByRole("button", { name: "Alla" }).click();
+  await expect(rad(page, "10.6")).toBeVisible();
+});
+
+test("långa punkter har en kort rubrik och hela texten under Detaljer (UX-07)", async ({ page }) => {
+  await oppnaFas(page, 10);
+  const r = rad(page, "10.9");
+  await expect(r.locator(".epc-radtext")).toContainText("Signerat SAT-protokoll för reläskydd");
+  await expect(r).not.toContainText("Öppna fel hanteras");
+  await r.getByRole("button", { name: "Detaljer för 10.9" }).click();
+  await expect(r).toContainText("Öppna fel hanteras före ONE:s spänningssättning");
+  // Sökningen hittar punkten på hela texten.
+  await page.getByRole("searchbox", { name: "Sök i guiden" }).fill("ljusbågsvakt");
+  await expect(rad(page, "10.9")).toBeVisible();
+});
+
+test("moment 10–13 grupperas efter när arbetet görs (UX-08)", async ({ page }) => {
+  await page.getByRole("button", { name: "Fäll ut alla" }).click();
+  const m11 = page.locator("#fas-11");
+  await expect(m11.locator(".epc-sektion h4")).toHaveText(["Planering (veckor före)", "Före leverans", "Lyftdag", "Efter placering"]);
+  await expect(m11).not.toContainText("Från källgenomgången");
+  await expect(m11.locator(".epc-sektion").nth(2).locator('[id="kp-11.15"]')).toBeVisible();
+});
+
 test("lägesbilden har en rad per projekt och visar läget för valt projekt", async ({ page }) => {
   const rader = lage(page).getByRole("group", { name: "Välj projekt" }).getByRole("button");
   await expect(rader).toHaveCount(4);
