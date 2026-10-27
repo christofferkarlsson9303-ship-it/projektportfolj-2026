@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Lightbulb, MoreHorizontal, Search } from "lucide-react";
 import { usePortfolj, useUi } from "../state/hooks.js";
 import { Fasruta, Sektioner } from "../components/epc/Fas.jsx";
 import { Markering } from "../components/epc/Delar.jsx";
@@ -8,6 +8,10 @@ import { AttVerifiera, Lardomar, Ledtidstabell, Milstolpstabell, Nyckelvarden } 
 import { LOPANDE, MARKERINGAR, SUMMERING, VERSION } from "../data/bessChecklistData.ts";
 import { projekt } from "../lib/berakningar.js";
 import { FAS_STATUS, erfarenheter, faslage, punktlage } from "../lib/epc.js";
+import { styrandeLeveranser } from "../lib/momentkort.js";
+import { RUBRIKER } from "../data/momentvisning.js";
+import { senastDatum } from "../lib/narDatum.js";
+import { idag } from "../lib/datum.js";
 import { Summering } from "../components/epc/Summering.jsx";
 import { Callout, Card, SectionHeading } from "../components/ds/index.js";
 import { Erfarenhetslista } from "../components/epc/Erfarenheter.jsx";
@@ -32,17 +36,23 @@ const MARKFILTER = [
 ];
 
 const STATUSFILTER = [
-  ["alla", "Alla"],
   ["kvar", "Kvar"],
+  ["alla", "Alla"],
   ["klara", "Klara"],
   ["kommenterade", "Kommenterade"],
 ];
 
 const LAGEN = ["klar", "pagar", "sen", "kommande", "odaterad"];
 
-/** Faser som pågår eller är sena för projektet — de fälls ut från början. */
-const aktuellaFaser = (faser) =>
-  faser.filter((f) => f.status === "pagar" || f.status === "sen").map((f) => f.fas.nr);
+/** Faser som pågår eller är sena för projektet — de fälls ut från början.
+ *  Pågår inget fälls nästa kommande moment ut (UX-11), så att det alltid finns
+ *  ett aktuellt moment att arbeta i. */
+const aktuellaFaser = (faser) => {
+  const nu = faser.filter((f) => f.status === "pagar" || f.status === "sen").map((f) => f.fas.nr);
+  if (nu.length) return nu;
+  const nasta = faser.find((f) => f.status === "kommande");
+  return nasta ? [nasta.fas.nr] : [];
+};
 
 /** En infälld referensdel. Fälls ut av användaren eller av en länk (mal) hit. */
 function Referensdel({ id, mal, titel, text, start = false, children }) {
@@ -72,7 +82,8 @@ function Guide({ pid, mal }) {
   const [oppna, setOppna] = useState(() => new Set(aktuellaFaser(faser)));
   const [sok, setSok] = useState("");
   const [mark, setMark] = useState("alla");
-  const [statusfilter, setStatusfilter] = useState("alla");
+  /* UX-06: "Kvar" är förvalt. Valet sparas inte, så en omladdning börjar om. */
+  const [statusfilter, setStatusfilter] = useState("kvar");
 
   /* Det raderna behöver, räknat en gång per render i stället för per rad. */
   const ctx = useMemo(() => {
@@ -84,8 +95,12 @@ function Guide({ pid, mal }) {
     for (const k of erfarenheter(state))
       if (k.projektId !== pid) tidigare.set(k.punkt, (tidigare.get(k.punkt) || 0) + 1);
     const grindkod = (id) => "G" + id.split(".")[0];
-    return { pid, pl, antal, tidigare, grindkod };
-  }, [state, pid, faser]);
+    const leveranser = styrandeLeveranser(state, pid);
+    const nu = idag();
+    const senast = senastDatum(state, pid, nu, faser);
+    const visaAlla = statusfilter === "kvar" ? () => setStatusfilter("alla") : null;
+    return { pid, pl, antal, tidigare, grindkod, leveranser, visaAlla, senast, nu };
+  }, [state, pid, faser, statusfilter]);
 
   /* Byter man projekt i lägesbilden fälls det projektets pågående faser ut. */
   const [forraPid, setForraPid] = useState(pid);
@@ -117,10 +132,26 @@ function Guide({ pid, mal }) {
   }, [mal]);
 
   const sokord = sok.trim().toLowerCase();
-  const filterAktivt = !!sokord || mark !== "alla" || statusfilter !== "alla";
+  /* "Kvar" är standardläget och fäller inte ut alla moment; övriga filter gör det. */
+  const filterAktivt = !!sokord || mark !== "alla" || (statusfilter !== "alla" && statusfilter !== "kvar");
+
+  /* En punkt som bockas av försvinner inte direkt ur "Kvar" — den stryks och
+     ligger kvar tills filtret väljs igen eller projektet byts. Ögonblicksbilden
+     är de punkter som var kvar när "Kvar" valdes. */
+  const [kvarBild, setKvarBild] = useState(null);
+  if (statusfilter === "kvar" && (!kvarBild || kvarBild.pid !== pid)) {
+    const ids = new Set();
+    for (const [id, l] of ctx.pl) if (l.status === "oppen") ids.add(id);
+    setKvarBild({ pid, ids });
+  }
+  const valjStatus = (id) => {
+    if (id === "kvar") setKvarBild(null);
+    setStatusfilter(id);
+  };
+
   const statusOk = (punkt) => {
     const st = ctx.pl.get(punkt.id).status;
-    if (statusfilter === "kvar") return st === "oppen";
+    if (statusfilter === "kvar") return st === "oppen" || !!kvarBild?.ids.has(punkt.id);
     if (statusfilter === "klara") return st === "klar";
     if (statusfilter === "kommenterade") return ctx.antal.has(punkt.id) || ctx.tidigare.has(punkt.id);
     return true;
@@ -128,7 +159,7 @@ function Guide({ pid, mal }) {
   const filter = (punkt) =>
     (mark === "alla" || punkt.badges.includes(mark)) &&
     statusOk(punkt) &&
-    (!sokord || `${punkt.id} ${punkt.text} ${punkt.ansvar} ${punkt.nar}`.toLowerCase().includes(sokord));
+    (!sokord || `${punkt.id} ${RUBRIKER[punkt.id] || ""} ${punkt.text} ${punkt.ansvar} ${punkt.nar}`.toLowerCase().includes(sokord));
 
   const vaxla = (nr, oppen) =>
     setOppna((o) => {
@@ -154,8 +185,21 @@ function Guide({ pid, mal }) {
           {Object.entries(MARKERINGAR).map(([k, m]) => (
             <li key={k}>
               <Markering typ={k} /> {m.beskrivning}
+              {k === "HP" ? " · röd kant på raden" : ""}
             </li>
           ))}
+          <li>
+            <span className="epc-legend-ikon" aria-hidden="true">
+              <Lightbulb size={13} />
+            </span>{" "}
+            Erfarenheter från andra projekt på samma punkt
+          </li>
+          <li>
+            <span className="epc-legend-ikon" aria-hidden="true">
+              <MoreHorizontal size={14} />
+            </span>{" "}
+            Kommentera eller sätt ej aktuell
+          </li>
         </ul>
       </SectionHeading>
 
@@ -172,7 +216,7 @@ function Guide({ pid, mal }) {
         </label>
         <div className="ov-flikar" role="group" aria-label="Visa status">
           {STATUSFILTER.map(([id, namn]) => (
-            <button key={id} type="button" aria-pressed={statusfilter === id} onClick={() => setStatusfilter(id)}>
+            <button key={id} type="button" aria-pressed={statusfilter === id} onClick={() => valjStatus(id)}>
               {namn}
             </button>
           ))}
