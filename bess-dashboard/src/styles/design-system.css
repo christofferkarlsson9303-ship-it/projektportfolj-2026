@@ -1830,8 +1830,8 @@ textarea.hp-led-text::placeholder{color:var(--ink-faint);font-weight:400}
    röd/blågrön håller kontrast i båda lägena. */
 
 .epc-markeringar{display:inline-flex;gap:4px;flex-wrap:wrap}
-.epc-markering{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:18px;padding:0 5px;
-  border-radius:5px;font:800 10px/1 var(--font-b);letter-spacing:.04em;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+.epc-markering{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:18px;padding:0 6px;
+  border-radius:5px;font:700 10.5px/1 var(--font-b);letter-spacing:.01em;white-space:nowrap;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
 .epc-markering.hp{background:#b8322a;color:#fff}
 .epc-markering.k{background:#005f76;color:#fff}
 .epc-markering.l{background:var(--info-bg);color:var(--info-ink);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--info-ink) 35%,transparent)}
@@ -1840,6 +1840,7 @@ textarea.hp-led-text::placeholder{color:var(--ink-faint);font-weight:400}
 .epc-projektplan{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 18px;padding-top:14px;border-top:1px solid var(--hairline)}
 .epc-legend{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12.5px;color:var(--ink-soft)}
 .epc-legend li{display:inline-flex;align-items:center;gap:7px}
+.epc-legend-ikon{display:inline-flex;color:var(--ink-faint)}
 
 .epc-falt{display:flex;flex-direction:column;gap:4px;min-width:0}
 .epc-falt label{display:flex;align-items:center;gap:6px;font:700 10.5px/1.3 var(--font-b);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint)}
@@ -1912,6 +1913,14 @@ textarea.hp-led-text::placeholder{color:var(--ink-faint);font-weight:400}
 .epc-saknas{padding:10px 12px;border-radius:8px;background:var(--warn-bg);color:var(--ink);font-size:12.5px;line-height:1.45}
 .epc-saknas>b{display:block;color:var(--warn-ink);margin-bottom:4px}
 .epc-saknas ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px}
+.epc-saknas-lista{list-style:none;padding-left:0!important}
+.epc-saknas-antal{display:inline-block;min-width:1.6em;font-weight:700;font-variant-numeric:tabular-nums;color:var(--warn-ink)}
+.epc-saknas-not{margin:6px 0 0;font-size:12px;color:var(--ink-soft)}
+.epc-tidslage{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin:4px 0 2px;font-size:12.5px}
+.epc-tidslage-datum{font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.epc-tidslage-plan{color:var(--ink-faint);font-size:12px}
+.epc-styrsav{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;margin:2px 0}
+.epc-styrsav-rubrik{font-size:12px;font-weight:600;color:var(--ink-soft)}
 .epc-saknas-hp{font-size:10.5px;font-weight:700;color:var(--warn-ink);border:1px solid currentColor;border-radius:4px;padding:0 4px}
 .epc-ejreg{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:8px;border:1px solid var(--hairline);font-size:12.5px;line-height:1.45}
 .epc-grindlage{margin:0;display:flex;align-items:flex-start;gap:6px;font-size:12.5px;line-height:1.45;color:var(--ink-soft)}
@@ -1939,6 +1948,11 @@ textarea.hp-led-text::placeholder{color:var(--ink-faint);font-weight:400}
 .epc-rad.klar .epc-radtext>span:last-child{color:var(--ink-soft)}
 .epc-rad.ejaktuell .epc-radtext>span:last-child{color:var(--ink-faint);text-decoration:line-through;text-decoration-color:var(--hairline-stark)}
 .epc-radmeta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-size:12px;color:var(--ink-soft)}
+.epc-detaljknapp{background:none;border:0;padding:0;cursor:pointer;font:600 12px/1.4 var(--font-b);color:var(--lank);text-decoration:underline;text-underline-offset:2px}
+.epc-detaljtext{margin:0 0 0 42px;font-size:12.5px;line-height:1.5;color:var(--ink-soft);overflow-wrap:anywhere}
+.epc-tomtmoment{margin:8px 0 0;font-size:13px;color:var(--ink-soft)}
+.epc-senast{font-weight:600;color:var(--ink-soft);font-variant-numeric:tabular-nums;cursor:help}
+.epc-senast.sen{color:var(--bad-ink)}
 .epc-klarinfo{color:var(--ok-ink);font-weight:600}
 .epc-ejinfo{color:var(--ink-faint);font-weight:600}
 .epc-radatgard{grid-area:atgard;display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px}
@@ -1947,6 +1961,19 @@ textarea.hp-led-text::placeholder{color:var(--ink-faint);font-weight:400}
 .epc-kommknapp.har{border-color:var(--one-bla);color:var(--info-ink);background:var(--info-bg)}
 .epc-kommknapp[aria-expanded="true"]{border-color:var(--one-bla);color:var(--info-ink)}
 .epc-erfchip{border-color:color-mix(in srgb,var(--orange) 55%,var(--hairline));color:var(--warn-ink);background:var(--warn-bg)}
+.epc-radmeny{position:relative}
+.epc-menyknapp{display:inline-flex;align-items:center;justify-content:center;width:30px;height:28px;border-radius:8px;background:none;
+  border:1px solid transparent;color:var(--ink-faint);cursor:pointer}
+.epc-menyknapp:hover,.epc-menyknapp[aria-expanded="true"]{border-color:var(--hairline-stark);color:var(--ink);background:var(--sunken)}
+.epc-radmeny-lista{position:absolute;right:0;top:calc(100% + 4px);z-index:20;display:flex;flex-direction:column;min-width:150px;padding:4px;
+  border-radius:10px;border:1px solid var(--hairline);background:var(--surface);box-shadow:0 8px 24px rgba(0,0,0,.14)}
+.epc-radmeny-lista button{text-align:left;padding:8px 10px;border-radius:6px;background:none;border:0;cursor:pointer;font:600 13px/1.2 var(--font-b);color:var(--ink)}
+.epc-radmeny-lista button:hover,.epc-radmeny-lista button:focus-visible{background:var(--sunken)}
+@media(max-width:640px){.epc-radmeny-lista{left:0;right:auto}}
+/* UX-11: ett moment med passerad grind är en kompakt rad när det är infällt. */
+.epc-fas.klar:not([open])>summary{padding-top:8px;padding-bottom:8px}
+.epc-fas.klar:not([open]) .epc-fasdatum,.epc-fas.klar:not([open]) .epc-styrsav,.epc-fas.klar:not([open]) .epc-hpchip{display:none}
+.epc-fas.klar:not([open]) .epc-tidslage{margin:0}
 .epc-ejknapp{font-size:11.5px;color:var(--ink-faint);font-weight:600}
 .epc-radpanel{grid-area:panel;padding:8px 0 4px 30px;min-width:0}
 @media(max-width:640px){

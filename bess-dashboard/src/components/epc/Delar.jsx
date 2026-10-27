@@ -7,13 +7,13 @@ import { StatusBadge } from "../ds/StatusBadge.jsx";
    och statusmärken för faser och ledtider. Märkena är designsystemets
    StatusBadge med domänens egna ord ("Grind passerad", "Starta nu"). */
 
-/** HP, K eller L som liten etikett. Förklaringen ligger i title och i text för skärmläsare. */
+/** HP, K eller L som liten etikett med ordet utskrivet (UX-04): "Hållpunkt",
+ *  "Kontraktskrav", "Lärdom". Beskrivningen ligger i title. */
 export function Markering({ typ }) {
   const m = MARKERINGAR[typ];
   return (
     <span className={`epc-markering ${typ.toLowerCase()}`} title={`${m.namn} – ${m.beskrivning}`}>
-      <span aria-hidden="true">{typ}</span>
-      <span className="sr-only">{m.namn}</span>
+      {m.namn}
     </span>
   );
 }

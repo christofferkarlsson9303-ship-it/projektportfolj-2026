@@ -1,5 +1,5 @@
-import { memo, useState } from "react";
-import { Check, ChevronDown, Lightbulb, MessageSquare, RotateCcw } from "lucide-react";
+import { memo, useEffect, useRef, useState } from "react";
+import { Check, ChevronDown, Lightbulb, MessageSquare, MoreHorizontal, RotateCcw } from "lucide-react";
 import { usePortfolj, usePortfoljAtgarder, useUi } from "../../state/hooks.js";
 import { MILSTOLPAR } from "../../data/bessChecklistData.ts";
 import { PUNKT_UNDERLAG } from "../../data/punktUnderlag.js";
@@ -7,6 +7,9 @@ import { DatumFalt, Falt } from "../ui/Falt.jsx";
 import { datumKort, idag } from "../../lib/datum.js";
 import { fasRad, grindSaknas, mallDatum, planAnkare } from "../../lib/epc.js";
 import { FasStatus, Markeringar } from "./Delar.jsx";
+import { StatusBadge } from "../ds/StatusBadge.jsx";
+import { saknasSammanfattning, tidslage } from "../../lib/momentkort.js";
+import { RUBRIKER, visadeSektioner } from "../../data/momentvisning.js";
 import { Kommentarer } from "./Punkt.jsx";
 import { EgenkontrollLage } from "./EgenkontrollLage.jsx";
 import { LosningGrind } from "./LosningGrind.jsx";
@@ -31,10 +34,12 @@ const GRIND_KALLA = {
 /* En rad tar bara enkla värden och är memorerad: att bocka en punkt ritar om
    den raden, inte guidens 309. Den läser åtgärderna (usePortfoljAtgarder),
    inte portföljen — usePortfolj() skulle rita om varje rad vid varje ändring. */
-const Punktrad = memo(function Punktrad({ punkt, pid, status, kalla, kontroll, datum, av, nKomm, nTidigare, grind }) {
+const Punktrad = memo(function Punktrad({ punkt, pid, status, kalla, kontroll, datum, av, nKomm, nTidigare, grind, senast, senastGrund, sen }) {
   const { dispatch } = usePortfoljAtgarder();
   const { oppnaPost } = useUi();
   const [oppen, setOppen] = useState(false);
+  const [detaljer, setDetaljer] = useState(false);
+  const rubrik = RUBRIKER[punkt.id];
   const underlag = PUNKT_UNDERLAG[punkt.id];
   const lage = { status, kalla, kontroll, datum, av };
   const hp = punkt.badges.includes("HP");
@@ -64,12 +69,33 @@ const Punktrad = memo(function Punktrad({ punkt, pid, status, kalla, kontroll, d
       <div className="epc-radkropp">
         <label htmlFor={idCb} className="epc-radtext">
           <span className="epc-id">{nr}</span>
-          <span>{punkt.text}</span>
+          <span>{rubrik || punkt.text}</span>
         </label>
+        {/* UX-07: kort rubrik, hela texten med mått och OEM-krav ett klick bort. */}
+        {rubrik && detaljer ? <p className="epc-detaljtext" id={`det-${pid}-${punkt.id}`}>{punkt.text}</p> : null}
         <span className="epc-radmeta">
           <Markeringar badges={punkt.badges} />
+          {rubrik ? (
+            <button
+              type="button"
+              className="epc-detaljknapp"
+              aria-expanded={detaljer}
+              aria-controls={detaljer ? `det-${pid}-${punkt.id}` : undefined}
+              onClick={() => setDetaljer((v) => !v)}
+            >
+              {detaljer ? "Dölj detaljer" : "Detaljer"}
+              <span className="sr-only"> för {nr}</span>
+            </button>
+          ) : null}
           <span className="epc-ansvar">{punkt.ansvar}</span>
           {punkt.nar && punkt.nar !== "—" ? <span className="epc-nar">{punkt.nar}</span> : null}
+          {/* UX-09: När-texten räknad till ett datum där den är entydig. */}
+          {senast ? (
+            <span className={`epc-senast${sen ? " sen" : ""}`} title={senastGrund}>
+              {senast}
+              {sen ? " · passerat" : ""}
+            </span>
+          ) : null}
           {lage.status === "klar" ? (
             <span className="epc-klarinfo">
               {styrkt ? `Klar · styrkt av egenkontroll ${lage.kontroll}` : `Klar ${lage.datum || ""}${lage.av ? " · " + lage.av : ""}`}
@@ -91,31 +117,35 @@ const Punktrad = memo(function Punktrad({ punkt, pid, status, kalla, kontroll, d
         {nTidigare ? (
           <button type="button" className="epc-erfchip" onClick={() => setOppen(true)} title="Andra projekt har avvikelser eller lärdomar på den här punkten">
             <Lightbulb size={13} aria-hidden="true" />
-            {nTidigare}
-            <span className="sr-only"> erfarenheter från tidigare projekt på {nr}</span>
+            {nTidigare} {nTidigare === 1 ? "erfarenhet" : "erfarenheter"}
+            <span className="sr-only"> från tidigare projekt på {nr}</span>
           </button>
         ) : null}
-        <button
-          type="button"
-          className={`epc-kommknapp${nKomm ? " har" : ""}`}
-          aria-expanded={oppen}
-          onClick={() => setOppen((v) => !v)}
-        >
-          <MessageSquare size={14} aria-hidden="true" />
-          {nKomm || ""}
-          <span className="sr-only">Kommentarer på {nr}</span>
-        </button>
-        {lage.status !== "klar" ? (
+        {/* UX-03: kommentarsknappen syns bara när det finns kommentarer eller
+            panelen är öppen. Kommentera och Ej aktuell ligger i ⋯-menyn. */}
+        {nKomm || oppen ? (
           <button
             type="button"
-            className="epc-textknapp epc-ejknapp"
-            aria-pressed={lage.status === "ejaktuell"}
-            onClick={() => satt(lage.status === "ejaktuell" ? "" : "ejaktuell")}
+            className={`epc-kommknapp${nKomm ? " har" : ""}`}
+            aria-expanded={oppen}
+            onClick={() => setOppen((v) => !v)}
           >
-            {lage.status === "ejaktuell" ? "Aktuell igen" : "Ej aktuell"}
-            <span className="sr-only">: {nr}</span>
+            <MessageSquare size={14} aria-hidden="true" />
+            {nKomm || ""}
+            <span className="sr-only">Kommentarer på {nr}</span>
           </button>
         ) : null}
+        {lage.status === "ejaktuell" ? (
+          <button type="button" className="epc-textknapp epc-ejknapp" onClick={() => satt("")}>
+            Aktuell igen<span className="sr-only">: {nr}</span>
+          </button>
+        ) : null}
+        <Radmeny
+          nr={nr}
+          kommentarOppen={oppen}
+          onKommentera={() => setOppen(true)}
+          ejAktuell={lage.status !== "klar" && lage.status !== "ejaktuell" ? () => satt("ejaktuell") : null}
+        />
       </div>
       {oppen ? (
         <div className="epc-radpanel">
@@ -125,6 +155,70 @@ const Punktrad = memo(function Punktrad({ punkt, pid, status, kalla, kontroll, d
     </li>
   );
 });
+
+/** ⋯-menyn på en punktrad: Kommentera och Ej aktuell, ett klick bort så att
+ *  raden bara har kryssrutan som synlig åtgärd. Stängs med Escape, ett val
+ *  eller när fokus lämnar menyn. */
+function Radmeny({ nr, kommentarOppen, onKommentera, ejAktuell }) {
+  const [oppen, setOppen] = useState(false);
+  const ref = useRef(null);
+  const knapp = useRef(null);
+  useEffect(() => {
+    if (!oppen) return undefined;
+    const utanfor = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOppen(false);
+    };
+    document.addEventListener("pointerdown", utanfor);
+    return () => document.removeEventListener("pointerdown", utanfor);
+  }, [oppen]);
+  const val = (gor) => () => {
+    setOppen(false);
+    gor();
+    knapp.current?.focus();
+  };
+  return (
+    <div
+      className="epc-radmeny"
+      ref={ref}
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && oppen) {
+          e.stopPropagation();
+          setOppen(false);
+          knapp.current?.focus();
+        }
+      }}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) setOppen(false);
+      }}
+    >
+      <button
+        ref={knapp}
+        type="button"
+        className="epc-menyknapp"
+        aria-haspopup="true"
+        aria-expanded={oppen}
+        aria-label={`Fler val för ${nr}`}
+        onClick={() => setOppen((v) => !v)}
+      >
+        <MoreHorizontal size={16} aria-hidden="true" />
+      </button>
+      {oppen ? (
+        <div className="epc-radmeny-lista" role="group" aria-label={`Val för ${nr}`}>
+          {!kommentarOppen ? (
+            <button type="button" onClick={val(onKommentera)}>
+              Kommentera<span className="sr-only"> {nr}</span>
+            </button>
+          ) : null}
+          {ejAktuell ? (
+            <button type="button" onClick={val(ejAktuell)}>
+              Ej aktuell<span className="sr-only">: {nr}</span>
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 /** ctx: { pid, pl (punktlage), antal (kommentarer per punkt), tidigare
  *  (andra projekts erfarenheter per punkt), grindkod(punktId) }. */
@@ -138,6 +232,7 @@ export function Sektioner({ sektioner, filter, ctx }) {
         <ul className="epc-lista">
           {punkter.map((p) => {
             const l = ctx.pl.get(p.id);
+            const s = l.status === "oppen" && l.kalla !== "ejregistrerad" ? ctx.senast?.get(p.id) : null;
             return (
               <Punktrad
                 key={p.id}
@@ -151,6 +246,9 @@ export function Sektioner({ sektioner, filter, ctx }) {
                 nKomm={ctx.antal.get(p.id) || 0}
                 nTidigare={ctx.tidigare.get(p.id) || 0}
                 grind={ctx.grindkod(p.id)}
+                senast={s?.text}
+                senastGrund={s?.grund}
+                sen={!!s && s.datum < ctx.nu}
               />
             );
           })}
@@ -162,55 +260,45 @@ export function Sektioner({ sektioner, filter, ctx }) {
 
 /* ---------- Det som saknas för klartecknet ---------- */
 
-const VISA_PUNKTER = 6;
-
-/** Flyttar fokus till en punkt i listan ovanför. Appen routar på #hash, så
- *  en vanlig ankarlänk skulle byta vy. */
+/** Flyttar fokus till en punkt i listan ovanför och markerar den kort. Appen
+ *  routar på #hash, så en vanlig ankarlänk skulle byta vy. */
 function visaPunkt(id) {
   const rad = document.getElementById(`kp-${id}`);
   if (!rad) return;
   rad.scrollIntoView({ behavior: "smooth", block: "center" });
   rad.querySelector("input")?.focus({ preventScroll: true });
+  rad.classList.remove("epc-markerad");
+  void rad.offsetWidth; // starta om animationen vid upprepat klick
+  rad.classList.add("epc-markerad");
+  setTimeout(() => rad.classList.remove("epc-markerad"), 2400);
 }
 
+/* UX-05: det som saknas räknas per typ. Radtexterna står redan i listan och
+   upprepas inte här; ett klick hoppar till första öppna raden av typen. */
 function Saknas({ saknas, kod }) {
-  const [alla, setAlla] = useState(false);
-  if (saknas.klart) return null;
-  const punkter = alla ? saknas.punkter : saknas.punkter.slice(0, VISA_PUNKTER);
-  const fler = saknas.punkter.length - punkter.length;
+  const { delar, ejRegistrerade } = saknasSammanfattning(saknas);
+  if (!delar.length) return null;
   return (
     <div className="epc-saknas" role="group" aria-label={`Det här saknas för ${kod}`}>
       <b>Det här saknas för {kod}</b>
-      <ul>
-        {punkter.map((p) => (
-          <li key={p.id}>
-            <button type="button" className="lankknapp" onClick={() => visaPunkt(p.id)}>
-              {p.id.replace("lop.", "∞.")}
-            </button>{" "}
-            {p.hp ? <span className="epc-saknas-hp">HP</span> : null} {p.text}
-            {p.ejRegistrerad ? <span className="text-ink-faint"> · ej registrerad</span> : null}
+      <ul className="epc-saknas-lista">
+        {delar.map((d) => (
+          <li key={d.typ}>
+            {d.forsta ? (
+              <button type="button" className="lankknapp" onClick={() => visaPunkt(d.forsta)}>
+                <span className="epc-saknas-antal">{d.antal}</span> {d.etikett}
+              </button>
+            ) : (
+              <span>
+                <span className="epc-saknas-antal">{d.antal}</span> {d.etikett}
+              </span>
+            )}
           </li>
         ))}
-        {fler > 0 ? (
-          <li>
-            <button type="button" className="lankknapp" onClick={() => setAlla(true)}>
-              … och {fler} punkter till
-            </button>
-          </li>
-        ) : null}
-        {saknas.kontroller.length ? (
-          <li>
-            {saknas.kontroller.length} egenkontroll{saknas.kontroller.length > 1 ? "er" : ""} ej verifierade:{" "}
-            {saknas.kontroller
-              .slice(0, 4)
-              .map((k) => (k.totalt ? `${k.text} (${k.klara}/${k.totalt})` : k.text))
-              .join(", ")}
-            {saknas.kontroller.length > 4 ? ` med flera` : ""}
-          </li>
-        ) : null}
-        {saknas.avvikelser ? <li>{saknas.avvikelser} öppen avvikelse{saknas.avvikelser > 1 ? "r" : ""} i egenkontrollerna</li> : null}
-        {saknas.grinddatum ? <li>Klartecken: datum då {kod} passerades</li> : null}
       </ul>
+      {ejRegistrerade ? (
+        <p className="epc-saknas-not">varav {ejRegistrerade} gjorda men inte registrerade</p>
+      ) : null}
     </div>
   );
 }
@@ -347,12 +435,45 @@ function IProjektet({ lage, pid, projektnamn }) {
   );
 }
 
+/* ---------- Rubrikraden: när och vad som styr (UX-01, UX-02) ---------- */
+
+function Tidslage({ lage }) {
+  const t = tidslage(lage);
+  return (
+    <span className="epc-tidslage">
+      {t.datum ? <span className="epc-tidslage-datum">{t.datum}</span> : null}
+      <StatusBadge ton={t.ton} label={t.lage} />
+      {t.plan ? <span className="epc-tidslage-plan">{t.plan}</span> : null}
+    </span>
+  );
+}
+
+function StyrsAv({ rader }) {
+  if (!rader?.length) return null;
+  return (
+    <span className="epc-styrsav">
+      <span className="epc-styrsav-rubrik">Styrs av:</span>
+      {rader.map((r) => (
+        <StatusBadge
+          key={r.id}
+          ton={r.ton}
+          wrap
+          label={`${r.benamning} ${r.datum ? datumKort(r.datum) : "datum saknas"} · ${
+            r.forsenarDagar ? `försenar ${r.forsenarDagar} d` : r.statusText
+          }`}
+        />
+      ))}
+    </span>
+  );
+}
+
 /* ---------- Steget ---------- */
 
 export function Fasruta({ lage, pid, projektnamn, oppen, onVaxla, filter, tvingaOppen, ctx }) {
   const f = lage.fas;
   const ms = f.milstolpe ? MILSTOLPAR.find((m) => m.kod === f.milstolpe) : null;
-  const synliga = f.sektioner.reduce((n, s) => n + s.punkter.filter(filter).length, 0);
+  const sektioner = visadeSektioner(f);
+  const synliga = sektioner.reduce((n, s) => n + s.punkter.filter(filter).length, 0);
   if (tvingaOppen && !synliga) return null;
 
   return (
@@ -371,6 +492,8 @@ export function Fasruta({ lage, pid, projektnamn, oppen, onVaxla, filter, tvinga
         <span className="epc-fastitel">
           <span className="sr-only">Moment {f.nr}: </span>
           <b>{f.titel}</b>
+          <Tidslage lage={lage} />
+          <StyrsAv rader={ctx?.leveranser?.get(f.nr)} />
           <span className="epc-fasdatum">{f.syfte}</span>
         </span>
         <span className="epc-fasinfo">
@@ -407,7 +530,15 @@ export function Fasruta({ lage, pid, projektnamn, oppen, onVaxla, filter, tvinga
               </>
             ) : null}
           </p>
-          <Sektioner sektioner={f.sektioner} filter={filter} ctx={ctx} />
+          <Sektioner sektioner={sektioner} filter={filter} ctx={ctx} />
+          {!synliga && ctx?.visaAlla ? (
+            <p className="epc-tomtmoment">
+              Inget kvar att göra i momentet.{" "}
+              <button type="button" className="lankknapp" onClick={ctx.visaAlla}>
+                Visa alla punkter
+              </button>
+            </p>
+          ) : null}
         </div>
         <IProjektet lage={lage} pid={pid} projektnamn={projektnamn} />
       </div>
