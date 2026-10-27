@@ -91,13 +91,13 @@ test("grindrutan räknar det som saknas per typ och hoppar till första raden", 
   await expect(saknas).toContainText("klartecken (grinddatum)");
   // Radtexterna upprepas inte i panelen (UX-05).
   await expect(saknas).not.toContainText("Skärmåterföring");
-  const hp = saknas.getByRole("button", { name: /^5 hållpunkter$/ });
+  const hp = saknas.getByRole("button", { name: /^7 hållpunkter$/ });
   await expect(hp).toBeVisible();
 
   await rad(page, "10.7").getByRole("checkbox").check();
-  await expect(saknas.getByRole("button", { name: /^4 hållpunkter$/ })).toBeVisible();
+  await expect(saknas.getByRole("button", { name: /^6 hållpunkter$/ })).toBeVisible();
 
-  await saknas.getByRole("button", { name: /^4 hållpunkter$/ }).click();
+  await saknas.getByRole("button", { name: /^6 hållpunkter$/ }).click();
   await expect(rad(page, "10.8")).toHaveClass(/epc-markerad/);
   await expect(rad(page, "10.8").getByRole("checkbox")).toBeFocused();
 });
