@@ -4,6 +4,12 @@ Du är i **bess-dashboard**: Vite, React, Tailwind, `localStorage` eller Supabas
 
 En visuell prototyp byggdes 2026-10-04 i ett annat verktyg (Grok). Den ligger **inte** i det här repot och ska inte klistras in. Beteendet som är värt att behålla står i [`docs/prototyp-36037.md`](docs/prototyp-36037.md). Läs den filen helt innan du rör Idag, tidplan, ÄTA eller site.
 
+## Röd tråd (2026-10-22)
+
+Läs [`docs/rod-trad.md`](docs/rod-trad.md) innan du lägger till eller ändrar en vy. Varje vy ska följa reglerna i §4 där. Ny vy kräver att en befintlig tas bort eller slås ihop. B1–B3 är beslutade: 8 faser (ONE P:s 4 är grupper), tre ingångar, siten fryst.
+
+**Menyn har tre ingångar (2026-10-26).** `INGANGAR` och `VERKTYG` i `src/data/vyer.js` styr den. Huvudmenyn (`Sidebar.jsx`) visar Idag, Projektet, Pengar och en Verktyg-knapp som öppnar Ctrl/Cmd+K. Vyerna i en ingång visas som flikar i `Flikrad.jsx`. Vy-för-vy-besluten står i [`docs/strykningslista.md`](docs/strykningslista.md). Lägg aldrig till en fjärde ingång eller en ny menyrad; en ny vy blir en flik eller ett verktyg. Flikar som ska slås ihop (t.ex. Översikt, Tavla, Tidrapport) ligger kvar tills sammanslagningen är byggd. Siten är fryst och dold ur menyn.
+
 ## Vad som redan är sant
 
 - **Tidplanen ”Blir vi klara i tid” finns.** `src/components/tidplan/KritiskLinje.jsx` + `src/lib/kritiskLinje.js` + `src/data/fasberoenden.js`. Kolumnerna fas, standardplan, beräknat, försening, marginal, väntar på, och tabellen M1–M7, är redan där. Prototypens ”0 dagar” och fasta datum 2026-12-02 är seed för 36037, inte en kalkyl. Byt inte ut motorn.
@@ -59,11 +65,14 @@ Fyll i datum och beslut i tabellen när det är fattat. Migrationer i `supabase/
 - **Siterunda** (`lib/siterunda.js`, 2026-10-23): Registrera händelse tar foto och plats. Foton krymps till JPEG och laddas till ritningsarkivet (`projekt/foto/…`); på punkten ligger bara `foton` med sökväg. En plats sätter en nål på siteobjektet. Med foto eller plats och utan datum blir uppföljningen idag.
 - **"Mina uppgifter" finns inte än.** `agare` är fritext; bygg det först när ansvar tilldelas uttryckligen.
 
-## Menyn följer rytmen (2026-10-22)
+## Moment på alla poster (2026-10-27)
 
-- **Hela menyn** (`GRUPPER` i `data/vyer.js`) har sex grupper efter projektmetodens rytm: Dagligen, Varje vecka och månad, Projektet, Pengar, Siten, Bibliotek. Nya vyer läggs i den grupp där de används, inte i en ny grupp.
-- **Enkla menyn** (`ENKEL_MENY`, sju flikar) svarar på fyra frågor: vad gör jag idag/i veckan, vad blockerar, blir vi klara i tid, vad kostar det. Idag, Översikt, Veckokoll, Bygga batteripark, Tidplan, ÄTA, Budget och utfall. Öppna punkter nås från Idag; HSEQ, Risker och Öppna punkter från Veckokoll ("Veckans genomgång").
-- **Testet för en ny vy:** svarar den på någon av de fyra frågorna? Annars hör den hemma i en befintlig vy eller i Bibliotek.
+- **Punkter, ÄTA (`ur`), risker, dagbok, störningar, byggmöten, skyddsronder och tillbud har `moment` (0–15)** och därmed en fas via `projektfasForMoment()`. Listan är `MOMENT_LISTOR` i `lib/postmoment.js`.
+- **`momentKalla`**: `"auto"` = satt till projektets aktuella moment när posten skapades; `"antaget"` = satt vid inläsning av en äldre post (ANTAGANDE, visa det som antaget); saknas eller `"vald"` = valt av användaren och rörs aldrig.
+- **Sätts automatiskt.** `reducer` kör `medNyaMoment()` efter varje åtgärd och `efterInlasning` kör `medPostmoment()`. En ny åtgärd som skapar poster behöver inte sätta moment själv.
+- **En risk** utan moment får fasens första moment om den ligger i en annan fas än projektet, annars aktuellt moment.
+- **Leveranser ingår inte.** Deras `moment` binder tidplanen (`bestallningar.js`) och får aldrig gissas.
+- Användaren byter moment med `UPPDATERA` och sätter då `momentKalla: "vald"`.
 
 ## ÄTA: art, orsak och fyra kolumner (2026-10-21)
 
@@ -103,7 +112,7 @@ Regler:
 - **`--lank`** är textfärgen för länkar och nummer på ytor som följer temat (ONE Blågrön ljust, info-ton mörkt). Använd den i stället för `var(--one-djup)` som textfärg på ytor — inte på vita knappar i sidhuvudet.
 - **Felgränser:** `Felgrans` runt varje vy, `AppFelgrans` runt hela appen (omladdning och lokal kopia).
 - **Rendering:** `usePortfoljAtgarder()` ger dispatch och de enkla åtgärderna utan portföljdatan. Använd den i memorerade rader och knappar — en komponent som läser `usePortfolj()` ritas om vid varje ändring, oavsett `React.memo`. Guidens rader (`Punktrad`) är memorerade och får bara enkla värden.
-- **Guiden ritar bara utfällda moment** (`Fasruta`). Ett test som räknar alla 288 rader fäller ut alla först.
+- **Guiden ritar bara utfällda moment** (`Fasruta`). Ett test som räknar alla 309 rader fäller ut alla först.
 - **CI** delar e2e på tre jobb (`--shard`). Kontrollen "E2E (desktop + mobil)" är grön bara om alla tre delarna är det.
 
 ## Gör inte
@@ -117,7 +126,7 @@ Regler:
 
 ## Fas och moment
 
-- **Fas** betyder alltid ONE-P fas 1–8 (`data/projektfaser.ts`): Projektstart, projektkort, milstolpar, statushuvud.
+- **Fas** betyder alltid ONE-P fas 1–8 (`data/projektfaser.ts`): Projektstart, projektkort, milstolpar, statushuvud. ONE P:s Initiering/Planering/Genomförande/Avslut är grupper av faserna (1 / 2 / 3–6 / 7–8), inga egna fasnummer (beslut B1 2026-10-27).
 - **Moment** betyder alltid EPC-checklistans steg 0–15 med grind G0–G15 (`data/bessChecklistData.ts`): Bygga batteripark, Gantt-raderna, egenkontrollerna.
 - Skriv "Moment 11 · Leverans, lyft & montage", aldrig "Fas 11". När båda behövs: "Moment 11, fas 5". Variabelnamn som `fas`, `faslage` och ankare som `fas-11` ligger kvar; det är bara texten användaren ser som följer regeln.
 

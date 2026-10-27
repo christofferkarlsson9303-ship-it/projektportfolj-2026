@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { annatProjekt, oppna, gaTill, projektval, utanKonsolfel, valjProjekt } from "./hjalpare.js";
+import { annatProjekt, oppna, gaTill, projektval, utanKonsolfel, valjProjekt, oppnaMeny } from "./hjalpare.js";
 import { VYER } from "../src/data/vyer.js";
 
 test("enkel meny, synlig sökknapp och ordlista hjälper utan att dölja funktioner", async ({ page }, info) => {
@@ -16,17 +16,10 @@ test("enkel meny, synlig sökknapp och ordlista hjälper utan att dölja funktio
   await expect(page.getByRole("banner").locator(".sidhjalp-panel")).toContainText("Gör skyddsrond");
   await gaTill(page, "Min projektmetod");
   const ham = page.getByRole("button", { name: /Öppna menyn|Stäng menyn/ });
-  if (await ham.isVisible() && await ham.getAttribute("aria-expanded") === "false") await ham.click();
-  const nav = page.getByRole("navigation", { name: "Huvudmeny" });
-  // Projektmetoden ligger inte i den enkla menyn, så vägen hit fällde ut hela.
-  const enkel = nav.getByRole("button", { name: "Visa enkel meny", exact: true });
-  if (await enkel.count()) await enkel.click();
+  const nav = await oppnaMeny(page);
+  // Projektmetoden är ett verktyg: den ligger inte i menyn men visas som aktuell plats.
   await expect(nav.getByRole("button", { name: "Tidrapport", exact: true })).toHaveCount(0);
-  // Aktiv vy syns även när den inte hör till den enkla menyn.
   await expect(nav.getByRole("button", { name: "Min projektmetod", exact: true })).toHaveAttribute("aria-current", "page");
-  await nav.getByRole("button", { name: "Visa alla funktioner", exact: true }).click();
-  await expect(nav.getByRole("button", { name: "Tidrapport", exact: true })).toBeVisible();
-  await nav.getByRole("button", { name: "Visa enkel meny", exact: true }).click();
   if (await ham.isVisible()) await page.getByRole("button", { name: "Stäng sidomenyn", exact: true }).click();
   await page.screenshot({ path: info.outputPath("projektmetod.png"), fullPage: true });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

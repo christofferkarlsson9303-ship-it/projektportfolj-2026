@@ -18,6 +18,7 @@ import { MALLAR, arNal, objektFel, punkterForSite } from "../lib/site.js";
 import { boxFel, kopplingFel, viewpointFel } from "../lib/modellKoppling.js";
 import { arGuid } from "../lib/bcfHanterare.js";
 import { projektFasFranEpc } from "../lib/projektfasEpc.js";
+import { medNyaMoment, medPostmoment } from "../lib/postmoment.js";
 import { arDold } from "../lib/arkiv.js";
 import { sattVidSteg } from "../lib/sammanfoga.js";
 import { ARVSDELAR, arv } from "../lib/projektmall.js";
@@ -116,7 +117,7 @@ export function efterInlasning(state) {
     const omr = riskFasFranGammal(r.fas, r.kategori);
     return { ...r, fas: omr ?? fasForProjekt.get(r.projektId) ?? 4, ...(alla.has(r.projektId) ? {} : { fasModell: FAS_MODELL }) };
   });
-  return {
+  return medPostmoment({
     ...state,
     ur,
     projekt,
@@ -124,7 +125,7 @@ export function efterInlasning(state) {
     slutdok: medSlutdokrader(state, projekt),
     handlingsplaner: medHandlingsplaner(state, projekt),
     hseqApd: medApdRader(state, projekt),
-  };
+  });
 }
 
 /* APD-planen och arbetsplatstavlan har en rad per projekt, sådd här av
@@ -312,7 +313,16 @@ function loggat(state, projektId, text) {
   return { ...state, andringslogg: [post, ...(state.andringslogg || [])].slice(0, 150) };
 }
 
+/* Varje ändring passerar medNyaMoment: nya poster utan moment får projektets aktuella
+   moment (lib/postmoment.js). Hela state från inläsning och delning går orört igenom —
+   efterInlasning sätter moment där. */
 export function reducer(state, action) {
+  const nytt = reducerInre(state, action);
+  if (nytt === state || action.type === "SATT_STATE" || action.type === "SATT_LOGG") return nytt;
+  return medNyaMoment(state, nytt);
+}
+
+function reducerInre(state, action) {
   switch (action.type) {
     /* Ersätt hela state — används vid inläsning och vid inkommande delad ändring. */
     case "SATT_STATE":

@@ -15,21 +15,21 @@
 export const TIDSGRUPPER = {
   10: [
     { namn: "Planering och före leverans", punkter: ["10.1", "10.11"] },
-    { namn: "Leverans och mottagning", punkter: ["10.2", "10.3", "10.12"] },
+    { namn: "Leverans och mottagning", punkter: ["10.2", "10.3", "10.12", "10.19"] },
     { namn: "Montage", punkter: ["10.4", "10.5", "10.6", "10.7"] },
-    { namn: "Provning och före spänningssättning", punkter: ["10.8", "10.9", "10.10", "10.13", "10.14", "10.15"] },
+    { namn: "Provning och före spänningssättning", punkter: ["10.8", "10.9", "10.10", "10.13", "10.14", "10.15", "10.16", "10.17", "10.18"] },
   ],
   11: [
     { namn: "Planering (veckor före)", punkter: ["11.1", "11.2", "11.3", "11.4"] },
-    { namn: "Före leverans", punkter: ["11.5", "11.12"] },
+    { namn: "Före leverans", punkter: ["11.5", "11.12", "11.17"] },
     { namn: "Lyftdag", punkter: ["11.6", "11.7", "11.8", "11.9", "11.11", "11.14", "11.15", "11.10"] },
-    { namn: "Efter placering", punkter: ["11.13"] },
+    { namn: "Efter placering", punkter: ["11.13", "11.16"] },
   ],
   12: [
     { namn: "Före montage", punkter: ["12.1", "12.6", "12.4"] },
     {
       namn: "Montage och anslutning",
-      punkter: ["12.2", "12.3", "12.5", "12.7", "12.8", "12.10", "12.11", "12.12", "12.14", "12.16"],
+      punkter: ["12.2", "12.19", "12.20", "12.21", "12.3", "12.5", "12.7", "12.8", "12.10", "12.11", "12.12", "12.14", "12.16", "12.17", "12.18"],
     },
     { namn: "Före spänning", punkter: ["12.9", "12.15"] },
     { namn: "Vid idrifttagning", punkter: ["12.13"] },
@@ -39,7 +39,7 @@ export const TIDSGRUPPER = {
     { namn: "Före cold commissioning", punkter: ["13.14", "13.15", "13.7"] },
     { namn: "Cold commissioning", punkter: ["13.6", "13.19"] },
     { namn: "Hot commissioning och SAT", punkter: ["13.8", "13.16", "13.18", "13.20", "13.22", "13.9", "13.10"] },
-    { namn: "Spänningssättning och M5", punkter: ["13.12", "13.11", "13.13"] },
+    { namn: "Spänningssättning och M5", punkter: ["13.23", "13.24", "13.12", "13.11", "13.13", "13.25"] },
   ],
 };
 
@@ -54,11 +54,14 @@ export const RUBRIKER = {
   "10.13": "Fack H3: forcera aldrig jordkopplaren",
   "10.14": "SAT-resultat för ljusbågsskydd och utlösningskedja",
   "10.15": "Verifiering av intern DC-försörjning och batteribackup",
+  "10.16": "Dokumenterat omsättningsläge för lokaltrafo och MV-skidens trafo",
+  "10.19": "E-House nivellerat inom tolerans och jordat direkt",
   "11.4": "Lyftplan med kranens lastdiagram och OEM:s lyftredskap",
   "11.5": "Hjälpkraft 400 V klar vid ankomst (CATL-garanti)",
   "11.8": "Förankring: CATL svetsas, PE-skid endast bultas",
   "11.10": "Avvikelse från leveransfönster → skriftligt varsel samma dag",
   "11.15": "PCS dockas mot MV-skid medan den hänger i kranen",
+  "11.16": "Okulär kontroll av momentmärkning efter transport",
   "12.1": "Fastställ gränsen för PCS-interna DC-säkringar med PE",
   "12.2": "DC-kabelskor, åtdragningsmoment och balans mellan block",
   "12.3": "Kvittens på PE:s interna AC-förbindning PCS–MV-skid",
@@ -68,6 +71,10 @@ export const RUBRIKER = {
   "12.11": "CATL: skyddsplåtar i busbar-utrymmet av och på igen",
   "12.12": "Momentprotokoll för ONE:s externa kraftanslutningar",
   "12.16": "LSP-kabelfärger enligt bygghandling",
+  "12.18": "Kabelskåp: placering, marknivå, handtag och märkning",
+  "12.19": "PCSK: DC direkt mot skenorna i rätt ordning, skydd på",
+  "12.20": "PCSK-änden 60 Nm med rätt brickor; CATL-änden 50 Nm",
+  "12.21": "Kontaktytor Al/Cu rengjorda och kontaktmedel enligt PE",
   "13.3": "Kompetens och skydd för ONE:s och OEM:s idrifttagningspersonal",
   "13.5": "Spänningssättningstillstånd från EAA och nätägare",
   "13.6": "ONE:s förkontroller av externa kablar före cold commissioning",
@@ -83,6 +90,9 @@ export const RUBRIKER = {
   "13.20": "Bevaka nät- och EMS-prov – bekräfta ansvar före bokning",
   "13.21": "Kopplingsansvar dygnet runt – bemanna",
   "13.22": "Inga andra arbetsbevis under provning; märkning före spänning",
+  "13.23": "Fasföljd och faslikhet kontrollerade MV och LV, protokoll",
+  "13.24": "Okulär besiktning före spänning: städat, skydd på, låst",
+  "13.25": "ONE:s idrifttagningsintyg per anläggningsdel signerat",
 };
 
 /** Sektionerna som guiden ritar för ett moment: tidsgrupperna om momentet har

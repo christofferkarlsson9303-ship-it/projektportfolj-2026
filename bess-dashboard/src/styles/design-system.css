@@ -1198,6 +1198,9 @@ tr.lastrad:hover{opacity:.8}
 .inlogg-marke{display:inline-flex;flex-direction:column;align-items:flex-start;margin-bottom:20px}
 .inlogg-logo{height:44px;width:auto}
 .inlogg-dom{font-size:12px;letter-spacing:.03em;color:var(--one-bla);margin-top:6px}
+.inlogg-google{display:inline-flex;align-items:center;justify-content:center;gap:10px}
+.inlogg-eller{display:flex;align-items:center;gap:10px;margin:16px 0 12px;font-size:12px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.08em}
+.inlogg-eller::before,.inlogg-eller::after{content:"";flex:1;border-top:1px solid var(--hairline)}
 .inlogg-kort h1{font-size:20px;margin:0 0 4px}
 .inlogg-kort label{display:block;font-size:12.5px;font-weight:600;color:var(--ink-svag);margin-bottom:6px}
 .note.err{background:var(--fel-bg,#fdeaea);border-left-color:var(--rod)}
@@ -2367,3 +2370,23 @@ button.ov-gantt-rad:hover>:first-child,button.ov-gantt-rad:focus-visible>:first-
 
 /* Felgränserna: felmeddelandet i en dämpad ruta. */
 .felgrans-text{background:var(--sunken);border-radius:10px;padding:12px;font-size:12px;overflow-x:auto;color:var(--ink-soft);white-space:pre-wrap}
+
+/* ---------- Flikrad: vyerna i aktiv ingång (Idag / Projektet / Pengar) ----------
+   Fortsättning av sidhuvudet i ONE Blågrön. Rullar i sidled på smal skärm
+   i stället för att bryta raden eller göra sidan bredare. */
+.flikrad{display:flex;gap:2px;background:var(--one-djup);padding:0 38px;overflow-x:auto;
+  scrollbar-width:none;border-top:1px solid rgba(255,255,255,.14)}
+.flikrad::-webkit-scrollbar{display:none}
+.flikrad button{flex:0 0 auto;font-family:var(--font-b);font-size:13.5px;font-weight:600;color:rgba(255,255,255,.78);
+  background:none;border:none;border-bottom:3px solid transparent;padding:11px 14px 9px;cursor:pointer;white-space:nowrap}
+.flikrad button:hover{color:#fff;background:rgba(255,255,255,.08)}
+.flikrad button.on{color:#fff;border-bottom-color:var(--one-bla)}
+.flikrad button:focus-visible{outline:2px solid #fff;outline-offset:-2px}
+@media(min-width:981px){
+  .flikrad{padding-left:max(24px,calc((100% - 1320px) / 2 + 24px));padding-right:max(24px,calc((100% - 1320px) / 2 + 24px))}
+}
+@media(max-width:980px){.flikrad{padding:0 8px}}
+@media print{.flikrad{display:none}}
+/* Verktygsknappen i sidomenyn ligger sist, avskild från ingångarna. */
+.sidenav .nav-verktyg{margin-top:10px;border-top:1px solid rgba(255,255,255,.12);border-radius:0;padding-top:14px}
+.sidenav > button:not(.nav-verktyg){font-size:15px;padding:12px}

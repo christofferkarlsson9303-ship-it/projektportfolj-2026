@@ -5,8 +5,8 @@ import { PROJEKTMALLAR, PROJEKTKONTROLL_REVISION } from "./projektkontroll.js";
 
 describe("AC2C-gränsdragning", () => {
   it("behåller kontrollhistorikens nycklar och huvudmoment", () => {
-    expect(SUMMERING).toEqual({faser:16,punkter:288,hallpunkter:48,milstolpar:7,motsagelser:12});
-    expect(new Set(ALLA_PUNKTER.map(p => p.id)).size).toBe(288);
+    expect(SUMMERING).toEqual({faser:16,punkter:309,hallpunkter:55,milstolpar:7,motsagelser:12});
+    expect(new Set(ALLA_PUNKTER.map(p => p.id)).size).toBe(309);
     expect(PROJEKTMALLAR).toHaveLength(16);
     expect(PROJEKTKONTROLL_REVISION).toBe("2026-10-17.1");
   });
