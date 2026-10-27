@@ -24,6 +24,10 @@
    plus lop.25–26. Åtta befintliga punkter har fått ett tillägg i texten;
    ingen av dem var bockad i något projekt. 10.14 och 8.1 var bockade och
    fick därför nya punkter (10.17, 8.10) i stället för tillägg.
+   Samma dag: moment 12 fick PCSK Gen3-avsnittet (12.19–12.21) ur PE:s
+   installationsmanual INVG3MHW01. 12.1 är omskriven: fältsäkringar gäller
+   bara HEM/HEMK, så punkten är ej aktuell för PCSK (36037 hade redan
+   markerat den så). 12.2 (bockad) är orörd; PCSK-ändens moment står i 12.20.
 
    Id:n ("7.3", "lop.4") står i länkar (#kp-7.3) och i ledtidernas
    punkthänvisning — de får aldrig numreras om. Ny punkt i en fas läggs sist
@@ -742,7 +746,7 @@ export const FASER: Fas[] = [
       {
         namn: "",
         punkter: [
-          { id: "12.1", text: "Fastställ gränsen för PCS-interna DC-säkringar med PE före externa kabelanslutningar. Ta emot PE:s klartecken och följ godkänd montageanvisning för ONE:s anslutningar.", badges: ["HP", "L"], ansvar: "ONE / PE", nar: "Montage" },
+          { id: "12.1", text: "PCS-interna DC-säkringar: fältmontering gäller bara PE HEM/HEMK (PV-växelriktare, fotnot 1 i PE INVG3MHW01). PCSK/PCSM (BESS) har inga fältsäkringar – ej aktuell för PCSK. DC-skyddet ligger i CATL:s rack/Main Control Box och PCS:ens DC-brytare.", badges: ["L"], ansvar: "ONE / PE", nar: "Montage" },
           { id: "12.2", text: "DC: dubbelhåls kabelskor (c/c 45 mm), M12 50 Nm, balans mellan block ≤ ±20 %", badges: ["HP"], ansvar: "Montör", nar: "Montage" },
           { id: "12.3", text: "Ta emot PE:s montagekvittens för intern AC-förbindning PCS–transformator/MV-skid. ONE utför externa anslutningar. Dokumentera skriftligt om PCS-dockningen kräver ONE-medverkan.", badges: [], ansvar: "ONE PL / PE", nar: "Montage" },
           { id: "12.4", text: "Samordna säker provkonfiguration för aerosolsystemet med CATL och FACP-specialist. ONE:s externa kablage och OEM:s interna FSS hanteras separat enligt godkänd provplan.", badges: ["HP", "L"], ansvar: "ONE / CATL / FACP-specialist", nar: "Hela montaget" },
@@ -770,6 +774,14 @@ export const FASER: Fas[] = [
         punkter: [
           { id: "12.17", text: "Beröringsskydd IP2X kontrollerat på ONE:s anslutningar i kabelskåp och LSP-skåp efter montage", badges: ["K"], ansvar: "Elinstallatör", nar: "Efter montage" },
           { id: "12.18", text: "Kabelskåp: rätt placering och marknivå, tjälskjutningsskruvar borttagna, parallellhandtag, markering/snökäpp och märkning", badges: ["L"], ansvar: "Elinstallatör", nar: "Efter montage" },
+        ],
+      },
+      {
+        namn: "PCSK Gen3 – DC-anslutning (PE INVG3MHW01, 2026-10-27)",
+        punkter: [
+          { id: "12.19", text: "PCSK DC-anslutning i ordning: kontrollera typskylt (PCSK/PCSM) → öppna DC-facket → DC+ och DC− direkt mot DC-skenorna, inga fältsäkringar → momentdra → momentlacka → montera beröringsskydden i polykarbonat över DC-skenorna", badges: ["HP", "K"], ansvar: "Elinstallatör", nar: "Montage" },
+          { id: "12.20", text: "PCSK-ändens moment: M12 mot DC-skena 60 Nm (PE Gen3), fjäderbricka DIN 6796 + stor planbricka DIN 9021 på båda sidor: bult → DIN 6796 → DIN 9021 → kabelsko → skena → planbricka → DIN 6796 → mutter. CATL-änden är 50 Nm (12.2) – båda värdena i momentprotokollet", badges: ["K"], ansvar: "Elinstallatör", nar: "Montage" },
+          { id: "12.21", text: "Kontaktytor (Al/Cu) rengjorda med isopropanol före ihopbultning; AXQ 1×240 Al mot skena med kabelsko och kontaktmedel enligt PE:s anvisning", badges: ["L"], ansvar: "Elinstallatör", nar: "Montage" },
         ],
       },
     ],

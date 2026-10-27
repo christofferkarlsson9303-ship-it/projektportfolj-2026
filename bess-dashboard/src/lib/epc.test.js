@@ -263,10 +263,10 @@ describe("punktlage", () => {
 });
 
 describe("checklistsummering", () => {
-  it("summerar klara, kvar, hållpunkter och grindar över alla 306 punkter", () => {
+  it("summerar klara, kvar, hållpunkter och grindar över alla 309 punkter", () => {
     const { totalt, faser, lopande } = checklistsummering(seed(), "36037", NU);
     // Moment 0–9 är passerade men inga punkter är registrerade: grinden bockar inte av.
-    expect(totalt).toMatchObject({ punkter: 306, klara: 0, ejAktuella: 0, kvar: 306, hp: 55, hpKlara: 0, grindar: 10 });
+    expect(totalt).toMatchObject({ punkter: 309, klara: 0, ejAktuella: 0, kvar: 309, hp: 55, hpKlara: 0, grindar: 10 });
     expect(totalt.andel).toBe(0);
     expect(faser[10]).toMatchObject({ punkter: 19, klara: 0, kvar: 19, hp: 7, hpKvar: 7 });
     expect(lopande).toMatchObject({ punkter: 26, klara: 0 });
