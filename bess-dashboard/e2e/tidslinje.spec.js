@@ -133,12 +133,12 @@ test("omfattningsväljaren går att styra med piltangenter", async ({ page }) =>
   const alla = grupp.getByRole("radio", { name: "Alla projekt" });
   const ett = grupp.getByRole("radio", { name: "Valt projekt" });
 
-  await expect(alla).toHaveAttribute("aria-checked", "true");
-
-  await alla.focus();
-  await page.keyboard.press("ArrowRight");
   await expect(ett).toHaveAttribute("aria-checked", "true");
-  await expect(ett).toBeFocused();
+
+  await ett.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(alla).toHaveAttribute("aria-checked", "true");
+  await expect(alla).toBeFocused();
 });
 
 test("byggfaserna fälls ut och bockar av", async ({ page }) => {

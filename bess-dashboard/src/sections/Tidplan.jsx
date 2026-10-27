@@ -225,7 +225,8 @@ function Byggfas({ fas, pid }) {
 export function Tidplan() {
   const { state, uppd, uppdStatus, laggTill } = usePortfolj();
   const { valtProjekt: pid, fraga } = useUi();
-  const [omfang, setOmfang] = useState("alla");
+  /* Gantt visar projektet i toppraden som standard; "Alla projekt" är ett val. */
+  const [omfang, setOmfang] = useState("ett");
   const bred = useMedia("(min-width: 768px)");
   /* null = följ skärmbredden; true/false = användaren har valt. */
   const [visaGantt, setVisaGantt] = useState(null);
@@ -384,8 +385,8 @@ export function Tidplan() {
             varde={omfang}
             onValj={setOmfang}
             alternativ={[
-              ["alla", "Alla projekt"],
               ["ett", "Valt projekt"],
+              ["alla", "Alla projekt"],
             ]}
           />
         }
