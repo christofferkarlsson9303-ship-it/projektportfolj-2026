@@ -119,7 +119,7 @@ describe("faslage", () => {
     expect(f[7].status).toBe("klar");
     expect(f[10].status).toBe("pagar"); // 2026-09-04 → 2026-11-04
     expect(f[11].status).toBe("kommande");
-    expect(f[10]).toMatchObject({ punkter: 15, hp: 5 });
+    expect(f[10]).toMatchObject({ punkter: 19, hp: 7 });
   });
 
   it("markerar en fas som sen när slutet passerat utan grind", () => {
@@ -200,7 +200,7 @@ describe("kommandeHallpunkter", () => {
     const hp = kommandeHallpunkter(seed(), "36037", 30, NU);
     expect(new Set(hp.map((x) => x.fas.fas.nr))).toEqual(new Set([10, 11, 12]));
     // Fas 10–12 har 5 + 5 + 4 hållpunkter.
-    expect(hp).toHaveLength(14);
+    expect(hp).toHaveLength(17);
   });
 
   it("släpper fasens hållpunkter när grinden passeras", () => {
@@ -218,7 +218,7 @@ describe("lagesbild", () => {
     expect(l.nastaGrind.fas.grind.kod).toBe("G10");
     expect(l.nastaBetalning).toMatchObject({ kod: "M5", status: "pagaende" });
     expect(l.grindarPasserade).toBe(10);
-    expect(l.hp).toBe(48);
+    expect(l.hp).toBe(55);
     // En passerad grind bockar inte av hållpunkterna (beslut 2026-10-17).
     expect(l.hpKlara).toBe(0);
     expect(l.dagarTillSlutbesiktning).toBe(67);
@@ -263,13 +263,13 @@ describe("punktlage", () => {
 });
 
 describe("checklistsummering", () => {
-  it("summerar klara, kvar, hållpunkter och grindar över alla 288 punkter", () => {
+  it("summerar klara, kvar, hållpunkter och grindar över alla 306 punkter", () => {
     const { totalt, faser, lopande } = checklistsummering(seed(), "36037", NU);
     // Moment 0–9 är passerade men inga punkter är registrerade: grinden bockar inte av.
-    expect(totalt).toMatchObject({ punkter: 288, klara: 0, ejAktuella: 0, kvar: 288, hp: 48, hpKlara: 0, grindar: 10 });
+    expect(totalt).toMatchObject({ punkter: 306, klara: 0, ejAktuella: 0, kvar: 306, hp: 55, hpKlara: 0, grindar: 10 });
     expect(totalt.andel).toBe(0);
-    expect(faser[10]).toMatchObject({ punkter: 15, klara: 0, kvar: 15, hp: 5, hpKvar: 5 });
-    expect(lopande).toMatchObject({ punkter: 24, klara: 0 });
+    expect(faser[10]).toMatchObject({ punkter: 19, klara: 0, kvar: 19, hp: 7, hpKvar: 7 });
+    expect(lopande).toMatchObject({ punkter: 26, klara: 0 });
   });
 
   it("räknar andelen på det som är aktuellt", () => {
@@ -277,7 +277,7 @@ describe("checklistsummering", () => {
     for (const id of ["10.1", "10.2"]) s = punkt(s, "36037", id, "klar");
     s = punkt(s, "36037", "10.3", "ejaktuell");
     const { totalt, faser } = checklistsummering(s, "36037", NU);
-    expect(faser[10]).toMatchObject({ klara: 2, ejAktuella: 1, kvar: 12 });
+    expect(faser[10]).toMatchObject({ klara: 2, ejAktuella: 1, kvar: 16 });
     expect(totalt.andel).toBe(Math.round((2 / 287) * 100));
   });
 });
@@ -302,7 +302,7 @@ describe("nastaUppgifter", () => {
 
   it("föreslår grinden när alla fasens punkter är klara", () => {
     let s = seed();
-    for (const i of Array.from({ length: 15 }, (_, n) => n + 1)) s = punkt(s, "36037", `10.${i}`, "klar");
+    for (const i of Array.from({ length: 19 }, (_, n) => n + 1)) s = punkt(s, "36037", `10.${i}`, "klar");
     const g = nastaUppgifter(s, "36037", NU).find((x) => x.typ === "grind");
     expect(g.fas.fas.grind.kod).toBe("G10");
     expect(g.orsak).toMatch(/dags för G10/);
@@ -479,9 +479,9 @@ describe("grindSaknas", () => {
     const g = grindSaknas(seed(), "36037", 10, NU);
     expect(g.klart).toBe(false);
     expect(g.grinddatum).toBe(true);
-    expect(g.punkter).toHaveLength(15);
+    expect(g.punkter).toHaveLength(19);
     const hp = g.punkter.filter((p) => p.hp).length;
-    expect(hp).toBe(5);
+    expect(hp).toBe(7);
     expect(g.punkter.slice(0, hp).every((p) => p.hp)).toBe(true);
     expect(g.punkter.every((p) => !p.ejRegistrerad)).toBe(true);
   });

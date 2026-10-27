@@ -19,7 +19,7 @@ Tre checklistor över samma arbete, med var sin lagring och utan koppling till v
 | Checklista | Katalog (statisk) | Status per projekt | Skrivs av | Läses av |
 | --- | --- | --- | --- | --- |
 | Projektstart | `data/projektstartKatalog.js`, 216 punkter (91 kritiska) | `utkast.kryss[bucket][id]` – i webbläsaren tills projektet skapas, sedan i `state.projektstart[].utkast` | `kryssa()` i `Projektstart.jsx` | `fasKrav()`, `stegKrav()`, `pdfKvar()` i `lib/projektfas.js` |
-| Bygga batteripark | `data/bessChecklistData.ts`, 288 punkter (264 i moment 0–15, 24 löpande) | `state.epcPunkter` (`status: klar \| ejaktuell`), grindar i `state.epcFaser` | `EPC_PUNKT`, `EPC_FAS` | `punktlage()`, `faslage()`, `nastaUppgifter()` i `lib/epc.js` |
+| Bygga batteripark | `data/bessChecklistData.ts`, 306 punkter (280 i moment 0–15, 26 löpande; version 1.3 2026-10-27) | `state.epcPunkter` (`status: klar \| ejaktuell`), grindar i `state.epcFaser` | `EPC_PUNKT`, `EPC_FAS` | `punktlage()`, `faslage()`, `nastaUppgifter()` i `lib/epc.js` |
 | Egenkontroller | `data/projektkontroll.js` (`PROJEKTMALLAR`), 115 punkter i 16 moment | `state.faltkontroller` (resultat, datum, kontrollant, referens, mallrevision) per omfattning | `FALT_KONTROLL` | `kontrollage()`, `byggFaltmaterial()`, `EgenkontrollLage.jsx` |
 
 Kopplingar som redan finns i koden: 41 egenkontroller har fältet `epc` som pekar på EPC-punkter. Projektstartens punkter är inte kopplade till något.
@@ -120,7 +120,7 @@ Varje etapp är en egen PR med tester. Ingen etapp ändrar vad användaren ser f
 
 ### Etapp 0 – Beslut och sammanslagningslista (PL + el/OEM)
 
-- Gå igenom [`gemensam-checklista-mappning.csv`](gemensam-checklista-mappning.csv). Den har alla 623 punkter (inklusive de fyra anbudspunkterna i fas 1 från PR #79). Förslag i kolumnen `foreslagen_relation`: 41 `verifierar` (från koden) och 11 `möjlig sammanslagning` (automatisk textlikhet, ska granskas).
+- Gå igenom [`gemensam-checklista-mappning.csv`](gemensam-checklista-mappning.csv). Den har alla 641 punkter (inklusive de fyra anbudspunkterna i fas 1 från PR #79 och de 18 punkterna ur EBR-E och Montörspärmen 2026-10-27). Förslag i kolumnen `foreslagen_relation`: 41 `verifierar` (från koden) och 11 `möjlig sammanslagning` (automatisk textlikhet, ska granskas).
 - Fyll i `beslut`: `egen` (ny KP), `slå ihop med <id>` eller `verifierar <id>`. Det som inte beslutas blir en egen punkt.
 - Fyll i `beslutad_av`.
 

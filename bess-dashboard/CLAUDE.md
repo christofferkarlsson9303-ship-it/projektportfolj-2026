@@ -109,7 +109,7 @@ Regler:
 - **`--lank`** är textfärgen för länkar och nummer på ytor som följer temat (ONE Blågrön ljust, info-ton mörkt). Använd den i stället för `var(--one-djup)` som textfärg på ytor — inte på vita knappar i sidhuvudet.
 - **Felgränser:** `Felgrans` runt varje vy, `AppFelgrans` runt hela appen (omladdning och lokal kopia).
 - **Rendering:** `usePortfoljAtgarder()` ger dispatch och de enkla åtgärderna utan portföljdatan. Använd den i memorerade rader och knappar — en komponent som läser `usePortfolj()` ritas om vid varje ändring, oavsett `React.memo`. Guidens rader (`Punktrad`) är memorerade och får bara enkla värden.
-- **Guiden ritar bara utfällda moment** (`Fasruta`). Ett test som räknar alla 288 rader fäller ut alla först.
+- **Guiden ritar bara utfällda moment** (`Fasruta`). Ett test som räknar alla 306 rader fäller ut alla först.
 - **CI** delar e2e på tre jobb (`--shard`). Kontrollen "E2E (desktop + mobil)" är grön bara om alla tre delarna är det.
 
 ## Gör inte
