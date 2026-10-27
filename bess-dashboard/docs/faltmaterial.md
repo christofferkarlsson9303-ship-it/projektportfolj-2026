@@ -72,6 +72,16 @@ I miljöer med förinstallerad Chromium kan
 `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/sökväg/till/chromium` användas.
 PDF/utskrift granskas även visuellt för sidbrytningar, huvud och skrivfält.
 
+## Samma nummer som Bygga batteripark (2026-10-27)
+
+Varje kontrollrad i fältmaterialet visas med numret på den checklistpunkt den
+bevisar plus en bokstav: `12.20a`, `12.20b`. Kopplingen står i
+`data/kontrollnummer.js` (`KONTROLL_FORALDER`) och bokstäverna delas ut i
+projektchecklistans ordning. Det interna id:t (P12.01, M2.05, B.02 …) är
+oförändrat, så registrerade resultat och `epc`-kopplingen påverkas inte. Numret
+bockar inte av checklistpunkten. Sju rader (`SVAG_KOPPLING`) saknar bra
+motsvarighet och ligger under närmaste punkt i samma moment.
+
 ## Lagplan (borttagen 2026-10-27)
 
 Lagplanen (Lag A/B/C med två namn per lag) är borttagen. Arbetsledaren fördelar

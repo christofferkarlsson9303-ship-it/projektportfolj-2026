@@ -11,12 +11,12 @@ async function panel(page) {
 }
 async function registrera(d) {
   await d.locator("details").first().locator("summary").click();
-  await d.getByRole("combobox", { name: "Resultat – P0.01", exact: true }).selectOption("ok");
-  await d.getByLabel("Kontrolldatum – P0.01", { exact: true }).fill("2026-10-01");
-  await d.getByLabel("Kontrollant (namn) – P0.01", { exact: true }).fill("Provare 123");
-  await d.getByLabel("Bevis / protokoll och revision – P0.01", { exact: true }).fill("Kravspecifikation rev C");
-  await d.getByLabel("Mätvärde / avvikelse / åtgärd / motivering – P0.01", { exact: true }).fill("Bekräftat 8 MW / 16 MWh.");
-  await d.getByLabel("Mätvärde / avvikelse / åtgärd / motivering – P0.01", { exact: true }).blur();
+  await d.getByRole("combobox", { name: "Resultat – 0.4a", exact: true }).selectOption("ok");
+  await d.getByLabel("Kontrolldatum – 0.4a", { exact: true }).fill("2026-10-01");
+  await d.getByLabel("Kontrollant (namn) – 0.4a", { exact: true }).fill("Provare 123");
+  await d.getByLabel("Bevis / protokoll och revision – 0.4a", { exact: true }).fill("Kravspecifikation rev C");
+  await d.getByLabel("Mätvärde / avvikelse / åtgärd / motivering – 0.4a", { exact: true }).fill("Bekräftat 8 MW / 16 MWh.");
+  await d.getByLabel("Mätvärde / avvikelse / åtgärd / motivering – 0.4a", { exact: true }).blur();
 }
 
 test("projektchecklista sparar spårbara resultat utan att blanda enheter eller projekt", async ({ page }) => {
@@ -44,7 +44,7 @@ test("rapport exporterar verkligt resultat och markerar delurval; blankett förb
   await oppna(page); const d = await panel(page);
   await registrera(d);
   await d.getByRole("button", { name: "Rensa moment", exact: true }).click();
-  await d.getByRole("checkbox", { name: /^Moment 1:/ }).check();
+  await d.getByRole("checkbox", { name: /^Moment 0:/ }).check();
   await d.getByLabel("Kontrollplan / dokumentnummer och revision", { exact: true }).fill("KP-001 rev C");
   const promise = page.waitForEvent("download"); await d.getByRole("button", { name: "Ladda ned PDF", exact: true }).click();
   const file = await promise; const path = info.outputPath("delrapport.pdf"); await file.saveAs(path);
@@ -88,7 +88,7 @@ test("komplett egenkontroll har fasindex och slutdokumentationens genväg", asyn
   await expect(report).toContainText("Egenkontroll – redo för granskning");
   await expect(report.locator(".field-check")).toHaveCount(125);
   await expect(report.locator(".field-index tbody tr")).toHaveCount(16);
-  await expect(report).toContainText("P15.04");
+  await expect(report).toContainText("15.12a");
   if (info.project.name === "desktop") await page.pdf({ path: info.outputPath("komplett-print.pdf"), printBackground: true, preferCSSPageSize: true });
   utanKonsolfel(fel);
 });

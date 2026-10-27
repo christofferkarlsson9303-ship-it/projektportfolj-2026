@@ -2,6 +2,7 @@
    En punkt utan `tillampning` gäller alla profiler. */
 
 import { HARDVARUPROFILER } from "../data/hardvaruprofiler.js";
+import { kontrollNr } from "../data/kontrollnummer.js";
 
 /** @param {any} punkt @param {string} profilId @returns {boolean} */
 export const gallerProfil = (punkt, profilId) => !punkt?.tillampning || punkt.tillampning.profil === profilId;
@@ -32,7 +33,7 @@ export function oppnaBeslut(undantagna, moment, profilId) {
     const fran = HARDVARUPROFILER[undantagna[0].profil]?.kort || undantagna[0].profil;
     ut.push(`${undantagna.length} punkter gäller ${fran} och är borttagna. Motsvarande kontrollkrav för ${namn} ska fastställas ur tillverkarens manual innan utförande.`);
   }
-  const att = moment.flatMap((m) => m.punkter.filter((p) => p.verifiering && /verifier/i.test(p.verifiering)).map((p) => p.id));
+  const att = moment.flatMap((m) => m.punkter.filter((p) => p.verifiering && /verifier/i.test(p.verifiering)).map((p) => kontrollNr(p.id)));
   if (att.length) ut.push(`${att.length} krav är ej verifierade mot OEM-manual (${att.slice(0, 8).join(", ")}${att.length > 8 ? " …" : ""}).`);
   return ut;
 }

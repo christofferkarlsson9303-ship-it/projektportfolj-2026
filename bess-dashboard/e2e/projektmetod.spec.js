@@ -64,17 +64,17 @@ test("byggfasens egenkontroller delar resultat och sparar sista texten vid Escap
   const d = page.getByRole("dialog", { name: /Fältmaterial/ });
   await expect(d.getByRole("status")).toContainText("4 kontrollpunkter");
   await d.locator("details").first().locator("summary").click();
-  await d.getByRole("combobox", { name: "Resultat – P0.01", exact: true }).selectOption("ok");
-  await d.getByLabel("Kontrolldatum – P0.01", { exact: true }).fill("2026-10-01");
-  await d.getByLabel("Kontrollant (namn) – P0.01", { exact: true }).fill("Kontrollant A");
-  const ref = d.getByLabel("Bevis / protokoll och revision – P0.01", { exact: true });
+  await d.getByRole("combobox", { name: "Resultat – 0.4a", exact: true }).selectOption("ok");
+  await d.getByLabel("Kontrolldatum – 0.4a", { exact: true }).fill("2026-10-01");
+  await d.getByLabel("Kontrollant (namn) – 0.4a", { exact: true }).fill("Kontrollant A");
+  const ref = d.getByLabel("Bevis / protokoll och revision – 0.4a", { exact: true });
   await ref.fill("Kravspecifikation rev D"); await ref.press("Escape");
   await expect(d).not.toBeVisible(); await expect(lage).toContainText("1 av 4 kompletta");
   await page.getByRole("button", { name: "Fältmaterial", exact: true }).click();
   await expect(d.getByRole("status")).toContainText("125 kontrollpunkter");
   await expect(d).toContainText("1 av 125 kompletta kontroller");
   await d.locator("details").first().locator("summary").click();
-  await expect(d.getByLabel("Bevis / protokoll och revision – P0.01", { exact: true })).toHaveValue("Kravspecifikation rev D");
+  await expect(d.getByLabel("Bevis / protokoll och revision – 0.4a", { exact: true })).toHaveValue("Kravspecifikation rev D");
 });
 
 test("alla sidor går att öppna och har enkel vägledning", async ({ page }) => {

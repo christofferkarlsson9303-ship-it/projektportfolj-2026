@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { kontrollNr, mallEtikett } from "../../data/kontrollnummer.js";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { FALTMALLAR, KALLSTATUS } from "../../data/faltmaterial.js";
 import { gallerProfil } from "../../lib/tillampning.js";
@@ -101,14 +102,14 @@ export function FaltmaterialPanel({ projekt, urval, onValjProjekt, onStang }) {
         <legend className="mb-2 font-head text-lg font-bold">Kontrollmoment</legend>
         <div className="mb-3 flex flex-wrap gap-2"><button type="button" className="btn sec mini" onClick={() => setMallIds(alla)}>{mallpaket === "projekt" ? "Välj hela projektet" : "Välj alla fyra"}</button><button type="button" className="btn sec mini" onClick={() => setMallIds([])}>Rensa moment</button></div>
         <div className="flex flex-col gap-3">{mallar.map((m) => <section key={m.id} className="rounded-sm border border-solid border-hairline p-3">
-          <label className="flex items-center gap-3 font-bold"><input type="checkbox" checked={mallIds.includes(m.id)} onChange={() => vaxlaMall(m.id)} />Moment {m.nr}: {m.titel}<span className="ml-auto whitespace-nowrap text-sm text-ink-soft">{m.punkter.filter((p) => gallerProfil(p, profilId)).length} punkter{m.punkter.some((p) => !gallerProfil(p, profilId)) ? ` · ${m.punkter.filter((p) => !gallerProfil(p, profilId)).length} gäller annan hårdvara` : ""}</span></label>
+          <label className="flex items-center gap-3 font-bold"><input type="checkbox" checked={mallIds.includes(m.id)} onChange={() => vaxlaMall(m.id)} />{mallEtikett(m)}: {m.titel}<span className="ml-auto whitespace-nowrap text-sm text-ink-soft">{m.punkter.filter((p) => gallerProfil(p, profilId)).length} punkter{m.punkter.some((p) => !gallerProfil(p, profilId)) ? ` · ${m.punkter.filter((p) => !gallerProfil(p, profilId)).length} gäller annan hårdvara` : ""}</span></label>
           {m.flode ? <p className="text-sm font-semibold text-text-bla">{m.flode}</p> : null}
           {mallIds.includes(m.id) ? <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <label className="flex flex-col gap-1 text-xs font-semibold">Manual / provplan och revision – moment {m.nr}<input type="text" maxLength={140} value={referenser[m.id] || ""} placeholder="Dokumentnamn, revision och sida" onChange={(e) => setReferenser((r) => ({ ...r, [m.id]: e.target.value }))} /></label>
-            <label className="flex flex-col gap-1 text-xs font-semibold">Utförare – moment {m.nr}<input type="text" list="falt-utforare" maxLength={80} value={ansvar[m.id] || ""} placeholder={utforare || "Namn / organisation"} onChange={(e) => setAnsvar((r) => ({ ...r, [m.id]: e.target.value }))} /></label>
+            <label className="flex flex-col gap-1 text-xs font-semibold">Manual / provplan och revision – {mallEtikett(m).toLowerCase()}<input type="text" maxLength={140} value={referenser[m.id] || ""} placeholder="Dokumentnamn, revision och sida" onChange={(e) => setReferenser((r) => ({ ...r, [m.id]: e.target.value }))} /></label>
+            <label className="flex flex-col gap-1 text-xs font-semibold">Utförare – {mallEtikett(m).toLowerCase()}<input type="text" list="falt-utforare" maxLength={80} value={ansvar[m.id] || ""} placeholder={utforare || "Namn / organisation"} onChange={(e) => setAnsvar((r) => ({ ...r, [m.id]: e.target.value }))} /></label>
           </div> : null}
           <details className="mt-2 text-sm"><summary className="cursor-pointer text-text-bla">{mallpaket === "projekt" ? "Registrera egenkontroller / visa punkter" : "Visa kontrollpunkter och EPC-koppling"}</summary><ol className="m-0 mt-2 list-none p-0">{m.punkter.map((p) => <li className="border-0 border-t border-solid border-hairline py-2" key={p.id}>
-            <b>{p.id} · {p.titel}</b><p className="m-0 mt-1 text-ink-soft">{p.instruktion}</p>
+            <b>{kontrollNr(p.id)} · {p.titel}</b><p className="m-0 mt-1 text-ink-soft">{p.instruktion}</p>
             {p.verifiering ? <p className="m-0 mt-1 text-warn-ink">{p.verifiering}</p> : null}
             <p className="m-0 mt-1 text-xs text-ink-faint">Kompetens: {p.roll} · EPC {p.epc.join(", ") || "Ny detaljpunkt"}</p>
             {mallpaket === "projekt" ? <KontrollResultat punkt={p} rad={kontrollIndex.get(kontrollId(projekt.id, omfattning, p.id))} revision={PROJEKTKONTROLL_REVISION} onSpara={(falt, varde) => sparaKontroll(p, falt, varde)} /> : null}
