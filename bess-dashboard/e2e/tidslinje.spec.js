@@ -141,20 +141,14 @@ test("omfattningsväljaren går att styra med piltangenter", async ({ page }) =>
   await expect(ett).toBeFocused();
 });
 
-test("byggfaserna fälls ut och bockar av", async ({ page }) => {
-  const faser = page.getByRole("region", { name: /^Milstolpar → klart-kriterier/ });
-  const forstaFas = faser.locator("button[aria-expanded]").first();
-  await expect(forstaFas).toHaveAttribute("aria-expanded", "false");
+test("milstolparna är räknare som öppnar momentet i Bygga batteripark", async ({ page }) => {
+  const kort = page.getByRole("region", { name: /^Milstolpar → klart-kriterier/ });
+  const rader = kort.getByRole("list", { name: "Milstolpar och grindar" }).getByRole("listitem");
+  await expect(rader).toHaveCount(7);
+  await expect(kort.getByRole("checkbox")).toHaveCount(0);
 
-  await forstaFas.click();
-  await expect(forstaFas).toHaveAttribute("aria-expanded", "true");
-
-  const kryss = faser.getByRole("checkbox").first();
-  await expect(kryss).toBeVisible();
-
-  const fore = await kryss.isChecked();
-  await kryss.click();
-  expect(await kryss.isChecked()).toBe(!fore);
+  await kort.getByRole("button", { name: /^Öppna moment 7 / }).click();
+  await expect(page).toHaveURL(/#\/epc\//);
 });
 
 test("byggmoment grupperas i åtta fällbara ONE-P-faser", async ({ page }) => {
