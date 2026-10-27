@@ -1,5 +1,4 @@
 import { FALTMALLAR, FALTMALL_REVISION, KALLSTATUS } from "../data/faltmaterial.js";
-import { LAGMALLAR, LAGPLAN_INLEDNING } from "../data/lagplan.js";
 import { PROJEKTMALLAR, PROJEKTKONTROLL_REVISION, PROJEKTKONTROLL_INLEDNING } from "../data/projektkontroll.js";
 import { kontrollId, kontrollSummering } from "./projektkontroll.js";
 import { idag } from "./datum.js";
@@ -22,7 +21,7 @@ export function arbetsrader(state, pid, { utforare = "", fran = "", till = "", i
 
 /**
  * Metadata till fältmaterialet. Alla fält är valfria.
- * @typedef {{enhet?: string, utforare?: string, lagmedlemmar?: Object<string,string>, visaResultat?: boolean,
+ * @typedef {{enhet?: string, utforare?: string, visaResultat?: boolean,
  *   kontrollplan?: string, datum?: string, skapadAv?: string, dokumentNr?: string, ritning?: string,
  *   fran?: string, till?: string}} FaltMetadata
  */
@@ -33,8 +32,8 @@ export function arbetsrader(state, pid, { utforare = "", fran = "", till = "", i
 export function byggFaltmaterial({ projekt, mallIds, referenser = {}, ansvar = {}, metadata = {}, uppgifter = [], mallpaket = "teknisk", kontroller = [] }) {
   const idSet = new Set(mallIds);
   /** @type {any[]} */
-  const mallar = mallpaket === "projekt" ? PROJEKTMALLAR : mallpaket === "lagplan" ? LAGMALLAR : FALTMALLAR;
-  const revision = mallpaket === "projekt" ? PROJEKTKONTROLL_REVISION : mallpaket === "lagplan" ? "2026-10-01.2" : FALTMALL_REVISION;
+  const mallar = mallpaket === "projekt" ? PROJEKTMALLAR : FALTMALLAR;
+  const revision = mallpaket === "projekt" ? PROJEKTKONTROLL_REVISION : FALTMALL_REVISION;
   const omfattning = metadata.enhet?.trim() || "Hela anläggningen";
   const index = new Map(kontroller.map((r) => [r.id, r]));
   /* Bara punkter som gäller projektets hårdvaruprofil (F09). */
@@ -46,7 +45,7 @@ export function byggFaltmaterial({ projekt, mallIds, referenser = {}, ansvar = {
     ...m,
     utrustning: utrustning(m),
     referens: (referenser[m.id] || "").trim(),
-    utforare: (ansvar[m.id] || (m.lag ? [metadata.lagmedlemmar?.[`${m.lag}1`], metadata.lagmedlemmar?.[`${m.lag}2`]].filter(Boolean).join(" + ") : "") || metadata.utforare || "").trim(),
+    utforare: (ansvar[m.id] || metadata.utforare || "").trim(),
     punkter: m.punkter.map((p) => ({ ...p, epc: [...p.epc], kontroll: index.has(kontrollId(projekt.id, omfattning, p.id)) ? { ...index.get(kontrollId(projekt.id, omfattning, p.id)) } : null })),
   }));
   return {
@@ -55,7 +54,7 @@ export function byggFaltmaterial({ projekt, mallIds, referenser = {}, ansvar = {
     visaResultat: mallpaket === "projekt" && metadata.visaResultat,
     kontrollplan: metadata.kontrollplan || "", omfattning,
     sammanstallning: kontrollSummering(moment, revision),
-    mallpaket, momentTotal: mallar.length, inledning: mallpaket === "projekt" ? PROJEKTKONTROLL_INLEDNING : mallpaket === "lagplan" ? LAGPLAN_INLEDNING : "",
+    mallpaket, momentTotal: mallar.length, inledning: mallpaket === "projekt" ? PROJEKTKONTROLL_INLEDNING : "",
     datum: metadata.datum || idag(), skapadAv: metadata.skapadAv || "",
     dokumentNr: metadata.dokumentNr || `EK-${projekt.nr || projekt.id}-${metadata.datum || idag()}${mallpaket === "projekt" ? `-R3-${omfattning.replace(/[^\p{L}\p{N}]+/gu, "_").slice(0, 40)}` : ""}`,
     enhet: metadata.enhet || "", utforare: metadata.utforare || "", ritning: metadata.ritning || "",

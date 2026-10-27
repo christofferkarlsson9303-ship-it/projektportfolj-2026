@@ -59,7 +59,7 @@ export function vem(p, moment) {
   return String(p?.roll || moment?.utforare || "").trim();
 }
 
-/** Rubriken för ett moment: "Lag B – DC-kablar och anslutningar". */
+/** Rubriken för ett moment: "Moment 12 – Anslutning BESS/PCS". */
 export function momentRubrik(m) {
   return String(m?.titel || "").trim();
 }

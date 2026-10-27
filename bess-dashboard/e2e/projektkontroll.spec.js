@@ -20,7 +20,7 @@ async function registrera(d) {
 }
 
 test("projektchecklista sparar spårbara resultat utan att blanda enheter eller projekt", async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem("bess-faltmaterial-v1-36037", JSON.stringify({ version: 2, mallpaket: "lagplan", mallIds: ["lag-a"] })));
+  await page.addInitScript(() => localStorage.setItem("bess-faltmaterial-v1-36037", JSON.stringify({ version: 3, mallpaket: "lagplan", mallIds: ["lag-a"] })));
   const { fel } = await oppna(page);
   const d = await panel(page);
   await expect(d.getByRole("combobox", { name: "Mallpaket", exact: true })).toHaveValue("projekt");

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { arStopp, meningar, stegTitel, vem, sidfot, SA_HAR_GOR_DU } from "./arbetslista.js";
-import { LAGMALLAR } from "../data/lagplan.js";
 
 describe("Arbetslista i klartext", () => {
   it("delar instruktionen i en mening per rad", () => {
@@ -26,15 +25,9 @@ describe("Arbetslista i klartext", () => {
     expect(arStopp({ titel: "Placera BESS-containrar" })).toBe(false);
   });
 
-  it("varje lagmall har minst en STOPP och alla steg får minst en mening", () => {
-    for (const m of LAGMALLAR) {
-      expect(m.punkter.some(arStopp)).toBe(true);
-      for (const p of m.punkter) expect(meningar(p.instruktion).length).toBeGreaterThan(0);
-    }
-  });
 
   it("vem faller tillbaka på momentets utförare", () => {
-    expect(vem({ roll: "Lag A" })).toBe("Lag A");
+    expect(vem({ roll: "Montör" })).toBe("Montör");
     expect(vem({}, { utforare: "Dan + Adam" })).toBe("Dan + Adam");
   });
 
