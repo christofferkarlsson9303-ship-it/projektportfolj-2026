@@ -83,12 +83,21 @@ Markering i checklistorna: **[HP]** = hållpunkt, stopp tills godkänt · **[K]*
 
 ### 2.2 Faser och stödpunkter
 
+Projektet går genom **8 faser** (samma som i verktyget). ONE P:s fyra huvudfaser är rubriker som grupperar dem. Beslut B1, 2026-10-27.
+
 ```
-1. Anbud/Initiering  → Avropsacceptans · Avropsgenomgång · Tilldelning · Projektdirektiv
-2. Förberedelse      → Uppstartsavstämning · Startmöte · Planering · Godkänd lösning
-3. Genomförande      → Operativ styrning · Uppföljning · ÄTA/störning · Kvalitet · Fakturering
-4. Avslut            → Kundleverans slutförd · Slutfakturerat · Erfarenhetsåterföring · Slutrapport
+ONE P             Fas (verktyget)                         Grind     Stödpunkter
+1. Initiering     1 Anbud, kontrakt och uppstart          G0–G1     Avropsacceptans · Avropsgenomgång · Tilldelning · Projektdirektiv
+2. Planering      2 Projektering och planering            G2–G4     Uppstartsavstämning · Startmöte · Planering · Godkänd lösning
+3. Genomförande   3 Etablering                            G5        Operativ styrning · Uppföljning · ÄTA/störning
+                  4 Mark och betong (cBoP)                G6–G9     Kvalitet · Fakturering
+                  5 Leveranser, lyft och montage (eBoP)   G10–G12
+                  6 Provning och driftsättning            G13
+4. Avslut         7 Slutbesiktning och överlämning        G14       Kundleverans slutförd · Slutfakturerat
+                  8 Ekonomiskt avslut, lärdomar, garanti  G15       Erfarenhetsåterföring · Slutrapport
 ```
+
+**Fas** betyder alltid fas 1–8. **Moment** betyder EPC-stegen 0–15 med grind G0–G15. ONE P-namnen (Initiering, Planering, Genomförande, Avslut) används som grupp, inte som fasnummer.
 
 ### 2.3 Projektorganisation (ONE P)
 
@@ -150,7 +159,9 @@ Osäker på 2, 5–8 → kontrollera med övrig personal, rådfråga jurist.
 
 ## 4. ONE P-faser – kontrollpunkter på övergripande nivå
 
-### Fas 1 – Initiering
+Kontrollpunkterna nedan gäller per ONE P-grupp. Initiering = fas 1, Planering = fas 2, Genomförande = fas 3–6, Avslut = fas 7–8 (se 2.2).
+
+### Initiering (fas 1)
 - [ ] Avropsacceptans: lönsamhet, risker och resurser bedömda. Frågetecken → intern beställare (tacka nej/skjuta?).
 - [ ] Entreprenad- och ersättningsform klarlagd: totalentreprenad (ABT 06) eller utförandeentreprenad (AB 04), fast pris eller löpande räkning.
 - [ ] Förfrågningsunderlag tydligt innan förfrågan går ut: tekniska specifikationer, kvalitets- och miljökrav, tidsramar och AF-del.
@@ -164,7 +175,7 @@ Osäker på 2, 5–8 → kontrollera med övrig personal, rådfråga jurist.
 - [ ] Projekttriangeln prioriterad (BESS: oftast Tid först).
 - [ ] Roller namngivna skriftligt.
 
-### Fas 2 – Planering
+### Planering (fas 2)
 - [ ] Uppstartsavstämning PL ↔ intern beställare genomförd (se 6.3).
 - [ ] Risk-workshop genomförd (Risk-P), risklista med ägare. **[K Nivå A]**
 - [ ] Bygghandlingar cBoP/eBoP klara för granskning. **[HP → M2]**
@@ -176,7 +187,7 @@ Osäker på 2, 5–8 → kontrollera med övrig personal, rådfråga jurist.
 - [ ] ENIA testad.
 - [ ] Godkänd lösning före inköp (se 6.8). **[HP]**
 
-### Fas 3 – Genomförande
+### Genomförande (fas 3–6)
 - [ ] Daglig byggdagbok på engelska i SharePoint.
 - [ ] Veckovis EAC/prognos.
 - [ ] Veckovis riskgenomgång.
@@ -184,7 +195,7 @@ Osäker på 2, 5–8 → kontrollera med övrig personal, rådfråga jurist.
 - [ ] UR/ÄTA skickas omedelbart vid störning.
 - [ ] Notification före faktura.
 
-### Fas 4 – Avslut
+### Avslut (fas 7–8)
 - [ ] Projektet anmält redo för slutbesiktning (skriftligt).
 - [ ] Punch list stängs direkt.
 - [ ] As-built/relationshandlingar klara.
@@ -194,9 +205,9 @@ Osäker på 2, 5–8 → kontrollera med övrig personal, rådfråga jurist.
 
 ## 5. BESS-arbetsfaser – detaljerade checklistor
 
-Faserna följer projektets tidsordning. Varje fas anger ONE P-fas och motsvarande grind (G0–G15) i verktygets EPC-checklista.
+Avsnitten följer fas 1–8 i tidsordning. Varje avsnitt anger fas, ONE P-grupp och grindar (G0–G15) i verktygets EPC-checklista.
 
-### 5.1 Uppstart – vecka 0–1 (ONE P fas 1–2 · G1)
+### 5.1 Uppstart – vecka 0–1 (fas 1 · Initiering · G1)
 *Inget får missas här – detta styr resten av projektet.*
 
 **📋 Kontraktsgenomgång**
@@ -235,7 +246,7 @@ Faserna följer projektets tidsordning. Varje fas anger ONE P-fas och motsvarand
 - [ ] Milstolpens utlösande krav uppfyllt och dokumenterat.
 - [ ] Fakturaunderlag per milstolpe i rätt format.
 
-### 5.2 Projektering, tillstånd och nätägare – parallellt med uppstart (ONE P fas 2 · G2–G4)
+### 5.2 Projektering, tillstånd och nätägare – parallellt med uppstart (fas 2 · Planering · G2–G4)
 *Måste vara klart före byggstart – förseningar här sprider sig direkt till produktionen.*
 
 **📐 Teknisk projektering**
@@ -303,7 +314,7 @@ Faserna följer projektets tidsordning. Varje fas anger ONE P-fas och motsvarand
 - [ ] Mängdmaterial samupphandlat för flera projekt.
 - [ ] Leveranstider matchar tidplan, buffert före leveranser.
 
-### 5.3 Etablering & HSE – innan första UE och tunga leveranser (ONE P fas 2–3 · G5)
+### 5.3 Etablering & HSE – innan första UE och tunga leveranser (fas 3 · Genomförande · G5)
 *HSE-stopp är den snabbaste vägen till försening.*
 
 **🏕️ Fysisk etablering**
@@ -421,7 +432,7 @@ Faserna följer projektets tidsordning. Varje fas anger ONE P-fas och motsvarand
 - [ ] Insatsplan, nyckelhantering och kontaktlista överlämnade till beställaren och räddningstjänsten.
 - [ ] Brandskyddsdokumentation i slutdokumentationen (se 5.7).
 
-### 5.4 Mark & betong – cBoP (ONE P fas 3 · G6–G9)
+### 5.4 Mark & betong – cBoP (fas 4 · Genomförande · G6–G9)
 *Kritisk fas. Schakt och fundament ska vara godkända innan BESS och ställverk levereras. Fel här är dyra.*
 
 **🚜 Schakt & markarbeten (UE: Elleholms Maskin AB)**
@@ -459,7 +470,7 @@ Faserna följer projektets tidsordning. Varje fas anger ONE P-fas och motsvarand
 - [ ] Jordtagsmätning protokollförd. **[HP G8]**
 - [ ] Kabeltester godkända (utlöser M3 tillsammans med schakt klar).
 
-### 5.5 Leveranser, lyft & montage (ONE P fas 3 · G10–G12)
+### 5.5 Leveranser, lyft & montage (fas 5 · Genomförande · G10–G12)
 *Logistik är friktionens arena. Allt ska vara klart på plats innan leveransen anländer – aldrig tvärtom.*
 
 **📦 Innan leverans**
@@ -504,7 +515,7 @@ Faserna följer projektets tidsordning. Varje fas anger ONE P-fas och motsvarand
 - [ ] EMS-kommunikation (FlexGen) verifierad.
 - [ ] Egenkontroll elinstallation.
 
-### 5.6 Provning & driftsättning (ONE P fas 3 · G13)
+### 5.6 Provning & driftsättning (fas 6 · Genomförande · G13)
 *"Panikmånaden" om den inte förberetts hela projektet.*
 
 **📋 Förberedelse**
@@ -563,7 +574,7 @@ Varje prov: Kontrollerad · Datum · Signatur · Ej tillämplig. Protokoll signe
 - [ ] Egenkontroller från alla discipliner samlade.
 - [ ] Intyg och certifikat från leverantörer.
 
-### 5.7 Slutbesiktning & punch list (ONE P fas 4 · G14)
+### 5.7 Slutbesiktning & punch list (fas 7 · Avslut · G14)
 *Slutbetalning M6 + M7 hänger på detta. Ingen punch-punkt ska vara en överraskning.*
 
 **Förberedelse**
@@ -597,7 +608,7 @@ Varje prov: Kontrollerad · Datum · Signatur · Ej tillämplig. Protokoll signe
 - [ ] Garantiförteckning med start/slut per komponent
 - [ ] Överlämning till driftansvarig dokumenterad
 
-### 5.8 Ekonomiskt avslut, garanti och lärdomar (ONE P fas 4 · G15)
+### 5.8 Ekonomiskt avslut, garanti och lärdomar (fas 8 · Avslut · G15)
 *Projektet är inte avslutat förrän alla ÄTA är reglerade och slutregleringen signerad.*
 
 **💰 ÄTA-avslut**

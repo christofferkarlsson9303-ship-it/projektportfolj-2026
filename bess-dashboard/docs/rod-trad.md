@@ -1,6 +1,6 @@
 # Röd tråd – informationsarkitektur för bess-dashboard
 
-Datum: 2026-10-22 · Status: **delvis beslutat 2026-10-26** (B2, B3; B1 öppen) · Gäller före varje ny vy eller funktion.
+Datum: 2026-10-22 · Status: **beslutat** (B1 2026-10-27, B2–B3 2026-10-26) · Gäller före varje ny vy eller funktion.
 
 ## 1. Diagnos (fakta ur koden)
 
@@ -58,7 +58,7 @@ Befintlig kod raderas inte; gåläget kan ligga kvar bakom en knapp.
 
 | # | Beslut | Förslag |
 |---|---|---|
-| B1 | 4 eller 8 faser? Metoden och appen måste säga samma sak. | **Öppen.** Förslag: 8 i appen; uppdatera metoden §2.2/§4 så att de 4 ONE-P-huvudfaserna blir grupper av de 8. |
+| B1 | 4 eller 8 faser? Metoden och appen måste säga samma sak. | **2026-10-27: 8 faser.** ONE P:s 4 faser är grupper: Initiering 1, Planering 2, Genomförande 3–6, Avslut 7–8. Metoden §2.2, §4 och §5 uppdaterade. |
 | B2 | Godkänn ryggraden i §2 och ingångarna i §3. | **2026-10-26: Ja.** Vy för vy enligt [strykningslista.md](strykningslista.md). |
 | B3 | 3D: lägesbild (§5) eller frysa helt? | **2026-10-26: Frys och dölj ur menyn.** Nås via Ctrl/Cmd+K. Lägesbild tas upp senare. |
 | B4 | Ordning för genomförande | Se §7 |
