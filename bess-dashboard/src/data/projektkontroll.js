@@ -1,6 +1,5 @@
 import { FASER } from "./bessChecklistData.ts";
 import { FALTMALLAR } from "./faltmaterial.js";
-import { LAGMALLAR } from "./lagplan.js";
 export const PROJEKTKONTROLL_REVISION = "2026-10-17.1";
 export const PROJEKTKONTROLL_INLEDNING = "Följ projektet från första förberedelse till garantiuppföljning. Kontrollera arbetet mot rätt kontrakt, ritning, kontrollplan och tillverkarmanual. Skriv verkligt resultat, datum, kontrollant och bevis. För leverantörspunkter avser ONE:s kvittens mottaget/granskat underlag; leverantörens utförare och protokoll ska framgå. Öppna ansvarsgränser måste först fastställas skriftligt. STOPP betyder att utsedd ansvarig måste ge klartecken. En ifylld lista ersätter inte provprotokoll, tillstånd eller underskrift.";
 /** @type {Array<[string, string[][]]>} */
@@ -38,8 +37,8 @@ const steg = [
   ]],
   ["Etablering och arbetsmiljö", [
     ["Gör arbetsberedningar", "Gå igenom projektets arbetsmiljöplan och risker. Gör arbetsberedning för schakt, lyft, elarbete och arbete på höjd. Ange ansvarig och räddningsplan.", "BAS-U / arbetsledare"],
-    ["Säkra arbetsområdet", "Ordna byggstängsel, avspärrningar, skyltning, gångvägar, byggtrafik och räddningsvägar enligt platsens plan. Kontrollera innan arbetet börjar.", "Arbetsledare / Lag C"],
-    ["Kontrollera personal och resurser", "Kontrollera platsintroduktion, ID06 och kompetens för varje arbete. Fördela Lag A/B/C och specialistarbeten. Bestäm verktyg och skydd efter riskbedömning.", "Arbetsledare"],
+    ["Säkra arbetsområdet", "Ordna byggstängsel, avspärrningar, skyltning, gångvägar, byggtrafik och räddningsvägar enligt platsens plan. Kontrollera innan arbetet börjar.", "Arbetsledare / montör"],
+    ["Kontrollera personal och resurser", "Kontrollera platsintroduktion, ID06 och kompetens för varje arbete. Fördela arbetet och specialistarbeten. Bestäm verktyg och skydd efter riskbedömning.", "Arbetsledare"],
     ["STOPP – ge startbesked", "Bekräfta att området är säkert, rätt underlag finns och arbetslagen vet vem som gör vad. Signera startbesked för aktuellt arbete.", "Arbetsledare / BAS-U"],
   ]],
   ["Mark, schakt och dagvatten", [
@@ -52,10 +51,10 @@ const steg = [
     ["Kontrollera före gjutning", "Kontrollera form, armering, ingjutningsgods, kabelhål, jordanslutningar och oljegrop mot rätt ritning. Fotografera sådant som byggs in.", "Betongentreprenör / kontrollant"],
     ["STOPP – godkänn gjutstart", "Kontrollanten granskar arbetet före gjutning. Dokumentera avvikelser och klartecken; gjut inte över ett öppet fel.", "Kontrollant / arbetsledare"],
     ["Dokumentera betongen", "Spara leveransuppgifter, föreskrivna prov, härdning och efterbehandling. Kontrollera att fundamentet får belastas enligt ansvarig konstruktör.", "Betongentreprenör"],
-    ["Kontrollera färdigt fundament", "Mät läge, nivå, planhet och höjd. Kontrollera förankring och oljegropens utförande mot ritningen. Lämna mätprotokoll till montaget.", "Kontrollant / Lag A"],
+    ["Kontrollera färdigt fundament", "Mät läge, nivå, planhet och höjd. Kontrollera förankring och oljegropens utförande mot ritningen. Lämna mätprotokoll till montaget.", "Kontrollant / montör"],
   ]],
   ["Jordning och åskskydd", [
-    ["Kontrollera innan jordningen täcks", "Kontrollera jordledare, skarvar, anslutningar och märkning enligt ritningen. Ta foto och uppdatera relationsunderlaget innan återfyllning.", "Lag C / utsedd elpersonal"],
+    ["Kontrollera innan jordningen täcks", "Kontrollera jordledare, skarvar, anslutningar och märkning enligt ritningen. Ta foto och uppdatera relationsunderlaget innan återfyllning.", "Utsedd elpersonal"],
     ["Kontrollera alla enheters jordning", "Kontrollera BESS, PCS, transformator, ställverk och andra föreskrivna delar mot jordningsritningen. Märk och dokumentera anslutningarna.", "Utsedd elpersonal"],
     ["Mät jordningen", "Utför föreskrivna mätningar med rätt metod och instrument. Ange mätpunkter, verkliga värden och acceptanskrav i protokollet.", "Kontrollant"],
     ["Granska jordningsprotokollet", "Ansvarig granskar att resultatet uppfyller projekteringen. Dokumentera åtgärder och ny kontroll där resultatet inte godtas.", "Elprojektör / kontrollant"],
@@ -73,8 +72,8 @@ const steg = [
     ["STOPP – lämna stationen till provledaren", "Samla protokoll, aktuellt enlinjeschema och lista över öppna fel. Utsedd ansvarig ger klartecken för nästa kontrollsteg.", "Provledare / arbetsledare"],
   ]],
   ["Leverans, lyft och placering", [
-    ["Gör mottagningskontroll", "Kontrollera levererad utrustning och lösa delar mot leveranslistan. Anteckna serienummer. Fotografera transportskador och meddela ansvarig direkt.", "Lag A / arbetsledare"],
-    ["Placera och rikta upp", "Placera enligt godkänd layout och lyftplan. Kontrollera nivå, dockning, förankring och tillträde. Lämna över en stabil, säker enhet till Lag B/C.", "Lag A / lyftansvarig"],
+    ["Gör mottagningskontroll", "Kontrollera levererad utrustning och lösa delar mot leveranslistan. Anteckna serienummer. Fotografera transportskador och meddela ansvarig direkt.", "Montör / arbetsledare"],
+    ["Placera och rikta upp", "Placera enligt godkänd layout och lyftplan. Kontrollera nivå, dockning, förankring och tillträde. Lämna över en stabil, säker enhet för anslutning.", "Montör / lyftansvarig"],
   ]],
   ["Anslutningar och säkerhetssystem", [
     ["Kontrollera gränssnitten", "Kontrollera AC/DC, hjälpkraft, styrning, fiber, EMS/SCADA och leverantörens gränser mot aktuella scheman. Dokumentera vem som har utfört varje del.", "Utsedd el-/styrpersonal"],
@@ -109,15 +108,27 @@ const steg = [
     ["Planera garantiuppföljningen", "Bekräfta garantistart, serviceplan, kontaktvägar, reservdelar och tid för uppföljning enligt kontraktet. Lämna över kvarstående frågor till driftorganisationen.", "Projektledare / driftansvarig"],
   ]],
 ];
-const lag = (l, ids) => LAGMALLAR.find((m) => m.lag === l).punkter.filter((p) => ids.includes(p.id));
+/* Arbetssteg som tidigare låg i lagplanen (data/lagplan.js, borttagen 2026-10-27).
+   Id:n behålls tills fältmaterialet får checklistans nummer. */
+const p = (id, titel, instruktion, roll, verifiering = "") => ({ id, titel, instruktion, roll, verifiering, epc: [] });
+const STEG = Object.fromEntries([
+  p("A.03", "Förbered lyftet", "Jämför enhetens vikt, tyngdpunkt och lyftpunkter med lyftplanen. Kontrollera lyftdon tillsammans med lyftansvarig. Bestäm vem som signalerar till kranföraren och var styrlinorna används.", "Montör / lyftansvarig", "Använd inte uppgift om 17-tonsschacklar utan godkänd dimensionering. Vindgräns och lyftvinklar tas från aktuell lyftplan/tillverkare."),
+  p("A.04", "STOPP – frigör lyftområdet", "Kontrollera att ingen annan finns i riskområdet. Ingen får stå under lasten eller mellan enheten och fundamentet. Lyftansvarig ger klartecken före lyft.", "Lyftansvarig / montör"),
+  p("B.02", "STOPP – bekräfta PE:s klartecken före DC-anslutning", "Kontrollera typskylten: PCSK/PCSM (BESS) har inga fältmonterade DC-säkringar – säkringsmontering gäller bara HEM/HEMK (fotnot 1, PE INVG3MHW01). Ta emot PE:s klartecken och följ godkänd montageanvisning före ONE:s externa DC-anslutning. Dokumentera modell, utförare, protokoll och frisläppning.", "Montör / PE / utsedd kontrollant", "Kritisk uppgift från projektunderlaget. Bekräfta ordningen mot rätt PE-modell och arbetsberedning. Inga kablar får anslutas innan denna stoppunkt har frisläppts."),
+  p("B.03", "Dra och fördela DC-kablar", "Följ kabellistan från BESS till PCS. Skydda kablarna och håll rätt böjradie. Kontrollera antal, dimension och fördelning per DC-block. Skriv kontrollen i kabellistan.", "Montör", "Underlaget anger högst två kablar och 400 A per terminal samt högst ±20 % avvikelse mellan block. Bekräfta definition, dimensionering och gränser i godkänd projektering/OEM-anvisning."),
+  p("C.03", "STOPP – planera arbetet på höjd", "Kontrollera åtkomst, godkänd arbetsplattform och fallskydd enligt arbetsberedningen. Kontrollera utrustning tillsammans, så kallad Buddy Check. Kontrollera räddningsplan och väder. Spärra av området under arbetet.", "Montör / arbetsledare", "Sele och dubbellina väljs utifrån arbetsmetod och godkända förankringar; de är inte en generell lösning för alla tak eller saxliftar. Avbryt vid åskrisk eller överskriden vädergräns."),
+  p("C.04", "Montera fångststänger och åskskydd", "Montera på punkterna i åskskyddsritningen. Kontrollera infästning och jordanslutning. Täta genomföringar enligt godkänd lösning. Ta foto.", "Montör"),
+  p("C.05", "Montera antennen", "Placera enligt kommunikationsritningen så att metall inte skymmer signalen. Fäst kabeln med UV-tåligt skydd. Väderskydda kontaktstycken enligt tillverkaren och kontrollera tätning genom tak/vägg.", "Montör", "Vulktejp och krympslang används bara där kontakttypens montageanvisning tillåter det."),
+].map((x) => [x.id, x]));
+const steg_ = (ids) => ids.map((id) => STEG[id]);
 export const PROJEKTMALLAR = steg.map(([titel, rader], fas) => {
   const egna = rader.map(([rubrik, instruktion, roll], i) => ({ id: `P${fas}.${String(i + 1).padStart(2, "0")}`, titel: rubrik, instruktion, roll, epc: [], verifiering: "Kontrollkrav och gränsdragning fastställs i projektets godkända handlingar. Ange kontrollplan/ritning/protokoll som bevis." }));
-  const punkter = fas === 8 ? [...egna.slice(0, 2), ...lag("C", ["C.03", "C.04", "C.05"]), ...egna.slice(2)]
-    : fas === 11 ? [egna[0], ...lag("A", ["A.03", "A.04"]), egna[1], ...FALTMALLAR[0].punkter]
-      : fas === 12 ? [egna[0], ...lag("B", ["B.02", "B.03"]), ...FALTMALLAR[1].punkter, ...FALTMALLAR[2].punkter, egna[1]]
+  const punkter = fas === 8 ? [...egna.slice(0, 2), ...steg_(["C.03", "C.04", "C.05"]), ...egna.slice(2)]
+    : fas === 11 ? [egna[0], ...steg_(["A.03", "A.04"]), egna[1], ...FALTMALLAR[0].punkter]
+      : fas === 12 ? [egna[0], ...steg_(["B.02", "B.03"]), ...FALTMALLAR[1].punkter, ...FALTMALLAR[2].punkter, egna[1]]
         : fas === 13 ? [egna[0], ...FALTMALLAR[3].punkter, ...egna.slice(2), egna[1]] : egna;
   return ({
-  id: `projekt-${fas}`, nr: fas + 1, titel, kort: titel, utrustning: "Projektets avtalade kontrollomfattning",
+  id: `projekt-${fas}`, nr: fas, titel, kort: titel, utrustning: "Projektets avtalade kontrollomfattning",
   flode: `Moment ${fas}: ${FASER[fas].titel}. ${FASER[fas].grind.kod}: ${FASER[fas].grind.text} Dokumentera klartecken enligt godkänd kontrollplan.`,
   punkter,
 });

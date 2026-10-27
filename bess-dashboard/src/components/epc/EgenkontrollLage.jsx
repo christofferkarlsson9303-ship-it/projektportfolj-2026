@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { kontrollNr } from "../../data/kontrollnummer.js";
 import { hamtaGodkannanden } from "../../state/godkannanden.js";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { PROJEKTMALLAR, PROJEKTKONTROLL_REVISION } from "../../data/projektkontroll.js";
@@ -92,7 +93,7 @@ export function EgenkontrollLage({ pid, fas }) {
         <ul className="my-1 list-none p-0 text-xs" aria-label="Täckning per punkt">
           {ofullstandiga.map((p) => (
             <li key={p.id} className="flex justify-between gap-3 border-0 border-b border-solid border-hairline py-1">
-              <span>{p.id} {p.titel}</span>
+              <span>{kontrollNr(p.id)} {p.titel}</span>
               <span className="whitespace-nowrap font-bold text-warn-ink">{tackningText(lage.tackning[p.id])}</span>
             </li>
           ))}

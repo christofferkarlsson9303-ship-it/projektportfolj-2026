@@ -1,4 +1,5 @@
 import { Document, Font, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { kontrollNr, mallEtikett } from "../../data/kontrollnummer.js";
 import logotyp from "../../assets/one-nordic-logo.png";
 import regular from "../../assets/fonts/DejaVuSans.ttf?inline";
 import bold from "../../assets/fonts/DejaVuSans-Bold.ttf?inline";
@@ -93,7 +94,7 @@ function Steg({ p, moment }) {
   return <View style={stopp ? a.stopp : a.steg} wrap={false}>
     <View style={a.stegHuvud}>
       <View style={a.ruta} />
-      <Text style={a.stegId}>{p.id}</Text>
+      <Text style={a.stegId}>{kontrollNr(p.id)}</Text>
       {stopp ? <Text style={a.stoppMarke}>STOPP</Text> : null}
       <Text style={a.stegTitel}>{stegTitel(p)}</Text>
     </View>
@@ -137,7 +138,7 @@ function Header({ d, titel, moment }) {
     <Text style={s.meta}>Datum: {d.datum} · Skapad av: {d.skapadAv || "________________"} · Mallrevision: {d.revision}</Text>
     <Text style={s.meta}>Enhet/serienummer: {d.mallpaket === "projekt" ? d.omfattning : d.enhet || "________________"} · Utförare: {moment?.utforare || d.utforare || "________________"}</Text>
     <Text style={s.meta}>Ritning/revision: {d.ritning || "________________"}</Text>
-    {moment ? <Text style={s.moment}>Moment {moment.nr}: {moment.titel}</Text> : null}
+    {moment ? <Text style={s.moment}>{mallEtikett(moment)}: {moment.titel}</Text> : null}
   </View>;
 }
 
@@ -150,10 +151,10 @@ function Footer({ d, arbetslista = false }) {
 
 function Check({ p, d, arbetslista = false }) {
   return <View style={s.check} wrap={false}>
-    <Text style={s.checkTitle}>{arbetslista ? "□ " : ""}{p.id} · {p.titel}</Text>
+    <Text style={s.checkTitle}>{arbetslista ? "□ " : ""}{kontrollNr(p.id)} · {p.titel}</Text>
     <Text style={s.instruction}>{p.instruktion}</Text>
     {p.verifiering ? <Text style={s.verification}>Verifiering: {p.verifiering}</Text> : null}
-    <Text style={s.reference}>Kompetens: {p.roll} · EPC: {p.epc.join(", ") || "Ny detaljpunkt i momentmallen"}</Text>
+    <Text style={s.reference}>Kompetens: {p.roll} · EPC: {p.epc.join(", ") || "ingen automatisk avbockning"}</Text>
     {arbetslista ? <Text style={s.writing}>Datum / signatur / notering:</Text> : d.visaResultat ? <>
       <Text style={s.instruction}>Resultat: {kontrollNamn(p.kontroll?.resultat)} · Datum: {p.kontroll?.datum || "Ej angivet"}</Text>
       <Text style={s.instruction}>Kontrollant: {p.kontroll?.kontrollant || "Ej angiven"} · Kontrollerad mallrevision: {p.kontroll?.mallrevision || "Ej angiven"}</Text>

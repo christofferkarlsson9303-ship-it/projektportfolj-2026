@@ -1,4 +1,5 @@
 import logotyp from "../../assets/one-nordic-logo.png";
+import { kontrollNr } from "../../data/kontrollnummer.js";
 import { SA_HAR_GOR_DU, VID_FARA, arStopp, meningar, momentRubrik, sidfot, stegTitel, vem } from "../../lib/arbetslista.js";
 import "./field-print.css";
 
@@ -12,7 +13,7 @@ function Steg({ p, moment }) {
     <div className={`field-check field-steg${stopp ? " field-stopp" : ""}`}>
       <div className="field-steg-huvud">
         <span className="field-ruta" aria-hidden="true" />
-        <span className="field-steg-id">{p.id}</span>
+        <span className="field-steg-id">{kontrollNr(p.id)}</span>
         <h3>
           {stopp ? <span className="field-stopp-marke">STOPP</span> : null}
           {stegTitel(p)}

@@ -1,4 +1,5 @@
 import { kontrollNamn, kontrollBrister } from "../../lib/projektkontroll.js";
+import { kontrollNr, mallEtikett } from "../../data/kontrollnummer.js";
 import { ProjektkontrollSummary } from "./ProjektkontrollSummary.jsx";
 import { DocumentHeader } from "./DocumentHeader.jsx";
 import { FALT_FORUTSATTNING } from "../../data/faltmaterial.js";
@@ -11,7 +12,7 @@ export function EgenkontrollDocument({ dokument: d }) {
       {d.moment.map((m) => (
         <section className="field-moment" key={m.id}>
           <DocumentHeader dokument={d} titel="Egenkontroll – BESS" />
-          <h2>Moment {m.nr}: {m.titel}</h2>
+          <h2>{mallEtikett(m)}: {m.titel}</h2>
           {m.flode ? <p className="field-source"><b>Arbetsordning:</b> {m.flode}</p> : null}
           <p className="field-source">{d.kalla} {d.komplett ? "Hela valda mallpaketet." : "Delurval – kontrollera överlämningar och återstående arbete."}</p>
           {d.oppnaBeslut?.length ? <p className="field-verification"><b>Öppna beslut:</b> {d.oppnaBeslut.join(" ")}</p> : null}
@@ -20,10 +21,10 @@ export function EgenkontrollDocument({ dokument: d }) {
           <p><b>Manual/provplan och revision:</b> {m.referens || "EJ ANGIVEN – verifieras före utförande"}</p>
           {m.punkter.map((p) => (
             <section key={p.id} className="field-check">
-              <h3>{p.id} · {p.titel}</h3>
+              <h3>{kontrollNr(p.id)} · {p.titel}</h3>
               <p>{p.instruktion}</p>
               {p.verifiering ? <p className="field-verification"><b>Verifiering:</b> {p.verifiering}</p> : null}
-              <p className="field-reference">Kompetens: {p.roll} · EPC: {p.epc.join(", ") || "Ny detaljpunkt i momentmallen"}</p>
+              <p className="field-reference">Kompetens: {p.roll} · EPC: {p.epc.join(", ") || "ingen automatisk avbockning"}</p>
               {d.visaResultat ? <div className="field-recorded">
                 <p><b>Resultat:</b> {kontrollNamn(p.kontroll?.resultat)} · <b>Datum:</b> {p.kontroll?.datum || "Ej angivet"}</p>
                 <p><b>Kontrollant:</b> {p.kontroll?.kontrollant || "Ej angiven"} · <b>Kontrollerad mallrevision:</b> {p.kontroll?.mallrevision || "Ej angiven"}</p>

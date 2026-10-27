@@ -72,20 +72,22 @@ I miljöer med förinstallerad Chromium kan
 `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/sökväg/till/chromium` användas.
 PDF/utskrift granskas även visuellt för sidbrytningar, huvud och skrivfält.
 
-## Lagplan för sex montörer (revision 2026-10-01.2)
+## Samma nummer som Bygga batteripark (2026-10-27)
 
-Lagplan kan väljas som alternativ – 6 montörer / totalentreprenad, med 41 punkter:
-- Arbetsledaren före start: 8 punkter, ansvar och gränsdragning, kompetens, avspärrning, lyftplan och startbesked.
-- Lag A (två namn): 9 punkter, fundament, oljegrop, lyft, placering, förankring och överlämning.
-- Lag B (två namn): 9 punkter, säker arbetsmetod, DC-säkringar före DC-anslutning, kabeldragning, förband, moment, märkning, tätning och överlämning.
-- Lag C (två namn): 8 punkter, jordning, höjdarbete, åskskydd, antenn, fiber/styrning, stängsel och överlämning.
-- Arbetsledaren vid avslut: 7 punkter, AC/MV/hjälpkraft, brandlarm/nödstopp, dokumentation, avvikelser, tillstånd och OEM-överlämning.
+Varje kontrollrad i fältmaterialet visas med numret på den checklistpunkt den
+bevisar plus en bokstav: `12.20a`, `12.20b`. Kopplingen står i
+`data/kontrollnummer.js` (`KONTROLL_FORALDER`) och bokstäverna delas ut i
+projektchecklistans ordning. Det interna id:t (P12.01, M2.05, B.02 …) är
+oförändrat, så registrerade resultat och `epc`-kopplingen påverkas inte. Numret
+bockar inte av checklistpunkten. Sju rader (`SVAG_KOPPLING`) saknar bra
+motsvarighet och ligger under närmaste punkt i samma moment.
 
-Fyll i två namn per lag. Snabbvalet Endast Lag A/B/C väljer lagets eget moment; Arbetsledarens lista väljer start och avslut. Hela lagplanen väljer samtliga fem moment. Arbetsordning och förutsättningar följer med även vid lagurval. Välj dokumenttyp Arbetslista för avprickning eller Fältpaket för arbetslista och blank egenkontroll. Namnen sparas per projekt i samma lokala inställningar som övriga fältval.
+## Lagplan (borttagen 2026-10-27)
 
-Äldre sparade fältval migreras nu till den kompletta projektchecklistan. De tidigare 49 tekniska kontrollpunkterna finns kvar under Tekniska egenkontroller – 4 moment. Öppning från markerade projektuppgifter behåller arbetslistan med just dessa uppgifter.
-
-Källa är den uppladdade projektledarsammanställningen Inklistrad text.txt och lagindelningen i uppdraget. Ingen primär OEM-manual eller signerad kontraktsgränsdragning har tillhandahållits. Därför anges lyftdon, 0,25 %, 50 mm, två kablar/400 A och ±20 % som uppgifter att bekräfta för aktuell modell. Medicinska intyg, CATL-utbildning och PPE väljs efter aktuellt arbete, platskrav och riskbedömning. Listorna är dokumentunderlag; STOPP är en instruktion för manuell frisläppning, ingen digital låsning eller automatisk kontrollstatus.
+Lagplanen (Lag A/B/C med två namn per lag) är borttagen. Arbetsledaren fördelar
+jobben själv. De sju arbetssteg som projektchecklistan använde (A.03, A.04, B.02,
+B.03, C.03–C.05) ligger kvar i `data/projektkontroll.js` med samma id. Ett sparat
+fältval med mallpaket `lagplan` öppnas som projektchecklistan.
 
 ## Projektchecklista och egenkontrollrapport (revision 2026-10-01.3)
 
@@ -93,7 +95,7 @@ Standardvalet är **Projektchecklista – hela projektet**: 115 punkter i 16 fas
 från förstudie, avtal, tillstånd och projektering via mark, montage och
 idrifttagning till besiktning, slutdokumentation och garantiuppföljning.
 Alla tidigare 49 tekniska kontrollpunkter ingår med oförändrade punkt-ID:n.
-Lagplanen och de fyra tekniska mallarna finns kvar som separata val.
+De fyra tekniska mallarna finns kvar som separat val.
 
 Öppna en punkt och registrera resultat, faktiskt kontrolldatum, kontrollant,
 bevis/protokoll med revision samt mätvärde, avvikelse eller åtgärd.
@@ -128,7 +130,7 @@ Granskning, underskrift och beställarens mottagande sker separat. Rapporten
 ändrar inte EPC-grindar eller slutdokumentationens godkännanden automatiskt.
 
 I **Slutdokumentation → Projektets egenkontrollrapport** öppnas huvudmallen
-direkt. Samma genväg finns i Ctrl/Cmd+K. Tidigare mallval och lagens namn
+direkt. Samma genväg finns i Ctrl/Cmd+K. Tidigare mallval
 behålls för vanligt fältarbete. Engångslistor från markerade arbetsuppgifter
 skriver inte över projektets sparade mallval.
 
