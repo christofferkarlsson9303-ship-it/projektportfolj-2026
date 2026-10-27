@@ -42,6 +42,7 @@ Varje post i appen (punkt, ÄTA, risk, dagboksnotis, HSEQ-ronder, faktura) ska h
 4. Varje rad länkar tillbaka till sitt moment. Inga återvändsgränder.
 5. Samma begrepp har samma namn överallt (fas/moment enligt `CLAUDE.md`, "ÄTA").
 6. Ny vy kräver att en befintlig tas bort eller slås ihop. Taket är 3 ingångar + verktyg.
+7. **Självklart utan förklaring** (Christoffer 2026-10-27): den som öppnar vyn ska se vad som ska göras utan att någon förklarar. Överst står *vad som ska göras härnäst* som en mening och en knapp; färg och ikon säger läget innan text gör det; förkortningar (ÄTA, APD, G7) förklaras vid första förekomst; högst en huvuduppgift per skärm.
 
 ## 5. 3D-siten
 
@@ -65,9 +66,9 @@ Befintlig kod raderas inte; gåläget kan ligga kvar bakom en knapp.
 
 ## 7. Genomförande, en PR i taget
 
-1. **Moment på alla poster** – fält + migrering som sätter aktuellt moment; ingen UI-ändring. Testbart.
+1. **Moment på alla poster** – fält + migrering som sätter aktuellt moment; ingen UI-ändring. Testbart. **Klart 2026-10-27** (`lib/postmoment.js`).
 2. **Projektet-vyn** – fasband + momentpanel som samlar punkter/ÄTA/risker/dokument per moment.
-3. **Meny till 3 ingångar** – flytta övriga vyer till verktyg; gamla hash-adresser fortsätter fungera.
+3. **Meny till 3 ingångar** – flytta övriga vyer till verktyg; gamla hash-adresser fortsätter fungera. **Klart 2026-10-26** (PR #126).
 4. **Idag** – lägg till "nästa grind och vad som blockerar".
 5. **Site som lägesbild** – ny vy ovanpå befintlig scen.
 
