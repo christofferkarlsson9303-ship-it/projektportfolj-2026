@@ -34,13 +34,13 @@ const erfarenhetslista = async (page) => {
   return page.getByRole("region", { name: "Erfarenhetsåterföring — topp 10" });
 };
 
-test("guiden har 16 moment, de löpande punkterna och alla 288 kontrollpunkter att bocka av", async ({ page }) => {
+test("guiden har 16 moment, de löpande punkterna och alla 306 kontrollpunkter att bocka av", async ({ page }) => {
   await expect(page.locator("details.epc-fas")).toHaveCount(17);
   // Infällda moment ritar inte sina rader — fäll ut alla innan de räknas.
   await page.getByRole("button", { name: "Fäll ut alla" }).click();
-  await expect(page.locator(".epc-rad")).toHaveCount(288);
-  await expect(page.locator(".epc-rad.hp")).toHaveCount(48);
-  await expect(page.locator(".epc-rad input[type=checkbox]")).toHaveCount(288);
+  await expect(page.locator(".epc-rad")).toHaveCount(306);
+  await expect(page.locator(".epc-rad.hp")).toHaveCount(55);
+  await expect(page.locator(".epc-rad input[type=checkbox]")).toHaveCount(306);
   // Checklistan skapar inga ÄTA.
   await expect(page.getByRole("button", { name: /Skapa UR\/ÄTA/ })).toHaveCount(0);
 });
@@ -48,18 +48,18 @@ test("guiden har 16 moment, de löpande punkterna och alla 288 kontrollpunkter a
 test("summeringen visar exakt status per fas och följer avbockningen", async ({ page }) => {
   // Moment 0–9 är passerade i Växjö, men en grind bockar inte av punkter: inget är registrerat.
   await oppnaStatus(page);
-  await expect(status(page)).toContainText("0/288");
-  await expect(status(page).getByRole("row", { name: /^10 · Stationshus/ })).toContainText("0/15");
+  await expect(status(page)).toContainText("0/306");
+  await expect(status(page).getByRole("row", { name: /^10 · Stationshus/ })).toContainText("0/19");
 
   await oppnaFas(page, 10);
   await rad(page, "10.7").getByRole("checkbox").check();
-  await expect(status(page).getByRole("row", { name: /^10 · Stationshus/ })).toContainText("1/15");
-  await expect(status(page)).toContainText("1/288");
+  await expect(status(page).getByRole("row", { name: /^10 · Stationshus/ })).toContainText("1/19");
+  await expect(status(page)).toContainText("1/306");
   await expect(rad(page, "10.7")).toContainText(/Klar \d{4}-\d{2}-\d{2}/);
 
   // Ej aktuell räknas bort ur det som återstår.
   await rad(page, "10.3").getByRole("button", { name: /^Ej aktuell/ }).click();
-  await expect(status(page).getByRole("row", { name: /^10 · Stationshus/ })).toContainText("1/14");
+  await expect(status(page).getByRole("row", { name: /^10 · Stationshus/ })).toContainText("1/18");
   await expect(rad(page, "10.3")).toHaveClass(/ejaktuell/);
 
   await gaTill(page, "Översikt");
@@ -126,7 +126,7 @@ test("lägesbilden har en rad per projekt och visar läget för valt projekt", a
   await oppnaStatus(page);
   const framdrift = status(page).getByRole("list", { name: "Framdrift i checklistan" });
   await expect(framdrift).toContainText(/Grindar passerade\s*\d+\/16/);
-  await expect(framdrift).toContainText(/Hållpunkter klara\s*\d+\/48/);
+  await expect(framdrift).toContainText(/Hållpunkter klara\s*\d+\/55/);
   // Läget nu för valt projekt står i tre kort.
   for (const namn of ["Pågår nu", "Näst på tur", "Ledtider att starta"])
     await expect(page.getByRole("region", { name: namn })).toBeVisible();
@@ -154,9 +154,9 @@ test("version 1.3: källgenomgången, nyckelvärdena och de tolv motsägelserna 
   await expect(page.locator(".epc-verifiera dt")).toHaveCount(12);
 });
 
-test("filtret Hållpunkter visar bara de 48 hållpunkterna", async ({ page }) => {
+test("filtret Hållpunkter visar bara de 55 hållpunkterna", async ({ page }) => {
   await page.getByRole("group", { name: "Visa markering" }).getByRole("button", { name: "Hållpunkter" }).click();
-  await expect(page.locator(".epc-rad")).toHaveCount(48);
+  await expect(page.locator(".epc-rad")).toHaveCount(55);
   await expect(page.locator(".epc-rad:not(.hp)")).toHaveCount(0);
 });
 

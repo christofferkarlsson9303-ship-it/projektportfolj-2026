@@ -17,8 +17,8 @@ import {
    ny version, inte för att en punkt råkat försvinna. */
 
 describe("checklistans omfattning", () => {
-  it("har 16 moment, 288 kontrollpunkter, 48 hållpunkter, 7 milstolpar och 12 motsägelser", () => {
-    expect(SUMMERING).toEqual({ faser: 16, punkter: 288, hallpunkter: 48, milstolpar: 7, motsagelser: 12 });
+  it("har 16 moment, 306 kontrollpunkter, 55 hållpunkter, 7 milstolpar och 12 motsägelser", () => {
+    expect(SUMMERING).toEqual({ faser: 16, punkter: 306, hallpunkter: 55, milstolpar: 7, motsagelser: 12 });
     expect(ATT_VERIFIERA).toHaveLength(12);
   });
 
@@ -31,7 +31,7 @@ describe("checklistans omfattning", () => {
       expect(id.length, `fas ${f.nr}`).toBeGreaterThanOrEqual(v10[f.nr]);
     }
     const lop = LOPANDE.sektioner.flatMap((s) => s.punkter).map((p) => Number(p.id.slice(4)));
-    expect([...lop].sort((a, b) => a - b)).toEqual([...Array(24).keys()].map((i) => i + 1));
+    expect([...lop].sort((a, b) => a - b)).toEqual([...Array(26).keys()].map((i) => i + 1));
   });
 
   it("numrerar faserna 0–15 med grindarna G0–G15", () => {
@@ -41,7 +41,7 @@ describe("checklistans omfattning", () => {
   });
 
   it("har 24 löpande punkter utanför faserna", () => {
-    expect(LOPANDE.sektioner.flatMap((s) => s.punkter)).toHaveLength(24);
+    expect(LOPANDE.sektioner.flatMap((s) => s.punkter)).toHaveLength(26);
   });
 
   it("har unika id:n på formen fas.nr eller lop.nr", () => {
@@ -61,7 +61,7 @@ describe("checklistans omfattning", () => {
 
   it("fördelar hållpunkterna som checklistan", () => {
     const perFas = FASER.map((f) => f.sektioner.flatMap((s) => s.punkter).filter((p) => p.badges.includes("HP")).length);
-    expect(perFas).toEqual([0, 1, 2, 1, 1, 3, 4, 8, 3, 2, 5, 5, 4, 8, 1, 0]);
+    expect(perFas).toEqual([0, 1, 2, 1, 1, 3, 4, 8, 3, 2, 7, 6, 4, 12, 1, 0]);
   });
 });
 

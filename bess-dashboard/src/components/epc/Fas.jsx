@@ -29,7 +29,7 @@ const GRIND_KALLA = {
 /* ---------- Kontrollpunkterna ---------- */
 
 /* En rad tar bara enkla värden och är memorerad: att bocka en punkt ritar om
-   den raden, inte guidens 288. Den läser åtgärderna (usePortfoljAtgarder),
+   den raden, inte guidens 306. Den läser åtgärderna (usePortfoljAtgarder),
    inte portföljen — usePortfolj() skulle rita om varje rad vid varje ändring. */
 const Punktrad = memo(function Punktrad({ punkt, pid, status, kalla, kontroll, datum, av, nKomm, nTidigare, grind }) {
   const { dispatch } = usePortfoljAtgarder();
@@ -393,7 +393,7 @@ export function Fasruta({ lage, pid, projektnamn, oppen, onVaxla, filter, tvinga
       </summary>
 
       {/* Innehållet ritas bara i utfällda moment. Infällda moment höll förut
-          alla 288 rader i DOM:en (över 8 000 noder), och varje bockning fick
+          alla 306 rader i DOM:en (över 8 000 noder), och varje bockning fick
           webbläsaren att räkna om layouten för hela guiden. */}
       {oppen || tvingaOppen ? (
       <div className="epc-faskropp">
