@@ -1,5 +1,7 @@
-/* BATTERIPARK_MILSTOLPAR — grunddata extraherad ur standalone-filen.
-   Rör inte logiken: detta är ren data. */
+/* BATTERIPARK_MILSTOLPAR — grunddata extraherad ur standalone-filen (Montörspärmen 36037).
+   Används inte längre i någon vy (2026-10-27): Tidplan visar milstolparna ur den gemensamma
+   checklistan (lib/milstolpskrav.js). Filen ligger kvar som underlag tills punkterna som saknas
+   i bessChecklistData.ts är flyttade dit, och tas sedan bort. */
 
 export const BATTERIPARK_MILSTOLPAR = [
   { id:"M1", titel:"M1 · Commencement — 10 %", grupper:[
