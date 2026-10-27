@@ -17,8 +17,8 @@ import {
    ny version, inte för att en punkt råkat försvinna. */
 
 describe("checklistans omfattning", () => {
-  it("har 16 moment, 306 kontrollpunkter, 55 hållpunkter, 7 milstolpar och 12 motsägelser", () => {
-    expect(SUMMERING).toEqual({ faser: 16, punkter: 306, hallpunkter: 55, milstolpar: 7, motsagelser: 12 });
+  it("har 16 moment, 309 kontrollpunkter, 55 hållpunkter, 7 milstolpar och 12 motsägelser", () => {
+    expect(SUMMERING).toEqual({ faser: 16, punkter: 309, hallpunkter: 55, milstolpar: 7, motsagelser: 12 });
     expect(ATT_VERIFIERA).toHaveLength(12);
   });
 

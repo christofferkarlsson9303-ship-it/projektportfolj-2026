@@ -34,13 +34,13 @@ const erfarenhetslista = async (page) => {
   return page.getByRole("region", { name: "Erfarenhetsåterföring — topp 10" });
 };
 
-test("guiden har 16 moment, de löpande punkterna och alla 306 kontrollpunkter att bocka av", async ({ page }) => {
+test("guiden har 16 moment, de löpande punkterna och alla 309 kontrollpunkter att bocka av", async ({ page }) => {
   await expect(page.locator("details.epc-fas")).toHaveCount(17);
   // Infällda moment ritar inte sina rader — fäll ut alla innan de räknas.
   await page.getByRole("button", { name: "Fäll ut alla" }).click();
-  await expect(page.locator(".epc-rad")).toHaveCount(306);
+  await expect(page.locator(".epc-rad")).toHaveCount(309);
   await expect(page.locator(".epc-rad.hp")).toHaveCount(55);
-  await expect(page.locator(".epc-rad input[type=checkbox]")).toHaveCount(306);
+  await expect(page.locator(".epc-rad input[type=checkbox]")).toHaveCount(309);
   // Checklistan skapar inga ÄTA.
   await expect(page.getByRole("button", { name: /Skapa UR\/ÄTA/ })).toHaveCount(0);
 });
@@ -48,13 +48,13 @@ test("guiden har 16 moment, de löpande punkterna och alla 306 kontrollpunkter a
 test("summeringen visar exakt status per fas och följer avbockningen", async ({ page }) => {
   // Moment 0–9 är passerade i Växjö, men en grind bockar inte av punkter: inget är registrerat.
   await oppnaStatus(page);
-  await expect(status(page)).toContainText("0/306");
+  await expect(status(page)).toContainText("0/309");
   await expect(status(page).getByRole("row", { name: /^10 · Stationshus/ })).toContainText("0/19");
 
   await oppnaFas(page, 10);
   await rad(page, "10.7").getByRole("checkbox").check();
   await expect(status(page).getByRole("row", { name: /^10 · Stationshus/ })).toContainText("1/19");
-  await expect(status(page)).toContainText("1/306");
+  await expect(status(page)).toContainText("1/309");
   await expect(rad(page, "10.7")).toContainText(/Klar \d{4}-\d{2}-\d{2}/);
 
   // Ej aktuell räknas bort ur det som återstår.

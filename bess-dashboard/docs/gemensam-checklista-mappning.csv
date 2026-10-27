@@ -195,7 +195,7 @@
 ;epc;11.13;Shims justerade så att alla dörrar öppnar/stänger fritt;5;11;K;;;;;
 ;epc;11.14;Svetsfogar CATL korrosionsskyddas direkt;5;11;K;;;;;
 ;epc;11.15;PCS (~5,5 t) dockas mot MV-skid med centreringsverktyg medan den hänger i kranen;5;11;HP;;;;;
-;epc;12.1;PCS: DC-säkringar monterade INNAN DC-kablar ansluts (garanti);5;12;HP/L;;;;;
+;epc;12.1;PCS-interna DC-säkringar: fältmontering gäller bara PE HEM/HEMK (PV-växelriktare, fotnot 1 i PE INVG3MHW01). PCSK/PCSM (BESS) har inga fältsäkringar – ej aktuell för PCSK. DC-skyddet ligger i CATL:s rack/Main Control Box och PCS:ens DC-brytare.;5;12;L;;;;;
 ;epc;12.2;DC: dubbelhåls kabelskor (c/c 45 mm), M12 50 Nm, balans mellan block ≤ ±20 %;5;12;HP;;;;;
 ;epc;12.3;AC-krage PCS–skid: etanol, kontaktpasta, M12 A2-70, packning tät;5;12;;;;;;
 ;epc;12.4;Aerosolkablage (brandsläckning) FRÅNKOPPLAT till sista steget i hot commissioning;5;12;HP/L;;;;;
@@ -640,3 +640,6 @@
 ;epc;13.25;"ONE:s idrifttagningsintyg per anläggningsdel: elsäkerhetsledare/ansvarig signerar klar för drift för ONE:s del efter egenkontroll; PL sammanställer att mark, el och UE lämnat sina";6;13;HP;;;;;
 ;epc;lop.25;Mätinstrument med giltig kalibrering (jordtagsmätare, isolationsprovare, VLF, momentnyckel) – kalibreringsintyg sparas med protokollen;;löpande;K;;;;;
 ;epc;lop.26;UE-överlämning per delentreprenad: UE:s egenkontroll och testresultat lämnade och granskade innan ONE tar över delen;;löpande;K;;;;;
+;epc;12.19;PCSK DC-anslutning i ordning: kontrollera typskylt (PCSK/PCSM) → öppna DC-facket → DC+ och DC− direkt mot DC-skenorna, inga fältsäkringar → momentdra → momentlacka → montera beröringsskydden i polykarbonat över DC-skenorna;5;12;HP/K;;;;;
+;epc;12.20;PCSK-ändens moment: M12 mot DC-skena 60 Nm (PE Gen3), fjäderbricka DIN 6796 + stor planbricka DIN 9021 på båda sidor: bult → DIN 6796 → DIN 9021 → kabelsko → skena → planbricka → DIN 6796 → mutter. CATL-änden är 50 Nm (12.2) – båda värdena i momentprotokollet;5;12;K;;;;;
+;epc;12.21;"Kontaktytor (Al/Cu) rengjorda med isopropanol före ihopbultning; AXQ 1×240 Al mot skena med kabelsko och kontaktmedel enligt PE:s anvisning";5;12;L;;;;;
