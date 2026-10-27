@@ -49,17 +49,17 @@ test("summeringen visar exakt status per fas och följer avbockningen", async ({
   // Moment 0–9 är passerade i Växjö, men en grind bockar inte av punkter: inget är registrerat.
   await oppnaStatus(page);
   await expect(status(page)).toContainText("0/306");
-  await expect(status(page).getByRole("row", { name: /^10 · Stationshus/ })).toContainText("0/15");
+  await expect(status(page).getByRole("row", { name: /^10 · Stationshus/ })).toContainText("0/19");
 
   await oppnaFas(page, 10);
   await rad(page, "10.7").getByRole("checkbox").check();
-  await expect(status(page).getByRole("row", { name: /^10 · Stationshus/ })).toContainText("1/15");
+  await expect(status(page).getByRole("row", { name: /^10 · Stationshus/ })).toContainText("1/19");
   await expect(status(page)).toContainText("1/306");
   await expect(rad(page, "10.7")).toContainText(/Klar \d{4}-\d{2}-\d{2}/);
 
   // Ej aktuell räknas bort ur det som återstår.
   await rad(page, "10.3").getByRole("button", { name: /^Ej aktuell/ }).click();
-  await expect(status(page).getByRole("row", { name: /^10 · Stationshus/ })).toContainText("1/14");
+  await expect(status(page).getByRole("row", { name: /^10 · Stationshus/ })).toContainText("1/18");
   await expect(rad(page, "10.3")).toHaveClass(/ejaktuell/);
 
   await gaTill(page, "Översikt");
