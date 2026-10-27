@@ -65,11 +65,14 @@ Fyll i datum och beslut i tabellen när det är fattat. Migrationer i `supabase/
 - **Siterunda** (`lib/siterunda.js`, 2026-10-23): Registrera händelse tar foto och plats. Foton krymps till JPEG och laddas till ritningsarkivet (`projekt/foto/…`); på punkten ligger bara `foton` med sökväg. En plats sätter en nål på siteobjektet. Med foto eller plats och utan datum blir uppföljningen idag.
 - **"Mina uppgifter" finns inte än.** `agare` är fritext; bygg det först när ansvar tilldelas uttryckligen.
 
-## Menyn följer rytmen (2026-10-22)
+## Moment på alla poster (2026-10-27)
 
-- **Hela menyn** (`GRUPPER` i `data/vyer.js`) har sex grupper efter projektmetodens rytm: Dagligen, Varje vecka och månad, Projektet, Pengar, Siten, Bibliotek. Nya vyer läggs i den grupp där de används, inte i en ny grupp.
-- **Enkla menyn** (`ENKEL_MENY`, sju flikar) svarar på fyra frågor: vad gör jag idag/i veckan, vad blockerar, blir vi klara i tid, vad kostar det. Idag, Översikt, Veckokoll, Bygga batteripark, Tidplan, ÄTA, Budget och utfall. Öppna punkter nås från Idag; HSEQ, Risker och Öppna punkter från Veckokoll ("Veckans genomgång").
-- **Testet för en ny vy:** svarar den på någon av de fyra frågorna? Annars hör den hemma i en befintlig vy eller i Bibliotek.
+- **Punkter, ÄTA (`ur`), risker, dagbok, störningar, byggmöten, skyddsronder och tillbud har `moment` (0–15)** och därmed en fas via `projektfasForMoment()`. Listan är `MOMENT_LISTOR` i `lib/postmoment.js`.
+- **`momentKalla`**: `"auto"` = satt till projektets aktuella moment när posten skapades; `"antaget"` = satt vid inläsning av en äldre post (ANTAGANDE, visa det som antaget); saknas eller `"vald"` = valt av användaren och rörs aldrig.
+- **Sätts automatiskt.** `reducer` kör `medNyaMoment()` efter varje åtgärd och `efterInlasning` kör `medPostmoment()`. En ny åtgärd som skapar poster behöver inte sätta moment själv.
+- **En risk** utan moment får fasens första moment om den ligger i en annan fas än projektet, annars aktuellt moment.
+- **Leveranser ingår inte.** Deras `moment` binder tidplanen (`bestallningar.js`) och får aldrig gissas.
+- Användaren byter moment med `UPPDATERA` och sätter då `momentKalla: "vald"`.
 
 ## ÄTA: art, orsak och fyra kolumner (2026-10-21)
 
