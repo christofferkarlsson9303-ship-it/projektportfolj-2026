@@ -5,7 +5,7 @@ import regular from "../../assets/fonts/DejaVuSans.ttf?inline";
 import bold from "../../assets/fonts/DejaVuSans-Bold.ttf?inline";
 import { kontrollNamn, kontrollBrister, kontrollSummering, rapportStatus } from "../../lib/projektkontroll.js";
 import { FALT_FORUTSATTNING } from "../../data/faltmaterial.js";
-import { SA_HAR_GOR_DU, VID_FARA, arStopp, meningar, momentRubrik, sidfot, stegTitel, vem } from "../../lib/arbetslista.js";
+import { SA_HAR_GOR_DU, VID_FARA, arbetsSteg, momentBorja, momentRubrik, momentVar, sidfot } from "../../lib/arbetslista.js";
 
 // Lokala typsnitt: svenska tecken, Ω, pilar och tomma rutor även utan nät.
 Font.register({ family: "FieldSans", fonts: [{ src: regular }, { src: bold, fontWeight: 700 }] });
@@ -56,6 +56,7 @@ const a = StyleSheet.create({
   stegTitel: { fontSize: 12, fontWeight: 700, flex: 1 },
   tank: { fontSize: 8.5, backgroundColor: "#f3f5f6", padding: 5, marginTop: 3, marginBottom: 3, lineHeight: 1.2 },
   vem: { fontSize: 9.5, marginTop: 3 },
+  matt: { fontSize: 10.5, marginTop: 5, paddingTop: 4, fontWeight: 700 },
   sign: { fontSize: 9.5, marginTop: 7, paddingTop: 6, borderTop: "0.6pt dashed #85959d" },
   foot: { position: "absolute", bottom: 16, left: 36, right: 36, fontSize: 6.5, color: "#435b67", flexDirection: "row", justifyContent: "space-between" },
 });
@@ -84,23 +85,23 @@ function Regler({ d }) {
     <Text style={a.reglerRubrik}>Så här gör du</Text>
     <Numrerad rader={SA_HAR_GOR_DU} />
     <Text style={a.fara}>{VID_FARA}</Text>
-    {!d.komplett && d.moment.length ? <Text style={{ fontSize: 8.5, marginTop: 5 }}>Delurval: listan har bara en del av momenten.</Text> : null}
+    {!d.komplett && d.moment.length > 1 ? <Text style={{ fontSize: 8.5, marginTop: 5 }}>Delurval: listan har bara en del av momenten.</Text> : null}
   </View>;
 }
 
-function Steg({ p, moment }) {
-  const stopp = arStopp(p);
-  const rader = meningar(p.instruktion);
+function Steg({ steg }) {
+  const { p, titel, gor, tank, vem, matt, stopp } = steg;
   return <View style={stopp ? a.stopp : a.steg} wrap={false}>
     <View style={a.stegHuvud}>
       <View style={a.ruta} />
       <Text style={a.stegId}>{kontrollNr(p.id)}</Text>
       {stopp ? <Text style={a.stoppMarke}>STOPP</Text> : null}
-      <Text style={a.stegTitel}>{stegTitel(p)}</Text>
+      <Text style={a.stegTitel}>{titel}</Text>
     </View>
-    {rader.length > 1 ? <Numrerad rader={rader} /> : <Text style={a.radText}>{rader[0]}</Text>}
-    {p.verifiering ? <Text style={a.tank}>Tänk på: {p.verifiering}</Text> : null}
-    <Text style={a.vem}>Vem: {vem(p, moment) || "________________"}</Text>
+    {gor.length > 1 ? <Numrerad rader={gor} /> : <Text style={a.radText}>{gor[0]}</Text>}
+    {tank ? <Text style={a.tank}>Tänk på: {tank}</Text> : null}
+    {matt ? <Text style={a.matt}>Skriv: {matt}</Text> : null}
+    {vem ? <Text style={a.vem}>Vem: {vem}</Text> : null}
     <Text style={a.sign}>{stopp ? "Arbetsledaren ger klartecken. " : "Klart. "}Datum: __________   Namn: ________________________</Text>
   </View>;
 }
@@ -110,9 +111,9 @@ function ArbetslistaSidor({ d }) {
     <ArbetsHeader d={d} moment={m} />
     {i === 0 && !d.uppgifter.length ? <Regler d={d} /> : null}
     <Text style={a.moment}>{momentRubrik(m)}</Text>
-    {m.flode ? <Text style={a.borja}>Börja när: {m.flode}</Text> : null}
-    {m.utrustning ? <Text style={a.var}>Var: {m.utrustning}{m.referens ? ` · Manual: ${m.referens}` : ""}</Text> : null}
-    {m.punkter.map((p) => <Steg key={p.id} p={p} moment={m} />)}
+    {momentBorja(m) ? <Text style={a.borja}>Börja när: {momentBorja(m)}</Text> : null}
+    {momentVar(m) ? <Text style={a.var}>Var: {momentVar(m)}{m.referens ? ` · Manual: ${m.referens}` : ""}</Text> : null}
+    {arbetsSteg(m).map((st) => <Steg key={st.p.id} steg={st} />)}
     <ArbetsFooter d={d} />
   </Page>);
   if (d.uppgifter.length) sidor.unshift(<Page key="uppgifter" size="A4" style={a.page} wrap>

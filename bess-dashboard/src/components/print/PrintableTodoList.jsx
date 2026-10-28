@@ -1,14 +1,13 @@
 import logotyp from "../../assets/one-nordic-logo.png";
 import { kontrollNr } from "../../data/kontrollnummer.js";
-import { SA_HAR_GOR_DU, VID_FARA, arStopp, meningar, momentRubrik, sidfot, stegTitel, vem } from "../../lib/arbetslista.js";
+import { SA_HAR_GOR_DU, VID_FARA, arbetsSteg, momentBorja, momentRubrik, momentVar, sidfot } from "../../lib/arbetslista.js";
 import "./field-print.css";
 
 /* Arbetslista – BESS, i klartext. Reglerna och texthanteringen ligger i
    lib/arbetslista.js och delas med PDF:en. */
 
-function Steg({ p, moment }) {
-  const stopp = arStopp(p);
-  const rader = meningar(p.instruktion);
+function Steg({ steg }) {
+  const { p, titel, gor, tank, vem, matt, stopp } = steg;
   return (
     <div className={`field-check field-steg${stopp ? " field-stopp" : ""}`}>
       <div className="field-steg-huvud">
@@ -16,16 +15,17 @@ function Steg({ p, moment }) {
         <span className="field-steg-id">{kontrollNr(p.id)}</span>
         <h3>
           {stopp ? <span className="field-stopp-marke">STOPP</span> : null}
-          {stegTitel(p)}
+          {titel}
         </h3>
       </div>
-      {rader.length > 1 ? (
-        <ol className="field-gor">{rader.map((r) => <li key={r}>{r}</li>)}</ol>
+      {gor.length > 1 ? (
+        <ol className="field-gor">{gor.map((r) => <li key={r}>{r}</li>)}</ol>
       ) : (
-        <p className="field-gor-en">{rader[0]}</p>
+        <p className="field-gor-en">{gor[0]}</p>
       )}
-      {p.verifiering ? <p className="field-tank"><b>Tänk på:</b> {p.verifiering}</p> : null}
-      <p className="field-reference"><b>Vem:</b> {vem(p, moment) || "________________"}</p>
+      {tank ? <p className="field-tank"><b>Tänk på:</b> {tank}</p> : null}
+      {matt ? <p className="field-matt"><b>Skriv:</b> {matt}</p> : null}
+      {vem ? <p className="field-reference"><b>Vem:</b> {vem}</p> : null}
       {stopp ? (
         <p className="field-sign">Arbetsledaren ger klartecken. Datum: __________ Namn: ______________________</p>
       ) : (
@@ -52,7 +52,7 @@ export function PrintableTodoList({ dokument: d }) {
         <h2>Så här gör du</h2>
         <ol>{SA_HAR_GOR_DU.map((r) => <li key={r}>{r}</li>)}</ol>
         <p className="field-fara">{VID_FARA}</p>
-        {!d.komplett && d.moment.length ? <p className="field-delurval">Delurval: listan har bara en del av momenten.</p> : null}
+        {!d.komplett && d.moment.length > 1 ? <p className="field-delurval">Delurval: listan har bara en del av momenten.</p> : null}
       </section>
 
       {d.uppgifter.length ? (
@@ -80,9 +80,9 @@ export function PrintableTodoList({ dokument: d }) {
         <section key={m.id} className="field-moment-todo">
           <h2>{momentRubrik(m)}</h2>
           {m.utforare ? <p className="field-todo-vem">Utförare: {m.utforare}</p> : null}
-          {m.flode ? <p className="field-borja"><b>Börja när:</b> {m.flode}</p> : null}
-          {m.utrustning ? <p className="field-var"><b>Var:</b> {m.utrustning}{m.referens ? <> · <b>Manual:</b> {m.referens}</> : null}</p> : null}
-          {m.punkter.map((p) => <Steg key={p.id} p={p} moment={m} />)}
+          {momentBorja(m) ? <p className="field-borja"><b>Börja när:</b> {momentBorja(m)}</p> : null}
+          {momentVar(m) ? <p className="field-var"><b>Var:</b> {momentVar(m)}{m.referens ? <> · <b>Manual:</b> {m.referens}</> : null}</p> : null}
+          {arbetsSteg(m).map((st) => <Steg key={st.p.id} steg={st} />)}
         </section>
       ))}
 

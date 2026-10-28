@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { hamtaNamn } from "../../state/portfolj-reducer.js";
-import { arbetslistaDokument, fasblankettDokument, utforareMedUppgifter } from "../../lib/snabbutskrift.js";
+import { arbetslistaDokument, fasblankettDokument, montorlistaDokument, utforareMedUppgifter } from "../../lib/snabbutskrift.js";
 import { PrintableTodoList } from "../print/PrintableTodoList.jsx";
 import { EgenkontrollDocument } from "../print/EgenkontrollDocument.jsx";
 import { PdfExporter } from "../print/PdfExporter.jsx";
@@ -32,6 +32,11 @@ export function useSnabbUtskrift() {
         return;
       }
       skrivUt(<PrintableTodoList dokument={d} />);
+    },
+    montorlista(pid, fas) {
+      const p = projektFor(pid);
+      const d = p ? montorlistaDokument(p, fas, { skapadAv: hamtaNamn() }) : null;
+      if (d) skrivUt(<PrintableTodoList dokument={d} />);
     },
     fasblankett(pid, fas, { enhet = "" } = {}) {
       const p = projektFor(pid);

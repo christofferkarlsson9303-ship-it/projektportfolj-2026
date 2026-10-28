@@ -6,6 +6,7 @@
 import { arbetsrader, byggFaltmaterial } from "./faltmaterial.js";
 import { idag } from "./datum.js";
 import { PROJEKTMALLAR } from "../data/projektkontroll.js";
+import { MONTOR } from "../data/montortext.js";
 
 /** Utförare med öppna uppgifter i projektet, i bokstavsordning. */
 export function utforareMedUppgifter(state, pid) {
@@ -36,6 +37,22 @@ export function fasblankettDokument(projekt, fas, { enhet = "", skapadAv = "" } 
     metadata: { datum: idag(), skapadAv, enhet, ritning: "", visaResultat: false, kontrollplan: "" },
   });
 }
+
+/** Montörens lista för ett moment: bara montörens steg i klartext
+ *  (data/montortext.js). Null om momentet saknar montörtext. */
+export function montorlistaDokument(projekt, fas, { skapadAv = "" } = {}) {
+  if (!MONTOR[fas]) return null;
+  return byggFaltmaterial({
+    projekt,
+    mallpaket: "projekt",
+    mallIds: [`projekt-${fas}`],
+    kontroller: [],
+    metadata: { datum: idag(), skapadAv, enhet: "", ritning: "", visaResultat: false, kontrollplan: "" },
+  });
+}
+
+/** Moment som har montörens lista: [{fas, titel}]. */
+export const MONTORLISTOR = Object.entries(MONTOR).map(([fas, m]) => ({ fas: Number(fas), titel: m.rubrik }));
 
 /** Byggfaser som har en egenkontrollblankett: [{fas, titel}]. */
 export const FASBLANKETTER = PROJEKTMALLAR.map((m) => ({ fas: Number(m.id.replace("projekt-", "")), titel: m.titel })).filter((m) => Number.isFinite(m.fas));

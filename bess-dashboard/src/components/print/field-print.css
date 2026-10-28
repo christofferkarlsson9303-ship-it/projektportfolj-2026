@@ -54,8 +54,8 @@
 .field-regler li { margin: 3px 0; }
 .field-fara { margin: 8px 0 0; padding: 6px 10px; border-left: 4px solid #ea5549; font-weight: bold; }
 .field-delurval { margin: 6px 0 0; font-size: 11px; }
-.field-moment-todo { break-before: page; }
-.field-moment-todo:first-of-type { break-before: auto; }
+/* Nytt moment på ny sida, men det första momentet börjar direkt under reglerna. */
+.field-moment-todo + .field-moment-todo { break-before: page; }
 .field-moment-todo h2 { font-size: 17px; color: #005f76; margin: 4px 0 6px; }
 .field-borja, .field-var { margin: 4px 0; }
 .field-borja { background: #f3f5f6; border-left: 3px solid #005f76; padding: 6px 10px; }
@@ -68,6 +68,7 @@
 .field-gor li { margin: 2px 0; }
 .field-gor-en { margin: 0 0 6px; }
 .field-tank { margin: 6px 0; padding: 5px 8px; background: #f3f5f6; font-size: 11px; }
+.field-matt { margin: 8px 0 0; font-size: 13px; }
 .field-todo .field-reference, .field-todo .field-vem { font-size: 12px; margin: 4px 0; }
 .field-sign { margin: 10px 0 0; padding-top: 8px; border-top: 1px dashed #85959d; font-size: 12px; }
 .field-stopp { border: 3px solid #ea5549; }

@@ -7,6 +7,7 @@ import { kontrollId, kontrollSummering } from "../../lib/projektkontroll.js";
 import { kontrollage } from "../../lib/epc.js";
 import { HELA, tackningText, tolkaOmfattningar } from "../../lib/kontrollplan.js";
 import { useSnabbUtskrift } from "../field/SnabbUtskrift.jsx";
+import { MONTOR } from "../../data/montortext.js";
 
 export function EgenkontrollLage({ pid, fas }) {
   const { state, uppd, kvittens } = usePortfolj();
@@ -105,6 +106,7 @@ export function EgenkontrollLage({ pid, fas }) {
     <p className="my-2 text-xs text-ink-soft">Resultaten är desamma som i fältmaterialet. Bockarna i listan och grinden följs upp för sig.</p>
     <div className="flex flex-wrap gap-2">
       <button type="button" className="btn sec mini" onClick={() => snabb.fasblankett(pid, fas, { enhet: omfattning === HELA ? "" : omfattning })}>Skriv ut momentets blankett</button>
+      {MONTOR[fas] ? <button type="button" className="btn sec mini" onClick={() => snabb.montorlista(pid, fas)}>Skriv ut montörens lista</button> : null}
       <button type="button" className="btn sec mini" onClick={() => oppnaFaltmaterial({ mallpaket: "projekt", mallIds: [mall.id], enhet: omfattning === HELA ? "" : omfattning })}>Registrera egenkontroller – moment {fas}</button>
     </div>
   </section>;
