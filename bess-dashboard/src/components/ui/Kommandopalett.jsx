@@ -6,6 +6,7 @@ import { riskvarde } from "../../lib/berakningar.js";
 import { ALLA_PUNKTER } from "../../data/bessChecklistData.ts";
 import { useSnabbUtskrift } from "../field/SnabbUtskrift.jsx";
 import { FASBLANKETTER, MONTORLISTOR, utforareMedUppgifter } from "../../lib/snabbutskrift.js";
+import { profilIdFor } from "../../data/hardvaruprofiler.js";
 
 /* Kommandopalett (Ctrl/Cmd+K).
    Tillgänglighet: i standalone-versionen låg aria-selected på vanliga <li> utan
@@ -30,7 +31,7 @@ export function Kommandopalett() {
         ut.push({ t: "Skriv ut", label: `Arbetslista till ${n}`, sub: `Öppna uppgifter · ${pn}`, kor: () => snabb.arbetslista(vp.id, { utforare: n }) })
       );
       ut.push({ t: "Skriv ut", label: "Arbetslista för alla", sub: `Öppna uppgifter · ${pn}`, kor: () => snabb.arbetslista(vp.id) });
-      MONTORLISTOR.forEach((f) =>
+      if (profilIdFor(vp) === "catl-pe") MONTORLISTOR.forEach((f) =>
         ut.push({ t: "Skriv ut", label: `Montörens lista moment ${f.fas} – ${f.titel}`, sub: `Klartext för montören · ${pn}`, kor: () => snabb.montorlista(vp.id, f.fas) })
       );
       FASBLANKETTER.forEach((f) =>

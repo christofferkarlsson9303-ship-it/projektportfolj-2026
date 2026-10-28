@@ -43,6 +43,7 @@ export function byggFaltmaterial({ projekt, mallIds, referenser = {}, ansvar = {
   const utrustning = (m) => (profil !== "catl-pe" && /CATL|Power Electronics/.test(m.utrustning || "") ? `${hv.container.benamning} / ${hv.skid.benamning}` : m.utrustning);
   const moment = valda.filter((m) => m.punkter.length).map((m) => ({
     ...m,
+    profil,
     utrustning: utrustning(m),
     referens: (referenser[m.id] || "").trim(),
     utforare: (ansvar[m.id] || metadata.utforare || "").trim(),

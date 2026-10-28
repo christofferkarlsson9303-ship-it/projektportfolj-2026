@@ -69,7 +69,7 @@ export function vem(p, moment) {
  *  moment ("projekt-12") kan ha montörtext. */
 export function montorMoment(m) {
   const id = String(m?.id || "");
-  if (!id.startsWith("projekt-")) return null;
+  if (!id.startsWith("projekt-") || m?.profil !== "catl-pe") return null;
   return MONTOR[Number(id.slice("projekt-".length))] || null;
 }
 

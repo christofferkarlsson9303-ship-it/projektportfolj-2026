@@ -7,6 +7,7 @@ import { arbetsrader, byggFaltmaterial } from "./faltmaterial.js";
 import { idag } from "./datum.js";
 import { PROJEKTMALLAR } from "../data/projektkontroll.js";
 import { MONTOR } from "../data/montortext.js";
+import { profilIdFor } from "../data/hardvaruprofiler.js";
 
 /** Utförare med öppna uppgifter i projektet, i bokstavsordning. */
 export function utforareMedUppgifter(state, pid) {
@@ -41,7 +42,7 @@ export function fasblankettDokument(projekt, fas, { enhet = "", skapadAv = "" } 
 /** Montörens lista för ett moment: bara montörens steg i klartext
  *  (data/montortext.js). Null om momentet saknar montörtext. */
 export function montorlistaDokument(projekt, fas, { skapadAv = "" } = {}) {
-  if (!MONTOR[fas]) return null;
+  if (!MONTOR[fas] || profilIdFor(projekt) !== "catl-pe") return null;
   return byggFaltmaterial({
     projekt,
     mallpaket: "projekt",

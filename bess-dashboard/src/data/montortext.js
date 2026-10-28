@@ -33,9 +33,12 @@ export const MONTOR = {
     borja: "Batterier, växelriktare och skid står fast och är jordade.",
     var: "Batteri­containrar (CATL), växelriktare (PCS) och MV-skid.",
     steg: [
-      { id: "B.02", titel: "Läs skylten på växelriktaren", stopp: true, gor: [
-        "Står det PCSK eller PCSM? Då ska inga säkringar sättas i DC-facket.",
-        "Står det något annat? Sluta och ring arbetsledaren.",
+      { id: "B.02", titel: "Få PE:s klartecken före DC-kablarna", stopp: true, gor: [
+        "Läs typskylten: kontrollera PCSK eller PCSM mot projektets handlingar.",
+        "Inga fältmonterade DC-säkringar enligt godkänt PCSK/PCSM-underlag.",
+        "Få PE:s dokumenterade klartecken före DC-anslutning.",
+        "Följ godkänd montageanvisning. Dokumentera modell och frisläppning.",
+        "Saknas klartecken eller avviker modellen? Stanna och ring arbetsledaren.",
       ] },
       { id: "M2.04", titel: "Mät att det är spänningslöst", stopp: true, gor: [
         "Bara behörig elmontör.",
