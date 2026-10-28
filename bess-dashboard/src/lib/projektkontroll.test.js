@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { PROJEKTMALLAR, PROJEKTKONTROLL_REVISION } from "../data/projektkontroll.js";
 import { FALTMALLAR } from "../data/faltmaterial.js";
-import { foreslagenUtforare, kontrollId, kontrollBrister, rapportStatus, ueUtskrift } from "./projektkontroll.js";
+import { foreslagenUtforare, utforareForKontroll, kontrollId, kontrollBrister, rapportStatus, ueUtskrift } from "./projektkontroll.js";
 import { kvittensFor } from "./godkannanden.js";
 import { byggFaltmaterial } from "./faltmaterial.js";
 import { normalisera, reducer } from "../state/portfolj-reducer.js";
@@ -83,6 +83,13 @@ describe("UE-egenkontroll (2026-10-28)", () => {
     expect(foreslagenUtforare({ roll: "Betongentreprenör / kontrollant" })).toBe("ue");
     expect(foreslagenUtforare({ roll: "Kontrollant / montör" })).toBe("egen");
     expect(foreslagenUtforare({ roll: "Elinstallatör" })).toBe("egen");
+  });
+  it("bevarar äldre egenkontroller utan utforsAv men föreslår UE för nya rader", () => {
+    const punkt = { roll: "Betongentreprenör" };
+    expect(utforareForKontroll(undefined, punkt)).toBe("ue");
+    expect(utforareForKontroll(row("P7.03"), punkt)).toBe("egen");
+    expect(utforareForKontroll(row("P7.03", { utforsAv: "ue" }), punkt)).toBe("ue");
+    expect(utforareForKontroll(row("P7.03", { utforsAv: "egen" }), punkt)).toBe("egen");
   });
   it("räknas i momentets kontrolläge och loggas läsbart", () => {
     let state = structuredClone(SEED);

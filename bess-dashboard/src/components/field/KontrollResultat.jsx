@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { kontrollNr } from "../../data/kontrollnummer.js";
-import { KONTROLLRESULTAT, UE_GRANSKNING, foreslagenUtforare, kontrollBrister } from "../../lib/projektkontroll.js";
+import { KONTROLLRESULTAT, UE_GRANSKNING, utforareForKontroll, kontrollBrister } from "../../lib/projektkontroll.js";
 import { idag } from "../../lib/datum.js";
 
 /* Två lägen (2026-10-28):
@@ -18,7 +18,7 @@ export function KontrollResultat({ punkt, rad, revision, onSpara }) {
     setForraRad(rad);
     setUtkast({ ...(rad || {}), ...osparat });
   }
-  const lage = rad?.utforsAv || foreslagenUtforare(punkt);
+  const lage = utforareForKontroll(rad, punkt);
   const ue = lage === "ue";
   const brister = rad ? kontrollBrister({ ...rad, utforsAv: lage }, revision) : kontrollBrister({ utforsAv: lage }, revision);
   const nr = kontrollNr(punkt.id);

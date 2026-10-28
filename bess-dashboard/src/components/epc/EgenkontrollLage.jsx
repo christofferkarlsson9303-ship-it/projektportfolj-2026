@@ -43,10 +43,12 @@ export function EgenkontrollLage({ pid, fas }) {
   const laggTillEnhet = () => {
     const v = nyEnhet.trim();
     if (!v) return;
-    const lista = tolkaOmfattningar([...(lage.planerade.length ? lage.planerade : []), v].join("\n"));
+    const nyaEnheter = tolkaOmfattningar(v);
+    if (!nyaEnheter.length) return;
+    const lista = tolkaOmfattningar([...(lage.planerade.length ? lage.planerade : []), ...nyaEnheter].join("\n"));
     uppd("projekt", pid, "kontrollplan", { ...(projekt?.kontrollplan || {}), [String(fas)]: lista });
     setPlanText(lista.join("\n"));
-    setOmfattning(scopes.find((x) => x.toLocaleLowerCase("sv") === v.toLocaleLowerCase("sv")) || v);
+    setOmfattning(lista.find((x) => x.toLocaleLowerCase("sv") === nyaEnheter[0].toLocaleLowerCase("sv")) || HELA);
     setNyEnhet("");
   };
   /* UE-kontroller i vald enhet som inte är klara: mottagen, granskad och skickad. */

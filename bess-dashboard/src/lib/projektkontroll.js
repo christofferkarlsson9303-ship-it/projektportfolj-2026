@@ -13,6 +13,8 @@ export const UE_GRANSKNING = [
 ];
 /** Förslag när posten saknas: punkter där en entreprenör står först i rollen utförs av UE. */
 export const foreslagenUtforare = (punkt) => (/entreprenör/i.test(String(punkt?.roll || "").split("/")[0]) ? "ue" : "egen");
+/** Befintliga kontroller utan utforsAv behåller äldre egenkontrolläge. */
+export const utforareForKontroll = (rad, punkt) => rad ? (rad.utforsAv || "egen") : foreslagenUtforare(punkt);
 export const arUe = (r) => r?.utforsAv === "ue";
 
 /** @param {import("./typer.js").Kontrollpost|null|undefined} r @param {string} revision @returns {string[]} */
