@@ -35,3 +35,21 @@ test("fasens blankett och Ctrl+K skriver ut utan fältmaterialpanelen", async ({
   await expect(page.locator("#utskrift")).toContainText("Kontrakt och ansvar");
   await expect(page.getByRole("dialog", { name: /Fältmaterial/ })).toHaveCount(0);
 });
+
+test("montörens lista för moment 12 skrivs ut i klartext med ett klick", async ({ page }) => {
+  await oppna(page, "Idag");
+  await page.evaluate(() => { window.print = () => {}; });
+  await page.getByRole("button", { name: "Sök", exact: true }).click();
+  const sok = page.getByRole("combobox", { name: "Sök och hoppa" });
+  await sok.fill("Montörens lista moment 12");
+  await sok.press("Enter");
+  const doc = page.locator("#utskrift");
+  await expect(doc).toContainText("Moment 12 – Koppla in batterier och växelriktare");
+  await expect(doc.locator(".field-steg").first()).toContainText("12.19a");
+  await expect(doc.locator(".field-steg").first()).toContainText("PE:s dokumenterade klartecken");
+  await expect(doc).toContainText("Uppmätt: ____ Ω");
+  await expect(doc).not.toContainText("AC2C");
+  await expect(doc).not.toContainText("Ta emot");
+  await expect(doc).not.toContainText("Tänk på");
+  await expect(page.getByRole("dialog", { name: /Fältmaterial/ })).toHaveCount(0);
+});

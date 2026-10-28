@@ -1,3 +1,5 @@
+import { MONTOR } from "../data/montortext.js";
+
 /* Arbetslista – BESS i klartext.
 
    Målet: en tioåring ska förstå vad som ska göras. Därför visar
@@ -15,6 +17,10 @@
    fält för ritning och serienummer) står inte i stegen. Dokumentnummer,
    mallrevision och källa står i sidfoten, så spårbarheten finns kvar.
    Egenkontrollen är oförändrad och har kvar alla fält.
+
+   Moment med montörtext (data/montortext.js) visar i stället bara montörens
+   steg, i arbetsordning och med korta meningar. Projektledarens rader
+   (kvittenser, samordning) kommer inte med; de står kvar i egenkontrollen.
 
    Samma funktioner används av utskriften (PrintableTodoList) och PDF:en
    (EgenkontrollPdf), så papperet ser likadant ut oavsett väg. */
@@ -59,12 +65,47 @@ export function vem(p, moment) {
   return String(p?.roll || moment?.utforare || "").trim();
 }
 
-/** Rubriken för ett moment: "Moment 12 – Anslutning BESS/PCS". */
+/** Montörtexten för ett mallmoment, eller null. Bara projektchecklistans
+ *  moment ("projekt-12") kan ha montörtext. */
+export function montorMoment(m) {
+  const id = String(m?.id || "");
+  if (!id.startsWith("projekt-") || m?.profil !== "catl-pe") return null;
+  return MONTOR[Number(id.slice("projekt-".length))] || null;
+}
+
+/** Rubriken för ett moment: "Moment 12 – Koppla in batterier och växelriktare". */
 export function momentRubrik(m) {
+  const mt = montorMoment(m);
+  if (mt) return `Moment ${m.nr} – ${mt.rubrik}`;
   return String(m?.titel || "").trim();
+}
+
+/** "Börja när" och "Var" för momentet. Montörtexten går före mallens text. */
+export function momentBorja(m) {
+  return montorMoment(m)?.borja || m?.flode || "";
+}
+export function momentVar(m) {
+  return montorMoment(m)?.var || m?.utrustning || "";
+}
+
+/**
+ * Stegen på arbetslistan: { p, titel, gor, tank, vem, matt, stopp }.
+ * Med montörtext: bara montörens steg i arbetsordning. Utan: alla rader med
+ * instruktionen delad i meningar, som förut.
+ */
+export function arbetsSteg(m) {
+  const mt = montorMoment(m);
+  const punkter = m?.punkter || [];
+  if (!mt) return punkter.map((p) => ({ p, titel: stegTitel(p), gor: meningar(p.instruktion), tank: p.verifiering || "", vem: vem(p, m), matt: "", stopp: arStopp(p) }));
+  const per = new Map(punkter.map((p) => [p.id, p]));
+  return mt.steg.filter((s) => per.has(s.id)).map((s) => ({
+    p: per.get(s.id), titel: s.titel, gor: s.gor, tank: "", vem: "", matt: s.matt || "", stopp: s.stopp ?? arStopp(per.get(s.id)),
+  }));
 }
 
 /** Sidfotens spårbarhet: dokumentnummer, mallrevision och källa. */
 export function sidfot(d) {
-  return [d?.dokumentNr, d?.revision ? `Mallrevision ${d.revision}` : "", d?.kalla].filter(Boolean).join(" · ");
+  /* Montörens lista: källtexten (AC2C, workshopantaganden) hör till projektledaren. */
+  const montor = d?.moment?.length && !d.uppgifter?.length && d.moment.every((m) => montorMoment(m));
+  return [d?.dokumentNr, d?.revision ? `Mallrevision ${d.revision}` : "", montor ? "" : d?.kalla].filter(Boolean).join(" · ");
 }
