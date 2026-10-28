@@ -92,3 +92,25 @@ test("komplett egenkontroll har fasindex och slutdokumentationens genväg", asyn
   if (info.project.name === "desktop") await page.pdf({ path: info.outputPath("komplett-print.pdf"), printBackground: true, preferCSSPageSize: true });
   utanKonsolfel(fel);
 });
+
+test("UE:s egenkontroll är klar först när den är granskad och skickad till beställaren", async ({ page }) => {
+  const { fel } = await oppna(page);
+  const d = await panel(page);
+  await d.locator("details").nth(7).locator("summary").click();
+  /* 7.6a utförs av betongentreprenören och öppnas därför i UE-läge. */
+  await d.getByRole("combobox", { name: "Granskning av UE:s egenkontroll – 7.6a", exact: true }).selectOption("ok");
+  await d.getByLabel("UE (företag) – 7.6a", { exact: true }).fill("A-Bygg");
+  await d.getByLabel("UE:s egenkontroll (dokument) – 7.6a", { exact: true }).fill("Egenkontroll Batteri A-Bygg");
+  await d.getByLabel("Mottagen datum – 7.6a", { exact: true }).fill("2026-06-02");
+  await d.getByLabel("Granskad av (ONE) – 7.6a", { exact: true }).fill("CK");
+  await d.getByLabel("Granskad av (ONE) – 7.6a", { exact: true }).blur();
+  const ruta = d.getByLabel("Kontrollresultat 7.6a", { exact: true });
+  await expect(ruta).toContainText("Granskning ej klar");
+  for (const n of ["Signerad av UE:s ansvarige", "Daterad och rätt projekt/objekt angivet", "Varje Nej/avvikelse har kommentar och åtgärd"]) await ruta.getByLabel(n).check();
+  await expect(ruta).toContainText("Ej skickad till beställaren");
+  await d.getByLabel("Skickad till beställaren – 7.6a", { exact: true }).fill("2026-06-03");
+  await d.getByLabel("Skickad till beställaren – 7.6a", { exact: true }).blur();
+  await expect(ruta).toContainText("Klar – mottagen, granskad och skickad till beställaren");
+  await expect(d).toContainText("1 av 125 kompletta kontroller");
+  utanKonsolfel(fel);
+});

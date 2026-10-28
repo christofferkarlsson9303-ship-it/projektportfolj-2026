@@ -12,6 +12,12 @@
  * @property {string} [notering]      krävs vid "ej-tillamplig"
  * @property {string} mallrevision
  * @property {string} [omfattning]
+ * @property {"egen"|"ue"} [utforsAv]  "ue": ONE kontrollerar mottagen UE-egenkontroll (datum = mottaget, kontrollant = granskare, referens = UE:s protokoll)
+ * @property {string} [ue]            UE-företag
+ * @property {boolean} [ueSignerat]
+ * @property {boolean} [ueDaterat]
+ * @property {boolean} [ueAvvikelser]
+ * @property {string} [skickadBestallare] ÅÅÅÅ-MM-DD
  */
 
 /**

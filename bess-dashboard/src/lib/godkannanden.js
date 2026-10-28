@@ -15,7 +15,8 @@ export function kvittensFor(action, namn = "") {
   if (action?.type === "FALT_KONTROLL") {
     const r = action.rad;
     if (!r?.id || !r.resultat) return null;
-    const varde = { punktId: r.punktId, omfattning: r.omfattning, resultat: r.resultat, datum: r.datum || "", kontrollant: r.kontrollant || "", referens: r.referens || "", notering: r.notering || "", mallrevision: r.mallrevision || "" };
+    const varde = { punktId: r.punktId, omfattning: r.omfattning, resultat: r.resultat, datum: r.datum || "", kontrollant: r.kontrollant || "", referens: r.referens || "", notering: r.notering || "", mallrevision: r.mallrevision || "",
+      ...(r.utforsAv === "ue" ? { utforsAv: "ue", ue: r.ue || "", ueSignerat: !!r.ueSignerat, ueDaterat: !!r.ueDaterat, ueAvvikelser: !!r.ueAvvikelser, skickadBestallare: r.skickadBestallare || "" } : {}) };
     return validera({ typ: "egenkontroll", varde }).length ? null : { projektId: r.projektId, typ: "egenkontroll", objektId: r.id, varde, utfordAv: r.kontrollant || "" };
   }
   if (action?.type === "EPC_FAS" && action.falt === "grindDatum") {

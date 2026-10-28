@@ -3,7 +3,7 @@ import { kontrollNr, mallEtikett } from "../../data/kontrollnummer.js";
 import logotyp from "../../assets/one-nordic-logo.png";
 import regular from "../../assets/fonts/DejaVuSans.ttf?inline";
 import bold from "../../assets/fonts/DejaVuSans-Bold.ttf?inline";
-import { kontrollNamn, kontrollBrister, kontrollSummering, rapportStatus } from "../../lib/projektkontroll.js";
+import { kontrollNamn, kontrollBrister, kontrollSummering, rapportStatus, ueUtskrift } from "../../lib/projektkontroll.js";
 import { FALT_FORUTSATTNING } from "../../data/faltmaterial.js";
 import { SA_HAR_GOR_DU, VID_FARA, arStopp, meningar, momentRubrik, sidfot, stegTitel, vem } from "../../lib/arbetslista.js";
 
@@ -156,12 +156,14 @@ function Check({ p, d, arbetslista = false }) {
     {p.verifiering ? <Text style={s.verification}>Verifiering: {p.verifiering}</Text> : null}
     <Text style={s.reference}>Kompetens: {p.roll} · EPC: {p.epc.join(", ") || "ingen automatisk avbockning"}</Text>
     {arbetslista ? <Text style={s.writing}>Datum / signatur / notering:</Text> : d.visaResultat ? <>
+      {ueUtskrift(p.kontroll) ? ueUtskrift(p.kontroll).map((t) => <Text key={t} style={s.instruction}>{t}</Text>) : <>
       <Text style={s.instruction}>Resultat: {kontrollNamn(p.kontroll?.resultat)} · Datum: {p.kontroll?.datum || "Ej angivet"}</Text>
       <Text style={s.instruction}>Kontrollant: {p.kontroll?.kontrollant || "Ej angiven"} · Kontrollerad mallrevision: {p.kontroll?.mallrevision || "Ej angiven"}</Text>
       <Text style={s.instruction}>Bevis/protokoll: {p.kontroll?.referens || "Ej angivet"}</Text>
+      </>}
       <Text style={s.instruction}>Mätvärde / avvikelse / åtgärd / motivering: {p.kontroll?.notering || "—"}</Text>
       {kontrollBrister(p.kontroll, d.revision).length ? <Text style={s.verification}>Öppet: {kontrollBrister(p.kontroll, d.revision).join(" · ")}</Text> : null}
-      <Text style={s.writing}>Signatur: __________________ (namnet ovan är inte en underskrift)</Text>
+      <Text style={s.writing}>Signatur ONE: __________________</Text>
     </> : <>
       <View style={s.result}><Text>Resultat: □ OK    □ Ej OK    □ Ej tillämplig*</Text><Text>Datum: ______________</Text></View>
       <Text style={s.writing}>Mätvärde / Avvikelse / Notering:</Text>
