@@ -46,7 +46,7 @@ test("montörens lista för moment 12 skrivs ut i klartext med ett klick", async
   const doc = page.locator("#utskrift");
   await expect(doc).toContainText("Moment 12 – Koppla in batterier och växelriktare");
   await expect(doc.locator(".field-steg").first()).toContainText("12.19a");
-  await expect(doc.locator(".field-steg").first()).toContainText("Läs skylten på växelriktaren");
+  await expect(doc.locator(".field-steg").first()).toContainText("PE:s dokumenterade klartecken");
   await expect(doc).toContainText("Uppmätt: ____ Ω");
   await expect(doc).not.toContainText("AC2C");
   await expect(doc).not.toContainText("Ta emot");
