@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { PROJEKTMALLAR, PROJEKTKONTROLL_REVISION } from "../data/projektkontroll.js";
 import { FALTMALLAR } from "../data/faltmaterial.js";
-import { kontrollId, kontrollBrister, rapportStatus } from "./projektkontroll.js";
+import { foreslagenUtforare, kontrollId, kontrollBrister, rapportStatus, ueUtskrift } from "./projektkontroll.js";
+import { kvittensFor } from "./godkannanden.js";
 import { byggFaltmaterial } from "./faltmaterial.js";
 import { normalisera, reducer } from "../state/portfolj-reducer.js";
 import { SEED } from "../data/seed.js";
@@ -59,5 +60,37 @@ describe("kontrollBrister: kalenderdatum (granskning F13)", () => {
   });
   it("godtar skottdag", () => {
     expect(kontrollBrister(rad("2024-02-29"), PROJEKTKONTROLL_REVISION)).toEqual([]);
+  });
+});
+
+describe("UE-egenkontroll (2026-10-28)", () => {
+  const ue = (extra = {}) => row("P7.03", { utforsAv: "ue", ue: "A-Bygg", referens: "Egenkontroll Batteri A-Bygg", datum: "2026-06-02", kontrollant: "CK", ueSignerat: true, ueDaterat: true, ueAvvikelser: true, skickadBestallare: "2026-06-03", ...extra });
+  it("är klar först när UE:s protokoll är mottaget, granskat och skickat till beställaren", () => {
+    expect(kontrollBrister(ue(), rev)).toEqual([]);
+    expect(kontrollBrister(ue({ skickadBestallare: "" }), rev)).toContain("Ej skickad till beställaren");
+    expect(kontrollBrister(ue({ ueSignerat: false }), rev).join()).toContain("signerad av UE:s ansvarige");
+    expect(kontrollBrister(ue({ ue: "" }), rev)).toContain("UE (företag) saknas");
+    expect(kontrollBrister(ue({ skickadBestallare: "2026-06-01" }), rev)).toContain("Skickad till beställaren före mottaget datum");
+    expect(kontrollBrister(ue({ resultat: "ej-ok" }), rev)[0]).toContain("åter till UE");
+  });
+  it("ändrar inget för egna kontroller", () => {
+    expect(kontrollBrister(row("P7.03"), rev)).toEqual([]);
+    expect(ueUtskrift(row("P7.03"))).toBeNull();
+    expect(ueUtskrift(ue()).join(" ")).toContain("Skickad till beställaren: 2026-06-03");
+  });
+  it("föreslår UE när en entreprenör står först i rollen", () => {
+    expect(foreslagenUtforare({ roll: "Betongentreprenör" })).toBe("ue");
+    expect(foreslagenUtforare({ roll: "Betongentreprenör / kontrollant" })).toBe("ue");
+    expect(foreslagenUtforare({ roll: "Kontrollant / montör" })).toBe("egen");
+    expect(foreslagenUtforare({ roll: "Elinstallatör" })).toBe("egen");
+  });
+  it("räknas i momentets kontrolläge och loggas läsbart", () => {
+    let state = structuredClone(SEED);
+    state = reducer(state, { type: "FALT_KONTROLL", rad: ue({ skickadBestallare: "" }) });
+    expect(doc(state.faltkontroller, ["projekt-7"]).sammanstallning.klara).toBe(0);
+    state = reducer(state, { type: "FALT_KONTROLL", rad: ue() });
+    expect(doc(state.faltkontroller, ["projekt-7"]).sammanstallning.klara).toBe(1);
+    expect(state.andringslogg[0].text).toContain("skickad till beställaren: tomt → 2026-06-03");
+    expect(kvittensFor({ type: "FALT_KONTROLL", rad: ue() }).varde.skickadBestallare).toBe("2026-06-03");
   });
 });

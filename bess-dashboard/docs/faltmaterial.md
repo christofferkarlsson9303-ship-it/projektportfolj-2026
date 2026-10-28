@@ -97,6 +97,16 @@ idrifttagning till besiktning, slutdokumentation och garantiuppföljning.
 Alla tidigare 49 tekniska kontrollpunkter ingår med oförändrade punkt-ID:n.
 De fyra tekniska mallarna finns kvar som separat val.
 
+**Vem gör egenkontrollen (2026-10-28).** Varje punkt har två lägen. *Vi själva*:
+ONE registrerar resultat, datum, kontrollant och bevis. *UE*: underentreprenören gör
+egenkontrollen och ONE:s kontroll är att den är mottagen, granskad (signerad, daterad
+och rätt objekt, varje Nej kommenterat) och skickad till beställaren. Punkter där en
+entreprenör står först i rollen (t.ex. Betongentreprenör) öppnas i UE-läge. Ej OK
+betyder att protokollet går åter till UE. En UE-punkt är klar först när den är skickad.
+
+**Enheter.** Hela anläggningen är en gemensam kontroll för platsen. Läggs enheter till
+i momentet (t.ex. Batterifundament, Ställverk) krävs en klar kontroll per enhet för grinden.
+
 Öppna en punkt och registrera resultat, faktiskt kontrolldatum, kontrollant,
 bevis/protokoll med revision samt mätvärde, avvikelse eller åtgärd.
 **Ej OK** ska ha avvikelse/åtgärd. **Ej tillämplig** ska ha motivering och

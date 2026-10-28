@@ -5,7 +5,7 @@ import { FALTMALLAR, KALLSTATUS } from "../../data/faltmaterial.js";
 import { gallerProfil } from "../../lib/tillampning.js";
 import { profilIdFor } from "../../data/hardvaruprofiler.js";
 import { PROJEKTMALLAR, PROJEKTKONTROLL_REVISION } from "../../data/projektkontroll.js";
-import { kontrollId } from "../../lib/projektkontroll.js";
+import { foreslagenUtforare, kontrollId } from "../../lib/projektkontroll.js";
 import { KontrollResultat } from "./KontrollResultat.jsx";
 import { arbetsrader, byggFaltmaterial } from "../../lib/faltmaterial.js";
 import { idag, lokaltDatum } from "../../lib/datum.js";
@@ -61,6 +61,7 @@ export function FaltmaterialPanel({ projekt, urval, onValjProjekt, onStang }) {
     const id = kontrollId(projekt.id, omfattning, p.id);
     const gammal = kontrollIndex.get(id);
     const rad = { ...gammal, id, projektId: projekt.id, omfattning, punktId: p.id, titel: p.titel, instruktion: p.instruktion, mallrevision: !gammal || falt === "resultat" || falt === "bekrafta" ? PROJEKTKONTROLL_REVISION : gammal.mallrevision, andrad: new Date().toISOString() };
+    if (!rad.utforsAv) rad.utforsAv = foreslagenUtforare(p);
     if (falt !== "bekrafta") rad[falt] = varde;
     dispatch({ type: "FALT_KONTROLL", rad });
   };

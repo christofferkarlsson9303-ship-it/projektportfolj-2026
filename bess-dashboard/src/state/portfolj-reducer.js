@@ -348,8 +348,8 @@ function reducerInre(state, action) {
       const fore = gamla.find((p) => p.id === rad.id);
       const finns = !!fore;
       const nytt = { ...state, faltkontroller: finns ? byt(gamla, rad.id, () => ({ ...rad })) : [...gamla, { ...rad }] };
-      const etiketter = { resultat: "resultat", datum: "kontrolldatum", kontrollant: "kontrollant", referens: "protokollreferens", notering: "notering", mallrevision: "mallrevision" };
-      const andringar = Object.entries(etiketter).filter(([k]) => (fore?.[k] || "") !== (rad[k] || "")).map(([k, namn]) => `${namn}: ${fore?.[k] || "tomt"} → ${rad[k] || "tomt"}`);
+      const etiketter = { resultat: "resultat", datum: "kontrolldatum", kontrollant: "kontrollant", referens: "protokollreferens", notering: "notering", mallrevision: "mallrevision", utforsAv: "utförs av", ue: "UE", ueSignerat: "UE signerad", ueDaterat: "UE daterad", ueAvvikelser: "UE avvikelser kommenterade", skickadBestallare: "skickad till beställaren" };
+      const andringar = Object.entries(etiketter).filter(([k]) => String(fore?.[k] || "") !== String(rad[k] || "")).map(([k, namn]) => { const v = (x) => (x === true ? "ja" : x || "tomt"); return `${namn}: ${v(fore?.[k])} → ${v(rad[k])}`; });
       return andringar.length ? loggat(nytt, rad.projektId, `Egenkontroll ${rad.punktId} (${rad.omfattning}): ${andringar.join("; ")}`) : nytt;
     }
 

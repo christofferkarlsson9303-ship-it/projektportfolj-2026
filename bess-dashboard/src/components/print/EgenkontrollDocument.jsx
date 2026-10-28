@@ -1,4 +1,4 @@
-import { kontrollNamn, kontrollBrister } from "../../lib/projektkontroll.js";
+import { kontrollNamn, kontrollBrister, ueUtskrift } from "../../lib/projektkontroll.js";
 import { kontrollNr, mallEtikett } from "../../data/kontrollnummer.js";
 import { ProjektkontrollSummary } from "./ProjektkontrollSummary.jsx";
 import { DocumentHeader } from "./DocumentHeader.jsx";
@@ -26,12 +26,14 @@ export function EgenkontrollDocument({ dokument: d }) {
               {p.verifiering ? <p className="field-verification"><b>Verifiering:</b> {p.verifiering}</p> : null}
               <p className="field-reference">Kompetens: {p.roll} · EPC: {p.epc.join(", ") || "ingen automatisk avbockning"}</p>
               {d.visaResultat ? <div className="field-recorded">
+                {ueUtskrift(p.kontroll) ? ueUtskrift(p.kontroll).map((t) => <p key={t}>{t}</p>) : <>
                 <p><b>Resultat:</b> {kontrollNamn(p.kontroll?.resultat)} · <b>Datum:</b> {p.kontroll?.datum || "Ej angivet"}</p>
                 <p><b>Kontrollant:</b> {p.kontroll?.kontrollant || "Ej angiven"} · <b>Kontrollerad mallrevision:</b> {p.kontroll?.mallrevision || "Ej angiven"}</p>
                 <p><b>Bevis/protokoll:</b> {p.kontroll?.referens || "Ej angivet"}</p>
+                </>}
                 <p><b>Mätvärde / avvikelse / åtgärd / motivering:</b> {p.kontroll?.notering || "—"}</p>
                 {kontrollBrister(p.kontroll, d.revision).length ? <p className="field-verification"><b>Öppet:</b> {kontrollBrister(p.kontroll, d.revision).join(" · ")}</p> : null}
-                <p>Signatur: __________________ (kontrollantens namn ovan är inte en underskrift)</p>
+                <p>Signatur ONE: __________________</p>
               </div> : <>
               <div className="field-result"><span>Resultat: □ OK　□ Ej OK　□ Ej tillämplig*</span><span>Datum: ______________</span></div>
               <div className="field-writing">Mätvärde / Avvikelse / Notering: ________________________________________</div>

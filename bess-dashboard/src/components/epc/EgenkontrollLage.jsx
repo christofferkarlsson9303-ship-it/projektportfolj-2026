@@ -3,7 +3,7 @@ import { kontrollNr } from "../../data/kontrollnummer.js";
 import { hamtaGodkannanden } from "../../state/godkannanden.js";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { PROJEKTMALLAR, PROJEKTKONTROLL_REVISION } from "../../data/projektkontroll.js";
-import { kontrollId, kontrollSummering } from "../../lib/projektkontroll.js";
+import { arUe, kontrollBrister, kontrollId, kontrollSummering } from "../../lib/projektkontroll.js";
 import { kontrollage } from "../../lib/epc.js";
 import { HELA, tackningText, tolkaOmfattningar } from "../../lib/kontrollplan.js";
 import { useSnabbUtskrift } from "../field/SnabbUtskrift.jsx";
@@ -28,6 +28,7 @@ export function EgenkontrollLage({ pid, fas }) {
   const lage = kontrollage(state, pid)[fas];
   const [planText, setPlanText] = useState(() => (lage?.planerade || []).join("\n"));
   const [visaPlan, setVisaPlan] = useState(false);
+  const [nyEnhet, setNyEnhet] = useState("");
   if (!mall || !lage) return null;
   const rader = (state.faltkontroller || []).filter((r) => r.projektId === pid);
   const scopes = [...new Set([HELA, ...lage.omfattningar, ...rader.map((r) => r.omfattning).filter(Boolean)])];
@@ -39,6 +40,19 @@ export function EgenkontrollLage({ pid, fas }) {
     if (JSON.stringify(lista) === JSON.stringify(lage.planerade)) return;
     uppd("projekt", pid, "kontrollplan", { ...(projekt?.kontrollplan || {}), [String(fas)]: lista });
   };
+  const laggTillEnhet = () => {
+    const v = nyEnhet.trim();
+    if (!v) return;
+    const lista = tolkaOmfattningar([...(lage.planerade.length ? lage.planerade : []), v].join("\n"));
+    uppd("projekt", pid, "kontrollplan", { ...(projekt?.kontrollplan || {}), [String(fas)]: lista });
+    setPlanText(lista.join("\n"));
+    setOmfattning(scopes.find((x) => x.toLocaleLowerCase("sv") === v.toLocaleLowerCase("sv")) || v);
+    setNyEnhet("");
+  };
+  /* UE-kontroller i vald enhet som inte är klara: mottagen, granskad och skickad. */
+  const ueKvar = mall.punkter.map((p) => ({ p, r: index.get(kontrollId(pid, omfattning, p.id)) }))
+    .filter((x) => arUe(x.r) && kontrollBrister(x.r, PROJEKTKONTROLL_REVISION).length)
+    .map((x) => ({ ...x, vad: !x.r.resultat ? "ej granskad" : x.r.resultat === "ej-ok" ? "åter till UE" : !x.r.skickadBestallare ? "ej skickad till beställaren" : "ofullständig" }));
   const ofullstandiga = mall.punkter.filter((p) => lage.tackning[p.id] && lage.tackning[p.id].klara < lage.tackning[p.id].totalt);
 
   return <section className="my-3 rounded-sm border border-solid border-hairline bg-surface p-3" aria-label={`Egenkontroller i moment ${fas}`}>
@@ -65,14 +79,22 @@ export function EgenkontrollLage({ pid, fas }) {
         </>
       ) : null}
     </p>
-    <label className="mt-1 flex flex-col gap-1 text-xs">Visa för enhet<select value={omfattning} onChange={(e) => setOmfattning(e.target.value)}>{scopes.map((s) => <option key={s}>{s}</option>)}</select></label>
+    <div className="mt-1 flex flex-wrap items-end gap-2 text-xs">
+      <label className="flex min-w-[12rem] flex-1 flex-col gap-1">Kontrolleras för<select value={omfattning} onChange={(e) => setOmfattning(e.target.value)}>{scopes.map((s) => <option key={s}>{s}</option>)}</select></label>
+      <label className="flex min-w-[12rem] flex-1 flex-col gap-1">Lägg till enhet<input type="text" maxLength={80} value={nyEnhet} placeholder="T.ex. Batterifundament, Ställverk, SKID 1" onChange={(e) => setNyEnhet(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); laggTillEnhet(); } }} /></label>
+      <button type="button" className="btn sec mini" disabled={!nyEnhet.trim()} onClick={laggTillEnhet}>Lägg till</button>
+    </div>
+    <p className="my-1 text-xs text-ink-soft">{lage.omfattningar.length > 1
+      ? `Varje enhet kontrolleras för sig. G${fas} kräver en klar kontroll per punkt för: ${lage.omfattningar.join(", ")}.`
+      : "Hela anläggningen = en gemensam kontroll för hela platsen. Kontrolleras något per enhet (t.ex. batterifundament och ställverksfundament), lägg till enheterna – då krävs en kontroll per enhet."}</p>
+    {ueKvar.length ? <p className="my-1 text-xs font-bold text-warn-ink">UE-egenkontroller: {ueKvar.length} ej klara – {ueKvar.map((x) => `${kontrollNr(x.p.id)} ${x.vad}`).join(" · ")}</p> : null}
     {kvitterade ? (() => {
       const egna = mall.punkter.map((p) => ({ p, k: kvitterade.get(kontrollId(pid, omfattning, p.id)), r: index.get(kontrollId(pid, omfattning, p.id)) })).filter((x) => x.r?.resultat);
       const ok = egna.filter((x) => x.k && x.k.varde?.resultat === x.r.resultat && x.k.varde?.datum === x.r.datum).length;
       const senaste = egna.map((x) => x.k).filter(Boolean).sort((a, b) => (a.kvitterad_tid < b.kvitterad_tid ? 1 : -1))[0];
       if (!egna.length) return null;
       return <p className="my-1 text-xs text-ink-soft">
-        Kvitterade i databasen: <b className={ok === egna.length ? "text-ok-ink" : "text-warn-ink"}>{ok} av {egna.length}</b> registrerade resultat
+        Säkrat i molnet (med inloggning och servertid): <b className={ok === egna.length ? "text-ok-ink" : "text-warn-ink"}>{ok} av {egna.length}</b> registrerade resultat
         {senaste ? ` · senast kvitterad av ${senaste.kvitterad_epost} ${senaste.kvitterad_tid.slice(0, 16).replace("T", " ")} (utförd av ${senaste.utford_av || "–"})` : ""}
         {kvittens?.koade ? ` · ${kvittens.koade} väntar på kvittens` : ""}
       </p>;
@@ -81,7 +103,7 @@ export function EgenkontrollLage({ pid, fas }) {
     <div className="my-2">
       <button type="button" className="cursor-pointer border-0 bg-transparent p-0 text-left text-xs font-bold text-ink" aria-expanded={visaPlan} onClick={() => setVisaPlan((v) => !v)}>
         {visaPlan ? "▾ " : "▸ "}
-        {lage.planerade.length ? `Kontrollplan: ${lage.planerade.length} enheter att kontrollera` : "Ange vilka enheter som ska kontrolleras"}{lage.omfattningar.length > 1 ? ` · ${lage.omfattningar.length} enheter har kontroller` : ""}
+        {lage.planerade.length ? `Kontrollplan: ${lage.planerade.length} enheter att kontrollera` : "Redigera enhetslistan"}{lage.omfattningar.length > 1 ? ` · ${lage.omfattningar.length} enheter har kontroller` : ""}
       </button>
       {visaPlan ? <>
       <label className="mt-2 flex flex-col gap-1 text-xs">
