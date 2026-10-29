@@ -83,6 +83,19 @@ test("en åtgärd kan tas bort efter bekräftelse", async ({ page }) => {
   await expect(kort(page)).toHaveCount(0);
 });
 
+test("Escape i bekräftelsen stänger bara dialogen, inte panelen bakom", async ({ page }) => {
+  await nyAtgard(page, "Ska finnas kvar");
+  await panel(page).getByRole("button", { name: "Ta bort åtgärden" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  // Panelen lyssnar på Escape på window; dialogen får inte släppa igenom den.
+  await expect(panel(page)).toBeVisible();
+  await expect(kort(page)).toHaveCount(1);
+});
+
 test("planen hör till projektet, inte till portföljen", async ({ page }) => {
   await nyAtgard(page, "Bara i första projektet");
   await page.keyboard.press("Escape");
