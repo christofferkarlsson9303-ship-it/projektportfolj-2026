@@ -69,3 +69,5 @@ Vid inventeringen saknades `pg_cron`, `pg_net` och Vault-hemligheter. Ingen fung
 4. Gör ett autentiserat `?torr=1`-anrop för att kontrollera urvalet utan att skicka. Kontrollera kanalinställningarna separat; nuvarande torrsvar verifierar inte kanalnycklarna.
 5. Kör `supabase/manuellt/frist_paminnelser_schema.sql`. Filen har fått en kontroll som stoppar schemaläggningen om Vault-värdena saknas.
 6. Verifiera leverans och återförsök med ett avgränsat, uttryckligen godkänt utskick, därefter cron-loggen. Stäng först då #61.
+
+**2026-10-29:** stegen ovan finns nu som körbar runbook med kontroller i [`runbook-61-fristpaminnelser.md`](runbook-61-fristpaminnelser.md). Schemaskriptet är provat lokalt, och urvalet är torrkört mot produktionsdata: 1 påminnelse vid första körningen (UR010 Alvesta). Den driftsatta funktionen (version 2) är äldre än main och ska driftsättas om före steg 5.

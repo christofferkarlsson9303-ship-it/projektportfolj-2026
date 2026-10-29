@@ -156,7 +156,7 @@ export function meddelande(lista, projekt = [], appUrl = "") {
     "",
     ...rader,
     "",
-    "24 timmar är er egen rutin och kommer före kontraktets grans. Missar ni kontraktets grans kan rätten till ersättning och tidsförlängning gå förlorad. Se sidan Kontraktet.",
+    "24 timmar är er egen rutin och kommer före kontraktets gräns. Missar ni kontraktets gräns kan rätten till ersättning och tidsförlängning gå förlorad. Se sidan Kontraktet.",
     appUrl ? `Öppna Idag: ${appUrl}` : "",
   ]
     .filter((r, i, a) => r !== "" || a[i - 1] !== "")
