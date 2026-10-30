@@ -337,13 +337,14 @@ main{padding-top:30px}
 .lead{line-height:1.55}
 /* section.on: se kommentaren om den borttagna vyväxlaren ovan. */
 @keyframes sectionIn{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (prefers-reduced-motion:reduce){*,::backdrop{transition:none!important;animation:none!important}}
 
 /* sidomenyns gradient följer temat */
 .sidebar{background:linear-gradient(175deg,var(--sidebar-1) 0%,var(--sidebar-2) 78%,var(--sidebar-3) 100%)}
 
 /* ---------- Toast ---------- */
-.toast{position:fixed;right:22px;bottom:22px;z-index:80;display:flex;align-items:center;gap:10px;
+/* popover="manual": inset/margin/overflow nollställer webbläsarens popover-stil (inset:0, margin:auto). */
+.toast{position:fixed;inset:auto;right:22px;bottom:22px;margin:0;overflow:visible;z-index:80;display:flex;align-items:center;gap:10px;
   background:var(--raised);color:var(--ink);border:1px solid var(--hairline);border-radius:12px;
   padding:12px 16px;font-size:13px;font-weight:600;box-shadow:var(--sh-lift);
   opacity:0;transform:translateY(12px);pointer-events:none;transition:opacity .22s var(--ease),transform .22s var(--ease)}
@@ -354,11 +355,16 @@ main{padding-top:30px}
 @media(max-width:560px){.toast{left:14px;right:14px;bottom:14px;justify-content:center}}
 
 /* ---------- Kommandopalett ---------- */
-/* ---------- Dialogruta (ersätter prompt/confirm — blockerade i sandbox) ---------- */
-.mdl{position:fixed;inset:0;background:rgba(4,25,32,.5);backdrop-filter:blur(2px);display:none;
-  align-items:flex-start;justify-content:center;padding:10vh 16px 16px;z-index:90;overflow-y:auto}
-.mdl.on{display:flex;animation:cmdIn .16s var(--ease)}
-.mdl .mbox{width:min(480px,100%);background:var(--surface);border:1px solid var(--hairline);
+/* ---------- Dialogruta (ersätter prompt/confirm — blockerade i sandbox) ----------
+   .mdl är en native <dialog> (showModal). Den är bara ramen: formuläret .mbox fyller
+   den helt, så ett tryck utanför rutan träffar ::backdrop. display sätts inte här —
+   det skulle visa en stängd dialog. */
+.mdl{margin:10vh auto 16px;padding:0;border:0;background:none;color:inherit;
+  width:min(480px,calc(100% - 32px));max-width:none;max-height:calc(100dvh - 10vh - 16px);
+  overflow-y:auto;border-radius:16px;overscroll-behavior:contain}
+.mdl::backdrop{background:rgba(4,25,32,.5);backdrop-filter:blur(2px);
+  overflow:hidden;overscroll-behavior:contain;animation:cmdIn .16s var(--ease)}
+.mdl .mbox{width:100%;background:var(--surface);border:1px solid var(--hairline);
   border-radius:16px;box-shadow:var(--sh-lift);overflow:hidden;animation:cmdBox .2s var(--ease)}
 .mdl .mhd{padding:20px 22px 4px}
 .mdl .mhd h3{font-size:17px;color:var(--ink);letter-spacing:-.01em}
@@ -368,14 +374,16 @@ main{padding-top:30px}
 .mdl .mfot{display:flex;justify-content:flex-end;gap:10px;padding:14px 22px 20px;flex-wrap:wrap}
 .mdl .btn.fara{background:var(--rod)}
 .mdl .btn.fara:hover{background:#d8443a;box-shadow:0 6px 18px rgba(234,85,73,.3)}
-@media(max-width:560px){.mdl{padding-top:6vh}.mdl .mfot .btn{flex:1}}
+@media(max-width:560px){.mdl{margin-top:6vh;max-height:calc(100dvh - 6vh - 16px)}.mdl .mfot .btn{flex:1}}
 
-/* --- Kommandopalett --- */
-.cmdk{position:fixed;inset:0;background:rgba(4,25,32,.5);backdrop-filter:blur(2px);display:none;
-  align-items:flex-start;justify-content:center;padding-top:12vh;z-index:70}
-.cmdk.on{display:flex;animation:cmdIn .18s var(--ease)}
+/* --- Kommandopalett ---
+   .cmdk är en native <dialog> (showModal); .box fyller den helt, se .mdl ovan. */
+.cmdk{margin:12vh auto auto;padding:0;border:0;background:none;color:inherit;
+  width:min(580px,94vw);max-width:none;overflow:visible;overscroll-behavior:contain}
+.cmdk::backdrop{background:rgba(4,25,32,.5);backdrop-filter:blur(2px);
+  overflow:hidden;overscroll-behavior:contain;animation:cmdIn .18s var(--ease)}
 @keyframes cmdIn{from{opacity:0}to{opacity:1}}
-.cmdk .box{width:min(580px,94vw);background:var(--surface);border:1px solid var(--hairline);
+.cmdk .box{width:100%;background:var(--surface);border:1px solid var(--hairline);
   border-radius:16px;box-shadow:var(--sh-lift);overflow:hidden;animation:cmdBox .22s var(--ease)}
 @keyframes cmdBox{from{opacity:0;transform:translateY(-10px) scale(.985)}to{opacity:1;transform:none}}
 .cmdk input{width:100%;border:0;border-bottom:1px solid var(--hairline);padding:16px 18px;

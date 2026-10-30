@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { MILSTOLPE_MODELL, PILL } from "../../data/konstanter.js";
 import { VYER } from "../../data/vyer.js";
@@ -10,13 +10,16 @@ import { FASBLANKETTER, utforareMedUppgifter } from "../../lib/snabbutskrift.js"
 /* Kommandopalett (Ctrl/Cmd+K).
    Tillgänglighet: i standalone-versionen låg aria-selected på vanliga <li> utan
    listbox-roll, vilket skärmläsare ignorerar. Här är det en riktig combobox med
-   aria-activedescendant, så det aktiva alternativet läses upp vid piltangenter. */
+   aria-activedescendant, så det aktiva alternativet läses upp vid piltangenter.
+   Paletten är en native <dialog> öppnad med showModal() (F1, granskning 2026-10-29):
+   dialogroll, inert sida bakom, top layer och Escape/bakåtgest kommer från webbläsaren. */
 export function Kommandopalett() {
   const { state } = usePortfolj();
   const { visa, setValtProjekt, valtProjekt, oppnaPost, oppnaFaltmaterial, sokOppen: oppen, setSokOppen: setOppen } = useUi();
   const snabb = useSnabbUtskrift();
   const [q, setQ] = useState("");
   const [vald, setVald] = useState(0);
+  const dlgRef = useRef(null);
   const inputRef = useRef(null);
   const listRef = useRef(null);
   const forraFokus = useRef(null);
@@ -115,8 +118,20 @@ export function Kommandopalett() {
     return () => window.removeEventListener("keydown", ned);
   }, [setOppen]);
 
+  /* Öppnas som modal innan fokus flyttas till sökfältet (layout-effekten körs först).
+     Stängs paletten tas rutan bort ur DOM:en, och därmed ur top layer. close() anropas
+     inte: webbläsarens fokusåtergång rullar, och det är just det preventScroll nedan
+     undviker. */
+  useLayoutEffect(() => {
+    const d = dlgRef.current;
+    if (!oppen || !d || d.open) return;
+    // Före showModal(): den flyttar fokus in i rutan direkt, och då vore utlösaren borta.
+    forraFokus.current = document.activeElement;
+    d.showModal?.();
+  }, [oppen]);
+
   useEffect(() => {
-    if (oppen) { forraFokus.current = document.activeElement; inputRef.current?.focus(); }
+    if (oppen) inputRef.current?.focus();
     // Utan preventScroll avbryter fokusåterställningen en rullning som målvyn
     // just startat — t.ex. checklistan som rullar fram en utpekad punkt.
     else if (forraFokus.current instanceof HTMLElement) forraFokus.current.focus({ preventScroll: true });
@@ -134,8 +149,8 @@ export function Kommandopalett() {
     if (t) t.kor();
   };
 
+  // Escape hanteras av dialogens cancel-händelse.
   const onKeyDown = (e) => {
-    if (e.key === "Escape") return setOppen(false);
     if (e.key === "ArrowDown") {
       e.preventDefault();
       setVald((v) => Math.min(v + 1, traffar.length - 1));
@@ -151,13 +166,23 @@ export function Kommandopalett() {
   };
 
   return (
-    <div
-      className="cmdk on"
+    <dialog
+      ref={dlgRef}
+      className="cmdk"
+      aria-label="Sök och hoppa"
+      // Escape och bakåtgest: stängningen styrs av sokOppen, rutan tas bort i stället.
+      onCancel={(e) => {
+        e.preventDefault();
+        setOppen(false);
+      }}
+      // Stänger webbläsaren ändå (upprepad Escape) följer läget med.
+      onClose={() => setOppen(false)}
+      // Klick på ::backdrop har dialogen som mål, eftersom .box fyller hela dialogen.
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) setOppen(false);
       }}
     >
-      <div className="box" role="dialog" aria-modal="true" aria-label="Sök och hoppa">
+      <div className="box">
         <input
           ref={inputRef}
           value={q}
@@ -200,6 +225,6 @@ export function Kommandopalett() {
           )}
         </ul>
       </div>
-    </div>
+    </dialog>
   );
 }

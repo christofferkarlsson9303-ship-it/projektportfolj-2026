@@ -125,6 +125,58 @@ test("kommandopaletten öppnas med Ctrl+K och navigerar", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Risker");
 });
 
+test("kommandopaletten stängs med Escape och med klick utanför rutan", async ({ page }) => {
+  await oppna(page);
+  const palett = page.getByRole("dialog", { name: "Sök och hoppa" });
+
+  await page.keyboard.press("Control+k");
+  await expect(palett).toBeVisible();
+  expect(await palett.evaluate((el) => el.matches("dialog:modal"))).toBe(true);
+  await page.keyboard.press("Escape");
+  await expect(palett).toBeHidden();
+
+  // Ctrl+K ska fungera igen efter Escape — läget får inte hänga kvar som öppet.
+  await page.keyboard.press("Control+k");
+  await expect(palett).toBeVisible();
+  // Klick i övre vänstra hörnet träffar ::backdrop, inte rutan.
+  await page.mouse.click(5, 5);
+  await expect(palett).toBeHidden();
+});
+
+test("statusmeddelandet ligger i top layer och syns ovanför en öppen dialog", async ({ page }) => {
+  await oppna(page, "Öppna punkter");
+  // popover="manual" (F2): rutan är visad som popover från start och står kvar som live-region.
+  expect(await page.locator(".toast").evaluate((el) => el.matches(":popover-open"))).toBe(true);
+  await expect(page.locator(".toast")).toHaveAttribute("role", "status");
+
+  await page.getByRole("button", { name: "+ Lägg till punkt" }).click();
+  const dialog = page.getByRole("dialog", { name: "Ny punkt" });
+  await expect(dialog).toBeVisible();
+
+  /* Ett meddelande som visas medan dialogen är öppen ska ritas ovanför dialogens
+     ::backdrop. Samma steg som Toast.jsx tar vid ett nytt meddelande (hidePopover +
+     showPopover). Träfftest går inte: allt utanför en modal är inert och träffas
+     aldrig. I stället jämförs toastens yta med dialogen öppen och stängd — ligger
+     toasten under backdropen blir den mörkare och suddig, och bilderna skiljer sig. */
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.evaluate(() => {
+    const el = document.querySelector(".toast");
+    el.classList.add("visa");
+    el.hidePopover();
+    el.showPopover();
+  });
+  const ram = await page.locator(".toast").boundingBox();
+  expect(ram && ram.width > 30).toBeTruthy();
+  // Innanför de rundade hörnen (12 px) — i hörnen syns det som ligger bakom.
+  const yta = { x: ram.x + 14, y: ram.y + 14, width: ram.width - 28, height: Math.max(1, ram.height - 28) };
+  const medDialog = await page.screenshot({ clip: yta });
+
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  const utanDialog = await page.screenshot({ clip: yta });
+  expect(medDialog.equals(utanDialog)).toBe(true);
+});
+
 test("mörkt läge växlar och håller kontrast i sidomenyn", async ({ page }) => {
   await oppna(page);
 
@@ -149,7 +201,13 @@ test("dialogen fångar fokus och lämnar tillbaka det vid stängning", async ({ 
 
   const dialog = page.getByRole("dialog", { name: "Ny punkt" });
   await expect(dialog).toBeVisible();
-  await expect(dialog).toHaveAttribute("aria-modal", "true");
+  // Native <dialog> öppnad med showModal() (F1): modaliteten kommer från webbläsaren,
+  // inte från aria-modal. :modal gäller bara då, och sidan bakom är då inert.
+  expect(await dialog.evaluate((el) => el.matches("dialog:modal"))).toBe(true);
+  await expect(oppnaKnapp).not.toBeFocused();
+  // Tab ska stanna i rutan — webbläsarens fokusfälla, ingen egen.
+  for (let i = 0; i < 6; i++) await page.keyboard.press("Tab");
+  expect(await dialog.evaluate((el) => el.contains(document.activeElement))).toBe(true);
 
   // Escape ska stänga och ge tillbaka fokus till knappen som öppnade.
   await page.keyboard.press("Escape");

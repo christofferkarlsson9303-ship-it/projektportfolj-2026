@@ -1,21 +1,35 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useUi } from "../../state/hooks.js";
 
 /* Ersätter prompt()/confirm(), som är blockerade i sandlådan.
-   Tillgänglighet: role="dialog" + aria-modal, fokus flyttas in vid öppning och
-   tillbaka till utlösaren vid stängning, Escape stänger och Tab fångas i rutan. */
+   Native <dialog> öppnad med showModal() (F1, granskning 2026-10-29): webbläsaren
+   ger dialogrollen, gör sidan bakom inert, håller Tab i rutan, lägger den i top
+   layer och stänger på Escape och mobilens bakåtgest (cancel). Fokus flyttas in vid
+   öppning och tillbaka till utlösaren när rutan tas bort, som förut. */
 export function Dialog() {
   const { modal, stangModal } = useUi();
+  const dlgRef = useRef(null);
   const boxRef = useRef(null);
   const forraFokus = useRef(null);
   const [varden, setVarden] = useState({});
   const [fel, setFel] = useState("");
 
   const falt = modal?.falt || [];
+  const oppen = !!modal;
 
+  /* Öppnas en gång per visning. Byts frågan mot en ny utan att rutan stängts
+     ligger den kvar öppen. Rutan tas bort ur DOM:en när modalen stängs, vilket
+     också tar den ur top layer — close() anropas aldrig av oss. */
+  useLayoutEffect(() => {
+    const d = dlgRef.current;
+    // open-kontrollen: StrictMode kör effekten två gånger, och äldre webbläsare kastar då.
+    if (!oppen || !d || d.open) return;
+    // Före showModal(): den flyttar fokus in i rutan direkt, och då vore utlösaren borta.
+    forraFokus.current = document.activeElement;
+    d.showModal?.();
+  }, [oppen]);
   useEffect(() => {
     if (!modal) return undefined;
-    forraFokus.current = document.activeElement;
     setVarden(Object.fromEntries(falt.map((f) => [f.namn, f.varde || ""])));
     setFel("");
 
@@ -37,29 +51,7 @@ export function Dialog() {
   if (!modal) return null;
 
   const bekrafta = modal.typ === "bekrafta";
-
-  const onKeyDown = (e) => {
-    if (e.key === "Escape") {
-      e.stopPropagation();
-      stangModal(bekrafta ? false : null);
-      return;
-    }
-    if (e.key !== "Tab") return;
-    // Fokusfälla: håll tangentbordet kvar i dialogen.
-    const fokuserbara = boxRef.current?.querySelectorAll(
-      'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    );
-    if (!fokuserbara?.length) return;
-    const forsta = fokuserbara[0];
-    const sista = fokuserbara[fokuserbara.length - 1];
-    if (e.shiftKey && document.activeElement === forsta) {
-      e.preventDefault();
-      sista.focus();
-    } else if (!e.shiftKey && document.activeElement === sista) {
-      e.preventDefault();
-      forsta.focus();
-    }
-  };
+  const avbryt = () => stangModal(bekrafta ? false : null);
 
   const skicka = (e) => {
     e.preventDefault();
@@ -69,22 +61,32 @@ export function Dialog() {
   };
 
   return (
-    <div
-      className="mdl on"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) stangModal(bekrafta ? false : null);
+    <dialog
+      ref={dlgRef}
+      className="mdl"
+      aria-labelledby="mdl-titel"
+      aria-describedby={modal.lead ? "mdl-lead" : undefined}
+      /* Escape och bakåtgest: webbläsaren skickar cancel. Stängningen styrs av
+         modal-läget, så standardstängningen stoppas och rutan tas bort i stället. */
+      onCancel={(e) => {
+        e.preventDefault();
+        avbryt();
       }}
-      onKeyDown={onKeyDown}
+      /* Stänger webbläsaren rutan ändå (upprepad Escape utan användaraktivering)
+         följer modal-läget med, annars blir en osynlig modal hängande. */
+      onClose={avbryt}
+      /* Escape ska inte nå lyssnarna på window (Slideover, ÄTA-lådan, Projektstart …),
+         som annars stänger panelen bakom samtidigt. Stänger inget själv. */
+      onKeyDown={(e) => {
+        if (e.key === "Escape") e.stopPropagation();
+      }}
+      /* Klick utanför rutan: ett tryck på ::backdrop har dialogen som mål, eftersom
+         formuläret fyller hela dialogen. closedby="any" har ännu begränsat stöd. */
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) avbryt();
+      }}
     >
-      <form
-        className="mbox"
-        ref={boxRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="mdl-titel"
-        aria-describedby={modal.lead ? "mdl-lead" : undefined}
-        onSubmit={skicka}
-      >
+      <form className="mbox" ref={boxRef} onSubmit={skicka}>
         <div className="mhd">
           <h3 id="mdl-titel">{modal.titel}</h3>
           {modal.lead ? <p id="mdl-lead">{modal.lead}</p> : null}
@@ -133,7 +135,7 @@ export function Dialog() {
 
         {fel ? <p className="mx-5 text-sm text-bad-ink" role="alert">{fel}</p> : null}
         <div className="mfot">
-          <button type="button" className="btn sec" onClick={() => stangModal(bekrafta ? false : null)}>
+          <button type="button" className="btn sec" onClick={avbryt}>
             Avbryt
           </button>
           <button type="submit" className={`btn ${modal.fara ? "fara" : ""}`.trim()}>
@@ -141,6 +143,6 @@ export function Dialog() {
           </button>
         </div>
       </form>
-    </div>
+    </dialog>
   );
 }
