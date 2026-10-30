@@ -16,6 +16,7 @@ import { arNal, siteObjekt } from "../lib/site.js";
 import { Veckorutin } from "../components/idag/Veckorutin.jsx";
 import { Ekonomirad } from "../components/idag/Ekonomirad.jsx";
 import { HeroBild } from "../components/oversikt/Hero.jsx";
+import { projektlage } from "../lib/projektlage.js";
 
 /* Idag — projektledarens arbetslista.
 
@@ -145,6 +146,25 @@ function Del({ id, rubrik, ton = "", children, antal, synliga = antal }) {
   );
 }
 
+/** Nästa åtgärd ur checklistan: vad, och varför just nu. Leder till punkten. */
+function Nasta({ nasta, onOppna }) {
+  return (
+    <span className="flex min-w-0 items-baseline gap-2 text-[13px]">
+      <span className="shrink-0 font-bold text-white/70">Nästa:</span>
+      <button
+        type="button"
+        onClick={onOppna}
+        title={nasta.orsak}
+        aria-label={`Nästa åtgärd: ${nasta.text}`}
+        className="min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left font-body text-[13px] font-semibold text-white underline decoration-white/40 underline-offset-2 transition-colors duration-150 ease-one hover:decoration-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+      >
+        {nasta.text}
+      </button>
+      <span className="hidden shrink-0 text-[12px] text-white/60 lg:inline">{nasta.orsak}</span>
+    </span>
+  );
+}
+
 /** Ett stort tal i bandet. */
 function Bandtal({ etikett, varde, detalj }) {
   return (
@@ -254,6 +274,17 @@ export function Idag() {
 
   const harSite = p ? siteObjekt(state, p.id).some((o) => !arNal(o)) : false;
 
+  /* Fas, blockering och nästa åtgärd per projekt — samma rad som Översikt
+     (lib/projektlage.js). I projektläge bara valt projekt. */
+  const lagen = useMemo(
+    () => (portfolj ? state.projekt : p ? [p] : []).map((pr) => projektlage(state, pr, nu)),
+    [state, portfolj, p, nu]
+  );
+  const oppnaNasta = (pid, post) => {
+    setValtProjekt(pid);
+    oppnaPost("epc", post);
+  };
+
   /* Brådskande: frister först, sedan det som passerat sitt datum. Nyss klara räknas inte. */
   const bradskande = l.frister.length + l.forfallet.length - klara(l.forfallet) + (l.utanDatum.length ? 1 : 0);
   const narmast = l.idag.length - klara(l.idag) + l.veckan.length - klara(l.veckan);
@@ -352,25 +383,27 @@ export function Idag() {
         <HeroBild fil="bess-rader-skymning.jpg" position="60% 45%" />
         <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
           {portfolj ? (
-            <div className="flex min-w-0 max-w-[560px] flex-col gap-2">
+            <div className="flex w-full min-w-0 max-w-[720px] flex-col gap-2 md:w-auto md:flex-1">
               <span className="text-[12px] font-bold uppercase tracking-wider text-white/80">Alla projekt</span>
-              <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
-                {state.projekt.map((pr) => {
-                  const { ton, text } = tidsdom(state, pr.id, nu);
-                  return (
-                    <li key={pr.id} className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <button type="button" className={lankKlass} onClick={() => { setValtProjekt(pr.id); setLage("projekt"); }}>
+              <ul className="m-0 flex list-none flex-col p-0" aria-label="Projektens läge">
+                {lagen.map(({ p: pr, fas, tid, block, nasta }) => (
+                  <li key={pr.id} className="flex min-w-0 flex-col gap-1 border-0 border-t border-solid border-white/15 py-2 first:border-t-0 first:pt-0">
+                    <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <button type="button" className={`${lankKlass} text-left`} onClick={() => { setValtProjekt(pr.id); setLage("projekt"); }}>
                         {pr.nr ? `${pr.nr} ` : ""}{pr.namn}
                       </button>
-                      <StatusBadge ton={ton} label={text} />
-                    </li>
-                  );
-                })}
+                      <span className="text-[12px] font-semibold text-white/70">Fas {fas.nr} · {fas.kort}</span>
+                      <StatusBadge ton={tid.ton} label={tid.text} />
+                      <StatusBadge ton={block.ton} label={block.text} />
+                    </span>
+                    {nasta ? <Nasta nasta={nasta} onOppna={() => oppnaNasta(pr.id, nasta.post)} /> : null}
+                  </li>
+                ))}
               </ul>
               <p className="m-0 text-[13px] text-white/70">Välj ett projekt för att se och ändra dess rader.</p>
             </div>
           ) : (
-          <div className="flex min-w-0 max-w-[560px] flex-col gap-1.5">
+          <div className="flex w-full min-w-0 max-w-[720px] flex-col gap-1.5 md:w-auto md:flex-1">
             <span className="flex flex-wrap items-center gap-2">
               <span className="text-[12px] font-bold uppercase tracking-wider text-white/80">Blir vi klara i tid</span>
               <StatusBadge ton={dom.ton} label={dom.text} />
@@ -382,6 +415,13 @@ export function Idag() {
               </p>
             ) : null}
             <p className="m-0 text-[14px] text-white/80">{domMening}</p>
+            {lagen[0] ? (
+              <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="text-[12px] font-bold uppercase tracking-wider text-white/80">Fas {lagen[0].fas.nr} · {lagen[0].fas.kort}</span>
+                <StatusBadge ton={lagen[0].block.ton} label={lagen[0].block.text} />
+              </span>
+            ) : null}
+            {lagen[0]?.nasta ? <Nasta nasta={lagen[0].nasta} onOppna={() => oppnaNasta(p.id, lagen[0].nasta.post)} /> : null}
           </div>
           )}
 
