@@ -1,5 +1,10 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { usePortfolj, useUi } from "../../state/hooks.js";
+import { usePortfolj, usePortfoljAtgarder, useUi } from "../../state/hooks.js";
+import { hamtaNamn } from "../../state/portfolj-reducer.js";
+import { nyAtaPost } from "../../lib/nyaPoster.js";
+import { nyttId } from "../../lib/id.js";
+import { idag } from "../../lib/datum.js";
+import { medForslag, skapaForslag } from "../../lib/kommandon.js";
 import { MILSTOLPE_MODELL, PILL } from "../../data/konstanter.js";
 import { VYER } from "../../data/vyer.js";
 import { riskvarde } from "../../lib/berakningar.js";
@@ -12,10 +17,13 @@ import { FASBLANKETTER, utforareMedUppgifter } from "../../lib/snabbutskrift.js"
    listbox-roll, vilket skärmläsare ignorerar. Här är det en riktig combobox med
    aria-activedescendant, så det aktiva alternativet läses upp vid piltangenter.
    Paletten är en native <dialog> öppnad med showModal() (F1, granskning 2026-10-29):
-   dialogroll, inert sida bakom, top layer och Escape/bakåtgest kommer från webbläsaren. */
+   dialogroll, inert sida bakom, top layer och Escape/bakåtgest kommer från webbläsaren.
+   Åtgärder (lib/kommandon.js): fasta åtgärder överst när sökfältet är tomt, och
+   "Ny punkt"/"Ny ÄTA" ur det man skrivit — sist i listan, först efter "+". */
 export function Kommandopalett() {
   const { state } = usePortfolj();
-  const { visa, setValtProjekt, valtProjekt, oppnaPost, oppnaFaltmaterial, sokOppen: oppen, setSokOppen: setOppen } = useUi();
+  const { visa, setValtProjekt, valtProjekt, oppnaPost, oppnaFaltmaterial, sokOppen: oppen, setSokOppen: setOppen, setHandelseOppen, setLage, vaxlaTema, visaToast } = useUi();
+  const { laggTill } = usePortfoljAtgarder();
   const snabb = useSnabbUtskrift();
   const [q, setQ] = useState("");
   const [vald, setVald] = useState(0);
@@ -25,7 +33,12 @@ export function Kommandopalett() {
   const forraFokus = useRef(null);
 
   const index = useMemo(() => {
-    const ut = [{ t: "Vy", label: "Projektets egenkontrollrapport", sub: "Beställare / slutdokumentation / hela projektet", kor: () => oppnaFaltmaterial({ mallpaket: "projekt" }) }, { t: "Vy", label: "Skapa fältmaterial", sub: "Arbetslista / egenkontroll / PDF", kor: () => oppnaFaltmaterial() }];
+    const ut = [
+      { t: "Åtgärd", label: "Registrera händelse", sub: "Vad hände, foto och plats", kor: () => setHandelseOppen(true) },
+      { t: "Åtgärd", label: "Visa alla projekt i Idag", sub: "Portföljläge", kor: () => { setLage("portfolj"); visa("idag"); } },
+      { t: "Åtgärd", label: "Byt mellan ljust och mörkt läge", sub: "Tema", kor: vaxlaTema },
+    ];
+    ut.push({ t: "Vy", label: "Projektets egenkontrollrapport", sub: "Beställare / slutdokumentation / hela projektet", kor: () => oppnaFaltmaterial({ mallpaket: "projekt" }) }, { t: "Vy", label: "Skapa fältmaterial", sub: "Arbetslista / egenkontroll / PDF", kor: () => oppnaFaltmaterial() });
     const vp = state.projekt.find((p) => p.id === valtProjekt);
     if (vp) {
       const pn = `${vp.nr ? vp.nr + " " : ""}${vp.namn}`;
@@ -95,13 +108,47 @@ export function Kommandopalett() {
       ut.push({ t: "Kontakt", label: k.namn, sub: `${k.roll} · ${k.org}`, kor: () => visa("kontakter") })
     );
     return ut;
-  }, [state, visa, setValtProjekt, valtProjekt, oppnaPost, oppnaFaltmaterial, snabb]);
+  }, [state, visa, setValtProjekt, valtProjekt, oppnaPost, oppnaFaltmaterial, snabb, setHandelseOppen, setLage, vaxlaTema]);
+
+  /* Skapa ur söktexten, i valt projekt. Moment sätts av reducern. */
+  const forslagPoster = useMemo(() => {
+    const vp = state.projekt.find((p) => p.id === valtProjekt);
+    const f = skapaForslag(q, idag());
+    if (!vp) return { forst: false, poster: [] };
+    const pn = `${vp.nr ? vp.nr + " " : ""}${vp.namn}`;
+    const poster = f.poster.map((x) =>
+      x.typ === "punkt"
+        ? {
+            t: "Ny punkt",
+            label: x.titel,
+            sub: `${x.sub} · ${pn}`,
+            kor: () => {
+              laggTill("punkter", { id: nyttId("p"), projektId: vp.id, titel: x.titel, agare: hamtaNamn() || "Christoffer Karlsson", forfaller: x.forfaller, uppfoljning: x.uppfoljning, status: "oppen" });
+              visaToast(`Punkt tillagd i ${pn} · ${x.sub}`);
+            },
+          }
+        : {
+            t: "Ny ÄTA",
+            label: x.titel,
+            sub: `${x.sub} · ${pn}`,
+            kor: () => {
+              const post = nyAtaPost(state, vp.id, { benamning: x.titel, ansvarig: hamtaNamn() || "" });
+              laggTill("ur", post);
+              setValtProjekt(vp.id);
+              oppnaPost("ata", post.id);
+              visaToast(`${post.nr} registrerad i ${pn} — fristen räknas från idag`);
+            },
+          }
+    );
+    return { forst: f.forst, poster };
+  }, [q, state, valtProjekt, laggTill, visaToast, setValtProjekt, oppnaPost]);
 
   const traffar = useMemo(() => {
-    const s = q.toLowerCase().trim();
-    if (!s) return index.filter((c) => c.t === "Vy" || c.t === "Projekt").slice(0, 14);
-    return index.filter((c) => `${c.label} ${c.t} ${c.sub}`.toLowerCase().includes(s)).slice(0, 40);
-  }, [q, index]);
+    const s = q.toLowerCase().trim().replace(/^\+\s*/, "");
+    if (!s) return index.filter((c) => c.t === "Åtgärd" || c.t === "Vy" || c.t === "Projekt").slice(0, 16);
+    const hittade = forslagPoster.forst ? [] : index.filter((c) => `${c.label} ${c.t} ${c.sub}`.toLowerCase().includes(s)).slice(0, 40);
+    return medForslag(hittade, forslagPoster);
+  }, [q, index, forslagPoster]);
 
   // Global genväg
   useEffect(() => {
@@ -191,7 +238,7 @@ export function Kommandopalett() {
             setVald(0);
           }}
           onKeyDown={onKeyDown}
-          placeholder="Sök sida, projekt, ÄTA, risk, uppgift eller kontakt…"
+          placeholder="Sök, eller skriv en ny punkt eller ÄTA (+ först = punkt)…"
           role="combobox"
           aria-expanded="true"
           aria-controls="cmdlist"
