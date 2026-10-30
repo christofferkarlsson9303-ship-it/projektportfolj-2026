@@ -399,6 +399,17 @@ main{padding-top:30px}
 .cmdk li[aria-selected="true"]{background:var(--info-bg)}
 .cmdk li.ctom{color:var(--ink-soft);cursor:default;justify-content:center}
 
+/* ---------- Snabbraden i Idag ----------
+   Ramen bär fältets utseende; själva <input> är naken inuti, så att plustecken
+   och datumtolkning ligger i samma fält utan dubbla linjer. */
+.snabbrad{display:flex;align-items:center;gap:8px;min-height:40px;padding:0 12px;
+  border:1px solid var(--hairline-stark);border-radius:var(--r-sm);background:var(--surface);
+  transition:border-color .15s var(--ease),box-shadow .15s var(--ease)}
+.snabbrad:hover{border-color:var(--ink-faint)}
+.snabbrad:focus-within{border-color:var(--one-bla);box-shadow:0 0 0 3px color-mix(in srgb,var(--one-bla) 18%,transparent)}
+.snabbrad input[type=text]{border:0;border-radius:0;padding:8px 0;background:none;font-size:14px;width:auto}
+.snabbrad input[type=text]:focus{outline:0}
+
 /* ---------- Snabbfilter ---------- */
 .qfilter{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
 .qf{background:var(--surface);border:1px solid var(--hairline);color:var(--ink-soft);

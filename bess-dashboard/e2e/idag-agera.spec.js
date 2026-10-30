@@ -5,7 +5,8 @@ import { gaTill, oppna, projektval, utanKonsolfel } from "./hjalpare.js";
    hanteras i en panel utan sidbyte. Grunddatan: p2 hör till 36037 och har
    passerat sin frist; p3 hör till 36038. */
 
-const rad = (page, text) => page.getByRole("button", { name: new RegExp(text) });
+/* Radens huvudknapp ("Öppna: …"), inte bocken framför en punkt ("Markera klar: …"). */
+const rad = (page, text) => page.getByRole("button", { name: new RegExp(`^Öppna: .*${text}`) });
 
 test("projektläge visar bara valt projekt, portföljläge visar alla", async ({ page }) => {
   const { fel } = await oppna(page, "Idag");
@@ -37,7 +38,7 @@ test("en punkt hanteras i panelen: uppföljning rör inte fristen, kommentar spa
   await uppf.blur();
   /* Fristen har passerat, så punkten ligger kvar som förfallen. */
   await expect(panel).toContainText("15 sep");
-  await expect(page.getByRole("region", { name: "Brådskande" }).getByRole("button", { name: /Vågkvitto/ })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Brådskande" }).getByRole("button", { name: /^Öppna: .*Vågkvitto/ })).toBeVisible();
 
   await panel.getByRole("textbox", { name: "Ny kommentar" }).fill("Ringt leverantören");
   await panel.getByRole("button", { name: "Lägg till kommentar" }).click();
