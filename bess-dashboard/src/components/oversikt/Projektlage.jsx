@@ -3,49 +3,22 @@ import { ChevronRight } from "lucide-react";
 import { usePortfolj, useUi } from "../../state/hooks.js";
 import { Card } from "../ds/Card.jsx";
 import { StatusBadge } from "../ds/StatusBadge.jsx";
-import { tidsdom } from "../../lib/tidsdom.js";
-import { prognos, prognosLage } from "../../lib/prognos.js";
-import { lagesbild, planAnkare } from "../../lib/epc.js";
-import { arbetslage } from "../../lib/agenda.js";
+import { projektlage } from "../../lib/projektlage.js";
 import { idag } from "../../lib/datum.js";
 
 /* Läget per projekt — portföljens svar på tre av de fyra frågorna, en rad per
    projekt: blir vi klara i tid (tidsdom), vad kostar det (prognosLage), vad
    blockerar (nästa grind och vad som saknas). Raden leder till Idag för
    projektet, där det som ska göras står. Allt räknas med samma funktioner
-   som Idag och Ekonomi; inget räknas om här. */
-
-/** Det som blockerar: nästa grind som inte är passerad och vad som saknas. */
-function blockerar(state, pid, nu) {
-  if (!planAnkare(state, pid)) return { ton: "warn", text: "Datum saknas" };
-  const ng = lagesbild(state, pid, nu).nastaGrind;
-  if (!ng) return { ton: "ok", text: "Alla grindar passerade" };
-  if (!ng.kvar) return { ton: "ok", text: `${ng.fas.grind.kod} kan passeras` };
-  return {
-    ton: ng.status === "sen" ? "bad" : "neutral",
-    text: `${ng.fas.grind.kod}: ${ng.kvar} ${ng.kvar === 1 ? "punkt" : "punkter"} kvar${ng.hpKvar ? `, ${ng.hpKvar} HP` : ""}`,
-  };
-}
+   som Idag och Ekonomi, via lib/projektlage.js; inget räknas om här. */
 
 export function Projektlage({ i }) {
   const { state } = usePortfolj();
   const { setValtProjekt, setLage, visa } = useUi();
   const nu = idag();
 
-  const rader = useMemo(
-    () =>
-      state.projekt.map((p) => {
-        const l = arbetslage(state, 30, p.id);
-        return {
-          p,
-          tid: tidsdom(state, p.id, nu),
-          pengar: prognosLage(prognos(state, p.id)),
-          block: blockerar(state, p.id, nu),
-          attGora: l.frister.length + l.forfallet.length + (l.utanDatum.length ? 1 : 0) + l.idag.length + l.veckan.length,
-        };
-      }),
-    [state, nu]
-  );
+  // Samma rad som Idags portföljläge (lib/projektlage.js).
+  const rader = useMemo(() => state.projekt.map((p) => projektlage(state, p, nu)), [state, nu]);
 
   const oppna = (pid) => {
     setValtProjekt(pid);
