@@ -21,6 +21,7 @@ export function arbetslistaDokument(state, projekt, { utforare = "", ids, skapad
     mallIds: [],
     metadata: { datum: idag(), skapadAv, utforare, enhet: "", ritning: "", fran: "", till: "" },
     uppgifter: arbetsrader(state, projekt.id, { utforare, ids }),
+    kontakter: state.kontakter,
   });
 }
 
