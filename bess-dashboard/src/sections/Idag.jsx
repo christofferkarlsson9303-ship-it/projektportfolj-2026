@@ -156,10 +156,16 @@ function Nasta({ nasta, onOppna }) {
         onClick={onOppna}
         title={nasta.orsak}
         aria-label={`Nästa åtgärd: ${nasta.text}`}
+        data-post={nasta.post}
         className="min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left font-body text-[13px] font-semibold text-white underline decoration-white/40 underline-offset-2 transition-colors duration-150 ease-one hover:decoration-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
       >
         {nasta.text}
       </button>
+      {nasta.lardomar ? (
+        <span className="shrink-0 rounded-sm bg-white/15 px-2 text-[11px] font-bold leading-[18px] text-white" title="Avvikelser och lärdomar på samma punkt i andra projekt — visas på punkten">
+          {nasta.lardomar} {nasta.lardomar === 1 ? "lärdom" : "lärdomar"}
+        </span>
+      ) : null}
       <span className="hidden shrink-0 text-[12px] text-white/60 lg:inline">{nasta.orsak}</span>
     </span>
   );

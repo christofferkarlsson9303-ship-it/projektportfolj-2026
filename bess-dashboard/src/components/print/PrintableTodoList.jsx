@@ -56,6 +56,17 @@ function Kontakter({ kontakter }) {
   );
 }
 
+/** Råd från tidigare projekt för listans moment — "gör så här nästa gång". */
+function Lardomar({ lardomar }) {
+  if (!lardomar?.length) return null;
+  return (
+    <div className="field-lardomar">
+      <h3>Tänk på – från tidigare projekt</h3>
+      <ul>{lardomar.map((l, i) => <li key={i}>{l.text}{l.fran ? <span className="field-fran"> ({l.fran})</span> : null}</li>)}</ul>
+    </div>
+  );
+}
+
 export function PrintableTodoList({ dokument: d }) {
   return (
     <article className="field-document field-todo" aria-label="Arbetslista för fältet">
@@ -75,6 +86,7 @@ export function PrintableTodoList({ dokument: d }) {
         <ol>{SA_HAR_GOR_DU.map((r) => <li key={r}>{r}</li>)}</ol>
         <p className="field-fara">{VID_FARA}</p>
         <Kontakter kontakter={d.kontakter} />
+        <Lardomar lardomar={d.lardomar} />
         {!d.komplett && d.moment.length ? <p className="field-delurval">Delurval: listan har bara en del av momenten.</p> : null}
       </section>
 

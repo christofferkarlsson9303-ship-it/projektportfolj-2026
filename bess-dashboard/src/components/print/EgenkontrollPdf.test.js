@@ -24,11 +24,12 @@ describe("EgenkontrollPdf – arbetslista", () => {
     expect(d.kontakter.map((k) => k.namn)).not.toContain("Josef Fällman");
   });
 
-  it("renderas med kontakter och utan", async () => {
+  it("renderas med kontakter, utan, och med lärdomar", async () => {
     const med = arbetslistaDokument(SEED, projekt);
     const utan = arbetslistaDokument({ ...SEED, kontakter: [] }, projekt);
     expect(utan.kontakter).toEqual([]);
-    for (const d of [med, utan]) {
+    const medLardomar = { ...med, lardomar: [{ text: "Boka kranen två veckor tidigare", fran: "36038", moment: 11 }] };
+    for (const d of [med, utan, medLardomar]) {
       const buf = await renderToBuffer(createElement(EgenkontrollPdf, { dokument: d, typ: "arbetslista" }));
       expect(buf.subarray(0, 5).toString()).toBe("%PDF-");
     }

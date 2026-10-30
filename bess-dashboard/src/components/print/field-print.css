@@ -58,6 +58,11 @@
 .field-kontakter th, .field-kontakter td { padding: 3px 8px 3px 0; text-align: left; vertical-align: baseline; font-size: 12.5px; }
 .field-kontakter th { width: 28%; font-weight: 700; }
 .field-kontakter .field-tel { width: 38%; white-space: nowrap; }
+.field-lardomar { margin-top: 10px; padding: 6px 10px; border-left: 4px solid #005f76; background: #f3f5f6; }
+.field-lardomar h3 { margin: 0 0 4px; font-size: 13px; color: #005f76; }
+.field-lardomar ul { margin: 0; padding-left: 18px; }
+.field-lardomar li { margin: 2px 0; font-size: 12.5px; }
+.field-lardomar .field-fran { color: #435b67; font-size: 11px; }
 .field-fara { margin: 8px 0 0; padding: 6px 10px; border-left: 4px solid #ea5549; font-weight: bold; }
 .field-delurval { margin: 6px 0 0; font-size: 11px; }
 .field-moment-todo { break-before: page; }

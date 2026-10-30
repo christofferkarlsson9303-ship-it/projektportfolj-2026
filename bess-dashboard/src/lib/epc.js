@@ -647,6 +647,18 @@ export function tidigareErfarenheter(state, punktId, pid) {
   return erfarenheter(state).filter((k) => k.punkt === punktId && k.projektId !== pid);
 }
 
+/** "Gör så här nästa gång" från andra projekt, för givna moment — vassast först
+ *  (samma ordning som erfarenhetslistan). Utan gör-så-text tas lärdomen inte med:
+ *  det är råd till nästa lag, inte en händelselogg. */
+export function lardomarForMoment(state, pid, moment, max = 3) {
+  const valda = new Set(moment);
+  const namn = new Map((state.projekt || []).map((p) => [p.id, p.nr || p.namn || p.id]));
+  return erfarenheter(state)
+    .filter((k) => k.projektId !== pid && k.kp && valda.has(k.kp.fas) && String(k.gorSa || "").trim())
+    .slice(0, max)
+    .map((k) => ({ text: k.gorSa.trim(), fran: namn.get(k.projektId) || "", moment: k.kp.fas }));
+}
+
 /** Kommentarer på en punkt i projektet, äldst först. */
 export function kommentarerFor(state, pid, punktId) {
   return (state.epcKommentarer || []).filter((k) => k.projektId === pid && k.punkt === punktId);

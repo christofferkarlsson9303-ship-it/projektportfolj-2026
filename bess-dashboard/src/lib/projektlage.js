@@ -8,7 +8,7 @@
 
 import { faseInfo } from "../data/projektfaser.ts";
 import { arbetslage } from "./agenda.js";
-import { lagesbild, nastaUppgifter, planAnkare } from "./epc.js";
+import { lagesbild, nastaUppgifter, planAnkare, tidigareErfarenheter } from "./epc.js";
 import { idag } from "./datum.js";
 import { prognos, prognosLage } from "./prognos.js";
 import { tidsdom } from "./tidsdom.js";
@@ -28,16 +28,20 @@ export function blockerar(state, pid, nu = idag()) {
 /**
  * Nästa åtgärd i checklistan, eller null. `post` är "kp-<id>" för en punkt och
  * "fas-<nr>" för en grind — samma ankare som Bygga batteripark öppnar.
- * @returns {{text: string, orsak: string, ton: string, post: string} | null}
+ * `lardomar` är antal avvikelser/lärdomar på samma punkt i andra projekt.
+ * @returns {{text: string, orsak: string, ton: string, post: string, lardomar: number} | null}
  */
 export function nastaAtgard(state, pid, nu = idag()) {
   if (!planAnkare(state, pid)) return null;
   const forsta = nastaUppgifter(state, pid, nu)[0];
   if (!forsta) return null;
   if (forsta.typ === "grind") {
-    return { text: `Passera ${forsta.fas.fas.grind.kod}`, orsak: forsta.orsak, ton: forsta.ton || "", post: `fas-${forsta.fas.fas.nr}` };
+    return { text: `Passera ${forsta.fas.fas.grind.kod}`, orsak: forsta.orsak, ton: forsta.ton || "", post: `fas-${forsta.fas.fas.nr}`, lardomar: 0 };
   }
-  return { text: forsta.punkt.text, orsak: forsta.orsak, ton: forsta.ton || "", post: `kp-${forsta.punkt.id}` };
+  return {
+    text: forsta.punkt.text, orsak: forsta.orsak, ton: forsta.ton || "", post: `kp-${forsta.punkt.id}`,
+    lardomar: tidigareErfarenheter(state, forsta.punkt.id, pid).length,
+  };
 }
 
 /** Antal rader som kräver åtgärd inom en vecka — samma räkning som Idag. */
