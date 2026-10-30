@@ -64,6 +64,9 @@ Fyll i datum och beslut i tabellen när det är fattat. Migrationer i `supabase/
 - **Projektmall** (`lib/projektmall.js`, 2026-10-23): `SKAPA_PROJEKT` startar fortfarande tomt. Arv från ett tidigare projekt är ett eget steg, `PROJEKT_ARV` (risker, long lead, ej aktuella punkter, momentplan, lärdomar som uppgifter), i Bygga batteripark. Ärvda rader får id ur källradens id, så att samma arv inte ger dubbletter. Inga resultat, ekonomivärden eller signaturer ärvs.
 - **Siterunda** (`lib/siterunda.js`, 2026-10-23): Registrera händelse tar foto och plats. Foton krymps till JPEG och laddas till ritningsarkivet (`projekt/foto/…`); på punkten ligger bara `foton` med sökväg. En plats sätter en nål på siteobjektet. Med foto eller plats och utan datum blir uppföljningen idag.
 - **"Mina uppgifter" finns inte än.** `agare` är fritext; bygg det först när ansvar tilldelas uttryckligen.
+- **Idag med tangentbordet** (2026-10-30, inkrement A). `components/idag/useTangentlista.js`: j/k flyttar mellan rader med `[data-rad]`, Enter öppnar, `x` markerar punkt klar eller ångrar, `n` fokuserar snabbraden, `p` skriver ut arbetslistan (bara i projektläge). Tangenterna gör inget i fält, i öppen `<dialog>`, i sidopanel eller med Ctrl/Cmd/Alt. En ny radtyp i Idag ska rendera med `Arbetsrad`, annars når j/k den inte.
+- **Snabbraden** (`components/idag/SnabbRad.jsx`, `lib/snabbrad.js`): en mening blir en punkt i valt projekt. Ett datumord sist (idag, imorgon, fre, +3, 5/11, ISO) blir fristen; utan datum blir uppföljningen idag. Lägg nya datumord i `tolkaDatumord()` med test.
+- **Avbockning i Idag gäller bara punkter.** ÄTA och frister stängs med datum eller underlag i sin vy, aldrig med en bock. Klar sker direkt (`UPPDATERA_STATUS`, loggas); raden står kvar överstruken med Ångra i 6 s. Ingen bekräftelsedialog.
 
 ## Moment på alla poster (2026-10-27)
 
@@ -115,6 +118,22 @@ Regler:
 - **Reducern är delad per domän** (2026-10-29, R2). `src/state/portfolj-reducer.js` är kärnan (generiska liståtgärder, projekt, import, rutiner, logg) och exporterar samma gränssnitt som förut. ÄTA, punkter/EPC, HSEQ, site/byggmöten och ekonomi ligger i `src/state/reducers/<domän>Reducer.js`; de returnerar `undefined` för okända åtgärder. Gemensamma hjälpare (`byt`, `loggat`, `medLogg`, `hamtaNamn` …) finns i `reducers/hjalp.js`. Ny åtgärd: lägg den i rätt domänfil. `medNyaMoment()` körs fortfarande efter varje åtgärd i `reducer()`.
 - **Guiden ritar bara utfällda moment** (`Fasruta`). Ett test som räknar alla 309 rader fäller ut alla först.
 - **CI** delar e2e på tre jobb (`--shard`). Kontrollen "E2E (desktop + mobil)" är grön bara om alla tre delarna är det.
+
+## Designprinciper (2026-10-30)
+
+Redaktionellt och industriellt, inte "Tailwind-look". Inga nya värden — använd de befintliga tokens.
+
+| Princip | Regel |
+|---|---|
+| Avstånd | 8 px-skala: `2` / `4` / `6` / `8` (8–32 px). 4 px (`1`) bara inuti en textrad, etikett mot värde. |
+| Typografi | Högst tre nivåer per komponent: överrad (versaler, `tracking-wider`, 11–12 px, `text-ink-soft`), rubrik i `font-head`, brödtext i `font-body`. Siffror och datum med `tabular-nums`. |
+| Kanter och skuggor | Rader avgränsas med `border-hairline`, utan skugga. Kort: hårlinje + `shadow-sm`. Bara det som svävar (panel, palett, dialog) får `shadow-lift`. |
+| Färg | Färgtoken (`ink`, `ink-soft`, `ink-faint`, `sunken`, `one-bla` …). Ingen `gray-*`, inga nya hex. Ton för status kommer från `StatusBadge`/`Callout`. |
+| Rörelse | Hover och fokus 150 ms (`duration-150 ease-one`), panel/palett 200 ms. Stängs av vid `prefers-reduced-motion` (global regel i design-system.css). |
+| Fokus | Synlig ring på allt klickbart: `focus-visible:outline focus-visible:outline-2 focus-visible:outline-one-bla`. Krav för tangentbordsflödet. |
+| Interaktion | Inline och sidopanel före modal. Smarta förval (namn, valt projekt, moment) i stället för formulärfält. En ny funktion ska spara klick eller tangenttryck i ett vanligt flöde. |
+| Utskrift | Svartvitt A4, hög kontrast, signaturrader. Bygg på `SnabbUtskrift`, aldrig en ny utskriftsväg. |
+| Komplexitet | Smart under ytan, enkelt på ytan. Inga tekniska termer i UI. Larm för frister och grindar tas aldrig bort för att det ska se lugnare ut. |
 
 ## Gör inte
 

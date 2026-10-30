@@ -1,6 +1,8 @@
-import { useMemo, useState } from "react";
-import { ChevronRight, CircleCheck, Printer } from "lucide-react";
-import { usePortfolj, useUi } from "../state/hooks.js";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Check, ChevronRight, CircleCheck, Printer } from "lucide-react";
+import { usePortfolj, usePortfoljAtgarder, useUi } from "../state/hooks.js";
+import { SnabbRad } from "../components/idag/SnabbRad.jsx";
+import { useTangentlista } from "../components/idag/useTangentlista.js";
 import { PTag } from "../components/ui/PTag.jsx";
 import { StatusBadge } from "../components/ds/index.js";
 import { Vyvaljare } from "../components/ui/Vyvaljare.jsx";
@@ -48,20 +50,55 @@ const MARKERING = {
   "": "font-semibold text-ink-soft",
 };
 
-/** En rad i arbetslistan. Hela raden är en knapp som leder till posten.
- *  Namnet börjar med "Öppna" för skärmläsare, pilen visar det för seende. */
-function Arbetsrad({ nar, titel, undertext, pid, markering = "", onOppna }) {
+/** Bocken till vänster på en punkt, i en fast kolumn på 32 px. Tom ring = öppen;
+ *  ett klick markerar klar. Ifylld = nyss klar; ett klick till ångrar, som en
+ *  kryssruta. Samma bredd i båda lägena, så att raden inte flyttar sig. */
+function Bock({ titel, klar, onKlar, onAngra }) {
   return (
-    <li className="border-0 border-t border-solid border-hairline first:border-t-0">
+    <button
+      type="button"
+      onClick={klar ? onAngra : onKlar}
+      aria-label={klar ? `Ångra klar: ${titel}` : `Markera klar: ${titel}`}
+      title={klar ? "Ångra (x)" : "Markera klar (x)"}
+      className="group/bock flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 transition-colors duration-150 ease-one hover:bg-ok-bg focus-visible:outline focus-visible:outline-2 focus-visible:outline-one-bla"
+    >
+      <span
+        className={`flex h-[18px] w-[18px] items-center justify-center rounded-full border-[1.5px] border-solid transition-colors duration-150 ease-one ${
+          klar ? "border-ok-ink bg-ok-ink" : "border-hairline-stark group-hover/bock:border-ok-ink"
+        }`}
+      >
+        <Check
+          size={12}
+          strokeWidth={3}
+          aria-hidden="true"
+          className={`transition-opacity duration-150 ease-one ${klar ? "text-surface opacity-100" : "text-ok-ink opacity-0 group-hover/bock:opacity-100"}`}
+        />
+      </span>
+    </button>
+  );
+}
+
+/** En rad i arbetslistan. Radens huvudknapp leder till posten; den bär
+ *  data-rad så att j/k hittar den (useTangentlista). Namnet börjar med "Öppna"
+ *  för skärmläsare, pilen visar det för seende. En punkt har en bock framför;
+ *  en nyss klarmarkerad punkt står kvar på sin plats, överstruken, med Ångra. */
+function Arbetsrad({ nar, titel, undertext, pid, markering = "", onOppna, punktId, klar = false, onKlar, onAngra, bockTitel }) {
+  return (
+    <li className="flex items-center gap-1 border-0 border-t border-solid border-hairline first:border-t-0">
+      {/* Samma vänsterkolumn på alla rader, så att datum och rubriker står i linje. */}
+      {punktId ? <Bock titel={bockTitel} klar={klar} onKlar={onKlar} onAngra={onAngra} /> : <span aria-hidden="true" className="w-8 shrink-0" />}
       <button
         type="button"
         onClick={onOppna}
-        className="group -mx-2 flex w-[calc(100%+16px)] cursor-pointer items-center gap-x-3 rounded-lg border-0 bg-transparent px-2 py-2.5 text-left font-body text-ink transition-colors hover:bg-sunken"
+        data-rad=""
+        data-punkt={punktId && !klar ? punktId : undefined}
+        data-klar={klar ? punktId : undefined}
+        className={`group flex min-w-0 flex-1 cursor-pointer items-center gap-x-3 rounded-sm border-0 bg-transparent py-2.5 text-left font-body text-ink transition-colors duration-150 ease-one hover:bg-sunken focus-visible:bg-sunken focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-one-bla -mr-2 px-2`}
       >
         <span className="sr-only">Öppna: </span>
-        <span className={`w-[58px] shrink-0 text-[12.5px] tabular-nums ${MARKERING[markering]}`}>{nar}</span>
+        <span className={`w-[58px] shrink-0 text-[12.5px] tabular-nums ${klar ? "font-semibold text-ok-ink" : MARKERING[markering]}`}>{klar ? "Klar" : nar}</span>
         <span className="min-w-0 flex-1">
-          <span data-titel className="block text-[14px] font-semibold leading-snug text-ink">
+          <span data-titel className={`block text-[14px] font-semibold leading-snug ${klar ? "text-ink-faint line-through" : "text-ink"}`}>
             {titel}
           </span>
           {undertext ? <span className="mt-0.5 block text-[12px] text-ink-soft">{undertext}</span> : null}
@@ -82,9 +119,20 @@ function Arbetsrad({ nar, titel, undertext, pid, markering = "", onOppna }) {
 
 const PRICK = { larm: "bg-rod", varning: "bg-orange", "": "bg-hairline-stark" };
 
-/** En rubrik i arbetskortet med sina rader. Visas inte när den är tom. */
-function Del({ id, rubrik, ton = "", children, antal }) {
-  if (!antal) return null;
+/** En tangent i kortkommandoraden. */
+function Tangent({ children }) {
+  return (
+    <kbd className="inline-flex min-w-[20px] items-center justify-center rounded-sm border border-solid border-hairline-stark bg-sunken px-1 font-body text-[11px] font-bold leading-[18px] text-ink-soft">
+      {children}
+    </kbd>
+  );
+}
+
+/** En rubrik i arbetskortet med sina rader. Visas inte när den är tom.
+ *  `antal` är det som återstår; `synliga` tar även med nyss klarmarkerade rader,
+ *  så att en rubrik inte försvinner medan dess sista punkt kan ångras. */
+function Del({ id, rubrik, ton = "", children, antal, synliga = antal }) {
+  if (!antal && !synliga) return null;
   return (
     <section aria-labelledby={id} className="flex flex-col gap-1">
       <h4 id={id} className="m-0 flex items-center gap-2 text-[12px] font-bold uppercase tracking-wider text-ink-soft">
@@ -120,11 +168,74 @@ export function Idag() {
   const [panelId, setPanelId] = useState(null);
   const portfolj = lage === "portfolj";
   const snabb = useSnabbUtskrift();
+  const { dispatch } = usePortfoljAtgarder();
+  const rotRef = useRef(null);
+  const snabbRef = useRef(null);
+
+  /* Nyss klarmarkerade punkter står kvar på sin plats i sex sekunder, överstrukna
+     med Ångra — ingen bekräftelsedialog. Statusen ändras direkt och loggas som
+     alla statusbyten; Ångra är ett nytt statusbyte tillbaka till öppen. */
+  const [nyssKlara, setNyssKlara] = useState(() => new Set());
+  const timrar = useRef(new Map());
+  useEffect(() => {
+    const t = timrar.current;
+    return () => t.forEach(clearTimeout);
+  }, []);
+
+  const slapp = useCallback((id) => {
+    clearTimeout(timrar.current.get(id));
+    timrar.current.delete(id);
+    setNyssKlara((s) => {
+      if (!s.has(id)) return s;
+      const n = new Set(s);
+      n.delete(id);
+      return n;
+    });
+  }, []);
+
+  const markeraKlar = useCallback((id) => {
+    const pt = (state.punkter || []).find((x) => x.id === id);
+    if (!pt || pt.status === "klarmarkerad") return;
+    dispatch({ type: "UPPDATERA_STATUS", lista: "punkter", id, falt: "status", varde: "klarmarkerad" });
+    setNyssKlara((s) => new Set(s).add(id));
+    clearTimeout(timrar.current.get(id));
+    timrar.current.set(id, setTimeout(() => {
+      /* Har raden fokus när den försvinner flyttas fokus till nästa rad, så att
+         j/k fortsätter där man var. */
+      const rad = rotRef.current?.querySelector(`[data-klar="${CSS.escape(id)}"]`);
+      if (rad && rad === document.activeElement) {
+        const alla = [...rotRef.current.querySelectorAll("[data-rad]")].filter((r) => r.getClientRects().length > 0);
+        const i = alla.indexOf(rad);
+        (alla[i + 1] || alla[i - 1])?.focus();
+      }
+      slapp(id);
+    }, 6000));
+  }, [state.punkter, dispatch, slapp]);
+
+  const angra = useCallback((id) => {
+    slapp(id);
+    dispatch({ type: "UPPDATERA_STATUS", lista: "punkter", id, falt: "status", varde: "oppen" });
+  }, [dispatch, slapp]);
 
   /* Domen för valt projekt — samma motor som Tidplan. */
   const p = state.projekt.find((x) => x.id === valtProjekt) || state.projekt[0];
   const filterPid = portfolj ? null : p?.id || null;
-  const l = useMemo(() => arbetslage(state, Number(horisont), filterPid), [state, horisont, filterPid]);
+  /* Listan räknas som om de nyss klara fortfarande vore öppna, så att de står kvar på sin plats. */
+  const listState = useMemo(
+    () => (nyssKlara.size ? { ...state, punkter: state.punkter.map((pt) => (nyssKlara.has(pt.id) ? { ...pt, status: "oppen" } : pt)) } : state),
+    [state, nyssKlara]
+  );
+  const l = useMemo(() => arbetslage(listState, Number(horisont), filterPid), [listState, horisont, filterPid]);
+  const arKlar = (r) => r.typ === "Punkt" && nyssKlara.has(r.id);
+  const klara = (lista) => lista.filter(arKlar).length;
+
+  useTangentlista({
+    rotRef,
+    onKlar: markeraKlar,
+    onAngra: angra,
+    onNy: () => snabbRef.current?.focus(),
+    onSkrivUt: !portfolj && p ? () => snabb.arbetslista(p.id) : undefined,
+  });
   const nu = idag();
   const k = useMemo(() => (p ? kritiskLinje(state, p.id, nu) : null), [state, p, nu]);
   const kritiska = k ? k.faser.filter((f) => f.kritisk) : [];
@@ -143,9 +254,9 @@ export function Idag() {
 
   const harSite = p ? siteObjekt(state, p.id).some((o) => !arNal(o)) : false;
 
-  /* Brådskande: frister först, sedan det som passerat sitt datum. */
-  const bradskande = l.frister.length + l.forfallet.length + (l.utanDatum.length ? 1 : 0);
-  const narmast = l.idag.length + l.veckan.length;
+  /* Brådskande: frister först, sedan det som passerat sitt datum. Nyss klara räknas inte. */
+  const bradskande = l.frister.length + l.forfallet.length - klara(l.forfallet) + (l.utanDatum.length ? 1 : 0);
+  const narmast = l.idag.length - klara(l.idag) + l.veckan.length - klara(l.veckan);
   /* Samma rader som listan visar — ÄTA utan datum är en rad, inte en per ÄTA. */
   const attGora = bradskande + narmast;
 
@@ -223,11 +334,16 @@ export function Idag() {
       }
       pid={r.pid}
       onOppna={() => oppnaAgenda(r)}
+      punktId={r.typ === "Punkt" ? r.id : undefined}
+      klar={arKlar(r)}
+      bockTitel={r.titel}
+      onKlar={() => markeraKlar(r.id)}
+      onAngra={() => angra(r.id)}
     />
   );
 
   return (
-    <div className="flex flex-col gap-4 lg:gap-5">
+    <div ref={rotRef} className="flex flex-col gap-4 lg:gap-5">
       {/* ---------- 1. Bandet ---------- */}
       <section
         aria-label="Sammanfattning"
@@ -315,14 +431,16 @@ export function Idag() {
           </span>
         </div>
 
-        {!bradskande && !narmast ? (
+        {p ? <SnabbRad ref={snabbRef} pid={p.id} projektNamn={portfolj ? `${p.nr ? `${p.nr} ` : ""}${p.namn}` : ""} /> : null}
+
+        {!bradskande && !narmast && !nyssKlara.size ? (
           <p className="m-0 flex items-center gap-2 text-[14px] text-ink">
             <CircleCheck size={18} strokeWidth={2.2} aria-hidden="true" className="shrink-0 text-ok-ink" />
             Inget brådskande och inget med datum den närmaste veckan.
           </p>
         ) : null}
 
-        <Del id="idag-bradskande" rubrik="Brådskande" ton="larm" antal={bradskande}>
+        <Del id="idag-bradskande" rubrik="Brådskande" ton="larm" antal={bradskande} synliga={bradskande + klara(l.forfallet)}>
           {l.frister.map((f) => (
             <Arbetsrad
               key={f.id}
@@ -346,11 +464,11 @@ export function Idag() {
           ) : null}
         </Del>
 
-        <Del id="idag-idag" rubrik="Idag" ton="varning" antal={l.idag.length}>
+        <Del id="idag-idag" rubrik="Idag" ton="varning" antal={l.idag.length - klara(l.idag)} synliga={l.idag.length}>
           {l.idag.map(agendaRad)}
         </Del>
 
-        <Del id="idag-veckan" rubrik="Denna vecka" antal={l.veckan.length}>
+        <Del id="idag-veckan" rubrik="Denna vecka" antal={l.veckan.length - klara(l.veckan)} synliga={l.veckan.length}>
           {l.veckan.map(agendaRad)}
         </Del>
 
@@ -375,6 +493,15 @@ export function Idag() {
             ))}
           </div>
         ) : null}
+
+        {/* Kortkommandon — bara där det finns ett tangentbord att tala om. */}
+        <p className="m-0 hidden flex-wrap items-center gap-x-4 gap-y-2 border-0 border-t border-solid border-hairline pt-4 text-[12px] text-ink-faint md:flex print:hidden">
+          <span className="flex items-center gap-1"><Tangent>j</Tangent><Tangent>k</Tangent> flytta</span>
+          <span className="flex items-center gap-1"><Tangent>Enter</Tangent> öppna</span>
+          <span className="flex items-center gap-1"><Tangent>x</Tangent> klar / ångra</span>
+          <span className="flex items-center gap-1"><Tangent>n</Tangent> ny punkt</span>
+          {!portfolj ? <span className="flex items-center gap-1"><Tangent>p</Tangent> skriv ut arbetslista</span> : null}
+        </p>
       </section>
 
       {/* ---------- 3. Längre fram, infällt ---------- */}
