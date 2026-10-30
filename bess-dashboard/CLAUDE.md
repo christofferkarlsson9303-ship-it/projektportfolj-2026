@@ -112,6 +112,7 @@ Regler:
 - **`--lank`** är textfärgen för länkar och nummer på ytor som följer temat (ONE Blågrön ljust, info-ton mörkt). Använd den i stället för `var(--one-djup)` som textfärg på ytor — inte på vita knappar i sidhuvudet.
 - **Felgränser:** `Felgrans` runt varje vy, `AppFelgrans` runt hela appen (omladdning och lokal kopia).
 - **Rendering:** `usePortfoljAtgarder()` ger dispatch och de enkla åtgärderna utan portföljdatan. Använd den i memorerade rader och knappar — en komponent som läser `usePortfolj()` ritas om vid varje ändring, oavsett `React.memo`. Guidens rader (`Punktrad`) är memorerade och får bara enkla värden.
+- **Reducern är delad per domän** (2026-10-29, R2). `src/state/portfolj-reducer.js` är kärnan (generiska liståtgärder, projekt, import, rutiner, logg) och exporterar samma gränssnitt som förut. ÄTA, punkter/EPC, HSEQ, site/byggmöten och ekonomi ligger i `src/state/reducers/<domän>Reducer.js`; de returnerar `undefined` för okända åtgärder. Gemensamma hjälpare (`byt`, `loggat`, `medLogg`, `hamtaNamn` …) finns i `reducers/hjalp.js`. Ny åtgärd: lägg den i rätt domänfil. `medNyaMoment()` körs fortfarande efter varje åtgärd i `reducer()`.
 - **Guiden ritar bara utfällda moment** (`Fasruta`). Ett test som räknar alla 309 rader fäller ut alla först.
 - **CI** delar e2e på tre jobb (`--shard`). Kontrollen "E2E (desktop + mobil)" är grön bara om alla tre delarna är det.
 
