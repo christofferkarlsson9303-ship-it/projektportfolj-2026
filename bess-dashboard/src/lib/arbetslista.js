@@ -31,6 +31,38 @@ export const SA_HAR_GOR_DU = [
 
 export const VID_FARA = "Olycka eller fara: ring 112. Ring sedan arbetsledaren.";
 
+/* Vem montören ringer, i den ordningen. Rollen matchas mot kontaktens roll som
+   den skrivits i Kontakter; den egna projektledaren bara i ONE Nordic. */
+const FALTROLLER = [
+  { etikett: "Arbetsledare / BAS-U", passar: (k) => /bas-u|platsansvarig|platschef|arbetsledare/i.test(k.roll || "") },
+  { etikett: "Elsäkerhet", passar: (k) => /elsäkerhet|elansvarig|elanläggningsansvarig/i.test(k.roll || "") },
+  { etikett: "HMS", passar: (k) => /\bhms\b|arbetsmiljö/i.test(k.roll || "") },
+  { etikett: "Projektledare", passar: (k) => /projektledare/i.test(k.roll || "") && /one nordic/i.test(k.org || "") },
+];
+
+/** Gäller kontakten projektet? Tomt område, "Båda" eller "Alla" gäller alla; annars
+ *  ska området stå i projektets namn, ort, nummer eller id. */
+function iProjekt(k, projekt) {
+  const omr = String(k.omr || "").trim().toLocaleLowerCase("sv");
+  if (!omr || omr === "båda" || omr === "alla") return true;
+  const hostack = [projekt?.namn, projekt?.ort, projekt?.nr, projekt?.id].filter(Boolean).join(" ").toLocaleLowerCase("sv");
+  return hostack.includes(omr);
+}
+
+/**
+ * Kontakter för papperet i fält: en per fältroll, i ringordning. Telefonnummer
+ * finns medvetet inte i appen (se Kontakter) — papperet har en rad att fylla i.
+ * @param {{namn?: string, roll?: string, org?: string, omr?: string}[]} kontakter
+ * @returns {{etikett: string, namn: string, roll: string, org: string}[]}
+ */
+export function faltkontakter(kontakter, projekt) {
+  const aktuella = (kontakter || []).filter((k) => k?.namn && iProjekt(k, projekt));
+  return FALTROLLER.flatMap(({ etikett, passar }) => {
+    const k = aktuella.find(passar);
+    return k ? [{ etikett, namn: k.namn, roll: k.roll || "", org: k.org || "" }] : [];
+  });
+}
+
 /** Är steget en stoppunkt? Titeln börjar med "STOPP". */
 export function arStopp(p) {
   return /^STOPP\b/i.test(String(p?.titel || "").trim());

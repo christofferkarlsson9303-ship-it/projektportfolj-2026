@@ -35,6 +35,27 @@ function Steg({ p, moment }) {
   );
 }
 
+/** Vem montören ringer. Numret skrivs för hand — appen bär inga telefonnummer. */
+function Kontakter({ kontakter }) {
+  if (!kontakter?.length) return null;
+  return (
+    <div className="field-kontakter">
+      <h3>Ring vid frågor</h3>
+      <table>
+        <tbody>
+          {kontakter.map((k) => (
+            <tr key={k.etikett}>
+              <th scope="row">{k.etikett}</th>
+              <td>{k.namn}</td>
+              <td className="field-tel">Tel: ______________________</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export function PrintableTodoList({ dokument: d }) {
   return (
     <article className="field-document field-todo" aria-label="Arbetslista för fältet">
@@ -44,6 +65,7 @@ export function PrintableTodoList({ dokument: d }) {
           <h1>Arbetslista – BESS</h1>
           <p className="field-todo-projekt">{d.projekt.nr || d.projekt.id} · {d.projekt.namn}</p>
           <p className="field-todo-vem">Utförare: {d.utforare || "________________"} · Datum: {d.datum}</p>
+          {d.projekt.ort ? <p>Plats: {d.projekt.ort}</p> : null}
           {d.fran || d.till ? <p>Period: {d.fran || "Alla datum"} – {d.till || "Alla datum"}</p> : null}
         </div>
       </header>
@@ -52,6 +74,7 @@ export function PrintableTodoList({ dokument: d }) {
         <h2>Så här gör du</h2>
         <ol>{SA_HAR_GOR_DU.map((r) => <li key={r}>{r}</li>)}</ol>
         <p className="field-fara">{VID_FARA}</p>
+        <Kontakter kontakter={d.kontakter} />
         {!d.komplett && d.moment.length ? <p className="field-delurval">Delurval: listan har bara en del av momenten.</p> : null}
       </section>
 

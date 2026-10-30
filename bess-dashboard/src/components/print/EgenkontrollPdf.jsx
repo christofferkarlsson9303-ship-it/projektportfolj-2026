@@ -45,6 +45,12 @@ const a = StyleSheet.create({
   nr: { width: 14, fontWeight: 700 },
   radText: { flex: 1, lineHeight: 1.2 },
   fara: { marginTop: 6, paddingLeft: 7, borderLeft: "3pt solid #ea5549", fontWeight: 700 },
+  kontakter: { marginTop: 8, paddingTop: 6, borderTop: "0.6pt solid #85959d" },
+  kontaktRubrik: { fontSize: 10, fontWeight: 700, color: "#005f76", marginBottom: 3 },
+  kontaktRad: { flexDirection: "row", marginBottom: 4 },
+  kontaktRoll: { width: 120, fontWeight: 700 },
+  kontaktNamn: { flex: 1 },
+  kontaktTel: { width: 170 },
   borja: { backgroundColor: "#f3f5f6", borderLeft: "2pt solid #005f76", padding: 6, marginBottom: 4, lineHeight: 1.2 },
   var: { marginBottom: 8 },
   steg: { border: "1pt solid #85959d", borderRadius: 4, padding: 9, marginBottom: 9 },
@@ -64,7 +70,7 @@ function ArbetsHeader({ d, moment }) {
   return <View fixed wrap={false} style={a.head}>
     <View style={s.top}><Image src={logotyp} style={s.logo} /><Text style={a.title}>Arbetslista – BESS</Text></View>
     <Text style={a.meta}>{d.projekt.nr || d.projekt.id} · {d.projekt.namn} · Datum: {d.datum}</Text>
-    <Text style={a.meta}>Utförare: {moment?.utforare || d.utforare || "________________"}</Text>
+    <Text style={a.meta}>Utförare: {moment?.utforare || d.utforare || "________________"}{d.projekt.ort ? ` · Plats: ${d.projekt.ort}` : ""}</Text>
   </View>;
 }
 
@@ -84,6 +90,10 @@ function Regler({ d }) {
     <Text style={a.reglerRubrik}>Så här gör du</Text>
     <Numrerad rader={SA_HAR_GOR_DU} />
     <Text style={a.fara}>{VID_FARA}</Text>
+    {d.kontakter?.length ? <View style={a.kontakter}>
+      <Text style={a.kontaktRubrik}>Ring vid frågor</Text>
+      {d.kontakter.map((k) => <View key={k.etikett} style={a.kontaktRad}><Text style={a.kontaktRoll}>{k.etikett}</Text><Text style={a.kontaktNamn}>{k.namn}</Text><Text style={a.kontaktTel}>Tel: ______________________</Text></View>)}
+    </View> : null}
     {!d.komplett && d.moment.length ? <Text style={{ fontSize: 8.5, marginTop: 5 }}>Delurval: listan har bara en del av momenten.</Text> : null}
   </View>;
 }

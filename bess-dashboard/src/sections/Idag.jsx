@@ -472,7 +472,7 @@ export function Idag() {
           {l.veckan.map(agendaRad)}
         </Del>
 
-        {utforareIListan.length ? (
+        {!portfolj && p ? (
           <div
             className="flex flex-wrap items-center gap-2 border-0 border-t border-solid border-hairline pt-4 text-[13px]"
             role="group"
@@ -480,6 +480,9 @@ export function Idag() {
           >
             <Printer size={15} strokeWidth={2} aria-hidden="true" className="text-ink-soft" />
             <span className="text-ink-soft">Papper till laget:</span>
+            <button type="button" className="btn mini" aria-label="Skriv ut arbetslista – hela laget" onClick={() => snabb.arbetslista(p.id)}>
+              Hela laget
+            </button>
             {utforareIListan.map((n) => (
               <button
                 key={n}

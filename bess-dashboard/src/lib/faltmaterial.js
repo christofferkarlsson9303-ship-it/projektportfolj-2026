@@ -1,3 +1,4 @@
+import { faltkontakter } from "./arbetslista.js";
 import { FALTMALLAR, FALTMALL_REVISION, KALLSTATUS } from "../data/faltmaterial.js";
 import { PROJEKTMALLAR, PROJEKTKONTROLL_REVISION, PROJEKTKONTROLL_INLEDNING } from "../data/projektkontroll.js";
 import { kontrollId, kontrollSummering } from "./projektkontroll.js";
@@ -28,8 +29,8 @@ export function arbetsrader(state, pid, { utforare = "", fran = "", till = "", i
 
 /** Fryst dokumentmodell: inget här ändrar projektets eller EPC:s status.
  * @param {{projekt: any, mallIds: string[], referenser?: Object<string,string>, ansvar?: Object<string,string>,
- *   metadata?: FaltMetadata, uppgifter?: any[], mallpaket?: string, kontroller?: any[], profil?: string}} indata */
-export function byggFaltmaterial({ projekt, mallIds, referenser = {}, ansvar = {}, metadata = {}, uppgifter = [], mallpaket = "teknisk", kontroller = [] }) {
+ *   metadata?: FaltMetadata, uppgifter?: any[], mallpaket?: string, kontroller?: any[], profil?: string, kontakter?: any[]}} indata */
+export function byggFaltmaterial({ projekt, mallIds, referenser = {}, ansvar = {}, metadata = {}, uppgifter = [], mallpaket = "teknisk", kontroller = [], kontakter = [] }) {
   const idSet = new Set(mallIds);
   /** @type {any[]} */
   const mallar = mallpaket === "projekt" ? PROJEKTMALLAR : FALTMALLAR;
@@ -49,7 +50,9 @@ export function byggFaltmaterial({ projekt, mallIds, referenser = {}, ansvar = {
     punkter: m.punkter.map((p) => ({ ...p, epc: [...p.epc], kontroll: index.has(kontrollId(projekt.id, omfattning, p.id)) ? { ...index.get(kontrollId(projekt.id, omfattning, p.id)) } : null })),
   }));
   return {
-    projekt: { id: projekt.id, nr: projekt.nr, namn: projekt.namn, bestallare: projekt.bestallare },
+    projekt: { id: projekt.id, nr: projekt.nr, namn: projekt.namn, bestallare: projekt.bestallare, ort: projekt.ort || "" },
+    /* Vem montören ringer (lib/arbetslista.js: faltkontakter). Tom lista = inget block. */
+    kontakter: faltkontakter(kontakter, projekt),
     revision, kalla: KALLSTATUS,
     visaResultat: mallpaket === "projekt" && metadata.visaResultat,
     kontrollplan: metadata.kontrollplan || "", omfattning,

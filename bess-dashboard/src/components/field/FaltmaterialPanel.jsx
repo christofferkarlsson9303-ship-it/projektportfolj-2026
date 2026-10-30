@@ -54,7 +54,7 @@ export function FaltmaterialPanel({ projekt, urval, onValjProjekt, onStang }) {
   }, [projekt.id, mallpaket, mallIds, typ, utforare, referenser, ansvar, metadata.enhet, metadata.kontrollplan, urval?.ids, urval?.mallIds]);
 
   const uppgifter = useMemo(() => arbetsrader(state, projekt.id, { utforare, fran: metadata.fran, till: metadata.till, ids: urval?.ids }), [state, projekt.id, utforare, metadata.fran, metadata.till, urval?.ids]);
-  const dokument = useMemo(() => byggFaltmaterial({ projekt, mallpaket, mallIds, kontroller: state.faltkontroller, referenser, ansvar, metadata: { ...metadata, utforare }, uppgifter: uppgifter.filter((p) => uppgiftIds.has(p.id)) }), [state.faltkontroller, projekt, mallpaket, mallIds, referenser, ansvar, metadata, utforare, uppgifter, uppgiftIds]);
+  const dokument = useMemo(() => byggFaltmaterial({ projekt, mallpaket, mallIds, kontroller: state.faltkontroller, referenser, ansvar, metadata: { ...metadata, utforare }, uppgifter: uppgifter.filter((p) => uppgiftIds.has(p.id)), kontakter: state.kontakter }), [state.faltkontroller, state.kontakter, projekt, mallpaket, mallIds, referenser, ansvar, metadata, utforare, uppgifter, uppgiftIds]);
   const omfattning = metadata.enhet.trim() || "Hela anläggningen";
   const kontrollIndex = new Map((state.faltkontroller || []).map((r) => [r.id, r]));
   const sparaKontroll = (p, falt, varde) => {
