@@ -51,6 +51,7 @@ const a = StyleSheet.create({
   kontaktRoll: { width: 120, fontWeight: 700 },
   kontaktNamn: { flex: 1 },
   kontaktTel: { width: 170 },
+  lardomar: { marginTop: 8, padding: 6, borderLeft: "3pt solid #005f76", backgroundColor: "#f3f5f6" },
   borja: { backgroundColor: "#f3f5f6", borderLeft: "2pt solid #005f76", padding: 6, marginBottom: 4, lineHeight: 1.2 },
   var: { marginBottom: 8 },
   steg: { border: "1pt solid #85959d", borderRadius: 4, padding: 9, marginBottom: 9 },
@@ -93,6 +94,10 @@ function Regler({ d }) {
     {d.kontakter?.length ? <View style={a.kontakter}>
       <Text style={a.kontaktRubrik}>Ring vid frågor</Text>
       {d.kontakter.map((k) => <View key={k.etikett} style={a.kontaktRad}><Text style={a.kontaktRoll}>{k.etikett}</Text><Text style={a.kontaktNamn}>{k.namn}</Text><Text style={a.kontaktTel}>Tel: ______________________</Text></View>)}
+    </View> : null}
+    {d.lardomar?.length ? <View style={a.lardomar}>
+      <Text style={a.kontaktRubrik}>Tänk på – från tidigare projekt</Text>
+      {d.lardomar.map((l, i) => <View key={i} style={a.rad}><Text style={a.nr}>•</Text><Text style={a.radText}>{l.text}{l.fran ? ` (${l.fran})` : ""}</Text></View>)}
     </View> : null}
     {!d.komplett && d.moment.length ? <Text style={{ fontSize: 8.5, marginTop: 5 }}>Delurval: listan har bara en del av momenten.</Text> : null}
   </View>;

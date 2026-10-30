@@ -17,6 +17,7 @@ export function arbetsrader(state, pid, { utforare = "", fran = "", till = "", i
   ).map((p) => ({
     id: p.id, titel: p.titel, instruktion: p.instruktion || p.titel,
     utforare: p.utforare || p.agare || "", datum: p.forfaller || "", referens: p.ritningsreferens || "",
+    moment: Number.isInteger(p.moment) ? p.moment : null,
   }));
 }
 
@@ -29,8 +30,8 @@ export function arbetsrader(state, pid, { utforare = "", fran = "", till = "", i
 
 /** Fryst dokumentmodell: inget här ändrar projektets eller EPC:s status.
  * @param {{projekt: any, mallIds: string[], referenser?: Object<string,string>, ansvar?: Object<string,string>,
- *   metadata?: FaltMetadata, uppgifter?: any[], mallpaket?: string, kontroller?: any[], profil?: string, kontakter?: any[]}} indata */
-export function byggFaltmaterial({ projekt, mallIds, referenser = {}, ansvar = {}, metadata = {}, uppgifter = [], mallpaket = "teknisk", kontroller = [], kontakter = [] }) {
+ *   metadata?: FaltMetadata, uppgifter?: any[], mallpaket?: string, kontroller?: any[], profil?: string, kontakter?: any[], lardomar?: any[]}} indata */
+export function byggFaltmaterial({ projekt, mallIds, referenser = {}, ansvar = {}, metadata = {}, uppgifter = [], mallpaket = "teknisk", kontroller = [], kontakter = [], lardomar = [] }) {
   const idSet = new Set(mallIds);
   /** @type {any[]} */
   const mallar = mallpaket === "projekt" ? PROJEKTMALLAR : FALTMALLAR;
@@ -53,6 +54,8 @@ export function byggFaltmaterial({ projekt, mallIds, referenser = {}, ansvar = {
     projekt: { id: projekt.id, nr: projekt.nr, namn: projekt.namn, bestallare: projekt.bestallare, ort: projekt.ort || "" },
     /* Vem montören ringer (lib/arbetslista.js: faltkontakter). Tom lista = inget block. */
     kontakter: faltkontakter(kontakter, projekt),
+    /* Råd från tidigare projekt för listans moment (lib/epc.js: lardomarForMoment). */
+    lardomar: lardomar.map((l) => ({ ...l })),
     revision, kalla: KALLSTATUS,
     visaResultat: mallpaket === "projekt" && metadata.visaResultat,
     kontrollplan: metadata.kontrollplan || "", omfattning,
