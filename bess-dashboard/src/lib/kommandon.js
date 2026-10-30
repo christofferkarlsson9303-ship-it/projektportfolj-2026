@@ -24,6 +24,7 @@ export function skapaForslag(q, idagIso) {
   const plus = text.startsWith("+");
   const ren = plus ? text.slice(1).trim() : text;
   const punkt = tolkaSnabbrad(ren, idagIso);
+  /** @type {{typ: "punkt"|"ata", titel: string, forfaller?: string, uppfoljning?: string, sub: string}[]} */
   const poster = [];
   if (punkt) {
     poster.push({
